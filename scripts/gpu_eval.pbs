@@ -1,0 +1,95 @@
+#!/bin/bash
+# GPU smoke test + WER/speed comparison of backends on one H200.
+#   qsub -P <group> -q <queue> -v RTYPE=rt_HG,MODEL=.cache/models/owsm_v4_base_102M \
+#        -l select=1 -l walltime=01:00:00 scripts/gpu_eval.pbs
+#PBS -l walltime=01:00:00
+#PBS -j oe
+set -euo pipefail
+: "${PBS_JOBID:?run via qsub}"
+: "${PBS_LOCALDIR:?run via qsub}"
+cd "$PBS_O_WORKDIR"
+
+MODEL="${MODEL:-.cache/models/owsm_v4_base_102M}"
+STAGES="${STAGES:-info torch32 torch16 trt16 torch16_b8 trt16_b8}"
+STAGES="${STAGES//:/ }"  # qsub -v cannot pass spaces easily; accept a:b:c
+OUT="outputs/gpu_eval-${PBS_JOBID%%.*}"
+REF="${REF:-$OUT/torch32.json}"  # transcripts to compare against
+mkdir -p "$OUT"
+export TMPDIR="$PBS_LOCALDIR/tmp" && mkdir -p "$TMPDIR"
+export TORCHINDUCTOR_CACHE_DIR="$PBS_LOCALDIR/inductor"
+export OWSM_TRT_CACHE="$PWD/.cache/engines"
+export HF_HOME="$PWD/.cache/hf"
+export PYTHONUNBUFFERED=1
+
+# Unpack the prebuilt env (scripts/build_env_tar.sh) onto node-local disk: running torch/TensorRT from
+# a .venv on Lustre is slow.
+ENV_TAR="${ENV_TAR:-$PWD/.cache/envs/owsm-env.tar.zst}"
+ZSTD="$(command -v zstd || echo "$HOME/miniconda3/bin/zstd")"
+t0=$SECONDS
+"$ZSTD" -dc -T0 "$ENV_TAR" | tar -xf - -C "$PBS_LOCALDIR"
+echo "unpacked $(basename "$ENV_TAR") in $((SECONDS - t0))s"
+# Snapshot the code so edits made while the job is queued/running cannot leak into later stages.
+SNAP="$PBS_LOCALDIR/snap"
+mkdir -p "$SNAP" && cp -r src scripts "$SNAP/"
+PY=(env -u CONDA_PREFIX PYTHONPATH="$SNAP/src" "$PBS_LOCALDIR/owsm-env/bin/python3")
+
+nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv -l 5 > "$OUT/nvidia-smi.csv" &
+SMI=$!
+trap 'kill $SMI 2>/dev/null || true' EXIT
+
+run() {  # run <name> <timeout-seconds> <args...>
+  local name=$1 secs=$2; shift 2
+  echo "=== $name: $*"
+  timeout "$secs" "$@" 2>&1 | tee "$OUT/$name.log" || echo "!!! $name failed (exit ${PIPESTATUS[0]})"
+}
+
+for stage in $STAGES; do
+  case $stage in
+    info)
+      run info 300 bash -c "nvidia-smi; ${PY[*]} -c 'import torch, tensorrt as t; print(torch.__version__, torch.version.cuda, torch.cuda.is_available(), torch.cuda.get_device_name(), t.__version__)'" ;;
+    torch32)
+      run torch32 900 "${PY[@]}" "$SNAP/scripts/eval_wer.py" --model "$MODEL" --backend torch --dtype float32 \
+        --save "$OUT/torch32.json" ;;
+    torch16)
+      run torch16 900 "${PY[@]}" "$SNAP/scripts/eval_wer.py" --model "$MODEL" --backend torch --dtype float16 \
+        --save "$OUT/torch16.json" --compare "$REF" ;;
+    trt16)
+      run trt16 1800 "${PY[@]}" "$SNAP/scripts/eval_wer.py" --model "$MODEL" --backend tensorrt --dtype float16 \
+        --save "$OUT/trt16.json" --compare "$REF" ;;
+    trt16_b8)
+      run trt16_b8 900 "${PY[@]}" "$SNAP/scripts/eval_wer.py" --model "$MODEL" --backend tensorrt --dtype float16 \
+        --batch-size 8 --compare "$REF" ;;
+    torch16_b8)
+      run torch16_b8 900 "${PY[@]}" "$SNAP/scripts/eval_wer.py" --model "$MODEL" --backend torch --dtype float16 \
+        --batch-size 8 --compare "$REF" ;;
+    espnet_*)  # espnet_<beam>_<dtype>: official ESPnet Speech2Text baseline, e.g. espnet_5_float32
+      if [ ! -x "$PBS_LOCALDIR/espnet-ref/bin/python3" ]; then
+        "$ZSTD" -dc -T0 "$PWD/.cache/envs/espnet-ref.tar.zst" | tar -xf - -C "$PBS_LOCALDIR"
+      fi
+      IFS=_ read -r _ beam dt <<< "$stage"
+      run "$stage" 1800 env -u CONDA_PREFIX PYTHONPATH="$SNAP/src:$SNAP/scripts" "$PBS_LOCALDIR/espnet-ref/bin/python3" \
+        "$SNAP/scripts/bench_espnet.py" --model "$MODEL" --beam "$beam" --dtype "$dt" --save "$OUT/$stage.json" ;;
+    cli)  # the command line a user would type (python -m: console-script shebangs are not relocatable)
+      T=.cache/testdata/librispeech_dummy
+      run cli 1200 bash -c "set -e; CLI='${PY[*]} -m owsm_trt.cli'
+        \$CLI transcribe --model $MODEL $T/1272-128104-0000.flac $T/1272-128104-0001.flac
+        \$CLI transcribe --model $MODEL --timestamps --json $T/1272-128104-0002.flac
+        \$CLI transcribe --model $MODEL --long --json .cache/testdata/long_110s.wav
+        \$CLI bench --model $MODEL --batch-size 8 --iters 3
+        \$CLI bench --model $MODEL --backend torch --batch-size 1 --iters 3" ;;
+    smoke)
+      run smoke 900 "${PY[@]}" "$SNAP/scripts/smoke_features.py" --model "$MODEL" ;;
+    layers_*)  # layers_<b>: TensorRT per-layer profile of one decode step and the encoder
+      bs=${stage#layers_}
+      run "$stage" 900 "${PY[@]}" "$SNAP/scripts/trt_layers.py" --model "$MODEL" --batch "$bs" --out "$OUT/$stage" ;;
+    prof_*)  # prof_<backend>_<b>[_<opt level>], e.g. prof_tensorrt_1, prof_torch_8, prof_tensorrt_1_5 (fp16)
+      IFS=_ read -r _ be bs lvl <<< "$stage"
+      run "$stage" 1800 "${PY[@]}" "$SNAP/scripts/profile_phases.py" --model "$MODEL" --backend "$be" --batch "$bs" \
+        --opt-level "${lvl:-3}" ;;
+    trtO5_*)  # trtO5_<b>: TensorRT fp16 with builder optimization level 5
+      bs=${stage#trtO5_}
+      run "$stage" 1800 "${PY[@]}" "$SNAP/scripts/eval_wer.py" --model "$MODEL" --backend tensorrt --dtype float16 \
+        --batch-size "$bs" --opt-level 5 --compare "$REF" ;;
+  esac
+done
+echo "outputs in $OUT"
