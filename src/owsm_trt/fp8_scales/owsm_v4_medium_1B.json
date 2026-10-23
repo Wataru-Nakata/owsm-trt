@@ -16,7 +16,7 @@
   "data": "FLEURS validation (deu, spa, cmn as zho, jpn, fra, eng, rus; 100 each), JVS nonpara30 (jpn, speakers 91-100; 100), LibriSpeech dev-other (eng; 100)",
   "seed": 0,
   "padding": "30 s windows",
-  "tested": "WER/CER within 0.1 of fp16 on LibriSpeech test-clean, JVS parallel100 (speakers 1-10), FLEURS test deu/spa/cmn (agent/ctc round 4)"
+  "tested": "fp16 -> FP8 at batch 16 (agent/ctc round 4, job 2751570): LibriSpeech test-clean WER 2.42 -> 2.42, JVS parallel100 (speakers 1-10) CER 7.93 -> 7.91, FLEURS test deu WER 7.70 -> 7.73, spa 4.68 -> 4.64, cmn CER 12.65 -> 12.56. At batch 1 FLEURS cmn CER 12.65 -> 12.89 (job 2751615), all from one utterance in a decoder repetition loop (the other 944: 15 errors fewer)."
  },
  "amax": {
   "embed.conv.2": 2.296875,

@@ -16,7 +16,7 @@
   "data": "FLEURS validation (deu, spa, cmn as zho, jpn, fra, eng, rus; 100 each), JVS nonpara30 (jpn, speakers 91-100; 100), LibriSpeech dev-other (eng; 100)",
   "seed": 0,
   "padding": "30 s windows",
-  "tested": "WER/CER within 0.1 of fp16 on LibriSpeech test-clean, JVS parallel100 (speakers 1-10), FLEURS test deu/spa/cmn (agent/ctc round 4)"
+  "tested": "fp16 -> FP8 at batch 16 (agent/ctc round 4, jobs 2751568/2751604): LibriSpeech test-clean WER 2.66 -> 2.71, JVS parallel100 (speakers 1-10) CER 7.15 -> 7.22, FLEURS test deu WER 8.27 -> 8.24, spa 5.47 -> 5.41, cmn CER 10.93 -> 10.97 (engine-to-engine fp16 noise: about +-0.05)."
  },
  "amax": {
   "conditioning_layer": 1.0,
