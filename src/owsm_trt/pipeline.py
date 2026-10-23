@@ -634,10 +634,14 @@ class OWSM:
         primer = self._primer(lang, task, True, None)
         sess = self._session(bs) if beam == 1 and task == "asr" and TIMESTAMP_GUESSES else None
         if sess is None or not sess.windows or len(primer) >= sess.windows[-1]:
-            # (no drafts: a batch of fewer windows than bs gets a session of its size)
-            return self.transcribe(
-                windows, lang=lang, task=task, timestamps=True, batch_size=bs, beam_size=beam
+            # No drafts: transcribe() decodes fixed batches, and a smaller one would get a session of its
+            # own size (rebuilt every round). With ``fixed``, copies of the last window fill it up.
+            n = len(windows)
+            padded = windows + windows[-1:] * (-n % bs if fixed else 0)
+            out = self.transcribe(
+                padded, lang=lang, task=task, timestamps=True, batch_size=bs, beam_size=beam
             )
+            return out[:n]
         order = sorted(range(len(windows)), key=lambda i: len(windows[i]))  # as transcribe()
         ends = iter([self._end_guess(len(windows[i])) for i in order])  # drafts are made in batch order
 
