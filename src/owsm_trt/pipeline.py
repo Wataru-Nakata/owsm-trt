@@ -767,11 +767,20 @@ def _decoder_kernel(runner, cfg, checkpoint: Path, dev: torch.device, which):
         return runner
     mega = megakernel.MegaDecoder(_load_decoder(cfg, checkpoint), dev)
     try:
-        kernel = megakernel_gluon.GluonDecoder(mega)
+        if isinstance(which, str) and which.startswith("ring"):  # "ring" or "ring:<programs>"
+            from . import megakernel_ring
+
+            opts = which.split(":")[1:]  # [programs][:x (exclusive SMs)]
+            programs = int(opts[0]) if opts and opts[0] else None
+            kernel = megakernel_ring.RingDecoder(mega, programs=programs, exclusive="x" in opts)
+            route = megakernel_ring.ROUTE_TOKENS, megakernel_ring.ROUTE_ROWS
+        else:
+            kernel = megakernel_gluon.GluonDecoder(mega)
+            route = megakernel_gluon.ROUTE_TOKENS, megakernel_gluon.ROUTE_ROWS
     except ValueError as e:
         log.warning("decoder megakernel not used: %s", e)
         return runner
-    return megakernel.MegaBackend(runner, kernel, megakernel_gluon.ROUTE_TOKENS, megakernel_gluon.ROUTE_ROWS)
+    return megakernel.MegaBackend(runner, kernel, *route)
 
 
 def _load_decoder(cfg, checkpoint: Path) -> Decoder:

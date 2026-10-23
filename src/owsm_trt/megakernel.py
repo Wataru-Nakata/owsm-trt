@@ -693,13 +693,23 @@ class MegaBackend:
     def __getattr__(self, name):  # encode, encode_fn, trimmed, cfg, name, ...
         return getattr(self.inner, name)
 
-    def step_fn(self, tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv, kind="decode"):
+    @property
+    def argmax(self) -> bool:
+        """Whether step_fn takes ``pred``: calls on the kernel then write the logits' argmax there too (a call
+        the wrapped backend runs ignores it; see writes_pred on the returned function)."""
+        return getattr(self.kernel, "argmax", False)
+
+    def step_fn(
+        self, tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv, kind="decode", pred=None
+    ):
         args = (tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv)
         big = (self.max_tokens is not None and tokens.numel() > self.max_tokens) or (
             self.max_rows is not None and tokens.shape[0] > self.max_rows
         )
         if kind == "prefill" or big:
             return self.inner.step_fn(*args, kind=kind)
+        if pred is not None and self.argmax:
+            return self.kernel.step_fn(*args, kind=kind, pred=pred)
         return self.kernel.step_fn(*args, kind=kind)
 
     def check(self) -> None:

@@ -7,7 +7,7 @@ import pytest
 import torch
 from test_model import TINY
 
-from owsm_trt import megakernel, megakernel_gluon
+from owsm_trt import megakernel, megakernel_gluon, megakernel_ring
 from owsm_trt.modeling import OWSMModel
 from owsm_trt.runtime import GreedySession, TorchBackend
 
@@ -112,7 +112,7 @@ gluon_only = pytest.mark.skipif(
 
 @gluon_only
 @pytest.mark.parametrize("rows,window", [(1, 1), (1, 8), (2, 3), (8, 1), (1, 16), (1, 32), (4, 8), (2, 16)])
-def test_gluon_step_matches_decoder(model, rows, window):
+def test_gluon_step_matches_decoder(model, rows, window, kind="gluon", programs=None):
     dec = model.decoder
     L, H, dk, C, T = CFG.dec_layers, CFG.dec_heads, CFG.d_model // CFG.dec_heads, 128, CFG.enc_frames
     torch.manual_seed(rows * 100 + window)
@@ -129,10 +129,21 @@ def test_gluon_step_matches_decoder(model, rows, window):
     logits = torch.zeros(rows, window, CFG.vocab_size, device=dev)
     new_kv = torch.zeros(L, 2, rows, H, window, dk, **f16)
     k2, v2 = k.clone(), v.clone()
-    gk = megakernel_gluon.GluonDecoder(megakernel.MegaDecoder(dec, dev))
-    run = gk.step_fn(tokens, offset, k2, v2, ck, cv, logits, new_kv)
+    mega = megakernel.MegaDecoder(dec, dev)
+    if kind == "ring":
+        gk = megakernel_ring.RingDecoder(mega, programs=programs)
+    else:
+        gk = megakernel_gluon.GluonDecoder(mega)
+    pred = torch.full((rows, window), -1, dtype=torch.long, device=dev)
+    if kind == "ring":  # with the argmax
+        run = gk.step_fn(tokens, offset, k2, v2, ck, cv, logits, new_kv, pred=pred)
+        assert run.writes_pred
+    else:
+        run = gk.step_fn(tokens, offset, k2, v2, ck, cv, logits, new_kv)
     run()
     gk.check()
+    if kind == "ring":
+        assert torch.equal(pred, logits.argmax(-1))
     assert (logits - ref).abs().max().item() < 0.02 * ref.abs().max().item()
     assert (logits.argmax(-1) == ref.argmax(-1)).float().mean().item() >= 0.95
     torch.testing.assert_close(new_kv.float(), ref_kv, atol=0.05, rtol=0.02)
@@ -145,12 +156,23 @@ def test_gluon_step_matches_decoder(model, rows, window):
 
 
 @gluon_only
+@pytest.mark.parametrize("rows,window", [(1, 1), (1, 8), (2, 3), (8, 1), (1, 16), (1, 32), (4, 8), (2, 16)])
+@pytest.mark.parametrize("programs", [None, 3])
+def test_ring_step_matches_decoder(model, rows, window, programs):
+    """The ring kernel, with as many programs as the largest stage has units or with fewer (several units per
+    program and stage)."""
+    test_gluon_step_matches_decoder(model, rows, window, "ring", programs)
+
+
+@gluon_only
 @pytest.mark.parametrize("drafted", [False, True], ids=["steps", "drafted"])
-def test_gluon_session_matches_torch(model, drafted):
-    """Greedy decoding with the Gluon kernel for calls of up to 8 tokens (the PyTorch backend for the rest)."""
+@pytest.mark.parametrize("kind", ["gluon", "ring"])
+def test_gluon_session_matches_torch(model, drafted, kind):
+    """Greedy decoding with a Gluon kernel for calls of up to 32 tokens (the PyTorch backend for the rest)."""
     m16 = copy.deepcopy(model).half()
     m16.frontend.float()
-    gk = megakernel_gluon.GluonDecoder(megakernel.MegaDecoder(model.decoder, torch.device("cuda")))
+    mega = megakernel.MegaDecoder(model.decoder, torch.device("cuda"))
+    gk = megakernel_ring.RingDecoder(mega) if kind == "ring" else megakernel_gluon.GluonDecoder(mega)
     mega_be = megakernel.MegaBackend(TorchBackend(m16), gk, megakernel_gluon.MAX_TOKENS)
     batch = 3
     feats = m16.frontend(torch.randn(batch, CFG.num_samples, device="cuda"))

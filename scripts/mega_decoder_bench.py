@@ -176,6 +176,21 @@ def main():
         nws = [int(v) for v in os.environ.get("MEGA_GLUON_WARPS", "4").split(":")]
         mks = [GluonDecoder(mks[0], num_warps=nw, ts=True) for nw in nws]
         opts_list = [{"gluon": 1, "warps": nw} for nw in nws]
+    if os.environ.get("MEGA_RING"):  # the ring kernel with these numbers of programs (0: its default)
+        import re
+
+        from owsm_trt.megakernel_ring import RingDecoder
+
+        base = mks[0] if isinstance(mks[0], MegaDecoder) else mks[0].m
+        ring = []
+        for spec in os.environ["MEGA_RING"].split(":"):  # <programs>[s<slots>][a<L2 prefetch stages ahead>]
+            m = re.fullmatch(r"(\d+)(?:s(\d+))?(?:a(\d+))?", spec)
+            kw = {"slots": int(m[2])} if m[2] else {}
+            if m[3]:
+                kw["ahead"] = int(m[3])
+            ring.append(RingDecoder(base, programs=int(m[1]) or None, ts=True, **kw))
+        mks += ring
+        opts_list += [{"ring": 1, "programs": r.programs, "slots": r.slots, "ahead": r.ahead} for r in ring]
     print(f"model {model_dir}: L={L} d={cfg.d_model} H={H} V={V} T={T}; option sets {opts_list}", flush=True)
 
     cases = [(1, 1), (1, 2), (1, 4), (1, 8), (1, 16), (1, 32), (4, 8), (8, 1), (8, 8), (16, 1), (16, 4), (16, 8),
@@ -224,7 +239,7 @@ def main():
                     run64()
                     torch.cuda.synchronize()
                     prof = "\n      " + breakdown(
-                        mk.ts, L, mk.programs, 8 if mk.name == "megakernel-gluon" else 6
+                        mk.ts, L, mk.programs, 8 if mk.name in ("megakernel-gluon", "megakernel-ring") else 6
                     )
                     if os.environ.get("MEGA_ONE") == "1":
                         prof += "\n      " + one_stage(run64, mk.ts, L, mk.programs)
