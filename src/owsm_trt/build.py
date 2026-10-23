@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 DTYPES = {"float16": torch.float16, "bfloat16": torch.bfloat16, "float32": torch.float32}
 
 # Bump whenever the exported graphs change, so cached engines from older exports are not reused.
-EXPORT_VERSION = 13
+EXPORT_VERSION = 101
 MIN_FEATURE_FRAMES = 64  # shortest feature input of a trimming encoder engine
 
 
