@@ -58,7 +58,9 @@ def _text(v) -> str:
 def main() -> None:
     model = sys.argv[1]
     src_a = os.environ["AB_SRC"]
-    src_b = os.environ["PYTHONPATH"]  # gpu_eval.pbs: the job's snapshot of this checkout
+    src_b = (
+        os.environ.get("AB_SRC_B") or os.environ["PYTHONPATH"]
+    )  # default: the job's snapshot of this checkout
     configs = os.environ.get("AB_CONFIGS", "b1:b16").split(":")
     ref = os.environ.get("AB_REF", "none")
     rounds = int(os.environ.get("AB_ROUNDS", "2"))
