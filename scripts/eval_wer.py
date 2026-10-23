@@ -22,6 +22,14 @@ def normalize(text: str) -> list[str]:
     return text.split()
 
 
+def characters(text: str) -> list[str]:
+    """Characters without spaces and punctuation (character error rate)."""
+    return list(re.sub(r"[\W_]+", "", text.lower()))
+
+
+CER_LANGS = {"zho", "cmn", "yue", "jpn"}  # no spaces between words: character error rate
+
+
 def edit_distance(a: list[str], b: list[str]) -> int:
     prev = list(range(len(b) + 1))
     for i, x in enumerate(a, 1):
@@ -57,6 +65,12 @@ def main() -> None:
     ap.add_argument(
         "--fp8-calib", type=int, default=0, help="FP8 encoder calibrated on the first N utterances"
     )
+    ap.add_argument("--fp8", action="store_true", help="FP8 encoder with the scales the package ships")
+    ap.add_argument("--fp8-scales", help="FP8 encoder with the scales of this file")
+    ap.add_argument("--fp8-margin", type=float, default=1.0, help="FP8 input ranges times this")
+    ap.add_argument("--fp8-skip", default="", help="encoder layers (regular expression) kept fp16")
+    ap.add_argument("--lang", help="language of the data (default: the manifest's 'lang', else eng)")
+    ap.add_argument("--metric", choices=("auto", "wer", "cer"), default="auto", help="auto: CER for zho/jpn")
     args = ap.parse_args()
 
     items = json.load(open(args.data))
@@ -72,6 +86,9 @@ def main() -> None:
         optimization_level=args.opt_level,
         ctc_draft=not args.no_draft,
         fp8_calibration=waves[: args.fp8_calib] if args.fp8_calib else None,
+        fp8=args.fp8_scales or args.fp8,
+        fp8_margin=args.fp8_margin,
+        fp8_skip=args.fp8_skip,
     )
     load_s = time.perf_counter() - t0
     model.stream_priority = not args.no_priority
@@ -84,7 +101,12 @@ def main() -> None:
             w for w in owsm_trt.pipeline.DRAFT_WINDOWS if w <= args.max_window
         )
 
+    lang = args.lang or items[0].get("lang", "eng")
+    metric = args.metric if args.metric != "auto" else ("cer" if lang in CER_LANGS else "wer")
+    units = characters if metric == "cer" else normalize
     kw = {"batch_size": args.batch_size, "beam_size": args.beam, "timestamps": args.timestamps}
+    if lang != "eng":
+        kw["lang"] = lang
     model.transcribe(waves, **kw)  # warm-up: CUDA graphs for every batch size and feature length
     model.draft_stats = [0, 0]
     times = []
@@ -96,14 +118,16 @@ def main() -> None:
         times.append(time.perf_counter() - t0)
     dt = sorted(times)[len(times) // 2]  # median
 
-    errs = sum(edit_distance(normalize(it["text"]), normalize(r.text)) for it, r in zip(items, results))
-    words = sum(len(normalize(it["text"])) for it in items)
+    errs = sum(edit_distance(units(it["text"]), units(r.text)) for it, r in zip(items, results))
+    words = sum(len(units(it["text"])) for it in items)
     n_tok = sum(len(r.tokens) for r in results)
     print(
         f"backend={args.backend} dtype={args.dtype} batch={args.batch_size} beam={args.beam} "
         f"draft={not args.no_draft} load={load_s:.1f}s"
     )
-    print(f"WER {100 * errs / words:.2f}% over {len(items)} utts ({words} words)")
+    print(
+        f"{metric.upper()} {100 * errs / words:.2f}% over {len(items)} utts ({words} {'words' if metric == 'wer' else 'characters'})"
+    )
     if args.fp8_calib:  # the calibration utterances are part of the test set: also report the others
         rest = list(zip(items, results))[args.fp8_calib :]
         e = sum(edit_distance(normalize(it["text"]), normalize(r.text)) for it, r in rest)

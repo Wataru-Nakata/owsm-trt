@@ -372,9 +372,15 @@ def _with_weight(layer: nn.Module, weight, bias=None) -> nn.Module:
 
 
 def build_engines(
-    model: OWSMModel | OWSMCTCModel, engine_dir: Path, opts: BuildOptions, keep_onnx: bool = False
+    model: OWSMModel | OWSMCTCModel,
+    engine_dir: Path,
+    opts: BuildOptions,
+    keep_onnx: bool = False,
+    decoders_from: Path | None = None,
 ) -> None:
-    """Export ``model`` (already on GPU in the target dtype) and build its engines into ``engine_dir``."""
+    """Export ``model`` (already on GPU in the target dtype) and build its engines into ``engine_dir``.
+    ``decoders_from``: an engine directory of the same model and options but for the encoder's (an FP8
+    encoder's fp16 counterpart), whose decoder engines are copied instead of built."""
     cfg = model.cfg
     engine_dir.mkdir(parents=True, exist_ok=True)
     onnx_dir = engine_dir / "onnx"
@@ -404,10 +410,20 @@ def build_engines(
     log.info("building encoder engine (this can take a few minutes)")
     _build(enc_onnx, engine_dir / "encoder.engine", shapes, opts)
 
-    log.info("building decoder engines (this can take a few minutes)")
     profiles = decoder_profiles(opts.max_batch)
     steps = [p for p in profiles if p["kind"] != "verify"]
     verify = [p for p in profiles if p["kind"] == "verify"]
+    if decoders_from is not None:
+        meta = json.loads((decoders_from / "build.json").read_text())
+        for name in ("decoder", "verify"):
+            shutil.copyfile(decoders_from / f"{name}.engine", engine_dir / f"{name}.engine")
+        log.warning("decoder engines copied from %s", decoders_from)
+        extra = {"attn_plugin": meta.get("attn_plugin", {}), "decoders_from": decoders_from.name}
+        _finish(engine_dir, onnx_dir, opts, cfg, {"encoder": batches, "decoder": steps, "verify": verify},
+                keep_onnx, extra)  # fmt: skip
+        return
+
+    log.info("building decoder engines (this can take a few minutes)")
     plugin_onnx = None
     if opts.attn_plugin or opts.attn_plugin_steps:
         plugin_onnx = _export_plugin_decoder(model, onnx_dir / "plugins" / "decoder.onnx", opts)
