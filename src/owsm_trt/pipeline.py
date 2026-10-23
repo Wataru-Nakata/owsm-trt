@@ -256,8 +256,9 @@ class OWSM:
         runs alongside, 64 otherwise), calls of up to 16 tokens and 8 rows on the Gluon kernel; ``"auto"``: as
         ``"ring"`` on a Hopper GPU when the kernels build and match the decoder on a test call, TensorRT
         otherwise; True / ``"1"``: the Gluon kernel only; ``"triton"``: every decode/verify call as the
-        (slower) Triton megakernel (Ampere or newer). Kernels that fail leave TensorRT (logged). None: the
-        ``OWSM_TRT_MEGAKERNEL`` environment variable (auto / ring / 1 / triton / 0), off if unset.
+        (slower) Triton megakernel (Ampere or newer); False / ``"0"``: TensorRT only. Kernels that fail leave
+        TensorRT (logged). None: the ``OWSM_TRT_MEGAKERNEL`` environment variable (auto / ring / 1 / triton /
+        0), ``"auto"`` if unset.
         """
         files = hub.resolve(model)
         raw = load_espnet_config(files.config)
@@ -312,7 +313,7 @@ class OWSM:
                 frontend = _load_frontend(cfg, files.checkpoint, dev)
             runner = TRTCTCBackend(cfg, engine_dir) if cfg.ctc_only else TRTBackend(cfg, engine_dir)
             if decoder_kernel is None:
-                decoder_kernel = os.environ.get("OWSM_TRT_MEGAKERNEL", "0")
+                decoder_kernel = os.environ.get("OWSM_TRT_MEGAKERNEL", "auto")
             if decoder_kernel and decoder_kernel != "0" and not cfg.ctc_only and dtype == "float16":
                 runner = _decoder_kernel(runner, cfg, files.checkpoint, dev, decoder_kernel)
             return cls(cfg, tok, frontend, runner, opts, dev, use_cuda_graph, ctc_draft)
