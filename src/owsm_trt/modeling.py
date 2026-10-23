@@ -94,8 +94,9 @@ class Frontend(nn.Module):
 class Conv2dSubsampling(nn.Module):
     """ESPnet's Conv2dSubsampling{,2,8}: 3x3 convolutions with the given strides, then a linear layer.
 
-    ``plugin`` (export option): the first convolution and its ReLU as a TensorRT plugin
-    (plugins.conv1_relu)."""
+    ``plugin`` (export option): the first convolution and its ReLU, and the last ReLU with the flattening
+    for the linear layer, as TensorRT plugins (plugins.conv1_relu, plugins.relu_flatten): they read and
+    write the layout TensorRT's convolutions use, no reformats or transposes around them."""
 
     plugin = False
 
@@ -114,9 +115,9 @@ class Conv2dSubsampling(nn.Module):
         if Conv2dSubsampling.plugin:
             from . import plugins
 
-            x = self.conv[2:](plugins.conv1_relu(x, *self.plugin_weights()))
-        else:
-            x = self.conv(x.unsqueeze(1))  # [B, d, T', F']
+            x = self.conv[2:-1](plugins.conv1_relu(x, *self.plugin_weights()))  # [B, d, T', F'], no ReLU
+            return self.out(plugins.relu_flatten(x))
+        x = self.conv(x.unsqueeze(1))  # [B, d, T', F']
         b, c, t, f = x.shape
         return self.out(x.transpose(1, 2).reshape(b, t, c * f))
 

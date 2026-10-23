@@ -34,7 +34,7 @@ log = logging.getLogger(__name__)
 DTYPES = {"float16": torch.float16, "bfloat16": torch.bfloat16, "float32": torch.float32}
 
 # Bump whenever the exported graphs change, so cached engines from older exports are not reused.
-EXPORT_VERSION = 610
+EXPORT_VERSION = 621
 MIN_FEATURE_FRAMES = 64  # shortest feature input of a trimming encoder engine
 
 
@@ -63,10 +63,11 @@ class BuildOptions:
     # needs NVRTC at build time, else the usual grouped convolution between transposes)
     dwconv_plugin: bool = True
     # The subsampling's first convolution (one input channel) + ReLU as a TensorRT plugin (plugins.py; fp16,
-    # NVRTC), writing the layout of the convolution after it (1.2 vs 2.5 ms for 16 x 30 s on an H200).
+    # NVRTC), writing the layout of the convolution after it (1.2 vs 2.5 ms for 16 x 30 s on an H200); and
+    # its last ReLU with the flattening for the linear layer, reading that layout.
     conv1_plugin: bool = True
-    # OWSM-CTC: softmax (intermediate CTC) and argmax (output) over the vocabulary as TensorRT plugins
-    # (plugins.py; fp16 only, needs NVRTC at build time). TensorRT's own kernels for them take 4x longer.
+    # The CTC head's argmax (and OWSM-CTC's intermediate CTC softmax) over the vocabulary as TensorRT
+    # plugins (plugins.py; fp16 only, needs NVRTC at build time). TensorRT's own kernels take 4x longer.
     ctc_plugins: bool = True
 
 
@@ -138,11 +139,13 @@ def _encoder_export(model: OWSMModel | OWSMCTCModel, opts: BuildOptions, batch: 
         Conv2dSubsampling.plugin = opts.conv1_plugin and opts.dtype == "float16" and plugins.available()
         if Conv2dSubsampling.plugin:
             plugins.register_conv1()
+            plugins.register_flatten()
             embed.freeze_plugin_weights()
         translations = {
             **(fp8.ONNX_TRANSLATIONS if opts.fp8_encoder else {}),
             **(plugins.ONNX_TRANSLATIONS if DepthwiseConv1d.plugin else {}),
             **(plugins.CONV1_ONNX_TRANSLATIONS if Conv2dSubsampling.plugin else {}),
+            **(plugins.FLATTEN_ONNX_TRANSLATIONS if Conv2dSubsampling.plugin else {}),
         }
         yield feats_dims, translations or None
     finally:
@@ -169,7 +172,8 @@ def export_onnx(
 
     enc_path = out_dir / "encoder.onnx"
     feats = torch.randn(2, example_frames(cfg), cfg.n_mels, device=dev)
-    with _encoder_export(model, opts, batch) as (feats_dims, translations):
+    # (the CTC head drafts tokens: its argmax as in the OWSM-CTC export, on a padded vocabulary)
+    with _encoder_export(model, opts, batch) as (feats_dims, translations), _ctc_export(model, opts) as extra:
         torch.onnx.export(
             _EncoderGraph(model).eval(),
             (feats,),
@@ -179,7 +183,7 @@ def export_onnx(
             dynamic_shapes={"feats": feats_dims},
             dynamo=True,
             external_data=True,
-            custom_translation_table=translations,
+            custom_translation_table={**(translations or {}), **extra} or None,
         )
 
     dec_path = export_decoder_onnx(model, out_dir / "decoder.onnx", opts, split_self_attention)
@@ -316,9 +320,10 @@ def export_ctc_onnx(model: OWSMCTCModel, out_dir: Path, opts: BuildOptions) -> P
 
 
 @contextmanager
-def _ctc_export(model: OWSMCTCModel, opts: BuildOptions):
-    """OWSM-CTC export settings: the vocabulary padded (:func:`_padded_vocab`), softmax and argmax as
-    plugins (``opts.ctc_plugins``). Yields the custom translations for the exporter."""
+def _ctc_export(model: OWSMModel | OWSMCTCModel, opts: BuildOptions):
+    """Export settings of the CTC head (OWSM-CTC's output, the encoder-decoder models' drafts): the
+    vocabulary padded (:func:`_padded_vocab`), softmax and argmax as plugins (``opts.ctc_plugins``).
+    Yields the custom translations for the exporter."""
     CTC.plugin = opts.ctc_plugins and opts.dtype == "float16" and plugins.available()
     if CTC.plugin:
         plugins.register_ctc()
@@ -330,7 +335,7 @@ def _ctc_export(model: OWSMCTCModel, opts: BuildOptions):
 
 
 @contextmanager
-def _padded_vocab(model: OWSMCTCModel, multiple: int):
+def _padded_vocab(model: OWSMModel | OWSMCTCModel, multiple: int):
     """The CTC head and the intermediate CTC conditioning with the vocabulary padded to a multiple of
     ``multiple``: tokens that never win (logit -3e4: probability exactly 0 after the softmax in fp32) and
     add nothing (conditioning weights 0). The same results; TensorRT copies the logits and posteriors
