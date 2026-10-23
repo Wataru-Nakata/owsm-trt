@@ -4,7 +4,8 @@ import hashlib
 import logging
 import math
 import os
-from collections import OrderedDict
+from collections import OrderedDict, deque
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -49,6 +50,11 @@ FEATURE_STEP = 500
 TIMESTAMP_GUESSES = True
 # transcribe_long with batch_size > 1: a window is cut at the quietest point of its last this many seconds
 PAUSE_SEARCH_SECONDS = 15.0
+# transcribe_long with batch_size > 1 (ESPnet's windows): the windows of all recordings in one stream,
+# a row taking the next window of any recording as soon as it is free (False: round by round)
+LONG_STREAM = True
+# transcribe_long's batched windows (cut at pauses / round by round) are decoded longest first
+LONGEST_FIRST = True
 
 
 @dataclass
@@ -563,44 +569,120 @@ class OWSM:
         batch_size: int,
     ) -> list[Result]:
         """ESPnet's ``decode_long`` on each recording, window by window; with ``batch_size > 1`` the
-        current windows of all recordings are decoded together, round by round."""
+        windows of all recordings are decoded together (:meth:`_long_stream`, or round by round)."""
         t, cfg = self.tokenizer, self.cfg
         fs, seg_len = cfg.sample_rate, cfg.num_samples
         end_id = t.first_time + round(end_time_threshold / cfg.time_resolution)
         recs = [_Recording(w) for w in waves]
+
+        def live(r: _Recording) -> bool:
+            return r.offset < len(r.wav) and (len(r.wav) - r.offset) / fs >= skip_last_chunk_seconds
+
         together = batch_size > 1 and not condition_on_prev_text
+        if together and LONG_STREAM and self._stream_drafts(batch_size, beam, lang, task):
+            self._long_stream(recs, live, lang, task, batch_size, end_id)
+            return [_joined(r.segments) for r in recs]
         for group in [recs] if together else [[r] for r in recs]:
             if not together and self.device.type == "cuda":  # one recording at a time on the device:
                 group[0].wav = group[0].wav.to(self.device)  # its windows need no host copy
             while True:
-                live = [
-                    r
-                    for r in group
-                    if r.offset < len(r.wav) and (len(r.wav) - r.offset) / fs >= skip_last_chunk_seconds
-                ]
-                if not live:
+                now = [r for r in group if live(r)]
+                if not now:
                     break
-                chunks = [r.wav[r.offset : r.offset + seg_len] for r in live]
-                if len(live) > 1:
+                chunks = [r.wav[r.offset : r.offset + seg_len] for r in now]
+                if len(now) > 1:
                     outs = self._decode_windows(chunks, lang, task, batch_size, beam, fixed=True)
                     outs = [res.tokens for res in outs]
                 else:
-                    primer = self._primer(lang, task, True, live[0].prev if condition_on_prev_text else None)
+                    primer = self._primer(lang, task, True, now[0].prev if condition_on_prev_text else None)
                     outs = [self._long_window(chunks[0], primer, beam, task == "asr")]
-                for r, chunk, ids in zip(live, chunks, outs):
-                    kept, next_start = _window_cut(ids, t, end_id)
-                    if next_start is None:  # no timestamps at all
-                        r.segments.append(Segment(r.offset / fs, (r.offset + len(chunk)) / fs, t.decode(ids)))
-                        r.offset += seg_len
-                        continue
-                    res = self._result(kept, r.offset / fs)
-                    r.segments += res.segments
-                    r.prev = "".join(s.text for s in res.segments)
-                    advance = round((next_start - t.first_time) * cfg.time_resolution * fs)
-                    r.offset += advance if advance > 0 else seg_len
+                for r, chunk, ids in zip(now, chunks, outs):
+                    self._long_advance(r, len(chunk), ids, end_id)
             for r in group:
                 r.wav = None  # done with it (and with its copy on the device)
         return [_joined(r.segments) for r in recs]
+
+    def _long_advance(self, r: "_Recording", samples: int, ids: list[int], end_id: int) -> None:
+        """Take in the output of recording ``r``'s window (of ``samples``, at ``r.offset``), and move
+        ``r.offset`` to where ESPnet's ``decode_long`` starts the next one."""
+        t, cfg = self.tokenizer, self.cfg
+        fs = cfg.sample_rate
+        kept, next_start = _window_cut(ids, t, end_id)
+        if next_start is None:  # no timestamps at all
+            r.segments.append(Segment(r.offset / fs, (r.offset + samples) / fs, t.decode(ids)))
+            r.offset += cfg.num_samples
+            return
+        res = self._result(kept, r.offset / fs)
+        r.segments += res.segments
+        r.prev = "".join(s.text for s in res.segments)
+        advance = round((next_start - t.first_time) * cfg.time_resolution * fs)
+        r.offset += advance if advance > 0 else cfg.num_samples
+
+    def _stream_drafts(self, batch_size: int, beam: int, lang: str, task: str) -> GreedySession | None:
+        """The session that decodes windows as a stream with drafts (greedy ASR), or None."""
+        if beam != 1 or task != "asr" or not TIMESTAMP_GUESSES:
+            return None
+        sess = self._session(self._batch_size(batch_size, beam))
+        primer = self._primer(lang, task, True, None)
+        return sess if sess.windows and len(primer) < sess.windows[-1] else None
+
+    def _long_stream(
+        self,
+        recs: list["_Recording"],
+        live: Callable[["_Recording"], bool],
+        lang: str,
+        task: str,
+        batch_size: int,
+        end_id: int,
+    ) -> None:
+        """ESPnet's windows of all recordings in one :meth:`GreedySession.decode_stream`: a row whose
+        window is done takes the next window of any recording whose previous window is done (it starts
+        where that one's output says). Recordings with the most audio left go first, so that the long
+        ones do not end up alone; the encoder works ahead on whole batches while there are enough
+        windows to start (2 batches queued), else on whatever there is."""
+        t, seg_len = self.tokenizer, self.cfg.num_samples
+        sess = self._stream_drafts(batch_size, 1, lang, task)
+        rows = sess.rows
+        ready = [r for r in recs if live(r)]  # recordings whose next window can start
+        started: list[tuple[_Recording, int]] = []  # per window, in stream order: recording, length
+        ends: deque[list[int]] = deque()  # the guessed last timestamps of the batches not drafted yet
+        done = [0]
+
+        def batches() -> Iterator[torch.Tensor | None]:
+            while ready or len(started) > done[0]:
+                waiting = len(started) - done[0]  # windows encoded or decoding
+                if not ready or (len(ready) < rows and waiting >= rows + rows // 2):
+                    yield None  # wait for more windows to start (or for the stream to need them)
+                    continue
+                n = min(rows, 1 << (len(ready).bit_length() - 1))  # (few batch sizes: few CUDA graphs)
+                ready.sort(key=lambda r: len(r.wav) - r.offset, reverse=True)
+                pick = ready[:n]
+                del ready[:n]
+                chunks = [r.wav[r.offset : r.offset + seg_len] for r in pick]
+                started.extend((r, len(c)) for r, c in zip(pick, chunks))
+                ends.append([self._end_guess(len(c)) for c in chunks])
+                yield self._features(chunks)
+
+        def drafts_of(best_paths: torch.Tensor) -> list[list[int]]:  # called in batch order
+            return [[t.first_time] + d + [g] for d, g in zip(self._ctc_drafts(best_paths), ends.popleft())]
+
+        def finished(i: int, ids: list[int]) -> None:
+            r, samples = started[i]
+            done[0] += 1
+            self._long_advance(r, samples, ids, end_id)
+            if live(r):
+                ready.append(r)
+
+        primer = self._primer(lang, task, True, None)
+        insertions = t.not_drafted - set(range(t.first_time, t.last_time + 1))
+        outs, calls = sess.decode_stream(
+            primer, batches(), drafts_of, self._max_new(), insertions, give_up=16,
+            priority=self.stream_priority, finished=finished,
+        )  # fmt: skip
+        self.draft_stats[0] += sum(len(o) + 1 for o in outs)
+        self.draft_stats[1] += calls
+        for r in recs:
+            r.wav = None
 
     def _end_guess(self, samples: int) -> int:
         """The timestamp at the end of a window of ``samples``: a guess of its last one."""
@@ -679,7 +761,9 @@ class OWSM:
                 padded, lang=lang, task=task, timestamps=True, batch_size=bs, beam_size=beam
             )
             return out[:n]
-        order = sorted(range(len(windows)), key=lambda i: len(windows[i]))  # as transcribe()
+        # similar durations in an encoder batch (its features stop after the longest window); the longest
+        # first, so that the stream does not end on them
+        order = sorted(range(len(windows)), key=lambda i: len(windows[i]), reverse=LONGEST_FIRST)
         ends = iter([self._end_guess(len(windows[i])) for i in order])  # drafts are made in batch order
 
         def drafts_of(best_paths: torch.Tensor) -> list[list[int]]:

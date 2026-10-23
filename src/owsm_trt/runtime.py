@@ -756,6 +756,7 @@ class GreedySession(_Session):
         insertions: set[int] = frozenset(),
         give_up: int = 8,
         priority: bool = True,
+        finished: Callable[[int, list[int]], None] | None = None,
     ) -> tuple[list[list[int]], int]:
         """:meth:`decode_drafted` of any number of utterances, keeping every row busy.
 
@@ -764,6 +765,11 @@ class GreedySession(_Session):
         next one for the following call, so that the rows do not wait for the slowest one. The encoder
         runs ahead on a second CUDA stream into two staging buffers in turn; with ``priority``, the
         decoder calls go first on the GPU. Returns (tokens per utterance, in order; decoder calls).
+
+        ``finished(index, tokens)`` is called as soon as an utterance is done, so that ``batches`` can
+        depend on the outputs so far (transcribe_long: a window starts where the one before it in the
+        recording ended). Such a ``batches`` yields None while it has nothing to encode yet; it is asked
+        again after the next decoder call, or when a row has nothing left to decode.
         """
         if not self.windows:
             raise RuntimeError("the session was created without draft_windows")
@@ -790,12 +796,12 @@ class GreedySession(_Session):
         held: list[tuple] = [(), ()]  # per slot: the cross-attention K/V of its batch
         paths: list = [None, None]  # per slot: its CTC best paths, copied to the host after the encoder
 
-        def launch(s: int) -> None:  # encode the next batch into staging slot s
+        def launch(s: int) -> bool:  # encode the next batch into staging slot s, if there is one yet
             nonlocal count
             with torch.cuda.stream(side) if cuda else nullcontext():
                 feats = next(batches, None)
                 if feats is None:
-                    return
+                    return False
                 e = feats.shape[0]
                 # a smaller batch (the last one) gets buffers of its size rather than padding rows
                 bufs = self._stage[s] if e == self.rows else self._staging(s, e)
@@ -809,13 +815,12 @@ class GreedySession(_Session):
                     ready[s].record(side)
             queue.extend((s, i, count + i) for i in range(e))
             left[s], drafts[s], count = e, None, count + e
+            return True
 
         pending: list[int] = []  # free slots not refilled yet: launched while a decoder call runs
 
         def flush() -> None:
-            for s in pending:
-                launch(s)
-            pending.clear()
+            pending[:] = [s for s in pending if not launch(s)]
 
         def refill(r: int) -> _Row | None:
             if not queue:
@@ -842,11 +847,11 @@ class GreedySession(_Session):
         if cuda:
             dec.wait_stream(main)
             side.wait_stream(main)
-        launch(0)
-        launch(1)
+        pending += [0, 1]
+        flush()
         with torch.cuda.stream(dec) if cuda else nullcontext():
             out, calls = self._drafted(
-                [None] * self.rows, refill, None, max_new_tokens, insertions, give_up, meanwhile=flush
+                [None] * self.rows, refill, None, max_new_tokens, insertions, give_up, flush, finished
             )
         if cuda:
             main.wait_stream(dec)
@@ -879,10 +884,12 @@ class GreedySession(_Session):
         insertions: set[int],
         give_up: int,
         meanwhile: Callable[[], None] | None = None,
+        finished: Callable[[int, list[int]], None] | None = None,
     ) -> tuple[dict[int, list[int]], int]:
         """The loop of drafted decoding, on cache bucket ``c`` (None: not chosen yet). An empty row, or
         one whose utterance is done, takes ``refill(row)``. ``meanwhile()`` runs while each call runs on
-        the GPU (the host would only wait). Returns (tokens per utterance, calls).
+        the GPU (the host would only wait); ``finished(index, tokens)`` when an utterance is done, before
+        its row is refilled. Returns (tokens per utterance, calls).
 
         The host waits for every call's result, and the GPU for the next call: this loop is kept lean."""
         eos, done, calls = self.eos, {}, 0
@@ -896,6 +903,8 @@ class GreedySession(_Session):
                 if x is not None and not x.fresh:
                     if x.last == eos or len(x.out) >= max_new_tokens:
                         done[x.index] = x.out[:max_new_tokens]
+                        if finished is not None:
+                            finished(x.index, done[x.index])
                         x = None
                     else:
                         x.out.append(x.last)

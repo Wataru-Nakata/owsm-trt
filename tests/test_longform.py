@@ -128,14 +128,23 @@ def test_sequential_long_form_drafts_are_exact(model):
     assert both[1].segments == _owsm(model).transcribe_long(wav[:5000], **kw).segments
 
 
-def test_long_form_rounds_across_recordings(model):
-    """batch_size > 1: the current windows of several recordings decoded together, as one at a time."""
+def test_long_form_windows_across_recordings(model, monkeypatch):
+    """batch_size > 1: the windows of several recordings decoded together, as one at a time; as a
+    stream (a row takes the next window of any recording as soon as it is free) in fewer decoder calls
+    than round by round."""
+    from owsm_trt import pipeline
+
     torch.manual_seed(4)
     sr, kw = TINY.sample_rate, {"end_time_threshold": 1.8}
-    waves = [torch.randn(int(sr * s)) for s in (9.3, 4.1, 1.5, 6.2)]
-    m = _owsm(model)
-    one = [m.transcribe_long(w, **kw).segments for w in waves]
-    assert [r.segments for r in m.transcribe_long(waves, batch_size=3, **kw)] == one
+    waves = [torch.randn(int(sr * s)) for s in (9.3, 4.1, 1.5, 6.2, 12.0, 3.0)]
+    one = [_owsm(model).transcribe_long(w, **kw).segments for w in waves]
+    calls = {}
+    for stream in (True, False):
+        monkeypatch.setattr(pipeline, "LONG_STREAM", stream)
+        m = _owsm(model)
+        assert [r.segments for r in m.transcribe_long(waves, batch_size=3, **kw)] == one
+        calls[stream] = m.draft_stats[1]
+    assert calls[True] < calls[False], calls
     assert [r.segments for r in _owsm(model, draft=False).transcribe_long(waves, batch_size=3, **kw)] == one
 
 
