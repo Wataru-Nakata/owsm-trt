@@ -183,14 +183,24 @@ def main():
 
         base = mks[0] if isinstance(mks[0], MegaDecoder) else mks[0].m
         ring = []
-        for spec in os.environ["MEGA_RING"].split(":"):  # <programs>[s<slots>][a<L2 prefetch stages ahead>]
-            m = re.fullmatch(r"(\d+)(?:s(\d+))?(?:a(\d+))?", spec)
-            kw = {"slots": int(m[2])} if m[2] else {}
+        for spec in os.environ["MEGA_RING"].split(
+            ":"
+        ):  # <programs>[r<row programs>][a<L2 ahead>][c<chunk>][x]
+            m = re.fullmatch(r"(\d+)(?:r(\d+))?(?:a(\d+))?(?:c(\d+))?(?:w(\d+))?(x?)", spec)
+            kw = {"row_programs": int(m[2])} if m[2] else {}
             if m[3]:
                 kw["ahead"] = int(m[3])
+            if m[4]:
+                kw["chunk"] = int(m[4])
+            if m[5]:
+                kw["num_warps"] = int(m[5])
+            if m[6]:
+                kw["exclusive"] = True
             ring.append(RingDecoder(base, programs=int(m[1]) or None, ts=True, **kw))
         mks += ring
-        opts_list += [{"ring": 1, "programs": r.programs, "slots": r.slots, "ahead": r.ahead} for r in ring]
+        opts_list += [
+            {"ring": 1, "programs": r.P, "rows": r.P_rows, "chunk": r.ck, "warps": r.nw} for r in ring
+        ]
     print(f"model {model_dir}: L={L} d={cfg.d_model} H={H} V={V} T={T}; option sets {opts_list}", flush=True)
 
     cases = [(1, 1), (1, 2), (1, 4), (1, 8), (1, 16), (1, 32), (4, 8), (8, 1), (8, 8), (16, 1), (16, 4), (16, 8),
@@ -239,7 +249,10 @@ def main():
                     run64()
                     torch.cuda.synchronize()
                     prof = "\n      " + breakdown(
-                        mk.ts, L, mk.programs, 8 if mk.name in ("megakernel-gluon", "megakernel-ring") else 6
+                        mk.ts,
+                        L,
+                        getattr(run64, "programs", mk.programs),
+                        8 if mk.name in ("megakernel-gluon", "megakernel-ring") else 6,
                     )
                     if os.environ.get("MEGA_ONE") == "1":
                         prof += "\n      " + one_stage(run64, mk.ts, L, mk.programs)
