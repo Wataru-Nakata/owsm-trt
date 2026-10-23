@@ -112,8 +112,8 @@ def host_time(
 
         def body(b=bound.bufs, oracle=oracle) -> None:
             if step[0] == len(answers):  # first pass: ask the oracle
-                answers.append(torch.tensor(oracle(b.inp.view(-1).tolist())))
-            b.res.copy_(answers[step[0]])
+                answers.append(torch.tensor(oracle(b.host.view(-1).tolist())))  # the call's input
+            b.res_host.copy_(answers[step[0]])  # (what the call's graph ends with)
             step[0] += 1
 
         bound.body = body

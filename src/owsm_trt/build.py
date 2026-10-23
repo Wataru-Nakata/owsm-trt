@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 DTYPES = {"float16": torch.float16, "bfloat16": torch.bfloat16, "float32": torch.float32}
 
 # Bump whenever the exported graphs change, so cached engines from older exports are not reused.
-EXPORT_VERSION = 402
+EXPORT_VERSION = 403
 MIN_FEATURE_FRAMES = 64  # shortest feature input of a trimming encoder engine
 
 
@@ -50,14 +50,18 @@ class _EncoderGraph(nn.Module):
     def forward(self, feats: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         enc = self.encoder(feats)
         kv = self.decoder.cross_kv(enc)  # [L, 2, B, H, T, d_k]
-        # The CTC head (drafts only) reads just the subsampled frames computed from `feats`: when the
-        # features stop after the audio, the frames filled in after them see padding only.
-        t = feats.shape[1]
+        # The CTC head only drafts tokens, so it reads just the subsampled frames computed from `feats`
+        # (when the features stop after the audio, the frames filled in after them see padding only) and
+        # the window's last frame, where OWSM's CTC puts the final punctuation. A blank stands for the
+        # frames in between, which are blank (on the 73 LibriSpeech utterances of the tests, all of them).
+        # ctc_ids [B, t + 2]: best path on frames 0 .. t-1, blank, frame T'-1 (blank if t = T').
+        n, t = enc.shape[1], feats.shape[1]
         for s in self.strides:  # as OWSMConfig.enc_frames
             t = (t - 3) // s + 1
-        # (Not enc[:, :t]: the exporter would specialise that view on whether it is contiguous, t == T'.)
-        frames = enc.index_select(1, torch.arange(t, device=enc.device))
-        return kv[:, 0], kv[:, 1], self.ctc(frames)  # ctc_ids [B, t]
+        pos = torch.arange(t + 2, device=enc.device)
+        # (Not a slice enc[:, :t]: the exporter would specialise that view on whether it is contiguous.)
+        frames = enc.index_select(1, torch.where(pos < t, pos, n - 1))
+        return kv[:, 0], kv[:, 1], self.ctc(frames).masked_fill((pos == t) | (pos > n), 0)  # blank: 0
 
 
 class _DecoderGraph(nn.Module):

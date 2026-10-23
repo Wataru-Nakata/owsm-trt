@@ -3,8 +3,8 @@
 Both backends expose the same two operations on caller-owned buffers:
 
 * ``encode(feats, cross_k, cross_v, ctc_ids)`` -- encoder, per-layer cross-attention K/V projection and
-  the CTC head's best-path ids; returns the ids as a view [B, t] of ``ctc_ids`` (the TensorRT encoder
-  only reads the frames computed from the features it got, see build._EncoderGraph)
+  the CTC head's best-path ids; returns the ids as a view [B, t] of ``ctc_ids`` [B, T' + 2] (the
+  TensorRT encoder reads only some of the frames, see build._EncoderGraph)
 * ``step_fn(...)`` -- returns a closure that runs one decoder call writing logits and new K/V into
   fixed buffers, so that the whole decode step can be captured in a CUDA graph.
 """
@@ -61,8 +61,10 @@ class TorchBackend:
         kv = self.model.decoder.cross_kv(enc)  # [L, 2, B, H, T', d_k]
         cross_k.copy_(kv[:, 0])
         cross_v.copy_(kv[:, 1])
-        ctc_ids.copy_(self.model.ctc(enc))
-        return ctc_ids
+        ids = self.model.ctc(enc)
+        out = ctc_ids.view(-1)[: ids.numel()].view(ids.shape)
+        out.copy_(ids)
+        return out
 
     def encode_fn(
         self, feats: torch.Tensor, cross_k: torch.Tensor, cross_v: torch.Tensor, ctc_ids: torch.Tensor
@@ -72,7 +74,8 @@ class TorchBackend:
         def run() -> None:
             self.encode(feats, cross_k, cross_v, ctc_ids)
 
-        run.ctc_ids = ctc_ids
+        b, t = feats.shape[0], self.cfg.enc_frames
+        run.ctc_ids = ctc_ids.view(-1)[: b * t].view(b, t)
         return run
 
     def step_fn(
@@ -338,6 +341,11 @@ def capture_graph(body: Callable[[], None], stream: torch.cuda.Stream | None = N
     with torch.cuda.graph(graph, stream=stream):
         body()
     return graph
+
+
+def ctc_columns(cfg: OWSMConfig) -> int:
+    """Columns of a buffer for the encoder's CTC best paths: up to T' + 2 (see build._EncoderGraph)."""
+    return cfg.enc_frames + 2
 
 
 def cache_buckets(capacity: int, smallest: int = 64) -> list[int]:
@@ -616,7 +624,7 @@ class GreedySession(_Session):
         self.batch = batch
         self.seq = torch.zeros(batch, capacity + 1, dtype=torch.long, device=device)
         self.done = torch.zeros(batch, dtype=torch.bool, device=device)
-        self.ctc_ids = torch.zeros(batch, cfg.enc_frames, dtype=torch.int32, device=device)
+        self.ctc_ids = torch.zeros(batch, ctc_columns(cfg), dtype=torch.int32, device=device)
         self._eos = torch.full((batch,), eos, dtype=torch.long, device=device)
         self._capture_all()
 
@@ -1053,9 +1061,14 @@ class _Verify:
         self.rows, self.w, self.rules, self.notime, self.eos = rows, w, rules, notime, eos
         # per call, one host copy: [w tokens | offset | timestamps so far (count, last) | first-token position]
         self.inp = torch.zeros(rows, w + 4, dtype=torch.long, **dev)
-        pinned = kw["device"].type == "cuda"  # filled on the host, copied without a sync
+        # Pinned host buffers, copied from and to inside the call's CUDA graph: a call is one graph
+        # launch, and its result is read when an event says it is there.
+        pinned = kw["device"].type == "cuda"
         self.host = torch.zeros(rows, w + 4, dtype=torch.long, pin_memory=pinned)
         self.host_flat = self.host.numpy().reshape(-1)
+        self.res_host = torch.zeros(rows, 2, dtype=torch.long, pin_memory=pinned)
+        self.res_np = self.res_host.numpy()
+        self.ready = torch.cuda.Event() if pinned else None
         self.tok = torch.zeros(rows, w, dtype=torch.long, **dev)
         self.offs = torch.zeros(rows, dtype=torch.long, **dev)
         self.logits = torch.zeros(rows, w, cfg.vocab_size, **dev)
@@ -1108,6 +1121,7 @@ class _Bound:
 
     def body(self) -> None:
         b = self.bufs
+        b.inp.copy_(b.host, non_blocking=True)
         b.tok.copy_(b.inp[:, : b.w])
         b.offs.copy_(b.inp[:, b.w])
         self.step()
@@ -1115,13 +1129,14 @@ class _Bound:
             kernels.write_kv(b.new_kv, self.k, self.v, b.offs)
             kernels.choose(b.logits, b.inp, b.notime, b.pred, b.rules)
             kernels.accept(b.pred, b.inp, b.res, b.eos)
-            return
-        L, _, r, H, w, dk = b.new_kv.shape
-        slots = (b.offs.unsqueeze(1) + b.ar)[None, :, None, :, None].expand(L, r, H, w, dk)
-        self.k.scatter_(3, slots, b.new_kv[:, 0])
-        self.v.scatter_(3, slots, b.new_kv[:, 1])
-        b.pred.copy_(b.predict())
-        b.res.copy_(b.accept())
+        else:
+            L, _, r, H, w, dk = b.new_kv.shape
+            slots = (b.offs.unsqueeze(1) + b.ar)[None, :, None, :, None].expand(L, r, H, w, dk)
+            self.k.scatter_(3, slots, b.new_kv[:, 0])
+            self.v.scatter_(3, slots, b.new_kv[:, 1])
+            b.pred.copy_(b.predict())
+            b.res.copy_(b.accept())
+        b.res_host.copy_(b.res, non_blocking=True)
 
     def capture(self) -> None:
         self.graph = capture_graph(self.body)
@@ -1131,12 +1146,14 @@ class _Bound:
         concatenated. Returns per row [drafted tokens accepted, the token emitted after them], after
         running ``meanwhile()`` while the GPU works."""
         b = self.bufs
-        b.host_flat[:] = np.frombuffer(array("q", flat), dtype=np.int64)
-        b.inp.copy_(b.host, non_blocking=True)  # the host buffer is reused after .tolist()
+        b.host_flat[:] = np.frombuffer(array("q", flat), dtype=np.int64)  # read by the call, reused after it
         self.graph.replay() if self.graph is not None else self.body()
         if meanwhile is not None:
             meanwhile()
-        return b.res.tolist()
+        if b.ready is not None:
+            b.ready.record()
+            b.ready.synchronize()
+        return b.res_np.tolist()
 
 
 LOG_ZERO = -1.0e10  # ESPnet's score for slots that must not be expanded
@@ -1183,7 +1200,7 @@ class BeamSession(_Session):
         # one row per utterance for the encoder and the primer; copied to every beam slot afterwards
         self.cross_kb = torch.zeros(L, batch, H, cfg.enc_frames, dk, **self.kw)
         self.cross_vb = torch.zeros(L, batch, H, cfg.enc_frames, dk, **self.kw)
-        self.ctc_ids = torch.zeros(batch, cfg.enc_frames, dtype=torch.int32, **dev)
+        self.ctc_ids = torch.zeros(batch, ctc_columns(cfg), dtype=torch.int32, **dev)
         self.score = torch.zeros(n, **dev)
         self.active = torch.zeros(n, dtype=torch.bool, **dev)
         self.done = torch.zeros(batch, dtype=torch.bool, **dev)

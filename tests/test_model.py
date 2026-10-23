@@ -540,8 +540,8 @@ def test_ctc_collapse_rows():
 
 @pytest.mark.parametrize("seconds", [0.3, 1.0, 2.0])
 def test_encoder_graph_ctc_on_computed_frames(seconds):
-    """The exported encoder's CTC ids cover the subsampled frames computed from trimmed features: the
-    full input's, up to there."""
+    """The exported encoder's CTC ids: the full input's best path on the subsampled frames computed from
+    trimmed features, a blank, and the window's last frame (blank too when every frame is computed)."""
     import dataclasses
 
     from owsm_trt.build import _EncoderGraph
@@ -563,9 +563,10 @@ def test_encoder_graph_ctc_on_computed_frames(seconds):
         k, v, ids = _EncoderGraph(m)(feats[:, :t])
     finally:
         m.encoder.fill = None
-    assert ids.shape[1] == m.encoder.embed(feats[:, :t]).shape[1] <= cfg.enc_frames
-    assert (ids.shape[1] < cfg.enc_frames) == (seconds < 1.9)
-    assert torch.equal(ids, full[:, : ids.shape[1]])
+    t = m.encoder.embed(feats[:, :t]).shape[1]  # subsampled frames computed
+    assert ids.shape[1] == t + 2 and (t < cfg.enc_frames) == (seconds < 1.9)
+    assert torch.equal(ids[:, :t], full[:, :t]) and not ids[:, t].any()
+    assert torch.equal(ids[:, t + 1], full[:, -1] if t < cfg.enc_frames else torch.zeros_like(full[:, -1]))
 
 
 @pytest.mark.parametrize("split", [True, False])

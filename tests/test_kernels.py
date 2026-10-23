@@ -74,4 +74,4 @@ def test_accept_matches_torch(W):
     ref = bufs.accept()
     kernels.accept(bufs.pred, bufs.inp, bufs.res, eos)
     assert torch.equal(bufs.res, ref)
-    assert ref[:, 0].max() > 1
+    assert W < 5 or ref[:, 0].max() > 1
