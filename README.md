@@ -72,7 +72,8 @@ PyTorch backend (2.42%); OWSM-CTC at 1603 with batch 1 and 2529 with batch 16 (W
 
 Rows are TensorRT fp16, with the decoder megakernel (below) unless marked "TensorRT decoder only". Where their
 transcripts differ from ESPnet's fp32 output, it is by a comma, a casing or a single word (fp16 rounding at a near-tie:
-rebuilding the same engine moves as many), and the WER moves by at most 0.17 points. In fp32 (`backend="torch",
+rebuilding the same engine moves as many; for OWSM-CTC at batch 16 two builds of the same code gave the same
+transcript for only 64 of the 73, at WER 4.26% and 4.43%), and the WER moves by at most 0.17 points. In fp32 (`backend="torch",
 dtype="float32"`) the transcripts are identical to ESPnet's: 73/73 for greedy, beam 5, greedy and beam 5 with
 timestamps, and OWSM-CTC. (TensorRT fp16 greedy with timestamps: 73/73, RTFx 1315; with the TensorRT decoder only
 72/73, RTFx 1070.)
@@ -217,7 +218,8 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
 * **OWSM-CTC** has no decoder: one engine runs the prompt encoder and the encoder (with language/task prefix,
   cross-attention to the prompt and intermediate-CTC conditioning) and returns the frame-wise best path. Inputs are
   padded to 30 s, as on the model card. Batches hold utterances of similar durations, and the next batch is queued on
-  the GPU before the host collapses the best paths of the one before. `transcribe_long` decodes 30 s windows
+  the GPU before the host collapses the best paths of the one before. With batch 1, two engine calls are in flight
+  at a time on two streams, each with its own TensorRT contexts (+13-17%, same output). `transcribe_long` decodes 30 s windows
   overlapping by 2 s on each side and keeps their middle frames, like ESPnet's `decode_long`; the windows of all
   recordings go through the encoder together.
 * **FP8 encoder (experimental, opt-in).** `fp8=True` or `fp8_calibration=[recordings]` runs the encoder's linear
