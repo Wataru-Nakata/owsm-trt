@@ -5,10 +5,14 @@ calls the GPU run makes: the decoder's prediction is only ever used after a corr
 is the next token of the greedy output.
 
 python scripts/draft_sim.py outputs/drafts.json
+
+``--time`` also measures the host's time per call (the drafting loop, filling the call's input and
+reading its result; what the GPU waits for), with the oracle's answers recorded beforehand.
 """
 
 import argparse
 import json
+import time
 from collections import Counter
 
 import torch
@@ -84,16 +88,69 @@ def simulate(
     return calls
 
 
+def host_time(
+    utts: list[dict],
+    primer: list[int],
+    eos: int,
+    insertions: set[int],
+    rows: int,
+    punctuation: frozenset[int],
+) -> tuple[int, float]:
+    """(calls, host seconds per call) of the drafting loop on the session's own call objects, whose GPU
+    part (the graph replay) is replaced by copying in the oracle's recorded answer."""
+    windows = tuple(w for w in (1, 2, 4, 8, 16, 32) if w * rows <= max(256, rows))
+    sess = GreedySession(
+        _NoDecoder(), TINY, rows, 512, eos, torch.float32, torch.device("cpu"), use_cuda_graph=False,
+        buckets=[64, 128, 256, 512], draft_windows=windows, punctuation=punctuation,
+    )  # fmt: skip
+    seqs = [primer + u["out"] + [eos] for u in utts]
+    held: dict[int, int] = {}
+    answers: list[torch.Tensor] = []
+    step = [0]
+    for (_, w), bound in sess._verify.items():
+        oracle = Oracle(w, seqs, held, eos)
+
+        def body(b=bound.bufs, oracle=oracle) -> None:
+            if step[0] == len(answers):  # first pass: ask the oracle
+                answers.append(torch.tensor(oracle(b.inp.view(-1).tolist())))
+            b.res.copy_(answers[step[0]])
+            step[0] += 1
+
+        bound.body = body
+    best = float("inf")
+    for _ in range(4):
+        queue, step[0] = list(range(len(utts))), 0
+
+        def refill(r: int) -> _Row | None:
+            if not queue:
+                return None
+            held[r] = queue.pop(0)
+            return _Row(held[r], primer, utts[held[r]]["draft"])
+
+        t0 = time.perf_counter()
+        out, calls = sess._drafted([None] * rows, refill, None, 512 - len(primer), insertions, 8)
+        if answers and len(answers) == calls and step[0] == calls:
+            best = min(best, time.perf_counter() - t0)
+        assert all(out[i] == u["out"] for i, u in enumerate(utts))
+    return calls, best / calls
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("drafts")
     ap.add_argument("--rows", default="1,8,16")
+    ap.add_argument(
+        "--time", action="store_true", help="host time per call (rows refilled as in decode_stream)"
+    )
     args = ap.parse_args()
     meta = json.load(open(args.drafts))
     utts, primer, eos, ins = meta["utterances"], meta["primer"], meta["eos"], set(meta["insertions"])
     punct = frozenset(meta.get("punctuation", []))
     for rows in map(int, args.rows.split(",")):
-        if rows == 1:
+        if args.time:
+            calls, sec = host_time(utts, primer, eos, ins, rows, punct)
+            print(f"rows {rows}: {calls} calls, host {1e6 * sec:.1f} us per call")
+        elif rows == 1:
             per = [simulate([u], primer, eos, ins, 1, punctuation=punct) for u in utts]
             print(f"rows 1: {sum(per)} calls, {sum(per) / len(utts):.2f} per utterance")
             print("  calls per utterance:", dict(sorted(Counter(per).items())))
