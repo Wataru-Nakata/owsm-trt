@@ -1,5 +1,6 @@
 """High-level API: ``OWSM.from_pretrained(...).transcribe(...)``."""
 
+import hashlib
 import logging
 import math
 import os
@@ -237,6 +238,10 @@ class OWSM:
         levels = {}  # builder optimization levels: BuildOptions' defaults unless one is given for both
         if optimization_level is not None:
             levels = {"opt_level": optimization_level, "verify_opt_level": optimization_level}
+        calibration, digest = None, ""
+        if fp8_calibration is not None:
+            calibration = [load_audio(a, cfg.sample_rate) for a in fp8_calibration]
+            digest = hashlib.sha1(b"".join(w.numpy().tobytes() for w in calibration)).hexdigest()[:12]
         opts = BuildOptions(
             dtype=dtype,
             max_batch=max_batch_size,
@@ -244,6 +249,7 @@ class OWSM:
             max_prefill=max_prompt_tokens,
             **levels,
             fp8_encoder=fp8_calibration is not None,
+            fp8_calibration=digest,
         )
         if fp8_calibration is not None and backend != "tensorrt":
             raise ValueError("FP8 is available for the TensorRT backend only")
@@ -264,8 +270,8 @@ class OWSM:
             if rebuild or not check_config(cfg, engine_dir):
                 log.warning("building TensorRT engines for %s into %s", files.name, engine_dir)
                 net = load_model(cfg, str(files.checkpoint), dev, DTYPES[dtype])
-                if fp8_calibration is not None:
-                    _quantize_encoder(net, tok, fp8_calibration, opts.max_batch)
+                if calibration is not None:
+                    _quantize_encoder(net, tok, calibration, opts.max_batch)
                 build_engines(net, engine_dir, opts)
                 frontend = net.frontend
                 del net

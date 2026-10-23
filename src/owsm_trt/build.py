@@ -39,6 +39,7 @@ class BuildOptions:
     # kernels, 3x the build time; the encoder and single-token steps gain nothing above level 3.)
     verify_opt_level: int = 4
     fp8_encoder: bool = False  # experimental: FP8 encoder GEMMs/convolutions (needs calibration audio)
+    fp8_calibration: str = ""  # digest of that audio: engines calibrated on other audio are other engines
     # Decoder attention as TensorRT plugins (attn_plugin): Triton kernels that read the KV cache and the
     # cross-attention keys/values where they are, instead of TensorRT's copies into its own layouts
     # every layer. In verify.engine (multi-token calls) and in decoder.engine (single-token steps and
