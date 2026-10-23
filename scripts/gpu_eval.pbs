@@ -120,6 +120,10 @@ for stage in $STAGES; do
         \$CLI transcribe --model $MODEL --long --json .cache/testdata/long_110s.wav
         \$CLI bench --model $MODEL --batch-size 8 --iters 3
         \$CLI bench --model $MODEL --backend torch --batch-size 1 --iters 3" ;;
+    fresh*)  # clean-install QA (scripts/fresh_install.sh; WHEEL=..., FRESH_MODELS=a:b, DEV_MODELS=c:d, DEV_SRC=...);
+      # fresh_<x>: with the pins PKGS_<x>, e.g. PKGS_old=torch@2.6.0/tensorrt@10.9.0.34 ('@' for '==')
+      pv="PKGS_${stage#fresh_}"; pk=""; [ "$stage" != fresh ] && pk=${!pv:-}; pk=${pk//@/==}
+      run "$stage" 3300 env FRESH_NAME="$stage" FRESH_PKGS="${pk//\// }" bash "$SNAP/scripts/fresh_install.sh" "$OUT" ;;
     smoke)
       run smoke 900 "${PY[@]}" "$SNAP/scripts/smoke_features.py" --model "$MODEL" ;;
     layers_*)  # layers_<b>: TensorRT per-layer profile of one decode step and the encoder

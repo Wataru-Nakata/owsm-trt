@@ -120,6 +120,28 @@ def test_bucket_switching_matches_single_cache(model, split):
         model.decoder.split_attention = True
 
 
+def test_buildable_drops_plugins_that_cannot_be_built(monkeypatch):
+    """Engines built without the plugins get options of their own (another engine directory), so they are rebuilt
+    once the plugins can be built; with every plugin buildable the options (and directory) stay the same."""
+    import dataclasses
+
+    from owsm_trt import attn_plugin, build, plugins
+
+    opts = build.BuildOptions()
+    monkeypatch.setattr(plugins, "available", lambda: True)
+    monkeypatch.setattr(attn_plugin, "unavailable", lambda: None)
+    assert build.buildable(opts, TINY) == opts
+    monkeypatch.setattr(plugins, "available", lambda: False)
+    assert build.buildable(opts, TINY) == dataclasses.replace(
+        opts, dwconv_plugin=False, conv1_plugin=False, ctc_plugins=False
+    )
+    monkeypatch.setattr(attn_plugin, "unavailable", lambda: "no Triton")
+    off = build.buildable(opts, TINY)
+    assert not (off.attn_plugin or off.attn_plugin_steps or off.dwconv_plugin)
+    ctc = dataclasses.replace(TINY, ctc_only=True)  # (no decoder: its options stay)
+    assert build.buildable(opts, ctc).attn_plugin
+
+
 def test_decoder_profile_shapes_are_consistent():
     from owsm_trt.build import BuildOptions, decoder_input_names, decoder_profile_shapes, decoder_profiles
 

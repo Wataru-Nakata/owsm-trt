@@ -10,8 +10,14 @@ readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.10"
 dependencies = [
-    "torch>=2.6",
-    "tensorrt>=10.8",
+    # torch 2.10: the oldest tested (2.6 exports SplitToSequence, which TensorRT cannot parse; 2.7-2.9 untested),
+    # and the first that brings Triton and cuda-bindings for its own CUDA version (Linux). The decoder megakernel
+    # needs Triton 3.8 (torch 2.14); with older ones the TensorRT decoder is used (logged).
+    "torch>=2.10",
+    # 10.16: the oldest tested with the AOT plugins (10.8 has none, 10.9 fails to create them from the ONNX
+    # nodes; the CUDA 13 packages of 10.13 no longer install)
+    "tensorrt>=10.16",
+    "cuda-bindings>=12.9",  # NVRTC for the encoder/CTC plugins (torch >= 2.10 brings it on Linux, for its CUDA)
     "numpy",
     "sentencepiece",
     "huggingface-hub",

@@ -283,13 +283,52 @@ _registered = False
 
 
 def available() -> bool:
-    """Whether the plugins can be built here (TensorRT's Python plugin API, NVRTC, a GPU)."""
+    """Whether the plugins can be built here (a GPU, TensorRT's ahead-of-time Python plugins, NVRTC); if not,
+    logs why once (the engines are built with TensorRT's own, slower kernels instead)."""
+    global _warned
+    reason = unavailable()
+    if reason and not _warned and torch.cuda.is_available():
+        _warned = True
+        log.warning(
+            "TensorRT engines without the NVRTC plugins (depthwise convolutions, subsampling, CTC softmax/argmax:"
+            " a slower encoder): %s",
+            reason,
+        )
+    return reason is None
+
+
+_warned = False
+
+
+@functools.cache
+def unavailable() -> str | None:
+    """Why the plugins cannot be built here (None: they can)."""
+    if not torch.cuda.is_available():
+        return "no CUDA device"
     try:
-        import tensorrt.plugin  # noqa: F401
-        from cuda.bindings import nvrtc  # noqa: F401
+        import tensorrt
+        import tensorrt.plugin as trtp
+    except ImportError as e:
+        return f"TensorRT's Python plugin API does not import ({e})"
+    if not hasattr(trtp, "aot_impl"):
+        return f"TensorRT {tensorrt.__version__} has no ahead-of-time Python plugins (owsm-trt needs TensorRT >= 10.16)"
+    cuda = (torch.version.cuda or "").split(".")[0]
+    hint = f"pip install 'cuda-bindings=={cuda}.*' (torch is built for CUDA {torch.version.cuda})"
+    try:
+        from cuda.bindings import driver, nvrtc
     except ImportError:
-        return False
-    return torch.cuda.is_available()
+        return f"cuda-bindings (NVRTC's Python bindings) is not installed: {hint}"
+    try:
+        nvrtc_ptx('extern "C" __global__ void owsm_probe() {}', "owsm_probe.cu", ())
+        _, major, minor = nvrtc.nvrtcVersion()
+        _, drv = driver.cuDriverGetVersion()
+    except Exception as e:  # noqa: BLE001 - e.g. cuda-bindings for another CUDA major than the NVRTC library
+        return f"NVRTC does not work ({type(e).__name__}: {e}); {hint}"
+    if (major, minor) > divmod(drv // 10, 100):
+        return (
+            f"NVRTC {major}.{minor} is newer than the driver (CUDA {drv // 1000}.{drv % 1000 // 10}); {hint}"
+        )
+    return None
 
 
 def _aot(trtp, kind: str, x, x2, w, tactic: int):

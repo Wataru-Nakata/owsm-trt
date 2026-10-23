@@ -14,6 +14,7 @@ plugins are ahead-of-time: the engine holds the kernels' PTX, so loading it need
 the registration.
 """
 
+import functools
 import math
 from typing import List, Tuple, Union
 
@@ -38,17 +39,28 @@ _REGISTERED = False
 
 
 def available(head_dim: int) -> bool:
-    """Whether the plugins can be built here (Triton, TensorRT's plugin API, an Ampere or newer GPU)
-    for this head size."""
-    if triton is None or head_dim not in (16, 32, 64, 128) or not torch.cuda.is_available():
-        return False
+    """Whether the plugins can be built here (Triton, TensorRT's ahead-of-time Python plugins, an Ampere or
+    newer GPU) for this head size."""
+    return head_dim in (16, 32, 64, 128) and unavailable() is None
+
+
+@functools.cache
+def unavailable() -> str | None:
+    """Why this environment cannot build the plugins (None: it can)."""
+    if not torch.cuda.is_available():
+        return "no CUDA device"
     if torch.cuda.get_device_capability() < (8, 0):
-        return False
+        return "they need an Ampere or newer GPU"
+    if triton is None:
+        return "Triton is not installed (it comes with PyTorch on Linux)"
     try:
+        import tensorrt
         import tensorrt.plugin as trtp
-    except ImportError:
-        return False
-    return hasattr(trtp, "aot_impl")
+    except ImportError as e:
+        return f"TensorRT's Python plugin API does not import ({e})"
+    if not hasattr(trtp, "aot_impl"):
+        return f"TensorRT {tensorrt.__version__} has no ahead-of-time Python plugins (owsm-trt needs TensorRT >= 10.16)"
+    return None
 
 
 # --- PyTorch reference implementations, exported as ONNX nodes of domain "owsm" ---
