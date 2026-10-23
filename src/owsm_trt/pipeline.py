@@ -126,7 +126,7 @@ def pause_cuts(
 class _Recording:
     """transcribe_long's progress through one recording."""
 
-    wav: torch.Tensor
+    wav: torch.Tensor | None
     offset: int = 0  # first sample of the next window
     prev: str | None = None  # text of the previous window (condition_on_prev_text)
     segments: list[Segment] = field(default_factory=list)
@@ -529,39 +529,39 @@ class OWSM:
         t, cfg = self.tokenizer, self.cfg
         fs, seg_len = cfg.sample_rate, cfg.num_samples
         end_id = t.first_time + round(end_time_threshold / cfg.time_resolution)
-        if self.device.type == "cuda":
-            waves = [w.to(self.device) for w in waves]  # windows are cut on the device: no copy per window
         recs = [_Recording(w) for w in waves]
-        while True:
-            live = [
-                r
-                for r in recs
-                if r.offset < len(r.wav) and (len(r.wav) - r.offset) / fs >= skip_last_chunk_seconds
-            ]
-            if not live:
-                break
-            chunks = [r.wav[r.offset : r.offset + seg_len] for r in live]
-            if batch_size > 1 and len(live) > 1 and not condition_on_prev_text:
-                outs = [
-                    res.tokens
-                    for res in self._decode_windows(chunks, lang, task, batch_size, beam, fixed=True)
+        together = batch_size > 1 and not condition_on_prev_text
+        for group in [recs] if together else [[r] for r in recs]:
+            if not together and self.device.type == "cuda":  # one recording at a time on the device:
+                group[0].wav = group[0].wav.to(self.device)  # its windows need no host copy
+            while True:
+                live = [
+                    r
+                    for r in group
+                    if r.offset < len(r.wav) and (len(r.wav) - r.offset) / fs >= skip_last_chunk_seconds
                 ]
-            else:
-                outs = []
-                for r, chunk in zip(live, chunks):
-                    primer = self._primer(lang, task, True, r.prev if condition_on_prev_text else None)
-                    outs.append(self._long_window(chunk, primer, beam, task == "asr"))
-            for r, chunk, ids in zip(live, chunks, outs):
-                kept, next_start = _window_cut(ids, t, end_id)
-                if next_start is None:  # no timestamps at all
-                    r.segments.append(Segment(r.offset / fs, (r.offset + len(chunk)) / fs, t.decode(ids)))
-                    r.offset += seg_len
-                    continue
-                res = self._result(kept, r.offset / fs)
-                r.segments += res.segments
-                r.prev = "".join(s.text for s in res.segments)
-                advance = round((next_start - t.first_time) * cfg.time_resolution * fs)
-                r.offset += advance if advance > 0 else seg_len
+                if not live:
+                    break
+                chunks = [r.wav[r.offset : r.offset + seg_len] for r in live]
+                if len(live) > 1:
+                    outs = self._decode_windows(chunks, lang, task, batch_size, beam, fixed=True)
+                    outs = [res.tokens for res in outs]
+                else:
+                    primer = self._primer(lang, task, True, live[0].prev if condition_on_prev_text else None)
+                    outs = [self._long_window(chunks[0], primer, beam, task == "asr")]
+                for r, chunk, ids in zip(live, chunks, outs):
+                    kept, next_start = _window_cut(ids, t, end_id)
+                    if next_start is None:  # no timestamps at all
+                        r.segments.append(Segment(r.offset / fs, (r.offset + len(chunk)) / fs, t.decode(ids)))
+                        r.offset += seg_len
+                        continue
+                    res = self._result(kept, r.offset / fs)
+                    r.segments += res.segments
+                    r.prev = "".join(s.text for s in res.segments)
+                    advance = round((next_start - t.first_time) * cfg.time_resolution * fs)
+                    r.offset += advance if advance > 0 else seg_len
+            for r in group:
+                r.wav = None  # done with it (and with its copy on the device)
         return [_joined(r.segments) for r in recs]
 
     def _end_guess(self, samples: int) -> int:
@@ -634,6 +634,7 @@ class OWSM:
         primer = self._primer(lang, task, True, None)
         sess = self._session(bs) if beam == 1 and task == "asr" and TIMESTAMP_GUESSES else None
         if sess is None or not sess.windows or len(primer) >= sess.windows[-1]:
+            # (no drafts: a batch of fewer windows than bs gets a session of its size)
             return self.transcribe(
                 windows, lang=lang, task=task, timestamps=True, batch_size=bs, beam_size=beam
             )

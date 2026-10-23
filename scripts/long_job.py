@@ -13,8 +13,9 @@ job runs the code as it was at submission. ``LONG_PLAN`` (colon-separated) picks
 * ``r<N>``: ESPnet's windows, the current windows of all recordings decoded together (batch size N)
 * ``noguess`` / ``guess``: the steps after it without / with guessed timestamps in drafts
 * ``prof``: GPU time of one 30 s encoder run and of single decoder calls per window size (batch 1)
-* ``fp32``: PyTorch fp32 on the first LONG_FP32_LIMIT (8) recordings, sequential with guessed
-  timestamps, without, and without drafts: the outputs should be the same
+* ``fp32``: PyTorch fp32 on the first LONG_FP32_LIMIT (8) recordings (or those in LONG_IDS, comma-
+  free: separated by '+'), sequential with guessed timestamps, without, and without drafts: the
+  outputs should be the same
 ``LONG_LIMIT``: only the first N recordings. ``LONG_DATA``: the manifest (default: the test-clean chapters).
 """
 
@@ -114,13 +115,16 @@ def main() -> None:
             profile(model, waves[0])
         elif step == "fp32":
             n = int(os.environ.get("LONG_FP32_LIMIT", 8))
+            sel = [i for i, it in enumerate(items) if it["id"] in os.environ.get("LONG_IDS", "").split("+")]
+            sel = sel or list(range(min(n, len(items))))
+            items32, waves32 = [items[i] for i in sel], [waves[i] for i in sel]
             ref32 = OWSM.from_pretrained(model_dir, backend="torch", dtype="float32")
             first = str(out / "long_fp32_guesses.json")
             for name in ("guesses", "noguess", "nodraft"):
                 pipeline.TIMESTAMP_GUESSES = name != "noguess"
                 ref32.ctc_draft = name != "nodraft"
                 ref32._sessions.clear()
-                evaluate(ref32, items[:n], waves[:n], 1, save=str(out / f"long_fp32_{name}.json"),
+                evaluate(ref32, items32, waves32, 1, save=str(out / f"long_fp32_{name}.json"),
                          label=f"fp32 {name}", compare=[first] if name != "guesses" else [], warmup=False)  # fmt: skip
             pipeline.TIMESTAMP_GUESSES = True
             del ref32
