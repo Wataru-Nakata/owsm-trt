@@ -977,6 +977,10 @@ class _Row:
         tail = out[-2:]  # all that _resync reads of the output
         tail.append(last)
         self.ptr = _resync(self.draft, self.ptr + len(got), tail, insertions, punctuation)
+        if is_time is not None and is_time(last) and last not in insertions and self.times[0] % 2 == 0:
+            # Drafts with timestamps (transcribe_long): after an end time, guess the next start time is
+            # the same (84% of LibriSpeech long-form utterance boundaries).
+            self.draft.insert(self.ptr, last)
 
 
 def _resync(

@@ -48,12 +48,12 @@ Test setup:
 |---|---:|---:|---:|---:|
 | ESPnet `Speech2Text`, beam 5 (its default), fp32 | 1 | 15 | 4.00% | |
 | ESPnet `Speech2Text`, greedy, fp32 | 1 | 25 | 3.91% | |
-| **owsm-trt, greedy** | 1 | **1175** | 3.74% | 72/73 |
-| **owsm-trt, greedy** | 8 | **1971** | 3.91% | 73/73 |
-| **owsm-trt, greedy** | 16 | **2032** | 3.91% | 73/73 |
-| owsm-trt, greedy, FP8 encoder (experimental) | 1 | 1192 | 3.91% | 69/73 |
-| owsm-trt, greedy, FP8 encoder (experimental) | 8 | 2251 | 3.83% | 69/73 |
-| owsm-trt, greedy, FP8 encoder (experimental) | 16 | 2269 | 3.83% | 70/73 |
+| **owsm-trt, greedy** | 1 | **1221** | 3.91% | 73/73 |
+| **owsm-trt, greedy** | 8 | **2278** | 3.74% | 71/73 |
+| **owsm-trt, greedy** | 16 | **2349** | 3.91% | 73/73 |
+| owsm-trt, greedy, FP8 encoder (experimental) | 1 | 1204 | 3.83% | 68/73 |
+| owsm-trt, greedy, FP8 encoder (experimental) | 8 | 2662 | 3.91% | 67/73 |
+| owsm-trt, greedy, FP8 encoder (experimental) | 16 | 2636 | 3.83% | 67/73 |
 | **owsm-trt, beam 5** | 1 | **103** | 4.09% | 72/73 |
 | ESPnet OWSM-CTC `best_path`, fp32 | 1 | 131 | 4.43% | |
 | **owsm-trt, OWSM-CTC** | 1 | **978** | 4.26% | 64/73 |
@@ -61,18 +61,20 @@ Test setup:
 | owsm-trt, OWSM-CTC, FP8 (experimental) | 1 | 1050 | 4.52% | 65/73 |
 | owsm-trt, OWSM-CTC, FP8 (experimental) | 16 | 1981 | 4.52% | 62/73 |
 
-For one stream that is 47× ESPnet's greedy decoding and 78× its default beam search, and 81× with batch 16; beam
+For one stream that is 49× ESPnet's greedy decoding and 81× its default beam search, and 94× with batch 16; beam
 search itself is 7× faster, and OWSM-CTC 7× to 12×. On all of LibriSpeech test-clean (2620 utterances, 5.4 h)
-greedy decoding runs at RTFx 1259 with batch 1 and 2763 with batch 16, with the WER of the PyTorch backend (2.42%).
+greedy decoding runs at RTFx 1316 with batch 1 and 2953 with batch 16, with the WER of the PyTorch backend (2.42%);
+with the FP8 encoder 3376 with batch 16, WER 2.41% (calibrated on 8 of the utterances).
 
 Rows are TensorRT fp16 unless marked FP8. Where their transcripts differ from ESPnet's fp32 output, it is by a comma,
 a casing or a single word (fp16 rounding at a near-tie), and the WER moves by at most 0.17 points. In fp32
 (`backend="torch", dtype="float32"`) the transcripts are identical to ESPnet's: 73/73 for greedy, beam 5, greedy and
 beam 5 with timestamps, and OWSM-CTC. (TensorRT fp16 greedy with timestamps: 71/73, RTFx 809.)
 
-The FP8 rows were calibrated on the first 8 test utterances. On the other 65 their WER is within one word of ESPnet's
-fp32: 4.00-4.11% vs 4.11% for the 1B model, 4.84% vs 4.74% for OWSM-CTC. That is one test set; check FP8 on your own
-data before relying on it. FP8 pays off with batches; at batch 1 the 1B model gains nothing from it.
+The 1B model's FP8 rows were calibrated on 8 LibriSpeech test-clean utterances, so all 73 test utterances are held
+out: WER 3.83-3.91% vs ESPnet's 3.91%; on all of test-clean 2.41% vs 2.42% in fp16. The OWSM-CTC FP8 rows were
+calibrated on the first 8 test utterances; on the other 65, 4.84% vs ESPnet's 4.74%. Check FP8 on your own data
+before relying on it. It pays off with batches (+13-17% here); at batch 1 the 1B model gains nothing from it.
 
 Single-utterance greedy decoding takes 5.6 ms for the first test utterance (6 s): 0.2 ms features, 3.5 ms encoder,
 1.9 ms decoding. With batch 16, sixteen utterances take 98 ms, 45 of them in the encoder.
@@ -96,9 +98,9 @@ cached afterwards.
   * The encoder input and its first residual connection are kept in fp32 (for Transformer encoders the whole residual
     stream): on some checkpoints the subsampled features times √d exceed the fp16 range (up to 4.5·10⁵ on OWSM-CTC
     v3.2).
-  * The exported decoder writes attention out with the scale on the query. The ONNX exporter's
+  * The exported decoder and encoder write attention out with the scale on the query. The ONNX exporter's
     `scaled_dot_product_attention` also scales the keys, which TensorRT then recomputes for all cross-attention keys
-    and the whole KV cache in every multi-token call (40% of such a call at batch 16).
+    and the whole KV cache in every multi-token call (40% of such a call at batch 16; 3-4% of the encoder).
 * **The padding is not subsampled.** Inputs are padded to 30 s as in ESPnet, but the encoder's convolutional
   subsampling (a third of its time at batch 16) only runs up to the end of the longest recording in the batch, plus
   its receptive field. Every later subsampled frame sees padding only, so it is the same for every recording: it is
@@ -111,6 +113,9 @@ cached afterwards.
   * Cross-attention keys/values are projected once per utterance.
   * The self-attention KV cache is static and comes in length buckets (64/128/256/512), so a step only reads as
     much cache as the sequence needs.
+  * Around a multi-token call, two Triton kernels write each row's new keys/values into the cache at its offset and
+    pick the next tokens under the timestamp rules in one pass over the logits (the allowed tokens are ranges of
+    ids, so no vocabulary-sized mask is built): 16% off a batch-16 call.
   * Each decoding step (engine, cache write, token choice) is one CUDA-graph replay; so is the encoder (one graph per
     5 s of input length). The host checks for the end every 4 steps.
   * Batched inputs are sorted by duration, so an encoder batch stops early and a decoding batch does not wait on one
@@ -130,7 +135,8 @@ cached afterwards.
 * **Rows are refilled (greedy ASR of more than one batch).** Utterances need from 1 to 25 decoder calls, and a fixed
   batch would wait for its slowest one. Instead a row whose utterance is done takes the next one for the following
   call, at its own cache offset (on the test set: 29 instead of 92 calls per pass at batch 8). The encoder works
-  ahead on a second CUDA stream, one batch at a time, into two staging buffers the rows are filled from.
+  ahead on a second CUDA stream, one batch at a time, into two staging buffers the rows are filled from; a smaller
+  last batch is encoded at its own size rather than padded with empty rows.
 * **Beam search is ESPnet's.** `beam_size=k` runs ESPnet's batched beam search (sum of log-probabilities, no length
   normalization, its `end_detect` rule) on a batch × k grid of hypotheses, every step one CUDA graph.
 * **Timestamp rules.** Like ESPnet, every search applies its `ScoreFilter`: no timestamps after `<notimestamps>`;

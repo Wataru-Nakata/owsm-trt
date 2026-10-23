@@ -745,3 +745,90 @@ def test_fp8_encoder_quantization():
     assert any(isinstance(mod, fp8.QConv2d) for mod in q.encoder.modules())
     out = q.encoder(feats)
     assert float((out - ref).norm() / ref.norm()) < 0.1
+
+
+@pytest.mark.parametrize("plugins", [{"self", "cross"}, {"self"}, {"cross"}])
+@pytest.mark.parametrize("fused", [False, True], ids=["qkv", "fused_qkv"])
+def test_decoder_step_with_attention_ops(model, plugins, fused):
+    """The decoder's export path with attn_plugin ops (their PyTorch implementations) == the plain step."""
+    import copy
+
+    m = copy.deepcopy(model)
+    if fused:
+        m.fuse_projections()
+    torch.manual_seed(5)
+    L, H, dk, T = TINY.dec_layers, TINY.dec_heads, 8, TINY.enc_frames
+    sk, sv = torch.randn(L, 3, H, 16, dk), torch.randn(L, 3, H, 16, dk)  # garbage past the offsets
+    ck, cv = torch.randn(L, 3, H, T, dk), torch.randn(L, 3, H, T, dk)
+    tokens, offset = torch.randint(2, 50, (3, 4)), torch.tensor([0, 5, 12])
+    ref = m.decoder.step(tokens, offset, list(sk), list(sv), list(ck), list(cv))
+    m.decoder.plugins = frozenset(plugins)
+    logits, new_kv = m.decoder.step(tokens, offset, list(sk), list(sv), list(ck), list(cv))
+    torch.testing.assert_close(logits, ref[0], rtol=1e-4, atol=1e-4)
+    torch.testing.assert_close(new_kv, ref[1], rtol=1e-5, atol=1e-5)
+
+
+def test_decoder_export_with_attention_plugins(model, tmp_path):
+    """Each layer's attention becomes one node the TensorRT ONNX parser maps to an attn_plugin plugin."""
+    onnx = pytest.importorskip("onnx")
+    from owsm_trt.build import BuildOptions, export_decoder_onnx
+
+    opts = BuildOptions(dtype="float32", max_batch=4, capacity=32, max_prefill=8, max_verify=4)
+    path = export_decoder_onnx(model, tmp_path / "decoder.onnx", opts, plugins=frozenset({"self", "cross"}))
+    assert model.decoder.plugins == frozenset()
+    graph = onnx.load(str(path), load_external_data=False).graph
+    nodes = [n for n in graph.node if n.domain == "owsm"]
+    L = TINY.dec_layers
+    assert sorted(n.op_type for n in nodes) == ["cross_attn"] * L + ["self_attn"] * L
+    for n in nodes:
+        assert {a.name: a.s for a in n.attribute} == {"plugin_namespace": b"owsm", "plugin_version": b"1"}
+    self_nodes = [n for n in nodes if n.op_type == "self_attn"]
+    assert [list(n.input[1:]) for n in self_nodes] == [
+        [f"self_k_{i}", f"self_v_{i}", "offset"] for i in range(L)
+    ]
+    cross = [n for n in nodes if n.op_type == "cross_attn"]
+    assert [list(n.input[1:]) for n in cross] == [[f"cross_k_{i}", f"cross_v_{i}"] for i in range(L)]
+
+
+@pytest.mark.parametrize("kind", ["aed", "ctc"])
+def test_export_without_trimming_runs_at_num_frames(tmp_path, kind):
+    """Utterance-MVN models (e.g. OWSM-CTC v3.2) get whole windows: their encoder export has a static
+    time dimension, which must be num_frames (the engine profiles' length), and computes the model."""
+    import dataclasses
+
+    pytest.importorskip("onnx")
+    from onnx.reference import ReferenceEvaluator
+
+    from owsm_trt.build import BuildOptions, export_ctc_onnx, export_onnx, trims_features
+    from owsm_trt.modeling import OWSMCTCModel
+
+    cfg = dataclasses.replace(TINY, normalize="utterance_mvn")
+    if kind == "ctc":
+        cfg = dataclasses.replace(
+            cfg, dec_layers=0, dec_ffn=0, dec_heads=0, ctc_only=True, prompt_d=16, prompt_heads=2,
+            prompt_ffn=32, prompt_layers=2, interctc_layers=(1,), cross_attn_layers=(1,),
+        )  # fmt: skip
+    assert not trims_features(cfg)
+    torch.manual_seed(9)
+    m = (OWSMCTCModel if kind == "ctc" else OWSMModel)(cfg).eval().requires_grad_(False)
+    m.frontend.melmat.uniform_(0, 1)
+    opts = BuildOptions(
+        dtype="float32", max_batch=4, attn_plugin=False, attn_plugin_steps=False, dwconv_plugin=False
+    )
+    feats = m.frontend(torch.randn(2, cfg.num_samples))
+    assert feats.shape[1] == cfg.num_frames
+    if kind == "ctc":
+        path = export_ctc_onnx(m, tmp_path, opts)
+        prompt, prefix = torch.tensor([[2, 9, 10]] * 2), torch.tensor([[4, 5]] * 2)
+        (ids,) = ReferenceEvaluator(str(path)).run(
+            None, {"feats": feats.numpy(), "prompt": prompt.numpy(), "prefix": prefix.numpy()}
+        )
+        assert torch.equal(torch.from_numpy(ids), m(feats, prompt, prefix))
+        return
+    path, _ = export_onnx(m, tmp_path, opts)
+    k, v, ids = ReferenceEvaluator(str(path)).run(None, {"feats": feats.numpy()})
+    enc = m.encoder(feats)
+    kv = m.decoder.cross_kv(enc)
+    torch.testing.assert_close(torch.from_numpy(k), kv[:, 0], rtol=1e-4, atol=1e-4)
+    full = m.ctc(enc)  # every frame computed: then two blanks (see build._EncoderGraph)
+    assert torch.equal(torch.from_numpy(ids), torch.cat([full, torch.zeros_like(full[:, :2])], 1))
