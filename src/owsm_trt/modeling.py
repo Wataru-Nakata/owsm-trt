@@ -90,7 +90,12 @@ class Frontend(nn.Module):
 
 
 class Conv2dSubsampling(nn.Module):
-    """ESPnet's Conv2dSubsampling{,2,8}: 3x3 convolutions with the given strides, then a linear layer."""
+    """ESPnet's Conv2dSubsampling{,2,8}: 3x3 convolutions with the given strides, then a linear layer.
+
+    ``plugin`` (export option): the first convolution and its ReLU as a TensorRT plugin
+    (plugins.conv1_relu)."""
+
+    plugin = False
 
     def __init__(self, n_mels: int, d: int, strides: tuple[int, ...]):
         super().__init__()
@@ -104,9 +109,29 @@ class Conv2dSubsampling(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # [B, T, F] -> [B, T', d]
-        x = self.conv(x.unsqueeze(1))  # [B, d, T', F']
+        if Conv2dSubsampling.plugin:
+            from . import plugins
+
+            x = self.conv[2:](plugins.conv1_relu(x, *self.plugin_weights()))
+        else:
+            x = self.conv(x.unsqueeze(1))  # [B, d, T', F']
         b, c, t, f = x.shape
         return self.out(x.transpose(1, 2).reshape(b, t, c * f))
+
+    def plugin_weights(self) -> tuple[torch.Tensor, torch.Tensor]:
+        """The first convolution's fp32 taps [9, C] (tap kh * 3 + kw) and bias [C] for plugins.conv1_relu;
+        constants of an exported graph after :meth:`freeze_plugin_weights`."""
+        frozen = getattr(self, "_plugin_frozen", None)
+        if frozen is not None:
+            return frozen
+        conv = self.conv[0]
+        return conv.weight.float().reshape(conv.out_channels, 9).t(), conv.bias.float()
+
+    @torch.no_grad()
+    def freeze_plugin_weights(self, frozen: bool = True) -> None:
+        self._plugin_frozen = None
+        if frozen:
+            self._plugin_frozen = tuple(t.contiguous() for t in self.plugin_weights())
 
 
 class MultiHeadedAttention(nn.Module):

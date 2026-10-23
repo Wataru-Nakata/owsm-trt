@@ -111,7 +111,7 @@ def test_padded_vocab_is_exact():
     memory = m.prompt_proj(m.prompt_encoder(m.embed(args[1])))
     ref, enc = m(*args), m.encoder(feats, prefix, memory, m.ctc)
     with _padded_vocab(m, 64):
-        assert m.ctc.ctc_lo.out_features == 64 and m.encoder.conditioning_layer.in_features == 64
+        assert m.ctc.ctc_lo.weight.shape[0] == 64 and m.encoder.conditioning_layer.weight.shape[1] == 64
         assert torch.equal(m(*args), ref)
         torch.testing.assert_close(m.encoder(feats, prefix, memory, m.ctc), enc, rtol=0, atol=1e-5)
         assert (m.ctc.ctc_lo(enc).float().softmax(-1)[..., cfg.vocab_size :] == 0).all()
@@ -121,13 +121,30 @@ def test_padded_vocab_is_exact():
             torch.testing.assert_close(m.encoder(feats, prefix, memory, m.ctc), enc, rtol=0, atol=1e-5)
         finally:
             CTC.plugin = False
-    assert m.ctc.ctc_lo.out_features == cfg.vocab_size
+    assert m.ctc.ctc_lo.weight.shape[0] == cfg.vocab_size
+    assert m.encoder.conditioning_layer.weight.shape[1] == cfg.vocab_size
+    # FP8 encoders (opt-in): the conditioning layer is an fp8.QLinear
+    from owsm_trt import fp8
+
+    def run(f):
+        return m(f, *args[1:])
+
+    fp8.quantize(m.encoder, fp8.calibrate(m.encoder, run, [feats]))
+    assert isinstance(m.encoder.conditioning_layer, fp8.QLinear)
+    ref, enc = m(*args), m.encoder(feats, prefix, memory, m.ctc)
+    with _padded_vocab(m, 64):
+        assert isinstance(m.encoder.conditioning_layer, fp8.QLinear)
+        assert torch.equal(m(*args), ref)
+        torch.testing.assert_close(m.encoder(feats, prefix, memory, m.ctc), enc, rtol=0, atol=1e-5)
 
 
 @pytest.mark.skipif(not plugins.available(), reason="needs CUDA, TensorRT's plugin API and NVRTC")
-def test_ctc_row_plugins(tmp_path):
+@pytest.mark.parametrize("tactic", [None, 1, 4])  # None: TensorRT's pick
+def test_ctc_row_plugins(tmp_path, tactic, monkeypatch):
     """softmax_rows / argmax_rows as TensorRT plugins against PyTorch, ties included."""
     import tensorrt as trt
+
+    monkeypatch.setattr(plugins, "rows_override", tactic)
 
     from owsm_trt.build import BuildOptions, _build
 
@@ -218,3 +235,74 @@ def test_fusable_silu():
     torch.testing.assert_close(
         FusableSiLU()(x.half()).float(), F.silu(x.half()).float(), rtol=1e-3, atol=1e-3
     )
+
+
+def test_conv1_plugin_op_matches_subsampling():
+    """Conv2dSubsampling with its first convolution + ReLU as the conv1_relu op (its PyTorch implementation),
+    weights frozen or not: the same output."""
+    from test_model import TINY
+
+    from owsm_trt.modeling import Conv2dSubsampling, OWSMModel
+
+    torch.manual_seed(0)
+    embed = OWSMModel(TINY).eval().requires_grad_(False).encoder.embed
+    x = torch.randn(2, 101, TINY.n_mels)
+    ref = embed(x)
+    Conv2dSubsampling.plugin = True
+    try:
+        torch.testing.assert_close(embed(x), ref, rtol=1e-5, atol=1e-5)
+        embed.freeze_plugin_weights()
+        torch.testing.assert_close(embed(x), ref, rtol=1e-5, atol=1e-5)
+    finally:
+        Conv2dSubsampling.plugin = False
+        embed.freeze_plugin_weights(False)
+
+
+@pytest.mark.skipif(not plugins.available(), reason="needs CUDA, TensorRT's plugin API and NVRTC")
+@pytest.mark.parametrize("c", [64, 1024])
+def test_conv1_tensorrt_plugin(tmp_path, c):
+    """conv1_relu as a TensorRT plugin (HWC8 output) feeding TensorRT's convolution, against PyTorch."""
+    import tensorrt as trt
+
+    from owsm_trt.build import BuildOptions, _build
+
+    class Net(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.c1, self.c2 = nn.Conv2d(1, c, 3, 2), nn.Conv2d(c, c, 3, 2)
+
+        def forward(self, x):
+            w = self.c1.weight.float().reshape(c, 9).t().contiguous()
+            return self.c2(plugins.conv1_relu(x, w, self.c1.bias.float()))
+
+    torch.manual_seed(0)
+    net = Net().cuda().half().eval()
+    x = torch.randn(3, 301, 80, device="cuda", dtype=torch.float16)
+    plugins.register_conv1()
+    batch, time = torch.export.Dim("batch", min=1, max=4), torch.export.Dim("time", min=64, max=512)
+    torch.onnx.export(
+        net, (x,), tmp_path / "net.onnx", input_names=["x"], output_names=["y"],
+        dynamic_shapes={"x": {0: batch, 1: time}}, dynamo=True,
+        custom_translation_table=plugins.CONV1_ONNX_TRANSLATIONS,
+    )  # fmt: skip
+    _build(
+        tmp_path / "net.onnx",
+        tmp_path / "net.engine",
+        [{"x": ((1, 64, 80), (3, 301, 80), (4, 512, 80))}],
+        BuildOptions(),
+    )
+    logger = trt.Logger(trt.Logger.WARNING)
+    engine = trt.Runtime(logger).deserialize_cuda_engine((tmp_path / "net.engine").read_bytes())
+    layers = engine.create_engine_inspector().get_engine_information(trt.LayerInformationFormat.JSON)
+    assert "conv1_relu" in layers
+    ctx = engine.create_execution_context()
+    ctx.set_input_shape("x", tuple(x.shape))
+    y = torch.empty(tuple(ctx.get_tensor_shape("y")), device="cuda", dtype=torch.float16)
+    for name, t in (("x", x), ("y", y)):
+        ctx.set_tensor_address(name, t.data_ptr())
+    stream = torch.cuda.current_stream()
+    assert ctx.execute_async_v3(stream.cuda_stream)
+    stream.synchronize()
+    with torch.no_grad():
+        ref = net.c2.float()(torch.relu(net.c1.float()(x.float().unsqueeze(1))))
+    torch.testing.assert_close(y.float(), ref, rtol=2e-2, atol=2e-2)

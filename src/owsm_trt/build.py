@@ -1,5 +1,6 @@
 """Export OWSM to ONNX and build TensorRT engines (done once per GPU / TensorRT version)."""
 
+import copy
 import hashlib
 import json
 import logging
@@ -10,12 +11,14 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import torch
+import torch.nn.functional as F
 from torch import nn
 
 from . import attn_plugin, fp8, plugins
 from .config import OWSMConfig
 from .modeling import (
     CTC,
+    Conv2dSubsampling,
     DepthwiseConv1d,
     FeedForward,
     FusableSiLU,
@@ -31,7 +34,7 @@ log = logging.getLogger(__name__)
 DTYPES = {"float16": torch.float16, "bfloat16": torch.bfloat16, "float32": torch.float32}
 
 # Bump whenever the exported graphs change, so cached engines from older exports are not reused.
-EXPORT_VERSION = 605
+EXPORT_VERSION = 610
 MIN_FEATURE_FRAMES = 64  # shortest feature input of a trimming encoder engine
 
 
@@ -59,6 +62,9 @@ class BuildOptions:
     # E-Branchformer depthwise convolutions as a TensorRT plugin in [B, T, C] (plugins.py; fp16 only,
     # needs NVRTC at build time, else the usual grouped convolution between transposes)
     dwconv_plugin: bool = True
+    # The subsampling's first convolution (one input channel) + ReLU as a TensorRT plugin (plugins.py; fp16,
+    # NVRTC), writing the layout of the convolution after it (1.2 vs 2.5 ms for 16 x 30 s on an H200).
+    conv1_plugin: bool = True
     # OWSM-CTC: softmax (intermediate CTC) and argmax (output) over the vocabulary as TensorRT plugins
     # (plugins.py; fp16 only, needs NVRTC at build time). TensorRT's own kernels for them take 4x longer.
     ctc_plugins: bool = True
@@ -112,34 +118,42 @@ def _encoder_export(model: OWSMModel | OWSMCTCModel, opts: BuildOptions, batch: 
     and the exporter's custom translation table."""
     cfg = model.cfg
     feats_dims = {0: batch}
-    if trims_features(cfg):  # feats may stop after the audio: the encoder fills in frames of padding
-        feats_dims[1] = torch.export.Dim("time", min=MIN_FEATURE_FRAMES, max=cfg.num_frames)
-        model.encoder.fill = padding_frame(model)
-    MultiHeadedAttention.explicit = True  # 3-4% faster encoder at batch 8-16 than the exporter's SDPA
-    DepthwiseConv1d.plugin = opts.dwconv_plugin and opts.dtype == "float16" and plugins.available()
+    embed = model.encoder.embed
     convs = [m for m in model.encoder.modules() if isinstance(m, DepthwiseConv1d)]
-    silus = [
+    ffns = [
         m for m in model.encoder.modules() if isinstance(m, FeedForward) and isinstance(m.activation, nn.SiLU)
     ]
-    for m in silus:
-        m.activation = FusableSiLU()
-    if DepthwiseConv1d.plugin:
-        plugins.register()
-        for m in convs:  # the plugins' weights as constants of the graph
-            m.freeze_plugin_weights()
-    translations = {
-        **(fp8.ONNX_TRANSLATIONS if opts.fp8_encoder else {}),
-        **(plugins.ONNX_TRANSLATIONS if DepthwiseConv1d.plugin else {}),
-    }
     try:
+        if trims_features(cfg):  # feats may stop after the audio: the encoder fills in frames of padding
+            feats_dims[1] = torch.export.Dim("time", min=MIN_FEATURE_FRAMES, max=cfg.num_frames)
+            model.encoder.fill = padding_frame(model)
+        MultiHeadedAttention.explicit = True  # 3-4% faster encoder at batch 8-16 than the exporter's SDPA
+        for m in ffns:
+            m.activation = FusableSiLU()
+        DepthwiseConv1d.plugin = opts.dwconv_plugin and opts.dtype == "float16" and plugins.available()
+        if DepthwiseConv1d.plugin:
+            plugins.register()
+            for m in convs:  # the plugins' weights as constants of the graph
+                m.freeze_plugin_weights()
+        Conv2dSubsampling.plugin = opts.conv1_plugin and opts.dtype == "float16" and plugins.available()
+        if Conv2dSubsampling.plugin:
+            plugins.register_conv1()
+            embed.freeze_plugin_weights()
+        translations = {
+            **(fp8.ONNX_TRANSLATIONS if opts.fp8_encoder else {}),
+            **(plugins.ONNX_TRANSLATIONS if DepthwiseConv1d.plugin else {}),
+            **(plugins.CONV1_ONNX_TRANSLATIONS if Conv2dSubsampling.plugin else {}),
+        }
         yield feats_dims, translations or None
     finally:
         model.encoder.fill = None
         MultiHeadedAttention.explicit = False
+        Conv2dSubsampling.plugin = False
+        embed.freeze_plugin_weights(False)
         DepthwiseConv1d.plugin = False
         for m in convs:
             m.freeze_plugin_weights(False)
-        for m in silus:
+        for m in ffns:
             m.activation = nn.SiLU()
 
 
@@ -320,36 +334,36 @@ def _padded_vocab(model: OWSMCTCModel, multiple: int):
     """The CTC head and the intermediate CTC conditioning with the vocabulary padded to a multiple of
     ``multiple``: tokens that never win (logit -3e4: probability exactly 0 after the softmax in fp32) and
     add nothing (conditioning weights 0). The same results; TensorRT copies the logits and posteriors
-    into aligned rows (a multiple of 8) otherwise."""
+    into aligned rows (a multiple of 8) otherwise. (Works on FP8 layers too: copies with padded weights.)"""
     lo = model.ctc.ctc_lo
     cond = getattr(model.encoder, "conditioning_layer", None)
-    v = lo.out_features
+    v = lo.weight.shape[0]
     pad = -v % multiple
     if not pad:
         yield
         return
-    with torch.no_grad():
-        new_lo = nn.Linear(lo.in_features, v + pad, device=lo.weight.device, dtype=lo.weight.dtype)
-        new_lo.weight.zero_()
-        new_lo.weight[:v] = lo.weight
-        new_lo.bias.fill_(-3e4)
-        new_lo.bias[:v] = lo.bias
-        if cond is not None:
-            new_cond = nn.Linear(
-                v + pad, cond.out_features, device=cond.weight.device, dtype=cond.weight.dtype
-            )
-            new_cond.weight.zero_()
-            new_cond.weight[:, :v] = cond.weight
-            new_cond.bias.copy_(cond.bias)
-    model.ctc.ctc_lo = new_lo.requires_grad_(False)
+    model.ctc.ctc_lo = _with_weight(
+        lo, lambda w: F.pad(w, (0, 0, 0, pad)), lambda b: F.pad(b, (0, pad), value=-3e4)
+    )
     if cond is not None:
-        model.encoder.conditioning_layer = new_cond.requires_grad_(False)
+        model.encoder.conditioning_layer = _with_weight(cond, lambda w: F.pad(w, (0, pad)))
     try:
         yield
     finally:
         model.ctc.ctc_lo = lo
         if cond is not None:
             model.encoder.conditioning_layer = cond
+
+
+def _with_weight(layer: nn.Module, weight, bias=None) -> nn.Module:
+    """A copy of ``layer`` (nn.Linear or fp8.QLinear) with ``weight(layer.weight)`` and ``bias(layer.bias)``."""
+    new = copy.copy(layer)  # shares the buffers (e.g. FP8 scales); the parameters are replaced below
+    new._parameters = dict(layer._parameters)
+    with torch.no_grad():
+        new.weight = nn.Parameter(weight(layer.weight), requires_grad=False)
+        if bias is not None:
+            new.bias = nn.Parameter(bias(layer.bias), requires_grad=False)
+    return new
 
 
 def build_engines(

@@ -437,12 +437,13 @@ extern "C" __global__ void __launch_bounds__(NT) softmax_rows(const uint4* __res
   s = sh_s[0];
 #pragma unroll
   for (int w = 1; w < NW; w++) merge(m, s, sh_m[w], sh_s[w]);
+  const float inv = 1.f / s;
 #pragma unroll 4
   for (int j = threadIdx.x; j < NV; j += NT) {
     float f[8];
     unpack8(x[j], f);
 #pragma unroll
-    for (int k = 0; k < 8; k++) f[k] = exp2f((f[k] - m) * LOG2E) / s;
+    for (int k = 0; k < 8; k++) f[k] = exp2f((f[k] - m) * LOG2E) * inv;
     y[j] = pack8(f);
   }
 }
@@ -478,8 +479,11 @@ extern "C" __global__ void __launch_bounds__(NT) argmax_rows(const uint4* __rest
 }
 """
 
-# Threads per row (tactic i + 1 = ROW_THREADS[i]); a 50048-wide fp16 row is 6256 vectors of 8.
-ROW_THREADS = (128, 256, 512)
+# Threads per row (tactic i + 1 = ROW_THREADS[i]); a 50048-wide fp16 row is 6256 vectors of 8. (softmax_rows
+# alone at 16 x 376 x 50048 on an H200: 0.43 ms; a version holding each row in the registers of a cluster
+# of 2-8 blocks, read once: 0.45-0.57 ms.)
+ROW_THREADS = (128, 256, 512, 1024)
+rows_override: int | None = None  # one tactic of the row plugins instead of all (tests, benchmarks)
 VOCAB_MULTIPLE = 64  # CTC export: vocabulary padded to a multiple of this (see build._padded_vocab)
 
 
@@ -541,10 +545,10 @@ _ctc_registered = False
 
 def _rows_aot(trtp, kernel: str, x, tactic: int):
     try:
-        nt = ROW_THREADS[max(tactic, 1) - 1]
         vocab = int(x.shape[2])
         if vocab % 8:
             raise ValueError(f"{kernel}: the vocabulary ({vocab}) must be a multiple of 8")
+        nt = ROW_THREADS[max(tactic, 1) - 1]
         ptx, _ = nvrtc_ptx(ROWS_SOURCE, "rows.cu", (("V", vocab), ("NT", nt)))
         launch = trtp.KernelLaunchParams()
         launch.grid_x = x.shape_expr[1]
@@ -564,7 +568,8 @@ def register_ctc() -> None:
     import tensorrt as trt
     import tensorrt.plugin as trtp
 
-    tactics = list(range(1, len(ROW_THREADS) + 1))
+    def tactics() -> list[int]:
+        return [rows_override] if rows_override is not None else list(range(1, len(ROW_THREADS) + 1))
 
     @trtp.register(f"{NAMESPACE}::softmax_rows")
     def _desc_s(x: trtp.TensorDesc) -> Tuple[trtp.TensorDesc]:
@@ -572,7 +577,7 @@ def register_ctc() -> None:
 
     @trtp.autotune(f"{NAMESPACE}::softmax_rows")
     def _tune_s(x: trtp.TensorDesc, outputs: Tuple[trtp.TensorDesc]) -> List[trtp.AutoTuneCombination]:
-        return [trtp.AutoTuneCombination("FP16, FP16", "LINEAR", tactics)]
+        return [trtp.AutoTuneCombination("FP16, FP16", "LINEAR", tactics())]
 
     @trtp.aot_impl(f"{NAMESPACE}::softmax_rows")
     def _impl_s(x: trtp.TensorDesc, outputs: Tuple[trtp.TensorDesc], tactic: int
@@ -585,7 +590,7 @@ def register_ctc() -> None:
 
     @trtp.autotune(f"{NAMESPACE}::argmax_rows")
     def _tune_a(x: trtp.TensorDesc, outputs: Tuple[trtp.TensorDesc]) -> List[trtp.AutoTuneCombination]:
-        return [trtp.AutoTuneCombination("FP16, INT32", "LINEAR", tactics)]
+        return [trtp.AutoTuneCombination("FP16, INT32", "LINEAR", tactics())]
 
     @trtp.aot_impl(f"{NAMESPACE}::argmax_rows")
     def _impl_a(x: trtp.TensorDesc, outputs: Tuple[trtp.TensorDesc], tactic: int
@@ -593,3 +598,119 @@ def register_ctc() -> None:
         return _rows_aot(trtp, "argmax_rows", x, tactic)
 
     _ctc_registered = True
+
+
+# --- The subsampling's first convolution ----------------------------------------------------------------
+
+CONV1_SOURCE = r"""
+// relu(conv2d(x, 3x3, stride 2, one input channel)) for x [B, T, F] fp16 (LINEAR), w [9, C] fp32 (tap
+// kh * 3 + kw), bias [C] fp32 -> y [B, C, T1, F1] fp16 in TensorRT's HWC8 format: memory [B][T1][F1][C],
+// the layout the next (TensorRT) convolution reads. Block (t1, b): the 3 input rows of output row t1 in
+// shared memory, thread g computes channels 8g .. 8g + 7 (weights in registers) at every f1 of the row, a
+// warp writing 512 consecutive bytes per f1. Memory-bound on the output (C / 8 x the input).
+typedef unsigned short u16;
+__device__ __forceinline__ float h2f(u16 h) { float f; asm("cvt.f32.f16 %0, %1;" : "=f"(f) : "h"(h)); return f; }
+__device__ __forceinline__ u16 f2h(float f) { u16 h; asm("cvt.rn.f16.f32 %0, %1;" : "=h"(h) : "f"(f)); return h; }
+
+extern "C" __global__ void __launch_bounds__(NT) conv1_relu(
+    const u16* __restrict__ x, const float* __restrict__ w, const float* __restrict__ bias, int T, uint4* __restrict__ y) {
+  constexpr int F1 = (F - 3) / 2 + 1, G = C / 8;
+  __shared__ float xs[3][F];
+  const int t1 = blockIdx.x, b = blockIdx.y, g = threadIdx.x;
+  const int T1 = (T - 3) / 2 + 1;
+  for (int i = threadIdx.x; i < 3 * F; i += NT) xs[i / F][i % F] = h2f(x[((long)b * T + 2 * t1 + i / F) * F + i % F]);
+  float wr[9][8], br[8];
+  if (g < G) {
+#pragma unroll
+    for (int k = 0; k < 9; k++)
+#pragma unroll
+      for (int j = 0; j < 8; j++) wr[k][j] = w[k * C + 8 * g + j];
+#pragma unroll
+    for (int j = 0; j < 8; j++) br[j] = bias[8 * g + j];
+  }
+  __syncthreads();
+  if (g >= G) return;
+  uint4* out = y + ((long)b * T1 + t1) * F1 * G + g;
+  for (int f1 = 0; f1 < F1; f1++) {
+    float a[8];
+#pragma unroll
+    for (int j = 0; j < 8; j++) a[j] = br[j];
+#pragma unroll
+    for (int kh = 0; kh < 3; kh++)
+#pragma unroll
+      for (int kw = 0; kw < 3; kw++) {
+        const float v = xs[kh][2 * f1 + kw];
+#pragma unroll
+        for (int j = 0; j < 8; j++) a[j] = fmaf(wr[kh * 3 + kw][j], v, a[j]);
+      }
+    unsigned p[4];
+#pragma unroll
+    for (int i = 0; i < 4; i++)
+      p[i] = (unsigned)f2h(fmaxf(a[2 * i], 0.f)) | ((unsigned)f2h(fmaxf(a[2 * i + 1], 0.f)) << 16);
+    out[(long)f1 * G] = make_uint4(p[0], p[1], p[2], p[3]);
+  }
+}
+"""
+
+
+@torch.library.custom_op("owsm_trt::conv1_relu", mutates_args=())
+def conv1_relu(x: torch.Tensor, weight: torch.Tensor, bias: torch.Tensor) -> torch.Tensor:
+    """relu(conv2d(x[:, None], 3x3, stride 2)) computed in fp32: x [B, T, F], weight [9, C] (tap kh * 3 + kw,
+    fp32), bias [C] (fp32) -> [B, C, T1, F1] in x.dtype."""
+    c = weight.shape[1]
+    y = F.conv2d(x.unsqueeze(1).float(), weight.t().reshape(c, 1, 3, 3), bias, stride=2)
+    return y.relu().to(x.dtype)
+
+
+@conv1_relu.register_fake
+def _(x: torch.Tensor, weight: torch.Tensor, bias: torch.Tensor) -> torch.Tensor:
+    b, t, f = x.shape
+    return x.new_empty(b, weight.shape[1], (t - 3) // 2 + 1, (f - 3) // 2 + 1)
+
+
+CONV1_ONNX_TRANSLATIONS = {
+    torch.ops.owsm_trt.conv1_relu.default: _onnx_op("conv1_relu", ("x", "weight", "bias")),
+}
+_conv1_registered = False
+
+
+def register_conv1() -> None:
+    """Register ``owsm::conv1_relu`` with TensorRT (output in HWC8, for the convolution after it)."""
+    global _conv1_registered
+    if _conv1_registered:
+        return
+    import tensorrt as trt
+    import tensorrt.plugin as trtp
+
+    @trtp.register(f"{NAMESPACE}::conv1_relu")
+    def _desc(x: trtp.TensorDesc, w: trtp.TensorDesc, b: trtp.TensorDesc) -> Tuple[trtp.TensorDesc]:
+        t1 = (x.shape_expr[1] - 3) // 2 + 1
+        f1 = (x.shape_expr[2] - 3) // 2 + 1
+        return trtp.from_shape_expr((x.shape_expr[0], w.shape_expr[1], t1, f1), dtype=trt.float16)
+
+    @trtp.autotune(f"{NAMESPACE}::conv1_relu")
+    def _tune(x: trtp.TensorDesc, w: trtp.TensorDesc, b: trtp.TensorDesc, outputs: Tuple[trtp.TensorDesc]
+              ) -> List[trtp.AutoTuneCombination]:  # fmt: skip
+        return [trtp.AutoTuneCombination("FP16, FP32, FP32, FP16", "LINEAR, LINEAR, LINEAR, HWC8", [1])]
+
+    @trtp.aot_impl(f"{NAMESPACE}::conv1_relu")
+    def _impl(x: trtp.TensorDesc, w: trtp.TensorDesc, b: trtp.TensorDesc, outputs: Tuple[trtp.TensorDesc],
+              tactic: int) -> Tuple[Union[str, bytes], Union[str, bytes], trtp.KernelLaunchParams, trtp.SymExprs]:  # fmt: skip
+        try:
+            c, f = int(w.shape[1]), int(x.shape[2])
+            if c % 8:
+                raise ValueError(f"conv1_relu: {c} channels (a multiple of 8 needed)")
+            nt = -(-(c // 8) // 32) * 32
+            ptx, _ = nvrtc_ptx(CONV1_SOURCE, "conv1.cu", (("C", c), ("F", f), ("NT", nt)))
+            launch = trtp.KernelLaunchParams()
+            launch.grid_x = (x.shape_expr[1] - 3) // 2 + 1
+            launch.grid_y = x.shape_expr[0]
+            launch.block_x = nt
+            extra = trtp.SymIntExprs(1)
+            extra[0] = trtp.SymInt32(x.shape_expr[1])
+            return "conv1_relu", ptx, launch, extra
+        except Exception:
+            log.error("conv1_relu plugin:\n%s", traceback.format_exc())
+            raise
+
+    _conv1_registered = True
