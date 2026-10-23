@@ -184,8 +184,9 @@ class OWSM:
             if beam == 1:
                 windows = self._draft_windows(batch)
                 self._sessions[key] = GreedySession(
-                    self.backend, self.cfg, batch, *args, draft_windows=windows, rules=self.rules
-                )
+                    self.backend, self.cfg, batch, *args, draft_windows=windows, rules=self.rules,
+                    punctuation=self.tokenizer.punctuation,
+                )  # fmt: skip
             else:
                 self._sessions[key] = BeamSession(
                     self.backend, self.cfg, batch, beam, *args, rules=self.rules

@@ -424,6 +424,23 @@ def test_drafted_decoding_recovers_from_draft_errors(model):
         assert calls <= most, (name, calls)
 
 
+def test_resync_rules():
+    """Where the draft continues after the decoder emitted something else than draft[j]."""
+    from owsm_trt.runtime import _resync
+
+    draft, comma, time = [10, 11, 12, 13, 14, 15], 3, 40
+    punct = frozenset({comma, 4})
+    assert _resync(draft, 2, [10, 11, 13], set(), punct) == 4  # draft[2] was dropped: anchor on 13
+    assert _resync(draft, 2, [10, 11, 30], set(), punct) == 3  # unknown word: it replaces draft[2]
+    assert _resync(draft, 2, [10, 11, comma], set(), punct) == 2  # punctuation the draft lacks: inserted
+    assert _resync(draft, 2, [10, 11, time], {time}, punct) == 2  # never drafted (timestamps): inserted
+    with_commas = [10, comma, 11, 12, 13, comma, 14]
+    # a lone comma is no anchor (the next one in the draft is not this one)...
+    assert _resync(with_commas, 3, [10, comma, 11, comma], set(), punct) == 3
+    # ...but a comma after an anchored word is
+    assert _resync(with_commas, 4, [11, 12, 13, comma], set(), punct) == 6
+
+
 @pytest.mark.parametrize("split", [True, False])
 def test_decoder_step_with_per_row_offsets(model, split):
     """Rows at different cache offsets in one call == each row on its own."""

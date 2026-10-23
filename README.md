@@ -48,12 +48,12 @@ Test setup:
 |---|---:|---:|---:|---:|
 | ESPnet `Speech2Text`, beam 5 (its default), fp32 | 1 | 15 | 4.00% | |
 | ESPnet `Speech2Text`, greedy, fp32 | 1 | 25 | 3.91% | |
-| **owsm-trt, greedy** | 1 | **989** | 3.74% | 72/73 |
-| **owsm-trt, greedy** | 8 | **1842** | 3.91% | 73/73 |
-| **owsm-trt, greedy** | 16 | **1913** | 3.91% | 73/73 |
-| owsm-trt, greedy, FP8 encoder (experimental) | 1 | 985 | 3.91% | 69/73 |
-| owsm-trt, greedy, FP8 encoder (experimental) | 8 | 2067 | 3.83% | 69/73 |
-| owsm-trt, greedy, FP8 encoder (experimental) | 16 | 2132 | 3.83% | 70/73 |
+| **owsm-trt, greedy** | 1 | **1175** | 3.74% | 72/73 |
+| **owsm-trt, greedy** | 8 | **1971** | 3.91% | 73/73 |
+| **owsm-trt, greedy** | 16 | **2032** | 3.91% | 73/73 |
+| owsm-trt, greedy, FP8 encoder (experimental) | 1 | 1192 | 3.91% | 69/73 |
+| owsm-trt, greedy, FP8 encoder (experimental) | 8 | 2251 | 3.83% | 69/73 |
+| owsm-trt, greedy, FP8 encoder (experimental) | 16 | 2269 | 3.83% | 70/73 |
 | **owsm-trt, beam 5** | 1 | **103** | 4.09% | 72/73 |
 | ESPnet OWSM-CTC `best_path`, fp32 | 1 | 131 | 4.43% | |
 | **owsm-trt, OWSM-CTC** | 1 | **978** | 4.26% | 64/73 |
@@ -61,13 +61,14 @@ Test setup:
 | owsm-trt, OWSM-CTC, FP8 (experimental) | 1 | 1050 | 4.52% | 65/73 |
 | owsm-trt, OWSM-CTC, FP8 (experimental) | 16 | 1981 | 4.52% | 62/73 |
 
-For one stream that is 40× ESPnet's greedy decoding and 66× its default beam search, and 77× with batch 16; beam
-search itself is 7× faster, and OWSM-CTC 7× to 12×.
+For one stream that is 47× ESPnet's greedy decoding and 78× its default beam search, and 81× with batch 16; beam
+search itself is 7× faster, and OWSM-CTC 7× to 12×. On all of LibriSpeech test-clean (2620 utterances, 5.4 h)
+greedy decoding runs at RTFx 1259 with batch 1 and 2763 with batch 16, with the WER of the PyTorch backend (2.42%).
 
 Rows are TensorRT fp16 unless marked FP8. Where their transcripts differ from ESPnet's fp32 output, it is by a comma,
 a casing or a single word (fp16 rounding at a near-tie), and the WER moves by at most 0.17 points. In fp32
 (`backend="torch", dtype="float32"`) the transcripts are identical to ESPnet's: 73/73 for greedy, beam 5, greedy and
-beam 5 with timestamps, and OWSM-CTC. (TensorRT fp16 greedy with timestamps: 71/73, RTFx 739.)
+beam 5 with timestamps, and OWSM-CTC. (TensorRT fp16 greedy with timestamps: 71/73, RTFx 809.)
 
 The FP8 rows were calibrated on the first 8 test utterances. On the other 65 their WER is within one word of ESPnet's
 fp32: 4.00-4.11% vs 4.11% for the 1B model, 4.84% vs 4.74% for OWSM-CTC. That is one test set; check FP8 on your own
@@ -103,7 +104,9 @@ cached afterwards.
   its receptive field. Every later subsampled frame sees padding only, so it is the same for every recording: it is
   computed once when the engine is built and filled in. The encoder output is that of the full input (up to fp16
   rounding); 8 s recordings take 27-31% less encoder time at batch 8-16. This needs global mean normalization,
-  which every OWSM model has except OWSM-CTC v3.2.
+  which every OWSM model has except OWSM-CTC v3.2. The attention layers do need the whole 30 s: padding only up to
+  a multiple of 10 s raises the 1B model's WER on LibriSpeech test-clean from 2.42% to 9.0% (OWSM-CTC v4: 2.62% to
+  2.77%).
 * **Decoding work is minimized.**
   * Cross-attention keys/values are projected once per utterance.
   * The self-attention KV cache is static and comes in length buckets (64/128/256/512), so a step only reads as
@@ -117,13 +120,16 @@ cached afterwards.
   utterance and keeps those that equal the decoder's own choice, so the output is exactly the greedy output with far
   fewer calls (almost half of the test utterances need a single call). In a batch every utterance advances by its own
   amount, at its own cache offset. When the decoder and the draft disagree, the draft is re-anchored on the last few
-  emitted tokens. The draft is used for `task="asr"` only (the CTC head is trained on transcripts), and dropped when
-  it stops being accepted (POWSM's CTC head writes phones). `ctc_draft=False` turns it off. A call checks at most
+  emitted tokens; a token found nowhere near is taken to replace the drafted one, unless it is punctuation the
+  draft lacks (CTC drafts often miss commas). Tuned by replaying the drafts and outputs of LibriSpeech test-clean
+  (`scripts/draft_sim.py`), these rules make 18% fewer calls than before. The draft is used for `task="asr"` only
+  (the CTC head is trained on transcripts), and dropped when 8 calls have accepted fewer drafted tokens than calls
+  (POWSM's CTC head writes phones). `ctc_draft=False` turns it off. A call checks at most
   256 tokens (rows × window), so at batch 16 a row gets up to 15 drafted tokens per call: wider calls cost more than
   they save.
 * **Rows are refilled (greedy ASR of more than one batch).** Utterances need from 1 to 25 decoder calls, and a fixed
   batch would wait for its slowest one. Instead a row whose utterance is done takes the next one for the following
-  call, at its own cache offset (on the test set: 38 instead of 92 calls per pass at batch 8). The encoder works
+  call, at its own cache offset (on the test set: 29 instead of 92 calls per pass at batch 8). The encoder works
   ahead on a second CUDA stream, one batch at a time, into two staging buffers the rows are filled from.
 * **Beam search is ESPnet's.** `beam_size=k` runs ESPnet's batched beam search (sum of log-probabilities, no length
   normalization, its `end_detect` rule) on a batch × k grid of hypotheses, every step one CUDA graph.
@@ -154,7 +160,7 @@ OWSM-CTC models. Each checkpoint below was checked two ways on LibriSpeech dev-c
 
 | model (`espnet/...`) | ESPnet parity | TensorRT RTFx b1 / b8 | WER fp32 → fp16 |
 |---|---|---|---|
-| `owsm_v4_medium_1B` | 73/73 | 989 / 1842 | 3.91% → 3.74% |
+| `owsm_v4_medium_1B` | 73/73 | 1175 / 1971 | 3.91% → 3.74% |
 | `owsm_v4_small_370M` | 5/5 | 1052 / 1521 | 4.17% → 4.17% |
 | `owsm_v4_base_102M` | 8/8 | 1846 / 3657 | 8.70% → 8.61% |
 | `owsm_ctc_v4_1B` | 73/73 | 976 / 1436 | 4.43% → 4.26% |
@@ -177,12 +183,13 @@ OWSM-CTC models. Each checkpoint below was checked two ways on LibriSpeech dev-c
 | `powsm`, task `asr` | 3/3 | 138 / 509 | see below |
 | `powsm_ctc`, tasks `pr` / `asr` | 2/2 / 2/2 | 864 / 1823 (`pr`) | 72/73 identical to fp32 |
 
-The first, third and fourth rows were measured with the current code. The others were measured earlier, before CTC
-drafts worked in batches, rows were refilled, the padding was left out of the subsampling and multi-token calls got
-their own engine; the current code is faster on them too (`owsm_v4_base_102M` went from 1401 / 2194 to 1846 / 3657).
+The first row was measured with the current code, the third and fourth just before the last change to draft
+re-anchoring (which speeds up the third, not OWSM-CTC). The others were measured earlier, before CTC drafts worked in
+batches, rows were refilled, the padding was left out of the subsampling and multi-token calls got their own engine;
+the current code is faster on them too (`owsm_v4_base_102M` went from 1401 / 2194 to 1846 / 3657).
 
 With timestamps, greedy and beam-5 outputs are identical to ESPnet's too: `owsm_v3.1_ebf_base` 3/3 on CPU, and
-`owsm_v4_medium_1B` 73/73 for both searches in fp32 on GPU (TensorRT fp16 greedy: 71/73, RTFx 739).
+`owsm_v4_medium_1B` 73/73 for both searches in fp32 on GPU (TensorRT fp16 greedy: 71/73, RTFx 809).
 
 Notes:
 * Language codes follow each model's vocabulary (`eng`, or `en` for OWSM v1/v2). POWSM uses 20 s windows.
@@ -225,6 +232,9 @@ Scripts in `scripts/`:
 * `check_models.py`: TensorRT fp16 against PyTorch fp32 for several models.
 * `profile_phases.py`: CUDA-event timing of the frontend, encoder, prefill, decode steps, and verify windows.
 * `draft_report.py`: where CTC drafts and the decoder disagree.
+* `dump_drafts.py` + `draft_sim.py`: drafts and greedy outputs of a test set, and an exact CPU replay of drafted
+  decoding on them (an oracle stands in for the decoder) to count decoder calls for other draft rules.
+* `pad_experiment.py`: WER with inputs padded to less than 30 s.
 * `trt_layers.py`: per-layer TensorRT profile plus an engine-inspector dump.
 * `encoder_variants.py`: encoder engines built several ways (optimization profile, trimmed features, CTC argmax),
   timed per batch size.

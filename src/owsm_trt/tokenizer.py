@@ -1,6 +1,7 @@
 """Token ids <-> text, following ESPnet's token list + SentencePiece conversion."""
 
 import re
+import unicodedata
 
 import sentencepiece as spm
 
@@ -29,6 +30,13 @@ class Tokenizer:
         # tokens a CTC head never writes but the decoder does: drafted decoding skips over them
         times = range(self.first_time, self.last_time + 1) if times else range(0)
         self.not_drafted = frozenset(times) | ({self.notime} if self.notime is not None else set())
+        # pieces of punctuation only (with or without the word-start mark), which CTC drafts often lack
+        self.punctuation = frozenset(
+            i
+            for i, t in enumerate(token_list)
+            if (text := t.replace("\u2581", ""))
+            and all(unicodedata.category(c).startswith("P") for c in text)
+        )
 
     def lang_id(self, lang: str) -> int:
         key = lang.strip("<>")

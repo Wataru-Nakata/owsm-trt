@@ -74,13 +74,21 @@ for stage in $STAGES; do
       [[ "$extra" =~ w([0-9]+) ]] && flags+=(--max-window "${BASH_REMATCH[1]}")
       [[ "$extra" =~ t([0-9]+) ]] && flags+=(--draft-tokens "${BASH_REMATCH[1]}")
       if [[ "$extra" == *ts* ]]; then flags+=(--timestamps); ref="${REF_TS:-$OUT}/espnet_${kk#k}_float32_ts.json"; fi
+      [ "$ref" != none ] && flags+=(--compare $ref)  # REF=none: no transcripts to compare against
+      [ -n "${DATA:-}" ] && flags+=(--data "$DATA")
       run "$stage" 1800 "${PY[@]}" "$SNAP/scripts/eval_wer.py" --model "$MODEL" --backend "$be" --dtype "float$bits" \
-        --batch-size "${bb#b}" --beam "${kk#k}" "${flags[@]}" --save "$OUT/$stage.json" --compare $ref ;;
+        --batch-size "${bb#b}" --beam "${kk#k}" "${flags[@]}" --save "$OUT/$stage.json" ;;
     check_models)  # MODELS=a:b:c (HF ids, optionally id@task): TensorRT fp16 vs torch fp32 for each
       run check_models 3300 "${PY[@]}" "$SNAP/scripts/check_models.py" ${MODELS//:/ } ;;
     enc_variants)  # encoder engine variants (VARIANTS=base:b1:unroll...), timed per batch size
       run enc_variants 2400 "${PY[@]}" "$SNAP/scripts/encoder_variants.py" --model "$MODEL" \
         ${VARIANTS:+--variants "${VARIANTS//:/,}"} ;;
+    pad)  # WER with inputs padded to less than 30 s (PyTorch backend); DATA=manifest.json STEPS=30:10:5:2
+      run pad 3300 "${PY[@]}" "$SNAP/scripts/pad_experiment.py" --model "$MODEL" \
+        ${DATA:+--data "$DATA"} ${STEPS:+--steps "${STEPS//:/,}"} ;;
+    dump_drafts)  # CTC drafts + greedy outputs for scripts/draft_sim.py; DATA=manifest.json
+      run dump_drafts 1800 "${PY[@]}" "$SNAP/scripts/dump_drafts.py" --model "$MODEL" ${DATA:+--data "$DATA"} \
+        --out "$OUT/drafts.json" ;;
     pyfile)  # PYFILE=path/to/script.py (e.g. a one-off debug script under outputs/), run with MODEL as argument
       run pyfile 1200 "${PY[@]}" "$PYFILE" "$MODEL" ;;
     fp8_toy)  # does TensorRT build FP8 kernels from our quantize/dequantize pairs?
