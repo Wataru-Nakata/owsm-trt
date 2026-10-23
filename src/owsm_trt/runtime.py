@@ -328,6 +328,9 @@ class CTCSession:
         return self.ids
 
 
+_END = object()  # decode_stream: no batches left
+
+
 def capture_graph(body: Callable[[], None], stream: torch.cuda.Stream | None = None) -> torch.cuda.CUDAGraph:
     """Warm ``body`` up on a side stream (TensorRT shape setup, allocator), then capture it (on
     ``stream``, by default PyTorch's capture stream)."""
@@ -796,12 +799,14 @@ class GreedySession(_Session):
         held: list[tuple] = [(), ()]  # per slot: the cross-attention K/V of its batch
         paths: list = [None, None]  # per slot: its CTC best paths, copied to the host after the encoder
 
-        def launch(s: int) -> bool:  # encode the next batch into staging slot s, if there is one yet
+        def launch(s: int) -> bool:  # encode the next batch into staging slot s; False: none yet
             nonlocal count
             with torch.cuda.stream(side) if cuda else nullcontext():
-                feats = next(batches, None)
+                feats = next(batches, _END)
                 if feats is None:
                     return False
+                if feats is _END:
+                    return True  # no more: the slot stays empty
                 e = feats.shape[0]
                 # a smaller batch (the last one) gets buffers of its size rather than padding rows
                 bufs = self._stage[s] if e == self.rows else self._staging(s, e)
