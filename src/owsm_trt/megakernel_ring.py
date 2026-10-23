@@ -18,8 +18,6 @@ Loops over K tiles are runtime loops and the layer loop adds an opaque zero to i
 _opaque0): unrolled or hoisted, their address and descriptor tensors stay live and spill.
 """
 
-import os
-
 import torch
 
 from .megakernel_gluon import MAX_TOKENS, _log2, _pow2, available, gluon
@@ -46,21 +44,23 @@ if gluon is not None:
         _now,
         _prefetch_rows,
         _self_attn_g,
-        _stats_finish,
-        _stats_load,
         _store_res,
     )
 
 __all__ = ["RingDecoder", "available", "MAX_TOKENS", "ROUTE_TOKENS", "ROUTE_ROWS"]
 
-# two accumulators per unit (even / odd ring slots; OWSM_RING_ACC2=0: one)
-ACC2 = gl.constexpr(os.environ.get("OWSM_RING_ACC2", "1") == "1") if gluon is not None else False
 
 # calls of up to ROUTE_TOKENS tokens and ROUTE_ROWS rows go to the kernel (MegaBackend)
 ROUTE_TOKENS = MAX_TOKENS
 ROUTE_ROWS = 8
 
 if gluon is not None:
+    from triton.experimental.gluon import constexpr_function
+
+    @constexpr_function
+    def _np2(n):
+        """The smallest power of 2 >= n (block shapes must be powers of 2)."""
+        return 1 << max(0, (int(n) - 1).bit_length())
 
     @gluon.jit
     def _prod_units(desc, row0, c, U, pid, P, ring, full, empty, LKS: gl.constexpr, KW: gl.constexpr,
@@ -168,6 +168,24 @@ if gluon is not None:
         return gl.inline_asm_elementwise("mov.u32 $0, 0;", "=r", [], dtype=gl.int32, is_pure=False, pack=1)
 
     @gluon.jit
+    def _stats_r(st, M, eps, NPART: gl.constexpr, PART: gl.constexpr, D: gl.constexpr, MTP: gl.constexpr,
+                 NW: gl.constexpr):  # fmt: skip
+        """Mean and 1/std per token of the residual stream from its NPART parts' statistics in st [2, NPART, M]
+        (mean, sum of squared deviations over PART features each; exact parallel combination; NPART need not be a
+        power of 2)."""
+        NPP: gl.constexpr = _np2(NPART)
+        ol: gl.constexpr = gl.BlockedLayout([1, 1], [32 // MTP, MTP], [NW, 1], [1, 0])
+        p = gl.arange(0, NPP, layout=gl.SliceLayout(1, ol))
+        t = gl.arange(0, MTP, layout=gl.SliceLayout(0, ol))
+        m = (t < M)[None, :] & (p < NPART)[:, None]
+        mu = gl.load(st + p[:, None] * M + t[None, :], mask=m, other=0.0, cache_modifier=".cg")
+        m2 = gl.load(st + (NPART + p[:, None]) * M + t[None, :], mask=m, other=0.0, cache_modifier=".cg")
+        mean = gl.sum(mu, axis=0) / NPART
+        dev = gl.where(m, mu - mean[None, :], 0.0)
+        var = (gl.sum(m2, axis=0) + PART * gl.sum(dev * dev, axis=0)) / D
+        return mean, 1.0 / gl.sqrt(var + eps)
+
+    @gluon.jit
     def _x_load(x, XS, HO, M, xbuf, NKC: gl.constexpr, N: gl.constexpr, MTP: gl.constexpr, LMTP: gl.constexpr,
                 HL: gl.constexpr, NW: gl.constexpr):  # fmt: skip
         """cp.async of the B side, one K chunk after another (small address tensors): xbuf[chunk] rows (h, t) =
@@ -202,43 +220,30 @@ if gluon is not None:
             version=[3, 0], warps_per_cta=[NW, 1], instr_shape=[16, N, 16]
         )
         acc = gl.zeros([BM, N], gl.float32, layout=mma)
-        if ACC2:  # even / odd chunks into two accumulators: independent wgmma chains
-            acc1 = gl.zeros([BM, N], gl.float32, layout=mma)
-            for k2 in range(NKC // CK // 2):
-                slot = c & (NSLOT - 1)
-                mbarrier.wait(full.index(slot), (c >> LNS) & 1)
-                for j in gl.static_range(CK):
-                    acc = warpgroup_mma(ring.index(slot * CK + j),
-                                        xbuf.index(2 * k2 * CK + j).slice(0, N).permute((1, 0)), acc, is_async=True)  # fmt: skip
-                acc, acc1 = warpgroup_mma_wait(CK, deps=[acc, acc1])
-                if k2 > 0:
-                    mbarrier.arrive(empty.index((c - 1) & (NSLOT - 1)))
-                c += 1
-                slot = c & (NSLOT - 1)
-                mbarrier.wait(full.index(slot), (c >> LNS) & 1)
-                for j in gl.static_range(CK):
-                    acc1 = warpgroup_mma(ring.index(slot * CK + j),
-                                         xbuf.index((2 * k2 + 1) * CK + j).slice(0, N).permute((1, 0)), acc1,
-                                         is_async=True)  # fmt: skip
-                acc, acc1 = warpgroup_mma_wait(CK, deps=[acc, acc1])
+        # even / odd slots into two accumulators: independent wgmma chains
+        acc1 = gl.zeros([BM, N], gl.float32, layout=mma)
+        for k2 in range(NKC // CK // 2):
+            slot = c & (NSLOT - 1)
+            mbarrier.wait(full.index(slot), (c >> LNS) & 1)
+            for j in gl.static_range(CK):
+                acc = warpgroup_mma(ring.index(slot * CK + j),
+                                    xbuf.index(2 * k2 * CK + j).slice(0, N).permute((1, 0)), acc, is_async=True)  # fmt: skip
+            acc, acc1 = warpgroup_mma_wait(CK, deps=[acc, acc1])
+            if k2 > 0:
                 mbarrier.arrive(empty.index((c - 1) & (NSLOT - 1)))
-                c += 1
-            acc, acc1 = warpgroup_mma_wait(0, deps=[acc, acc1])
+            c += 1
+            slot = c & (NSLOT - 1)
+            mbarrier.wait(full.index(slot), (c >> LNS) & 1)
+            for j in gl.static_range(CK):
+                acc1 = warpgroup_mma(ring.index(slot * CK + j),
+                                     xbuf.index((2 * k2 + 1) * CK + j).slice(0, N).permute((1, 0)), acc1,
+                                     is_async=True)  # fmt: skip
+            acc, acc1 = warpgroup_mma_wait(CK, deps=[acc, acc1])
             mbarrier.arrive(empty.index((c - 1) & (NSLOT - 1)))
-            acc = acc + acc1
-        else:
-            for kc in range(NKC // CK):
-                slot = c & (NSLOT - 1)
-                mbarrier.wait(full.index(slot), (c >> LNS) & 1)
-                for j in gl.static_range(CK):
-                    acc = warpgroup_mma(ring.index(slot * CK + j),
-                                        xbuf.index(kc * CK + j).slice(0, N).permute((1, 0)), acc, is_async=True)  # fmt: skip
-                acc = warpgroup_mma_wait(CK, deps=[acc])
-                if kc > 0:
-                    mbarrier.arrive(empty.index((c - 1) & (NSLOT - 1)))
-                c += 1
-            acc = warpgroup_mma_wait(0, deps=[acc])
-            mbarrier.arrive(empty.index((c - 1) & (NSLOT - 1)))
+            c += 1
+        acc, acc1 = warpgroup_mma_wait(0, deps=[acc, acc1])
+        mbarrier.arrive(empty.index((c - 1) & (NSLOT - 1)))
+        acc = acc + acc1
         return acc, c
 
     @gluon.jit
@@ -273,8 +278,7 @@ if gluon is not None:
         if pid < U:
             _x_load(x, XS, HO, M, xbuf, NKC, N, MTP, LMTP, HL, NW)
         if LN:
-            mu, m2 = _stats_load(st, M, NPART, MTP, NW)
-            mean, rstd = _stats_finish(mu, m2, eps, NPART, BM, D)
+            mean, rstd = _stats_r(st, M, eps, NPART, BM, D, MTP, NW)
             mean = gl.convert_layout(mean, gl.SliceLayout(0, el))
             rstd = gl.convert_layout(rstd, gl.SliceLayout(0, el))
         if pid < U:
@@ -347,13 +351,15 @@ if gluon is not None:
             gl.barrier()
             if TS:
                 gl.store(tsp + 6, _now())
-            if arrived == KS - 1:  # the last slice of the block
-                tot = out + gl.load(bias + n0 + rr)[:, None]
-                tot += gl.load(
+            if arrived == KS - 1:  # the last slice of the block: the sum in slice order, whichever it is
+                tot = gl.load(
                     x + tt[None, :] * D + n0 + rr[:, None], mask=tm, other=0.0, cache_modifier=".cg"
                 )
+                tot += gl.load(bias + n0 + rr)[:, None]
                 for j in gl.static_range(KS):
-                    if j != ks:
+                    if j == ks:
+                        tot += out
+                    else:
                         tot += gl.load(part + ((rb * KS + j) * BM) * MTP + po, cache_modifier=".cg")
                 gl.atomic_xchg(cnt + rb, 0, sem="relaxed", scope="gpu")
                 _store_res(tot, x, x2, st, n0, rb, M, BM, MTP, D, NPART, NW)
@@ -374,8 +380,7 @@ if gluon is not None:
         rr = gl.arange(0, BM, layout=gl.SliceLayout(1, el))
         tt = gl.arange(0, MTP, layout=gl.SliceLayout(0, el))
         _x_load(x2, 2 * D, D, M, xbuf, NKC, N, MTP, LMTP, 1, NW)
-        mu, m2 = _stats_load(st, M, NPART, MTP, NW)
-        mean, rstd = _stats_finish(mu, m2, eps, NPART, BM, D)
+        mean, rstd = _stats_r(st, M, eps, NPART, BM, D, MTP, NW)
         mean = gl.convert_layout(mean, gl.SliceLayout(0, el))
         rstd = gl.convert_layout(rstd, gl.SliceLayout(0, el))
         _x_wait()
@@ -596,7 +601,7 @@ if gluon is not None:
         P = gl.num_programs(0)
         sl: gl.constexpr = gl.NVMMASharedLayout(swizzle_byte_width=128, element_bitwidth=16, rank=2)
         ring = gl.allocate_shared_memory(gl.float16, [NSLOT * CK, BM, 64], sl)  # NSLOT chunks of CK tiles
-        xbuf = gl.allocate_shared_memory(gl.float16, [D // 64, NL, 64], sl)  # [K chunk, B rows, 64]
+        xbuf = gl.allocate_shared_memory(gl.float16, [_np2(D // 64), NL, 64], sl)  # [K chunk, B rows, 64]
         # padding 2 (not 1): the scratch is written with 8-byte vectors
         pl: gl.constexpr = gl.PaddedSharedLayout.with_identity_for([[NL, 2]], [BM, NL], [1, 0])
         scratch = gl.allocate_shared_memory(gl.float32, [BM, NL], pl)
@@ -632,10 +637,11 @@ class RingDecoder:
     """The decoder megakernel for any number of programs (see the module docstring); built on the weights
     :class:`owsm_trt.megakernel.MegaDecoder` prepares (LayerNorms folded in).
 
-    ``programs``: the number of programs (SMs it occupies) for single-row calls (default: half as many as the
-    largest stage has units, 32 for the 1B model: the most SMs left to the encoder that runs concurrently in
-    decode_stream, at two units per program), ``row_programs`` for calls of several rows (default: as many as
-    the largest stage has units). ``chunk``: [64, 64] weight tiles per ring slot (and per
+    ``programs``: the number of programs (SMs it occupies) for single-row calls while an encoder runs
+    concurrently (decode_stream; default: half as many as the largest stage has units, 32 for the 1B model:
+    the most SMs left to the encoder, at two units per program); ``solo_programs`` for single-row calls with
+    nothing alongside (``step_fn(..., solo=True)``) and ``row_programs`` for calls of several rows (default:
+    as many as the largest stage has units, 64). ``chunk``: [64, 64] weight tiles per ring slot (and per
     wait / release); the ring holds ``ring_kb`` KB. ``ahead``: GEMM stages ahead whose weights the producer
     also prefetches into L2. ``exclusive``: 3 idle warps more, so that a program takes all of its SM's
     registers (no other kernel's blocks beside it)."""
@@ -643,23 +649,26 @@ class RingDecoder:
     name = "megakernel-ring"
     argmax = True  # step_fn takes pred
 
-    def __init__(self, mega, programs: int | None = None, row_programs: int | None = None, num_warps: int = 4,
-                 chunk: int = 2, ring_kb: int = 128, maxs: int = 1 << 24, ts: bool = False,
-                 prefetch_attention: bool = True, ahead: int = 0, exclusive: bool = False):  # fmt: skip
+    def __init__(self, mega, programs: int | None = None, row_programs: int | None = None,
+                 solo_programs: int | None = None, num_warps: int = 4, chunk: int = 2, ring_kb: int = 128,
+                 maxs: int = 1 << 24, ts: bool = False, prefetch_attention: bool = True, ahead: int = 0,
+                 exclusive: bool = False):  # fmt: skip
         self.m = mega
         d, f = mega.D, mega.F
         dev = mega.device
-        pow2 = (d & (d - 1)) == 0 and f % d == 0 and ((f // d) & (f // d - 1)) == 0
-        if (not pow2 or not 256 <= d <= 1024 or d % mega.H or d // mega.H != 64 or chunk not in (1, 2, 4)
-                or num_warps not in (4, 8)):  # fmt: skip
+        bm = 16 * num_warps
+        ks = f // d if f % d == 0 else 0
+        if (d % bm or d % mega.H or d // mega.H != 64 or (d // 64) % 2 or not 256 <= d <= 1024 or ks < 1
+                or ks & (ks - 1) or chunk not in (1, 2, 4) or num_warps not in (4, 8)):  # fmt: skip
             raise ValueError("the model's shapes do not fit the ring megakernel's tiling")
         nsm = torch.cuda.get_device_properties(dev).multi_processor_count
-        self.bm = bm = 16 * num_warps  # weight rows per unit: one wgmma M tile per warpgroup
-        self.P = min(
-            nsm, programs or f // bm // 2
-        )  # (half the largest stage's units: SMs left to the encoder)
+        self.bm = bm  # weight rows per unit: one wgmma M tile per warpgroup
+        self.P = min(nsm, programs or f // bm // 2)
+        self.P_solo = min(nsm, solo_programs or f // bm)
         self.P_rows = min(nsm, row_programs or f // bm)
-        self.ck = min(chunk, d // 128)  # (an even number of chunks per unit)
+        while (d // 64) % (2 * chunk):  # (an even number of ring slots per unit: two accumulators)
+            chunk //= 2
+        self.ck = chunk
         self.slots = 1 << (ring_kb // (bm // 8 * self.ck)).bit_length() - 1  # a power of 2
         self.pw = 4 if exclusive else 1
         self.ahead = ahead
@@ -670,29 +679,36 @@ class RingDecoder:
         self.err = mega.err
         self.opts = {"TS": ts}
         self.programs = self.P
-        pmax = max(self.P, self.P_rows)
+        pmax = max(self.P, self.P_solo, self.P_rows)
         self.ts = torch.zeros((8 * mega.L + 3) * pmax * 8 if ts else 1, dtype=torch.int64, device=dev)
 
     def check(self) -> None:
         self.m.check()
 
-    def step_fn(
-        self, tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv, kind="decode", pred=None
-    ):
+    @property
+    def solo_differs(self) -> bool:
+        """Whether single-row calls take more SMs when nothing runs alongside (step_fn's ``solo``)."""
+        return self.P_solo != self.P
+
+    def step_fn(self, tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv, kind="decode", pred=None,
+                solo=False):  # fmt: skip
         """The call on these buffers (see MegaDecoder.step_fn); with ``pred`` [R, S] (int64) it also writes the
-        argmax of the logits there (``run.writes_pred``)."""
+        argmax of the logits there (``run.writes_pred``). ``solo``: no encoder runs alongside (single-row calls
+        take ``solo_programs`` then)."""
         m = self.m
         R, S = tokens.shape
         M = R * S
         if M > MAX_TOKENS:
             raise ValueError(f"the ring decoder kernel takes up to {MAX_TOKENS} tokens per call, not {M}")
         D, F, L, H = m.D, m.F, m.L, m.H
-        P = self.P if R == 1 else self.P_rows
+        P = (self.P_solo if solo else self.P) if R == 1 else self.P_rows
         dev = m.device
         mtp = max(4, _pow2(M))
         hl = 2 if mtp <= 16 else 1  # LayerNorm GEMMs: the residual stream as a hi/lo pair while it fits
         nl, n1 = max(8, hl * mtp), max(8, mtp)
-        ns = max(1, min(8, P // (R * H)))
+        # cross-attention key slices: for single-row calls from the programs alongside an encoder, also when
+        # solo (more programs), so that a call gives the same result either way
+        ns = max(1, min(8, (self.P if R == 1 else self.P_rows) // (R * H)))
         f16 = {"device": dev, "dtype": torch.float16}
         i32 = {"device": dev, "dtype": torch.int32}
         x = torch.zeros(M, D, device=dev)
