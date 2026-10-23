@@ -12,6 +12,7 @@ Both backends expose the same two operations on caller-owned buffers:
 import importlib.metadata
 import json
 import logging
+import os
 import re
 from array import array
 from bisect import bisect_left
@@ -67,7 +68,12 @@ class TorchBackend:
         return out
 
     def encode_fn(
-        self, feats: torch.Tensor, cross_k: torch.Tensor, cross_v: torch.Tensor, ctc_ids: torch.Tensor
+        self,
+        feats: torch.Tensor,
+        cross_k: torch.Tensor,
+        cross_v: torch.Tensor,
+        ctc_ids: torch.Tensor,
+        lane: int = 0,
     ) -> Callable[[], None]:
         """``encode`` on fixed buffers; ``run.ctc_ids`` is what it returns."""
 
@@ -197,11 +203,16 @@ class TRTBackend(_TRTEngines):
         return ids
 
     def encode_fn(
-        self, feats: torch.Tensor, cross_k: torch.Tensor, cross_v: torch.Tensor, ctc_ids: torch.Tensor
+        self,
+        feats: torch.Tensor,
+        cross_k: torch.Tensor,
+        cross_v: torch.Tensor,
+        ctc_ids: torch.Tensor,
+        lane: int = 0,
     ) -> Callable[[], None]:
         """``encode`` on fixed buffers with a context of its own, for CUDA-graph capture;
-        ``run.ctc_ids`` is what it returns."""
-        ctx = self._context(self.encoder, _batch_profile(self.profiles.get("encoder"), feats.shape[0]))
+        ``run.ctc_ids`` is what it returns. ``lane``: see :meth:`_context`."""
+        ctx = self._context(self.encoder, _batch_profile(self.profiles.get("encoder"), feats.shape[0]), lane)
         ids = self._bind_encoder(ctx, feats, cross_k, cross_v, ctc_ids)
 
         def run() -> None:
@@ -379,6 +390,11 @@ def ctc_buffers(cfg: OWSMConfig, batch: int, device) -> tuple[torch.Tensor, torc
 
 
 _END = object()  # decode_stream: no batches left
+# decode_stream with at most ENCODER_LANE_ROWS rows: its two staging slots are encoded on two streams, so
+# that two encoder calls run at the same time (TensorRT contexts with scratch memory of their own; the same
+# kernels on the same inputs: the same outputs). OWSM_TRT_ENCODER_LANES=0 turns it off.
+ENCODER_LANES = os.environ.get("OWSM_TRT_ENCODER_LANES", "1") != "0"
+ENCODER_LANE_ROWS = 1
 
 
 def capture_graph(body: Callable[[], None], stream: torch.cuda.Stream | None = None) -> torch.cuda.CUDAGraph:
@@ -511,7 +527,7 @@ class _Session:
         }
         self.use_cuda_graph = use_cuda_graph
         self.graphs: dict[int, torch.cuda.CUDAGraph] = {}
-        self._feats: torch.Tensor | None = None  # flat, viewed as encoder inputs of any length
+        self._feats: dict[int, torch.Tensor] = {}  # per lane: flat, viewed as encoder inputs of any length
         # Encoder graphs are captured on a stream of their own. Graphs captured on one stream share
         # PyTorch's cuBLAS workspace, and decode_stream runs the encoder while decoder graphs run
         # (with the torch backend, sharing it corrupts both).
@@ -587,12 +603,15 @@ class _Session:
                 after()
             return paths
         b, _, f = feats.shape
-        if self._feats is None:
-            self._feats = torch.zeros(b * self.cfg.num_frames * f, device=feats.device)
-        key = (cross_k.data_ptr(), tuple(feats.shape))
+        if lane not in self._feats:
+            self._feats[lane] = torch.zeros(b * self.cfg.num_frames * f, device=feats.device)
+        key = (cross_k.data_ptr(), tuple(feats.shape), lane)
         if key not in self._enc_graphs:
-            buf = self._feats[: feats.numel()].view(feats.shape)
-            run = self.backend.encode_fn(buf, cross_k, cross_v, ctc_ids)
+            buf = self._feats[lane][: feats.numel()].view(feats.shape)
+            if lane:
+                run = self.backend.encode_fn(buf, cross_k, cross_v, ctc_ids, lane=lane)
+            else:
+                run = self.backend.encode_fn(buf, cross_k, cross_v, ctc_ids)
 
             def body() -> None:
                 run()
@@ -869,7 +888,10 @@ class GreedySession(_Session):
             ids = self.ctc_ids
             self._stage_ids = [torch.zeros(ids.shape, dtype=ids.dtype, pin_memory=cuda) for _ in range(2)]
         main = torch.cuda.current_stream() if cuda else None
-        side = torch.cuda.Stream() if cuda else None
+        # a stream (and TensorRT contexts) per staging slot when the batch is small (ENCODER_LANES): its
+        # encoder calls leave most of the GPU idle, so the next two run at the same time
+        lanes = cuda and ENCODER_LANES and self.rows <= ENCODER_LANE_ROWS
+        sides = [torch.cuda.Stream() for _ in range(2 if lanes else 1)] if cuda else [None]
         dec = torch.cuda.Stream(priority=-1) if cuda and priority else main
         ready = [torch.cuda.Event() for _ in range(2)] if cuda else []
         copied = [torch.cuda.Event() for _ in range(2)] if cuda else []
@@ -881,6 +903,7 @@ class GreedySession(_Session):
 
         def launch(s: int) -> bool:  # encode the next batch into staging slot s; False: none yet
             nonlocal count
+            side = sides[s % len(sides)]
             with torch.cuda.stream(side) if cuda else nullcontext():
                 feats = next(batches, _END)
                 if feats is None:
@@ -893,7 +916,7 @@ class GreedySession(_Session):
                 bufs = self._stage[s] if e == self.rows else self._staging(s, e)
                 if cuda:
                     side.wait_event(copied[s])
-                ids = self._encoder(feats, *bufs)
+                ids = self._encoder(feats, *bufs, lane=s if len(sides) > 1 else 0)
                 held[s] = bufs[:2]
                 paths[s] = self._stage_ids[s].view(-1)[: ids.numel()].view(ids.shape)
                 paths[s].copy_(ids, non_blocking=True)  # read on the host once `ready`
@@ -932,7 +955,8 @@ class GreedySession(_Session):
 
         if cuda:
             dec.wait_stream(main)
-            side.wait_stream(main)
+            for side in sides:
+                side.wait_stream(main)
 
         def concurrent() -> bool:  # whether the encoder may run alongside the next decoder call: it runs, or
             # the call's meanwhile() (flush) launches it
@@ -947,7 +971,8 @@ class GreedySession(_Session):
             )  # fmt: skip
         if cuda:
             main.wait_stream(dec)
-            main.wait_stream(side)
+            for side in sides:
+                main.wait_stream(side)
         return [out[i] for i in range(count)], calls
 
     def _staging(self, slot: int, rows: int) -> tuple[torch.Tensor, ...]:

@@ -898,3 +898,33 @@ def test_packaged_fp8_scales(tmp_path, monkeypatch, caplog):
         assert _fp8_scales(model, True) is None
     assert "no FP8 scales shipped" in caplog.text
     assert _fp8_scales(model, str(files[0])) == files[0]  # a given file (with a warning: other checkpoint)
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="needs CUDA (streams)")
+def test_streamed_decoding_with_encoder_lanes(model, monkeypatch):
+    """decode_stream with one row: its two staging slots encoded on two streams at the same time give the
+    outputs of one encoder stream."""
+    import copy
+
+    import owsm_trt.runtime as runtime
+
+    torch.manual_seed(6)
+    m = copy.deepcopy(model).cuda()
+    dev = torch.device("cuda")
+    n = 7
+    feats = m.frontend(torch.randn(n, TINY.num_samples, device=dev))
+    sess = GreedySession(
+        TorchBackend(m), TINY, 1, 32, eos=1, dtype=torch.float32, device=dev, use_cuda_graph=True,
+        buckets=[8, 16, 32], draft_windows=(2, 4, 8),
+    )  # fmt: skip
+
+    def run(lanes: bool) -> list[list[int]]:
+        monkeypatch.setattr(runtime, "ENCODER_LANES", lanes)
+        batches = (feats[i : i + 1] for i in range(n))
+        out, _ = sess.decode_stream([2, 3, 4], batches, lambda paths: [[5, 6, 7]] * len(paths), 20)
+        return out
+
+    ref = run(False)
+    assert len(ref) == n
+    for _ in range(2):
+        assert run(True) == ref
