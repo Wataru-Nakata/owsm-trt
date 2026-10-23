@@ -368,13 +368,15 @@ if gluon is not None:
         return c
 
     @gluon.jit
-    def _out_r(x2, M, ring, full, empty, c, xbuf, scratch, st, eps, bout, cout, logits, amax, aidx, V, nrb, pid, P,
+    def _out_r(x2, M, ring, full, empty, c, xbuf, scratch, st, eps, bout, cout, logits, amax, aidx, ntm, FT, LT, S, V,
+               nrb, pid, P,
                D: gl.constexpr, N: gl.constexpr, MTP: gl.constexpr, LMTP: gl.constexpr, NPART: gl.constexpr,
                NW: gl.constexpr, NSLOT: gl.constexpr, LNS: gl.constexpr, CK: gl.constexpr, ARGMAX: gl.constexpr,
-               BM: gl.constexpr):  # fmt: skip
+               BM: gl.constexpr, NOTIME: gl.constexpr):  # fmt: skip
         """Final LayerNorm (folded) + output layer: blocks of BM rows pid, pid + P, ..., the B side (the
         residual stream's hi part) loaded once. ARGMAX: every block also stores its maximum per token and the
-        first row where it occurs (amax, aidx [blocks, MTP])."""
+        first row where it occurs (amax, aidx [blocks, MTP]); NOTIME: not over the timestamp tokens FT .. LT for
+        the tokens of rows whose flag ntm [R] is set (<notimestamps>)."""
         NKC: gl.constexpr = D // 64
         el: gl.constexpr = _el(BM, NW)
         rr = gl.arange(0, BM, layout=gl.SliceLayout(1, el))
@@ -384,6 +386,8 @@ if gluon is not None:
         mean = gl.convert_layout(mean, gl.SliceLayout(0, el))
         rstd = gl.convert_layout(rstd, gl.SliceLayout(0, el))
         _x_wait()
+        if NOTIME:
+            nt = gl.load(ntm + tt // S, mask=tt < M, other=0).to(gl.int32)
         for rb in range(pid, nrb, P):
             n0 = rb * BM
             rm = n0 + rr < V
@@ -395,6 +399,9 @@ if gluon is not None:
             gl.store(logits + tt[None, :] * V + n0 + rr[:, None], out, mask=(tt < M)[None, :] & rm[:, None])
             if ARGMAX:
                 om = gl.where(rm[:, None] & (tt >= 0)[None, :], out, float("-inf"))
+                if NOTIME:
+                    vv = n0 + rr
+                    om = gl.where(((vv >= FT) & (vv <= LT))[:, None] & (nt != 0)[None, :], float("-inf"), om)
                 mx = gl.max(om, axis=0)
                 ix = gl.min(gl.where(om == mx[None, :], rr[:, None], BM), axis=0) + n0
                 gl.store(amax + rb * MTP + tt, mx)
@@ -434,14 +441,14 @@ if gluon is not None:
             gl.store(ts + (g * P + pid) * 8, _now())
 
     @gluon.jit
-    def _consumer(tok, offs, emb, pe, xscale, bqkv, cqkv, bo, bcq, ccq, bco, b1, c1, b2, bout, cout,
+    def _consumer(tok, offs, TSTR, OSTR, emb, pe, xscale, bqkv, cqkv, bo, bcq, ccq, bco, b1, c1, b2, bout, cout,
                   kc, vc, C, ck, cv, T, logits, new_kv, x, x2, qkv, ob, q2, hb, st, part, cnt2, xp, xml, xcnt,
-                  bar, err, done, ts, amax, aidx, pred, R, S, L, V, eps, ring, full, empty, xbuf, scratch, pid, P,
+                  bar, err, done, ts, amax, aidx, pred, ntm, FT, LT, R, S, L, V, eps, ring, full, empty, xbuf, scratch, pid, P,
                   D: gl.constexpr, H: gl.constexpr, DK: gl.constexpr, F: gl.constexpr, LKS: gl.constexpr,
                   MTP: gl.constexpr, LMTP: gl.constexpr, HL: gl.constexpr, NL: gl.constexpr, LNL: gl.constexpr,
                   N1: gl.constexpr, LN1: gl.constexpr, SP: gl.constexpr, BT: gl.constexpr, NS: gl.constexpr,
                   NW: gl.constexpr, NSLOT: gl.constexpr, LNS: gl.constexpr, CK: gl.constexpr, MAXS: gl.constexpr, PFA: gl.constexpr,
-                  TS: gl.constexpr, ARGMAX: gl.constexpr, BM: gl.constexpr):  # fmt: skip
+                  TS: gl.constexpr, ARGMAX: gl.constexpr, BM: gl.constexpr, NOTIME: gl.constexpr):  # fmt: skip
         """The consumer warps: embedding, L layers of 8 stages, the output layer; a grid barrier between
         stages."""
         M = R * S
@@ -451,7 +458,7 @@ if gluon is not None:
         if TS:
             gl.store(ts + pid * 8, _now())
         for nu in range(pid, NPART, P):  # parts of BM features
-            _embed_g(nu, M, S, tok, offs, emb, pe, xscale, V, x, x2, st, D, BM, NPART, MTP, NW)
+            _embed_g(nu, M, S, tok, offs, TSTR, OSTR, emb, pe, xscale, V, x, x2, st, D, BM, NPART, MTP, NW)
         g = 1
         _stage_end(bar, err, g, P, pid, ts, MAXS, TS)
         c = 0
@@ -487,7 +494,7 @@ if gluon is not None:
             if PFA:
                 if pid_z < R * H:
                     cb = ((layer * R + pid_z // H) * H + pid_z % H).to(gl.int64) * C * DK
-                    off = gl.load(offs_z + pid_z // H)
+                    off = gl.load(offs_z + (pid_z // H) * OSTR)
                     _prefetch_rows(kc_z + cb, off, 128, NW)
                     _prefetch_rows(vc_z + cb, off, 128, NW)
             _gwait(bar, err, g * P, MAXS)
@@ -496,7 +503,25 @@ if gluon is not None:
                 gl.store(ts + (g * P + pid_z) * 8, _now())
             # self-attention -> ob
             _self_attn_g(
-                pid_z, P, R, S, layer, qkv_z, offs_z, kc_z, vc_z, C, new_kv_z, ob_z, D, H, DK, SP, BT, NW
+                pid_z,
+                P,
+                R,
+                S,
+                layer,
+                qkv_z,
+                offs_z,
+                OSTR,
+                kc_z,
+                vc_z,
+                C,
+                new_kv_z,
+                ob_z,
+                D,
+                H,
+                DK,
+                SP,
+                BT,
+                NW,
             )
             g += 1
             _stage_end(bar, err, g, P, pid_z, ts, MAXS, TS)
@@ -570,8 +595,8 @@ if gluon is not None:
                         ts + (g * P + pid_z) * 8, D, F, LKS, N1, LN1, MTP, LMTP, NPART, NW, NSLOT, LNS, CK, TS, BM)  # fmt: skip
             g += 1
             _stage_end(bar, err, g, P, pid_z, ts, MAXS, TS)
-        _out_r(x2, M, ring, full, empty, c, xbuf, scratch, st, eps, bout, cout, logits, amax, aidx, V, nrb, pid, P, D,
-               N1, MTP, LMTP, NPART, NW, NSLOT, LNS, CK, ARGMAX, BM)  # fmt: skip
+        _out_r(x2, M, ring, full, empty, c, xbuf, scratch, st, eps, bout, cout, logits, amax, aidx, ntm, FT, LT, S, V,
+               nrb, pid, P, D, N1, MTP, LMTP, NPART, NW, NSLOT, LNS, CK, ARGMAX, BM, NOTIME)  # fmt: skip
         if ARGMAX:  # the argmax over the output blocks' partials
             g += 1
             _stage_end(bar, err, g, P, pid, ts, MAXS, TS)
@@ -582,17 +607,18 @@ if gluon is not None:
 
     @gluon.jit
     def _decoder_kernel_r(
-        tok, offs, emb, pe, xscale,
+        tok, offs, TSTR, OSTR, emb, pe, xscale,
         dqkv, bqkv, cqkv, do_, bo, dcq, bcq, ccq, dco, bco, d1, b1, c1, d2, b2, dout, bout, cout,
         wqkv, wo, wcq, wco, w1, w2,
         kc, vc, C, ck, cv, T, logits, new_kv,
-        x, x2, qkv, ob, q2, hb, st, part, cnt2, xp, xml, xcnt, bar, err, done, ts, amax, aidx, pred,
+        x, x2, qkv, ob, q2, hb, st, part, cnt2, xp, xml, xcnt, bar, err, done, ts, amax, aidx, pred, ntm, FT, LT,
         R, S, L, V, eps,
         D: gl.constexpr, H: gl.constexpr, DK: gl.constexpr, F: gl.constexpr, LKS: gl.constexpr,
         MTP: gl.constexpr, LMTP: gl.constexpr, HL: gl.constexpr, NL: gl.constexpr, LNL: gl.constexpr,
         N1: gl.constexpr, LN1: gl.constexpr, SP: gl.constexpr, BT: gl.constexpr, NS: gl.constexpr,
         NW: gl.constexpr, NSLOT: gl.constexpr, LNS: gl.constexpr, CK: gl.constexpr, MAXS: gl.constexpr, PFA: gl.constexpr,
         AHEAD: gl.constexpr = 0, TS: gl.constexpr = False, ARGMAX: gl.constexpr = False, PW: gl.constexpr = 1,
+        NOTIME: gl.constexpr = False,
         BM: gl.constexpr = 64,
     ):  # fmt: skip
         """A decoder call (see the module docstring): shared memory, then the consumer warps and the producer
@@ -614,11 +640,11 @@ if gluon is not None:
         nrb = (V + BM - 1) // BM
         gl.warp_specialize(
             [
-                (_consumer, (tok, offs, emb, pe, xscale, bqkv, cqkv, bo, bcq, ccq, bco, b1, c1, b2, bout, cout, kc, vc,
+                (_consumer, (tok, offs, TSTR, OSTR, emb, pe, xscale, bqkv, cqkv, bo, bcq, ccq, bco, b1, c1, b2, bout, cout, kc, vc,
                              C, ck, cv, T, logits, new_kv, x, x2, qkv, ob, q2, hb, st, part, cnt2, xp, xml, xcnt, bar,
-                             err, done, ts, amax, aidx, pred, R, S, L, V, eps, ring, full, empty, xbuf, scratch, pid, P,
+                             err, done, ts, amax, aidx, pred, ntm, FT, LT, R, S, L, V, eps, ring, full, empty, xbuf, scratch, pid, P,
                              D, H, DK, F, LKS, MTP, LMTP, HL, NL, LNL, N1, LN1, SP, BT, NS, NW, NSLOT, LNS, CK, MAXS, PFA,
-                             TS, ARGMAX, BM)),
+                             TS, ARGMAX, BM, NOTIME)),
                 (_producer, (dqkv, do_, dcq, dco, d1, d2, dout, wqkv, wo, wcq, wco, w1, w2, ring, full, empty, pid, P,
                              L, nrb, D, F, LKS, NSLOT, LNS, CK, AHEAD, BM)),
             ],
@@ -691,10 +717,11 @@ class RingDecoder:
         return self.P_solo != self.P
 
     def step_fn(self, tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv, kind="decode", pred=None,
-                solo=False):  # fmt: skip
+                solo=False, notime=None):  # fmt: skip
         """The call on these buffers (see MegaDecoder.step_fn); with ``pred`` [R, S] (int64) it also writes the
-        argmax of the logits there (``run.writes_pred``). ``solo``: no encoder runs alongside (single-row calls
-        take ``solo_programs`` then)."""
+        argmax of the logits there (``run.writes_pred``), with ``notime`` = (flags [R] bool, first timestamp
+        token, last one) not over the timestamp tokens in the flagged rows (see MegaBackend.argmax). ``solo``: no
+        encoder runs alongside (single-row calls take ``solo_programs`` then)."""
         m = self.m
         R, S = tokens.shape
         M = R * S
@@ -730,20 +757,21 @@ class RingDecoder:
         argmax = pred is not None
         if pred is None:
             pred = torch.zeros(1, device=dev, dtype=torch.long)
+        ntm, ft, lt = notime if notime is not None else (torch.zeros(1, dtype=torch.bool, device=dev), 0, -1)
         dq, do_, dcq, dco, d1, d2, dout = self.descs
         C, T = self_k.shape[3], cross_k.shape[3]
         args = (
-            tokens, offset, m.emb, m.pe, m.xscale,
+            tokens, offset, tokens.stride(0), offset.stride(0), m.emb, m.pe, m.xscale,
             dq, m.bqkv, m.cqkv, do_, m.bo, dcq, m.bcq, m.ccq, dco, m.bco, d1, m.b1, m.c1, d2, m.b2, dout, m.bout,
             m.cout, m.wqkv, m.wo, m.wcq, m.wco, m.w1, m.w2,
             self_k, self_v, C, cross_k, cross_v, T, logits, new_kv,
-            x, x2, qkv, ob, q2, hb, st, part, cnt2, xp, xml, xcnt, bar, self.err, done, self.ts, amax, aidx, pred,
+            x, x2, qkv, ob, q2, hb, st, part, cnt2, xp, xml, xcnt, bar, self.err, done, self.ts, amax, aidx, pred, ntm, ft, lt,
             R, S, L, m.V, m.eps,
         )  # fmt: skip
         const = dict(
             D=D, H=H, DK=D // H, F=F, LKS=_log2(F // D), MTP=mtp, LMTP=_log2(mtp), HL=hl, NL=nl, LNL=_log2(nl), N1=n1,
             LN1=_log2(n1), SP=max(16, _pow2(S)), BT=64, NS=ns, NW=self.nw, NSLOT=self.slots, LNS=_log2(self.slots), CK=self.ck,
-            MAXS=self.maxs, PFA=self.pfa, AHEAD=self.ahead, TS=bool(self.opts["TS"]), ARGMAX=argmax, PW=self.pw, BM=bm,
+            MAXS=self.maxs, PFA=self.pfa, AHEAD=self.ahead, TS=bool(self.opts["TS"]), ARGMAX=argmax, PW=self.pw, BM=bm, NOTIME=argmax and notime is not None,
         )  # fmt: skip
 
         def run() -> None:
@@ -754,4 +782,5 @@ class RingDecoder:
         run.writes_cache = True
         run.writes_pred = argmax
         run.programs = P
+        run.kernel = self  # (profiling: the time stamps in self.ts)
         return run
