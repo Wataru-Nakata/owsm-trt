@@ -11,9 +11,9 @@ from pathlib import Path
 import torch
 from torch import nn
 
-from . import attn_plugin, fp8
+from . import attn_plugin, fp8, plugins
 from .config import OWSMConfig
-from .modeling import MultiHeadedAttention, OWSMCTCModel, OWSMModel, padding_frame
+from .modeling import DepthwiseConv1d, MultiHeadedAttention, OWSMCTCModel, OWSMModel, padding_frame
 from .runtime import cache_buckets
 
 log = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 DTYPES = {"float16": torch.float16, "bfloat16": torch.bfloat16, "float32": torch.float32}
 
 # Bump whenever the exported graphs change, so cached engines from older exports are not reused.
-EXPORT_VERSION = 14
+EXPORT_VERSION = 15
 MIN_FEATURE_FRAMES = 64  # shortest feature input of a trimming encoder engine
 
 
@@ -45,6 +45,9 @@ class BuildOptions:
     # prefill). Triton is needed to build them, not to run them; without it they are left out.
     attn_plugin: bool = True
     attn_plugin_steps: bool = True
+    # E-Branchformer depthwise convolutions as a TensorRT plugin in [B, T, C] (plugins.py; fp16 only,
+    # needs NVRTC at build time, else the usual grouped convolution between transposes)
+    dwconv_plugin: bool = True
 
 
 class _EncoderGraph(nn.Module):
@@ -94,6 +97,9 @@ def export_onnx(
         model.encoder.fill = padding_frame(model)
     feats = torch.randn(2, cfg.num_frames - 8, cfg.n_mels, device=dev)  # < max: not specialised
     MultiHeadedAttention.explicit = True  # 3-4% faster encoder at batch 8-16 than the exporter's SDPA
+    DepthwiseConv1d.plugin = opts.dwconv_plugin and opts.dtype == "float16" and plugins.available()
+    if DepthwiseConv1d.plugin:
+        plugins.register()
     try:
         torch.onnx.export(
             _EncoderGraph(model).eval(),
@@ -104,11 +110,16 @@ def export_onnx(
             dynamic_shapes={"feats": feats_dims},
             dynamo=True,
             external_data=True,
-            custom_translation_table=fp8.ONNX_TRANSLATIONS if opts.fp8_encoder else None,
+            custom_translation_table={
+                **(fp8.ONNX_TRANSLATIONS if opts.fp8_encoder else {}),
+                **(plugins.ONNX_TRANSLATIONS if DepthwiseConv1d.plugin else {}),
+            }
+            or None,
         )
     finally:
         model.encoder.fill = None
         MultiHeadedAttention.explicit = False
+        DepthwiseConv1d.plugin = False
 
     dec_path = export_decoder_onnx(model, out_dir / "decoder.onnx", opts, split_self_attention)
     return enc_path, dec_path
@@ -170,7 +181,6 @@ def _build(
     profiles: list[dict],
     opts: BuildOptions,
     opt_level: int | None = None,
-    aot_plugins: bool = False,
 ) -> None:
     import tensorrt as trt
 
@@ -179,7 +189,7 @@ def _build(
     flags = 0
     if hasattr(trt.NetworkDefinitionCreationFlag, "STRONGLY_TYPED"):
         flags |= 1 << int(trt.NetworkDefinitionCreationFlag.STRONGLY_TYPED)
-    if aot_plugins:  # Python plugins (attn_plugin) are compiled into the engine
+    if hasattr(trt.NetworkDefinitionCreationFlag, "PREFER_AOT_PYTHON_PLUGINS"):  # plugins in the engine
         flags |= 1 << int(trt.NetworkDefinitionCreationFlag.PREFER_AOT_PYTHON_PLUGINS)
     network = builder.create_network(flags)
     parser = trt.OnnxParser(network, logger)
@@ -301,7 +311,7 @@ def build_engines(
         plugins[name] = bool(use and plugin_onnx)
         if plugins[name]:
             try:
-                _build(plugin_onnx, engine_dir / f"{name}.engine", shapes, opts, level, aot_plugins=True)
+                _build(plugin_onnx, engine_dir / f"{name}.engine", shapes, opts, level)
             except Exception as e:  # noqa: BLE001 - e.g. kernels that do not compile for this GPU
                 log.warning("building %s.engine without attention plugins: %s", name, e)
                 plugins[name] = False

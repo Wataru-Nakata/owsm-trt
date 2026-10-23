@@ -207,13 +207,46 @@ class FeedForward(nn.Module):
 
 
 class DepthwiseConv1d(nn.Conv1d):
-    """Depthwise convolution over time of [B, T, C] input ('same' padding, ``nn.Conv1d`` weights)."""
+    """Depthwise convolution over time of [B, T, C] input ('same' padding, ``nn.Conv1d`` weights).
+
+    ``x`` may be a pair of tensors, concatenated along channels. ``residual``: returns ``x + conv(x)``;
+    ``gate``: returns ``gate[..., :C] * conv(x)``. With ``plugin`` set (TensorRT export), the convolution
+    is a custom op that becomes a TensorRT plugin working in [B, T, C] (see :mod:`owsm_trt.plugins`),
+    with the concatenation, residual and gate inside it.
+    """
+
+    plugin = False
+    plugin_cat = True  # the plugin concatenates a pair of inputs itself
 
     def __init__(self, channels: int, kernel: int):
         super().__init__(channels, channels, kernel, 1, (kernel - 1) // 2, groups=channels)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return super().forward(x.transpose(1, 2)).transpose(1, 2)
+    def forward(
+        self,
+        x: torch.Tensor | tuple[torch.Tensor, torch.Tensor],
+        residual: bool = False,
+        gate: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        if isinstance(x, tuple) and not (DepthwiseConv1d.plugin and DepthwiseConv1d.plugin_cat):
+            x = torch.cat(x, dim=-1)
+        if DepthwiseConv1d.plugin:
+            from . import plugins
+
+            w = self.weight.float()[:, 0].t()  # [K, C]
+            if residual:  # x + conv(x): one more tap of weight 1 at the centre
+                w = w + (torch.arange(w.shape[0], device=w.device) == self.padding[0]).to(w)[:, None]
+            b = self.bias.float()
+            if isinstance(x, tuple):
+                return plugins.dwconv1d_cat(*x, w, b)
+            if gate is not None:
+                return plugins.dwconv1d_gated(x, gate, w, b)
+            return plugins.dwconv1d(x, w, b)
+        y = super().forward(x.transpose(1, 2)).transpose(1, 2)
+        if residual:
+            y = x + y
+        if gate is not None:
+            y = gate[..., : y.shape[-1]] * y
+        return y
 
 
 class ConvolutionalSpatialGatingUnit(nn.Module):
@@ -224,8 +257,8 @@ class ConvolutionalSpatialGatingUnit(nn.Module):
         self.conv = DepthwiseConv1d(c, kernel)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x_r, x_g = x.chunk(2, dim=-1)
-        return x_r * self.conv(self.norm(x_g))
+        x_g = x.chunk(2, dim=-1)[1]
+        return self.conv(self.norm(x_g), gate=x)  # x_r * conv(norm(x_g)), x_r = x[..., :C]
 
 
 class ConvolutionalGatingMLP(nn.Module):
@@ -269,8 +302,8 @@ class EBranchformerLayer(nn.Module):
         x = x + 0.5 * self.feed_forward_macaron(self.norm_ff_macaron(x).to(dt)).to(r)
         x1 = self.attn(self.norm_mha(x).to(dt))
         x2 = self.cgmlp(self.norm_mlp(x).to(dt))
-        x_concat = torch.cat([x1, x2], dim=-1)  # [B, T, 2d]
-        x = x + self.merge_proj(x_concat + self.depthwise_conv_fusion(x_concat)).to(r)
+        x_concat = (x1, x2)  # [B, T, 2d], concatenated by the convolution
+        x = x + self.merge_proj(self.depthwise_conv_fusion(x_concat, residual=True)).to(r)
         x = x + 0.5 * self.feed_forward(self.norm_ff(x).to(dt)).to(r)
         if memory is not None and hasattr(self, "cross_attn"):
             x = x + self.cross_attn.cross(self.norm_cross_attn(x).to(dt), memory).to(r)
