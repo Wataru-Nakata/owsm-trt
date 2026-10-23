@@ -1,19 +1,32 @@
 """Export OWSM to ONNX and build TensorRT engines (done once per GPU / TensorRT version)."""
 
+import copy
 import hashlib
 import json
 import logging
 import shutil
 import time
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import torch
+import torch.nn.functional as F
 from torch import nn
 
 from . import attn_plugin, fp8, plugins
 from .config import OWSMConfig
-from .modeling import DepthwiseConv1d, MultiHeadedAttention, OWSMCTCModel, OWSMModel, padding_frame
+from .modeling import (
+    CTC,
+    Conv2dSubsampling,
+    DepthwiseConv1d,
+    FeedForward,
+    FusableSiLU,
+    MultiHeadedAttention,
+    OWSMCTCModel,
+    OWSMModel,
+    padding_frame,
+)
 from .runtime import cache_buckets
 
 log = logging.getLogger(__name__)
@@ -21,7 +34,7 @@ log = logging.getLogger(__name__)
 DTYPES = {"float16": torch.float16, "bfloat16": torch.bfloat16, "float32": torch.float32}
 
 # Bump whenever the exported graphs change, so cached engines from older exports are not reused.
-EXPORT_VERSION = 16
+EXPORT_VERSION = 610
 MIN_FEATURE_FRAMES = 64  # shortest feature input of a trimming encoder engine
 
 
@@ -49,6 +62,12 @@ class BuildOptions:
     # E-Branchformer depthwise convolutions as a TensorRT plugin in [B, T, C] (plugins.py; fp16 only,
     # needs NVRTC at build time, else the usual grouped convolution between transposes)
     dwconv_plugin: bool = True
+    # The subsampling's first convolution (one input channel) + ReLU as a TensorRT plugin (plugins.py; fp16,
+    # NVRTC), writing the layout of the convolution after it (1.2 vs 2.5 ms for 16 x 30 s on an H200).
+    conv1_plugin: bool = True
+    # OWSM-CTC: softmax (intermediate CTC) and argmax (output) over the vocabulary as TensorRT plugins
+    # (plugins.py; fp16 only, needs NVRTC at build time). TensorRT's own kernels for them take 4x longer.
+    ctc_plugins: bool = True
 
 
 class _EncoderGraph(nn.Module):
@@ -93,6 +112,51 @@ def decoder_input_names(n_layers: int) -> list[str]:
     return names
 
 
+@contextmanager
+def _encoder_export(model: OWSMModel | OWSMCTCModel, opts: BuildOptions, batch: torch.export.Dim):
+    """Export settings of an encoder (of either model kind); yields the dynamic dimensions of ``feats``
+    and the exporter's custom translation table."""
+    cfg = model.cfg
+    feats_dims = {0: batch}
+    embed = model.encoder.embed
+    convs = [m for m in model.encoder.modules() if isinstance(m, DepthwiseConv1d)]
+    ffns = [
+        m for m in model.encoder.modules() if isinstance(m, FeedForward) and isinstance(m.activation, nn.SiLU)
+    ]
+    try:
+        if trims_features(cfg):  # feats may stop after the audio: the encoder fills in frames of padding
+            feats_dims[1] = torch.export.Dim("time", min=MIN_FEATURE_FRAMES, max=cfg.num_frames)
+            model.encoder.fill = padding_frame(model)
+        MultiHeadedAttention.explicit = True  # 3-4% faster encoder at batch 8-16 than the exporter's SDPA
+        for m in ffns:
+            m.activation = FusableSiLU()
+        DepthwiseConv1d.plugin = opts.dwconv_plugin and opts.dtype == "float16" and plugins.available()
+        if DepthwiseConv1d.plugin:
+            plugins.register()
+            for m in convs:  # the plugins' weights as constants of the graph
+                m.freeze_plugin_weights()
+        Conv2dSubsampling.plugin = opts.conv1_plugin and opts.dtype == "float16" and plugins.available()
+        if Conv2dSubsampling.plugin:
+            plugins.register_conv1()
+            embed.freeze_plugin_weights()
+        translations = {
+            **(fp8.ONNX_TRANSLATIONS if opts.fp8_encoder else {}),
+            **(plugins.ONNX_TRANSLATIONS if DepthwiseConv1d.plugin else {}),
+            **(plugins.CONV1_ONNX_TRANSLATIONS if Conv2dSubsampling.plugin else {}),
+        }
+        yield feats_dims, translations or None
+    finally:
+        model.encoder.fill = None
+        MultiHeadedAttention.explicit = False
+        Conv2dSubsampling.plugin = False
+        embed.freeze_plugin_weights(False)
+        DepthwiseConv1d.plugin = False
+        for m in convs:
+            m.freeze_plugin_weights(False)
+        for m in ffns:
+            m.activation = nn.SiLU()
+
+
 def export_onnx(
     model: OWSMModel, out_dir: Path, opts: BuildOptions, split_self_attention: bool = False
 ) -> tuple[Path, Path]:
@@ -104,16 +168,8 @@ def export_onnx(
     batch = torch.export.Dim("batch", min=1, max=opts.max_batch)
 
     enc_path = out_dir / "encoder.onnx"
-    feats_dims = {0: batch}
-    if trims_features(cfg):  # feats may stop after the audio: the encoder fills in frames of padding
-        feats_dims[1] = torch.export.Dim("time", min=MIN_FEATURE_FRAMES, max=cfg.num_frames)
-        model.encoder.fill = padding_frame(model)
     feats = torch.randn(2, example_frames(cfg), cfg.n_mels, device=dev)
-    MultiHeadedAttention.explicit = True  # 3-4% faster encoder at batch 8-16 than the exporter's SDPA
-    DepthwiseConv1d.plugin = opts.dwconv_plugin and opts.dtype == "float16" and plugins.available()
-    if DepthwiseConv1d.plugin:
-        plugins.register()
-    try:
+    with _encoder_export(model, opts, batch) as (feats_dims, translations):
         torch.onnx.export(
             _EncoderGraph(model).eval(),
             (feats,),
@@ -123,16 +179,8 @@ def export_onnx(
             dynamic_shapes={"feats": feats_dims},
             dynamo=True,
             external_data=True,
-            custom_translation_table={
-                **(fp8.ONNX_TRANSLATIONS if opts.fp8_encoder else {}),
-                **(plugins.ONNX_TRANSLATIONS if DepthwiseConv1d.plugin else {}),
-            }
-            or None,
+            custom_translation_table=translations,
         )
-    finally:
-        model.encoder.fill = None
-        MultiHeadedAttention.explicit = False
-        DepthwiseConv1d.plugin = False
 
     dec_path = export_decoder_onnx(model, out_dir / "decoder.onnx", opts, split_self_attention)
     return enc_path, dec_path
@@ -247,17 +295,12 @@ def export_ctc_onnx(model: OWSMCTCModel, out_dir: Path, opts: BuildOptions) -> P
     batch = torch.export.Dim("batch", min=1, max=opts.max_batch)
     plen = torch.export.Dim("prompt", min=1, max=opts.max_prefill)
     path = out_dir / "ctc.onnx"
-    feats_dims = {0: batch}
-    if trims_features(cfg):  # as in export_onnx
-        feats_dims[1] = torch.export.Dim("time", min=MIN_FEATURE_FRAMES, max=cfg.num_frames)
-        model.encoder.fill = padding_frame(model)
     args = (
         torch.randn(2, example_frames(cfg), cfg.n_mels, device=dev),
         torch.zeros(2, 3, dtype=torch.long, device=dev),
         torch.zeros(2, 2, dtype=torch.long, device=dev),
     )
-    MultiHeadedAttention.explicit = True
-    try:
+    with _encoder_export(model, opts, batch) as (feats_dims, translations), _ctc_export(model, opts) as extra:
         torch.onnx.export(
             _CTCGraph(model).eval(),
             args,
@@ -267,12 +310,60 @@ def export_ctc_onnx(model: OWSMCTCModel, out_dir: Path, opts: BuildOptions) -> P
             dynamic_shapes={"feats": feats_dims, "prompt": {0: batch, 1: plen}, "prefix": {0: batch}},
             dynamo=True,
             external_data=True,
-            custom_translation_table=fp8.ONNX_TRANSLATIONS if opts.fp8_encoder else None,
+            custom_translation_table={**(translations or {}), **extra} or None,
         )
-    finally:
-        model.encoder.fill = None
-        MultiHeadedAttention.explicit = False
     return path
+
+
+@contextmanager
+def _ctc_export(model: OWSMCTCModel, opts: BuildOptions):
+    """OWSM-CTC export settings: the vocabulary padded (:func:`_padded_vocab`), softmax and argmax as
+    plugins (``opts.ctc_plugins``). Yields the custom translations for the exporter."""
+    CTC.plugin = opts.ctc_plugins and opts.dtype == "float16" and plugins.available()
+    if CTC.plugin:
+        plugins.register_ctc()
+    try:
+        with _padded_vocab(model, plugins.VOCAB_MULTIPLE):
+            yield plugins.CTC_ONNX_TRANSLATIONS if CTC.plugin else {}
+    finally:
+        CTC.plugin = False
+
+
+@contextmanager
+def _padded_vocab(model: OWSMCTCModel, multiple: int):
+    """The CTC head and the intermediate CTC conditioning with the vocabulary padded to a multiple of
+    ``multiple``: tokens that never win (logit -3e4: probability exactly 0 after the softmax in fp32) and
+    add nothing (conditioning weights 0). The same results; TensorRT copies the logits and posteriors
+    into aligned rows (a multiple of 8) otherwise. (Works on FP8 layers too: copies with padded weights.)"""
+    lo = model.ctc.ctc_lo
+    cond = getattr(model.encoder, "conditioning_layer", None)
+    v = lo.weight.shape[0]
+    pad = -v % multiple
+    if not pad:
+        yield
+        return
+    model.ctc.ctc_lo = _with_weight(
+        lo, lambda w: F.pad(w, (0, 0, 0, pad)), lambda b: F.pad(b, (0, pad), value=-3e4)
+    )
+    if cond is not None:
+        model.encoder.conditioning_layer = _with_weight(cond, lambda w: F.pad(w, (0, pad)))
+    try:
+        yield
+    finally:
+        model.ctc.ctc_lo = lo
+        if cond is not None:
+            model.encoder.conditioning_layer = cond
+
+
+def _with_weight(layer: nn.Module, weight, bias=None) -> nn.Module:
+    """A copy of ``layer`` (nn.Linear or fp8.QLinear) with ``weight(layer.weight)`` and ``bias(layer.bias)``."""
+    new = copy.copy(layer)  # shares the buffers (e.g. FP8 scales); the parameters are replaced below
+    new._parameters = dict(layer._parameters)
+    with torch.no_grad():
+        new.weight = nn.Parameter(weight(layer.weight), requires_grad=False)
+        if bias is not None:
+            new.bias = nn.Parameter(bias(layer.bias), requires_grad=False)
+    return new
 
 
 def build_engines(

@@ -1,6 +1,7 @@
 """transcribe_long on a tiny random model (CPU): window bookkeeping, drafts, the batched mode."""
 
 import dataclasses
+import functools
 
 import pytest
 import torch
@@ -206,3 +207,96 @@ def test_drafts_with_guessed_timestamps_are_greedy(model):
     (out,), plain = sess.decode_drafted(primer, [text], 40, times | {5})  # timestamps never drafted
     assert out == greedy
     assert calls["perfect"] < plain, (calls, plain)
+
+
+# --- OWSM-CTC ------------------------------------------------------------------------------------------
+
+CTC_TINY = dataclasses.replace(
+    TINY, dec_layers=0, dec_ffn=0, dec_heads=0, ctc_only=True, prompt_d=16, prompt_heads=2, prompt_ffn=32,
+    prompt_layers=2, interctc_layers=(1,), cross_attn_layers=(1,),
+)  # fmt: skip
+
+
+class _DistinctCTCBackend:
+    """The tiny CTC model's best paths shifted by a per-row function of the row's features, prompt and
+    prefix: rows mixed up between utterances, windows or batches show (the random model hardly listens)."""
+
+    name = "torch"
+
+    def __init__(self, model):
+        from owsm_trt.runtime import TorchCTCBackend
+
+        self.inner, self.cfg = TorchCTCBackend(model), model.cfg
+        self.calls: list[int] = []  # rows per call
+
+    def run_fn(self, feats, prompt, prefix, ctc_ids):
+        base = self.inner.run_fn(feats, prompt, prefix, ctc_ids)
+
+        def run() -> None:
+            base()
+            self.calls.append(feats.shape[0])
+            for b in range(feats.shape[0]):
+                seed = (
+                    int(feats[b].abs().sum() * 100) + 1009 * int(prompt[b].sum()) + 7 * int(prefix[b].sum())
+                )
+                g = torch.Generator().manual_seed(seed)
+                noise = torch.randint(0, 3, ctc_ids[b].shape, generator=g)  # many blanks and repeats
+                ctc_ids[b] = torch.where(noise == 0, 0, (ctc_ids[b] + 9 + noise * 7) % self.cfg.vocab_size)
+
+        return run
+
+
+@pytest.fixture(scope="module")
+def ctc_model():
+    from owsm_trt.modeling import OWSMCTCModel
+
+    torch.manual_seed(5)
+    m = OWSMCTCModel(CTC_TINY).eval().requires_grad_(False)
+    m.frontend.melmat.uniform_(0, 1)
+    m.fuse_projections()
+    return m
+
+
+def _ctc_owsm(model, max_batch: int = 4) -> OWSM:
+    opts = BuildOptions(dtype="float32", max_batch=max_batch)
+    return OWSM(
+        CTC_TINY, _Tokenizer(), model.frontend, _DistinctCTCBackend(model), opts, torch.device("cpu"),
+        use_cuda_graph=False,
+    )  # fmt: skip
+
+
+def test_ctc_batches_sorted_by_duration(ctc_model):
+    """OWSM-CTC transcribe: batches of similar durations, results in input order, as one at a time; the
+    prompt and prefix of a session follow the call's."""
+    torch.manual_seed(6)
+    sr = CTC_TINY.sample_rate
+    waves = [torch.randn(int(sr * s)) for s in (1.9, 0.4, 1.2, 0.7, 1.6, 0.2, 1.0)]
+    m = _ctc_owsm(ctc_model, max_batch=3)
+    one = [m.transcribe(w).tokens for w in waves]
+    assert len({tuple(t) for t in one}) == len(one)
+    out = m.transcribe(waves, batch_size=3)
+    assert [r.tokens for r in out] == one
+    assert m.backend.calls[-3:] == [3, 3, 1]
+    prompted = m.transcribe(waves[0], prompt="two words")
+    assert prompted.tokens != one[0]
+    assert m.transcribe(waves[0]).tokens == one[0]  # back to <na>
+    assert m.transcribe(waves[0], lang="deu", task="asr").tokens == one[0]  # (the stub has one language)
+    assert _ctc_owsm(ctc_model).transcribe(waves[0], prompt="two words").tokens == prompted.tokens
+
+
+def test_ctc_long_form_across_recordings(ctc_model):
+    """OWSM-CTC transcribe_long: the windows of all recordings in batches, as one recording at a time."""
+    torch.manual_seed(7)
+    sr = CTC_TINY.sample_rate
+    waves = [torch.randn(int(sr * s)) for s in (9.3, 1.1, 4.0, 2.3, 0.6)]
+    m = _ctc_owsm(ctc_model)
+    # (2 s context on each side of a 2 s window would leave nothing: 0.4 s)
+    m._long_ctc = functools.partial(OWSM._long_ctc, m, context_seconds=0.4)
+    one = [m.transcribe_long(w) for w in waves]
+    assert len({tuple(r.tokens) for r in one}) == len(one)
+    m.backend.calls.clear()
+    both = m.transcribe_long(waves)
+    assert [r.tokens for r in both] == [r.tokens for r in one]
+    assert [r.text for r in both] == [r.text for r in one]
+    assert [r.segments for r in both] == [r.segments for r in one]
+    assert max(m.backend.calls) == 4 and len(m.backend.calls) < len(waves)

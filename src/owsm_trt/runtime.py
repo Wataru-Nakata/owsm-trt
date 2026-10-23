@@ -303,18 +303,38 @@ def _batch_profile(profiles: list[dict] | None, batch: int) -> int:
 
 class CTCSession:
     """Static buffers and CUDA graphs for OWSM-CTC calls of one batch size and prompt length (a graph
-    per feature length)."""
+    per feature length).
 
-    def __init__(self, backend, cfg: OWSMConfig, batch: int, prompt_len: int, device, use_cuda_graph: bool):
+    ``shared``: (features, best paths) buffers of at least this session's size, to share with the
+    sessions of other batch sizes (calls on one stream run one at a time, and a caller reads the best
+    paths of a call before it makes the next one, or copies them in stream order)."""
+
+    def __init__(
+        self,
+        backend,
+        cfg: OWSMConfig,
+        batch: int,
+        prompt_len: int,
+        device,
+        use_cuda_graph: bool,
+        shared: tuple[torch.Tensor, torch.Tensor] | None = None,
+    ):
         self.backend, self.use_cuda_graph = backend, use_cuda_graph
-        self.feats = torch.zeros(batch * cfg.num_frames * cfg.n_mels, device=device)  # viewed per length
+        cols = cfg.n_prefix + cfg.enc_frames
+        if shared is None:
+            shared = ctc_buffers(cfg, batch, device)
+        self.feats = shared[0]  # viewed per feature length
+        self.ids = shared[1].view(-1)[: batch * cols].view(batch, cols)
         self.prompt = torch.zeros(batch, prompt_len, dtype=torch.long, device=device)
         self.prefix = torch.zeros(batch, 2, dtype=torch.long, device=device)
-        self.ids = torch.zeros(batch, cfg.n_prefix + cfg.enc_frames, dtype=torch.int32, device=device)
+        self.conditioning = None  # what prompt and prefix hold (see __call__)
         self._runs: dict[tuple, tuple] = {}  # feats shape -> (input view, closure, graph)
 
-    def __call__(self, feats: torch.Tensor, prompt: torch.Tensor, prefix: torch.Tensor) -> torch.Tensor:
-        """Best paths [B, 2 + T'] (frame-wise argmax; the first two frames are the prefix)."""
+    def __call__(
+        self, feats: torch.Tensor, prompt: torch.Tensor | None = None, prefix: torch.Tensor | None = None
+    ) -> torch.Tensor:
+        """Best paths [B, 2 + T'] (frame-wise argmax; the first two frames are the prefix). ``prompt`` and
+        ``prefix`` [B, 2]: None keeps those of the previous call."""
         key = tuple(feats.shape)
         if key not in self._runs:
             view = self.feats[: feats.numel()].view(feats.shape)
@@ -322,10 +342,19 @@ class CTCSession:
             self._runs[key] = (view, run, capture_graph(run) if self.use_cuda_graph else None)
         view, run, graph = self._runs[key]
         view.copy_(feats)
-        self.prompt.copy_(prompt)
-        self.prefix.copy_(prefix)
+        if prompt is not None:
+            self.prompt.copy_(prompt)
+        if prefix is not None:
+            self.prefix.copy_(prefix)
         graph.replay() if graph is not None else run()
         return self.ids
+
+
+def ctc_buffers(cfg: OWSMConfig, batch: int, device) -> tuple[torch.Tensor, torch.Tensor]:
+    """Features and best-path buffers for CTC sessions of up to ``batch`` rows (CTCSession ``shared``)."""
+    feats = torch.zeros(batch * cfg.num_frames * cfg.n_mels, device=device)
+    ids = torch.zeros(batch, cfg.n_prefix + cfg.enc_frames, dtype=torch.int32, device=device)
+    return feats, ids
 
 
 _END = object()  # decode_stream: no batches left
