@@ -23,6 +23,7 @@ from .modeling import (
     OWSMModel,
     convert_espnet_state_dict,
     frames_needed,
+    load_checkpoint,
     load_model,
 )
 from .runtime import (
@@ -857,7 +858,7 @@ def _decoder_kernel(runner, cfg, checkpoint: Path, dev: torch.device, which):
 
 def _load_decoder(cfg, checkpoint: Path) -> Decoder:
     """The decoder's weights (fp32, on the CPU) for the decoder megakernel."""
-    sd = convert_espnet_state_dict(torch.load(checkpoint, map_location="cpu", weights_only=True))
+    sd = convert_espnet_state_dict(load_checkpoint(checkpoint))
     dec = Decoder(cfg)
     dec.load_state_dict({k[len("decoder.") :]: v for k, v in sd.items() if k.startswith("decoder.")})
     return dec.eval().requires_grad_(False)
@@ -865,7 +866,7 @@ def _load_decoder(cfg, checkpoint: Path) -> Decoder:
 
 def _load_frontend(cfg, checkpoint: Path, device: torch.device) -> Frontend:
     """Only the fp32 frontend buffers are needed at runtime when the engines are cached."""
-    sd = torch.load(checkpoint, map_location="cpu", weights_only=True)
+    sd = load_checkpoint(checkpoint)
     fe = Frontend(cfg)
     state = {"melmat": sd["frontend.logmel.melmat"]}
     if fe.global_mvn:
