@@ -631,3 +631,46 @@ def test_fp8_encoder_quantization():
     assert any(isinstance(mod, fp8.QConv2d) for mod in q.encoder.modules())
     out = q.encoder(feats)
     assert float((out - ref).norm() / ref.norm()) < 0.1
+
+
+@pytest.mark.parametrize("plugins", [{"self", "cross"}, {"self"}, {"cross"}])
+@pytest.mark.parametrize("fused", [False, True], ids=["qkv", "fused_qkv"])
+def test_decoder_step_with_attention_ops(model, plugins, fused):
+    """The decoder's export path with attn_plugin ops (their PyTorch implementations) == the plain step."""
+    import copy
+
+    m = copy.deepcopy(model)
+    if fused:
+        m.fuse_projections()
+    torch.manual_seed(5)
+    L, H, dk, T = TINY.dec_layers, TINY.dec_heads, 8, TINY.enc_frames
+    sk, sv = torch.randn(L, 3, H, 16, dk), torch.randn(L, 3, H, 16, dk)  # garbage past the offsets
+    ck, cv = torch.randn(L, 3, H, T, dk), torch.randn(L, 3, H, T, dk)
+    tokens, offset = torch.randint(2, 50, (3, 4)), torch.tensor([0, 5, 12])
+    ref = m.decoder.step(tokens, offset, list(sk), list(sv), list(ck), list(cv))
+    m.decoder.plugins = frozenset(plugins)
+    logits, new_kv = m.decoder.step(tokens, offset, list(sk), list(sv), list(ck), list(cv))
+    torch.testing.assert_close(logits, ref[0], rtol=1e-4, atol=1e-4)
+    torch.testing.assert_close(new_kv, ref[1], rtol=1e-5, atol=1e-5)
+
+
+def test_decoder_export_with_attention_plugins(model, tmp_path):
+    """Each layer's attention becomes one node the TensorRT ONNX parser maps to an attn_plugin plugin."""
+    onnx = pytest.importorskip("onnx")
+    from owsm_trt.build import BuildOptions, export_decoder_onnx
+
+    opts = BuildOptions(dtype="float32", max_batch=4, capacity=32, max_prefill=8, max_verify=4)
+    path = export_decoder_onnx(model, tmp_path / "decoder.onnx", opts, plugins=frozenset({"self", "cross"}))
+    assert model.decoder.plugins == frozenset()
+    graph = onnx.load(str(path), load_external_data=False).graph
+    nodes = [n for n in graph.node if n.domain == "owsm"]
+    L = TINY.dec_layers
+    assert sorted(n.op_type for n in nodes) == ["cross_attn"] * L + ["self_attn"] * L
+    for n in nodes:
+        assert {a.name: a.s for a in n.attribute} == {"plugin_namespace": b"owsm", "plugin_version": b"1"}
+    self_nodes = [n for n in nodes if n.op_type == "self_attn"]
+    assert [list(n.input[1:]) for n in self_nodes] == [
+        [f"self_k_{i}", f"self_v_{i}", "offset"] for i in range(L)
+    ]
+    cross = [n for n in nodes if n.op_type == "cross_attn"]
+    assert [list(n.input[1:]) for n in cross] == [[f"cross_k_{i}", f"cross_v_{i}"] for i in range(L)]
