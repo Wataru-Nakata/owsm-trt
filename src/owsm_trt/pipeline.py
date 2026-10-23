@@ -53,8 +53,6 @@ PAUSE_SEARCH_SECONDS = 15.0
 # transcribe_long with batch_size > 1 (ESPnet's windows): the windows of all recordings in one stream,
 # a row taking the next window of any recording as soon as it is free (False: round by round)
 LONG_STREAM = True
-# transcribe_long's batched windows (cut at pauses / round by round) are decoded longest first
-LONGEST_FIRST = True
 
 
 @dataclass
@@ -761,9 +759,7 @@ class OWSM:
                 padded, lang=lang, task=task, timestamps=True, batch_size=bs, beam_size=beam
             )
             return out[:n]
-        # similar durations in an encoder batch (its features stop after the longest window); the longest
-        # first, so that the stream does not end on them
-        order = sorted(range(len(windows)), key=lambda i: len(windows[i]), reverse=LONGEST_FIRST)
+        order = sorted(range(len(windows)), key=lambda i: len(windows[i]))  # as transcribe()
         ends = iter([self._end_guess(len(windows[i])) for i in order])  # drafts are made in batch order
 
         def drafts_of(best_paths: torch.Tensor) -> list[list[int]]:

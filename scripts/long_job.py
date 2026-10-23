@@ -13,9 +13,8 @@ job runs the code as it was at submission. ``LONG_PLAN`` (colon-separated) picks
 * ``r<N>``: ESPnet's windows, the current windows of all recordings decoded together (batch size N)
 * ``noguess`` / ``guess``: the steps after it without / with guessed timestamps in drafts
 * ``rounds`` / ``stream``: ``r<N>`` steps after it round by round / as one stream (pipeline.LONG_STREAM)
-* ``asc`` / ``desc``: batched windows shortest / longest first (pipeline.LONGEST_FIRST)
-* ``fp32b``: PyTorch fp32 on LONG_FP32_LIMIT recordings: one at a time, as a stream (batch 16) and
-  round by round; the outputs should be the same
+* ``fp32b``: PyTorch fp32 on the recordings of the ``fp32`` step: one at a time, as a stream (batch 16)
+  and round by round; the outputs should be the same
 * ``prof``: GPU time of one 30 s encoder run and of single decoder calls per window size (batch 1)
 * ``fp32``: PyTorch fp32 on the first LONG_FP32_LIMIT (8) recordings (or those in LONG_IDS, comma-
   free: separated by '+'), sequential with guessed timestamps, without, and without drafts: the
@@ -107,9 +106,8 @@ def main() -> None:
         elif step[0] == "b" and step[1].isdigit():
             b, _, search = step[1:].partition("s")
             pipeline.PAUSE_SEARCH_SECONDS = float(search or 15)
-            order = "desc" if pipeline.LONGEST_FIRST else "asc"
-            evaluate(model, items, waves, int(b), repeat=3, save=str(out / f"long_{step}_{order}.json"),
-                     compare=[ref or seq], label=f"{step} {order}", cut_at_pauses=True)  # fmt: skip
+            evaluate(model, items, waves, int(b), repeat=3, save=str(out / f"long_{step}.json"),
+                     compare=[ref or seq], label=step, cut_at_pauses=True)  # fmt: skip
             pipeline.PAUSE_SEARCH_SECONDS = 15.0
         elif step[0] == "r" and step[1:].isdigit():
             name = f"long_{step}{'' if pipeline.LONG_STREAM else '_rounds'}.json"
@@ -120,15 +118,16 @@ def main() -> None:
             pipeline.TIMESTAMP_GUESSES = step == "guess"
         elif step in ("rounds", "stream"):
             pipeline.LONG_STREAM = step == "stream"
-        elif step in ("asc", "desc"):
-            pipeline.LONGEST_FIRST = step == "desc"
         elif step == "fp32b":
             n = int(os.environ.get("LONG_FP32_LIMIT", 8))
+            sel = [i for i, it in enumerate(items) if it["id"] in os.environ.get("LONG_IDS", "").split("+")]
+            sel = sel or list(range(min(n, len(items))))
+            items32, waves32 = [items[i] for i in sel], [waves[i] for i in sel]
             ref32 = OWSM.from_pretrained(model_dir, backend="torch", dtype="float32")
             first = str(out / "long_fp32b_one.json")
             for name, b, stream in (("one", 1, True), ("stream", 16, True), ("rounds", 16, False)):
                 pipeline.LONG_STREAM = stream
-                evaluate(ref32, items[:n], waves[:n], b, save=str(out / f"long_fp32b_{name}.json"),
+                evaluate(ref32, items32, waves32, b, save=str(out / f"long_fp32b_{name}.json"),
                          label=f"fp32 {name}", compare=[first] if name != "one" else [], warmup=False)  # fmt: skip
             pipeline.LONG_STREAM = True
             del ref32
