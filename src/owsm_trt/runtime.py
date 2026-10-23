@@ -209,6 +209,7 @@ class TRTBackend(_TRTEngines):
         self._bind(ctx, "cross_k", cross_k, False)
         self._bind(ctx, "cross_v", cross_v, False)
         self._bind(ctx, "ctc_ids", ctc_ids, False)
+        ctx.infer_shapes()
         b, t = ctx.get_tensor_shape("ctc_ids")
         if not 0 <= b * t <= ctc_ids.numel():
             raise ValueError(f"ctc_ids holds {ctc_ids.numel()} ids, the encoder writes {b} x {t}")
