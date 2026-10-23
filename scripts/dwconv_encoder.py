@@ -114,6 +114,7 @@ def main() -> None:
         try:
             if (flag, cat) not in exported:
                 exported[flag, cat] = export_onnx(model, tmp / name, opts)[0]
+            (tmp / name).mkdir(exist_ok=True)
             _build(exported[flag, cat], tmp / name / "encoder.engine", shapes, opts)
         except Exception:  # noqa: BLE001
             print(f"{name}: export/build failed:\n{traceback.format_exc()}", flush=True)

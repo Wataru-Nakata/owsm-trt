@@ -276,38 +276,11 @@ def cold(w: np.ndarray, bias: np.ndarray) -> None:
             )
 
 
-def ilp_sweep(w: np.ndarray, bias: np.ndarray) -> None:
-    """plugins.TACTICS with 1, 2, 4, 8 outputs interleaved per thread, at B=16 and B=1."""
-    for batch in (16, 1):
-        x = torch.randn(batch, T, C, device="cuda", dtype=torch.float16)
-        g = torch.randn(batch, T, 2 * C, device="cuda", dtype=torch.float16)
-        for kind in ("plain", "gated", "cat"):
-            ref = reference(x, w, bias, g if kind == "gated" else None)
-            for base in plugins.TACTICS:
-                times = []
-                for ilp in (1, 2, 4, 8):
-                    cfg = {**base, "ilp": ilp}
-                    try:
-                        y, us = direct(cfg, x, w, bias, g if kind == "gated" else None, kind == "cat")
-                    except Exception:  # noqa: BLE001
-                        print(f"{kind} {cfg}: failed:\n{traceback.format_exc()}", flush=True)
-                        times.append(float("nan"))
-                        continue
-                    if float((y.float() - ref).abs().max()) > 1e-2:
-                        print(f"{kind} {cfg}: WRONG, max abs err {float((y.float() - ref).abs().max()):.2e}")
-                    times.append(us)
-                print(
-                    f"B={batch:2d} {kind:5s} {base}: ILP 1/2/4/8 " + " ".join(f"{t:6.1f}" for t in times),
-                    flush=True,
-                )
-
-
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("model", nargs="?")
     ap.add_argument("--quick", action="store_true")
     ap.add_argument("--cold", action="store_true", help="direct launches only, inputs in L2 and in DRAM")
-    ap.add_argument("--ilp", action="store_true", help="direct launches only, plugins.TACTICS x ILP 1/2/4/8")
     ap.add_argument("--child")
     args = ap.parse_args()
     if args.child:
@@ -318,8 +291,6 @@ def main() -> None:
     bias = (rng.standard_normal(C) * 0.1).astype(np.float16)
     if args.cold:
         return cold(w, bias)
-    if args.ilp:
-        return ilp_sweep(w, bias)
     plugins.override = dict(v=2, tt=32, nt=128, nch=1)  # replaced per configuration below
     plugins.register()
     tmp = Path(tempfile.mkdtemp())
