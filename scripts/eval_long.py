@@ -4,7 +4,8 @@ python scripts/eval_long.py --model .cache/models/owsm_v4_medium_1B \
     --data .cache/longform/test_clean/manifest.json --save outputs/long_seq.json
 
 ``--batch-size 1`` is the sequential decoding (ESPnet's ``decode_long``, one recording at a time);
-``--batch-size > 1`` the batched mode (windows cut at pauses, all recordings at once).
+``--batch-size > 1`` decodes the windows of several recordings together, ``--pauses`` cuts windows at
+pauses instead (``transcribe_long(..., cut_at_pauses=True)``).
 """
 
 import argparse
@@ -156,6 +157,7 @@ def main() -> None:
     ap.add_argument("--limit", type=int, help="first N recordings only")
     ap.add_argument("--repeat", type=int, default=1)
     ap.add_argument("--no-draft", action="store_true")
+    ap.add_argument("--pauses", action="store_true", help="windows cut at pauses (cut_at_pauses=True)")
     ap.add_argument("--save")
     ap.add_argument("--compare", nargs="*", default=[])
     args = ap.parse_args()
@@ -164,7 +166,9 @@ def main() -> None:
     model = OWSM.from_pretrained(
         args.model, backend=args.backend, dtype=args.dtype, device=args.device, ctc_draft=not args.no_draft
     )
-    evaluate(model, items, waves, args.batch_size, args.repeat, args.save, args.compare)
+    evaluate(
+        model, items, waves, args.batch_size, args.repeat, args.save, args.compare, cut_at_pauses=args.pauses
+    )
 
 
 if __name__ == "__main__":

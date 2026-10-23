@@ -122,6 +122,22 @@ def pause_cuts(
     return cuts
 
 
+@dataclass
+class _Recording:
+    """transcribe_long's progress through one recording."""
+
+    wav: torch.Tensor
+    offset: int = 0  # first sample of the next window
+    prev: str | None = None  # text of the previous window (condition_on_prev_text)
+    segments: list[Segment] = field(default_factory=list)
+
+
+def _joined(segments: list[Segment]) -> Result:
+    return Result(
+        text=" ".join(s.text.strip() for s in segments if s.text.strip()), tokens=[], segments=segments
+    )
+
+
 class OWSM:
     """OWSM speech recognition / translation with a TensorRT (or PyTorch) backend.
 
@@ -465,17 +481,19 @@ class OWSM:
         skip_last_chunk_seconds: float = 0.2,
         beam_size: int = 1,
         batch_size: int = 1,
+        cut_at_pauses: bool = False,
     ) -> Result | list[Result]:
         """Long-form decoding with timestamps (port of ESPnet's ``Speech2Text.decode_long``).
 
         ``audio`` is one recording or a list of them. A recording is decoded one 30 s window at a
-        time, each window starting at the last complete utterance of the one before (as ESPnet does,
-        with the same output).
+        time, each window starting at the last complete utterance of the one before, as ESPnet does.
+        With ``batch_size > 1`` the next windows of up to that many recordings are decoded together
+        (the same output, up to fp16 rounding; a single recording gains nothing).
 
-        ``batch_size > 1`` (opt-in, faster, not ESPnet's output): each recording is cut at pauses into
-        windows of at most 30 s (the quietest point of the last 15 s of a window, see
-        :func:`pause_cuts`), and the windows of all recordings are decoded ``batch_size`` at a time.
-        Words are lost or doubled only where a cut falls inside a word.
+        ``cut_at_pauses=True`` (opt-in, faster, not ESPnet's output): each recording is cut at pauses
+        into windows of at most 30 s (the quietest point of the last 15 s of a window, see
+        :func:`pause_cuts`), and the windows of all recordings are decoded ``batch_size`` at a time, a
+        single recording too. Words are lost or doubled only where a cut falls inside a word.
 
         OWSM-CTC models are decoded in overlapping windows instead (ESPnet's ``ctc_log_probs``) and
         return a single segment.
@@ -484,70 +502,89 @@ class OWSM:
         waves = [self._wave(a, sr) for a in ([audio] if single else audio)]
         if self.cfg.ctc_only:
             results = [self._transcribe_long_ctc(w, lang, task) for w in waves]
-        elif batch_size > 1:
+        elif cut_at_pauses:
             if condition_on_prev_text:
-                raise ValueError("condition_on_prev_text needs sequential windows (batch_size=1)")
+                raise ValueError("condition_on_prev_text needs ESPnet's windows (cut_at_pauses=False)")
             results = self._long_batched(waves, lang, task, batch_size, beam_size, skip_last_chunk_seconds)
         else:
-            beam = self._check_beam(beam_size)
-            results = [
-                self._long_sequential(w, lang, task, condition_on_prev_text, end_time_threshold,
-                                      skip_last_chunk_seconds, beam)
-                for w in waves
-            ]  # fmt: skip
+            results = self._long_sequential(
+                waves, lang, task, condition_on_prev_text, end_time_threshold, skip_last_chunk_seconds,
+                self._check_beam(beam_size), batch_size,
+            )  # fmt: skip
         return results[0] if single else results
 
     def _long_sequential(
         self,
-        wav: torch.Tensor,
+        waves: list[torch.Tensor],
         lang: str,
         task: str,
         condition_on_prev_text: bool,
         end_time_threshold: float,
         skip_last_chunk_seconds: float,
         beam: int,
-    ) -> Result:
-        """ESPnet's ``decode_long`` on one recording."""
+        batch_size: int,
+    ) -> list[Result]:
+        """ESPnet's ``decode_long`` on each recording, window by window; with ``batch_size > 1`` the
+        current windows of all recordings are decoded together, round by round."""
         t, cfg = self.tokenizer, self.cfg
         fs, seg_len = cfg.sample_rate, cfg.num_samples
         end_id = t.first_time + round(end_time_threshold / cfg.time_resolution)
         if self.device.type == "cuda":
-            wav = wav.to(self.device)  # windows are cut on the device: no host copy per window
-        segments: list[Segment] = []
-        offset, prev = 0, None
-        while offset < len(wav):
-            chunk = wav[offset : offset + seg_len]
-            if len(chunk) / fs < skip_last_chunk_seconds:
+            waves = [w.to(self.device) for w in waves]  # windows are cut on the device: no copy per window
+        recs = [_Recording(w) for w in waves]
+        while True:
+            live = [
+                r
+                for r in recs
+                if r.offset < len(r.wav) and (len(r.wav) - r.offset) / fs >= skip_last_chunk_seconds
+            ]
+            if not live:
                 break
-            primer = self._primer(lang, task, True, prev if condition_on_prev_text else None)
-            ids = self._long_window(chunk, primer, beam, task == "asr")
-            kept, next_start = _window_cut(ids, t, end_id)
-            if next_start is None:  # no timestamps at all
-                segments.append(Segment(offset / fs, (offset + len(chunk)) / fs, t.decode(ids)))
-                offset += seg_len
-                continue
-            res = self._result(kept, offset / fs)
-            segments += res.segments
-            prev = "".join(s.text for s in res.segments)
-            advance = round((next_start - t.first_time) * cfg.time_resolution * fs)
-            offset += advance if advance > 0 else seg_len
-        text = " ".join(s.text.strip() for s in segments if s.text.strip())
-        return Result(text=text, tokens=[], segments=segments)
+            chunks = [r.wav[r.offset : r.offset + seg_len] for r in live]
+            if batch_size > 1 and len(live) > 1 and not condition_on_prev_text:
+                outs = [
+                    res.tokens
+                    for res in self._decode_windows(chunks, lang, task, batch_size, beam, fixed=True)
+                ]
+            else:
+                outs = []
+                for r, chunk in zip(live, chunks):
+                    primer = self._primer(lang, task, True, r.prev if condition_on_prev_text else None)
+                    outs.append(self._long_window(chunk, primer, beam, task == "asr"))
+            for r, chunk, ids in zip(live, chunks, outs):
+                kept, next_start = _window_cut(ids, t, end_id)
+                if next_start is None:  # no timestamps at all
+                    r.segments.append(Segment(r.offset / fs, (r.offset + len(chunk)) / fs, t.decode(ids)))
+                    r.offset += seg_len
+                    continue
+                res = self._result(kept, r.offset / fs)
+                r.segments += res.segments
+                r.prev = "".join(s.text for s in res.segments)
+                advance = round((next_start - t.first_time) * cfg.time_resolution * fs)
+                r.offset += advance if advance > 0 else seg_len
+        return [_joined(r.segments) for r in recs]
+
+    def _end_guess(self, samples: int) -> int:
+        """The timestamp at the end of a window of ``samples``: a guess of its last one."""
+        t, cfg = self.tokenizer, self.cfg
+        return t.first_time + min(
+            round(samples / cfg.sample_rate / cfg.time_resolution), t.last_time - t.first_time
+        )
 
     def _long_window(self, chunk: torch.Tensor, primer: list[int], beam: int, draft: bool) -> list[int]:
         """One window of :meth:`_long_sequential` (as :meth:`_decode`).
 
         Its CTC draft gets timestamps guessed: the window opens with the first one (it starts where the
-        previous window's last utterance did, or ended: 96% on LibriSpeech), it ends with the last one
-        (its last utterance runs into the end of the window: 83%), and after an end time the session
-        guesses the next start time to be the same (84%, see runtime._Row.advance). Guesses are drafted
-        tokens like any other: the output is the greedy output, in 27% fewer decoder calls."""
+        previous window's last utterance did, or ended: 96% on LibriSpeech), it ends with the one at
+        its end (its last utterance runs into the end of the window: 83%), and after an end time the
+        session guesses the next start time to be the same (84%, see runtime._Row.advance). Guesses are
+        drafted tokens like any other: the output is the greedy output, in 27% fewer decoder calls."""
         t = self.tokenizer
         sess = self._session(1, beam)
         if not (draft and TIMESTAMP_GUESSES and isinstance(sess, GreedySession) and sess.windows):
             return self._decode([chunk], [primer], beam, draft)[0]
         sess.encode(self._features([chunk]))
-        proposal = [t.first_time] + self._ctc_draft(sess.ctc_ids[0].tolist()) + [t.last_time]
+        proposal = [t.first_time] + self._ctc_draft(sess.ctc_ids[0].tolist()) + [self._end_guess(len(chunk))]
         insertions = t.not_drafted - set(range(t.first_time, t.last_time + 1))  # timestamps are drafted
         primers = torch.tensor([primer], device=self.device)
         # (a draft is given up after 16 calls that accepted fewer tokens than calls, not 8: a window
@@ -560,7 +597,7 @@ class OWSM:
     def _long_batched(
         self, waves: list[torch.Tensor], lang: str, task: str, batch_size: int, beam: int, skip_seconds: float
     ) -> list[Result]:
-        """Windows cut at pauses, decoded in batches (transcribe_long with ``batch_size > 1``)."""
+        """Windows cut at pauses, decoded in batches (transcribe_long with ``cut_at_pauses=True``)."""
         fs = self.cfg.sample_rate
         windows, owner = [], []  # waveform pieces; (recording, first sample) of each
         for r, wav in enumerate(waves):
@@ -569,21 +606,54 @@ class OWSM:
                 if (b - a) / fs >= skip_seconds:
                     windows.append(wav[a:b])
                     owner.append((r, a))
-        outs = (
-            self.transcribe(windows, lang=lang, task=task, timestamps=True, batch_size=batch_size,
-                            beam_size=beam)
-            if windows else []
-        )  # fmt: skip
+        outs = self._decode_windows(windows, lang, task, batch_size, beam) if windows else []
         segments: list[list[Segment]] = [[] for _ in waves]
         for (r, a), res in zip(owner, outs):
             off = a / fs
             segments[r] += [
                 Segment(round(s.start + off, 2), round(s.end + off, 2), s.text) for s in res.segments
             ]
-        return [
-            Result(text=" ".join(s.text.strip() for s in segs if s.text.strip()), tokens=[], segments=segs)
-            for segs in segments
-        ]
+        return [_joined(segs) for segs in segments]
+
+    def _decode_windows(
+        self,
+        windows: list[torch.Tensor],
+        lang: str,
+        task: str,
+        batch_size: int,
+        beam: int,
+        fixed: bool = False,
+    ) -> list[Result]:
+        """``transcribe(windows, timestamps=True)``, with drafts that guess timestamps as in
+        :meth:`_long_window` (greedy ASR): the first one is <0.00> (92% of pause-cut windows), the last
+        one the end of the window, and a start time the end time before it (91%). ``fixed``: the
+        session has ``batch_size`` rows however few windows there are (no session per count)."""
+        t = self.tokenizer
+        bs = self._batch_size(batch_size, beam)
+        bs = bs if fixed else min(bs, len(windows))
+        primer = self._primer(lang, task, True, None)
+        sess = self._session(bs) if beam == 1 and task == "asr" and TIMESTAMP_GUESSES else None
+        if sess is None or not sess.windows or len(primer) >= sess.windows[-1]:
+            return self.transcribe(
+                windows, lang=lang, task=task, timestamps=True, batch_size=bs, beam_size=beam
+            )
+        order = sorted(range(len(windows)), key=lambda i: len(windows[i]))  # as transcribe()
+        ends = iter([self._end_guess(len(windows[i])) for i in order])  # drafts are made in batch order
+
+        def draft(best_path: list[int]) -> list[int]:
+            return [t.first_time] + self._ctc_draft(best_path) + [next(ends)]
+
+        batches = (self._features([windows[j] for j in order[i : i + bs]]) for i in range(0, len(order), bs))
+        insertions = t.not_drafted - set(range(t.first_time, t.last_time + 1))
+        outs, calls = sess.decode_stream(
+            primer, batches, draft, self._max_new(), insertions, give_up=16, priority=self.stream_priority
+        )
+        self.draft_stats[0] += sum(len(o) + 1 for o in outs)
+        self.draft_stats[1] += calls
+        results: list[Result] = [None] * len(windows)
+        for j, ids in zip(order, outs):
+            results[j] = self._result(ids, offset=0.0)
+        return results
 
     def _transcribe_long_ctc(
         self, wav: torch.Tensor, lang: str, task: str, context_seconds: float = 2.0

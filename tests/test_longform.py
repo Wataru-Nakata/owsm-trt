@@ -53,11 +53,23 @@ def model() -> OWSMModel:
     return m
 
 
+class _DistinctBackend(TorchBackend):
+    """Cross-attention values that differ a lot between windows (the tiny random model hardly listens
+    to its input), so that a window decoded with another one's encoder output, or results handed back
+    in the wrong order, show (as tests/test_model.py)."""
+
+    def encode(self, feats, cross_k, cross_v, ctc_ids):
+        super().encode(feats, cross_k, cross_v, ctc_ids)
+        for b, f in enumerate(feats):
+            g = torch.Generator().manual_seed(int(f.abs().sum() * 100))
+            cross_v[:, b] += 10 * torch.randn(cross_v[:, b].shape, generator=g)
+
+
 def _owsm(model: OWSMModel, draft: bool = True) -> OWSM:
     opts = BuildOptions(dtype="float32", max_batch=4, capacity=64)
     return OWSM(
-        TINY, _Tokenizer(), model.frontend, TorchBackend(model), opts, torch.device("cpu"), use_cuda_graph=False,
-        ctc_draft=draft,
+        TINY, _Tokenizer(), model.frontend, _DistinctBackend(model), opts, torch.device("cpu"),
+        use_cuda_graph=False, ctc_draft=draft,
     )  # fmt: skip
 
 
@@ -115,13 +127,24 @@ def test_sequential_long_form_drafts_are_exact(model):
     assert both[1].segments == _owsm(model).transcribe_long(wav[:5000], **kw).segments
 
 
-def test_batched_long_form(model):
-    """batch_size > 1: windows cut at pauses, decoded in batches, timestamps shifted to the recording."""
+def test_long_form_rounds_across_recordings(model):
+    """batch_size > 1: the current windows of several recordings decoded together, as one at a time."""
+    torch.manual_seed(4)
+    sr, kw = TINY.sample_rate, {"end_time_threshold": 1.8}
+    waves = [torch.randn(int(sr * s)) for s in (9.3, 4.1, 1.5, 6.2)]
+    m = _owsm(model)
+    one = [m.transcribe_long(w, **kw).segments for w in waves]
+    assert [r.segments for r in m.transcribe_long(waves, batch_size=3, **kw)] == one
+    assert [r.segments for r in _owsm(model, draft=False).transcribe_long(waves, batch_size=3, **kw)] == one
+
+
+def test_long_form_cut_at_pauses(model):
+    """cut_at_pauses: windows cut at pauses, decoded in batches, timestamps shifted to the recording."""
     torch.manual_seed(2)
     sr = TINY.sample_rate
     waves = [torch.randn(int(sr * s)) for s in (7.1, 3.3, 1.2)]
     m = _owsm(model)
-    out = m.transcribe_long(waves, batch_size=3)
+    out = m.transcribe_long(waves, batch_size=3, cut_at_pauses=True)
     assert len(out) == 3
     for wav, res in zip(waves, out):
         cuts = pause_cuts(wav, TINY.num_samples, sr)
@@ -135,7 +158,7 @@ def test_batched_long_form(model):
         assert [dataclasses.astuple(s) for s in res.segments] == want
         assert res.text == " ".join(s.text for s in res.segments if s.text)
     with pytest.raises(ValueError):
-        m.transcribe_long(waves[0], batch_size=2, condition_on_prev_text=True)
+        m.transcribe_long(waves[0], cut_at_pauses=True, condition_on_prev_text=True)
 
 
 def test_drafts_with_guessed_timestamps_are_greedy(model):
