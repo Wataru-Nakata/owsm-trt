@@ -11,6 +11,7 @@ job runs the code as it was at submission. ``LONG_PLAN`` (colon-separated) picks
 * ``b<N>[s<S>]``: windows cut at pauses, batch size N (cuts searched in the last S seconds of a
   window), compared with this job's long_seq.json (or LONG_REF)
 * ``r<N>``: ESPnet's windows, the current windows of all recordings decoded together (batch size N)
+* ``noguess`` / ``guess``: the steps after it without / with guessed timestamps in drafts
 * ``prof``: GPU time of one 30 s encoder run and of single decoder calls per window size (batch 1)
 * ``fp32``: PyTorch fp32 on the first LONG_FP32_LIMIT (8) recordings, sequential with guessed
   timestamps, without, and without drafts: the outputs should be the same
@@ -107,6 +108,8 @@ def main() -> None:
         elif step.startswith("r"):
             evaluate(model, items, waves, int(step[1:]), repeat=3, save=str(out / f"long_{step}.json"),
                      compare=[ref or seq], label=step)  # fmt: skip
+        elif step in ("noguess", "guess"):
+            pipeline.TIMESTAMP_GUESSES = step == "guess"
         elif step == "prof":
             profile(model, waves[0])
         elif step == "fp32":
