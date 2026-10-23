@@ -529,8 +529,9 @@ class OWSM:
 
         ``audio`` is one recording or a list of them. A recording is decoded one 30 s window at a
         time, each window starting at the last complete utterance of the one before, as ESPnet does.
-        With ``batch_size > 1`` the next windows of up to that many recordings are decoded together
-        (the same output, up to fp16 rounding; a single recording gains nothing).
+        With ``batch_size > 1`` the windows of several recordings are decoded together, a row taking
+        the next window of any recording as soon as it is free (the same output, up to fp16 rounding;
+        a single recording gains nothing).
 
         ``cut_at_pauses=True`` (opt-in, faster, not ESPnet's output): each recording is cut at pauses
         into windows of at most 30 s (the quietest point of the last 15 s of a window, see
