@@ -1,6 +1,6 @@
 #!/bin/bash
 # Freeze src/ and scripts/ under outputs/jobs/<tag>/ and submit scripts/long_job.py from there (one GPU job,
-# through scripts/qsub_serial.sh), so that later edits do not leak into a queued job.
+# through the shared qsub_pool.sh), so that later edits do not leak into a queued job.
 #   scripts/long_submit.sh <tag> "LONG_PLAN=seq:dump:b16[,LONG_LIMIT=..,LONG_REF=..]" [walltime]
 # STAGES=... in the environment runs other gpu_eval.pbs stages too (default: pyfile only).
 set -euo pipefail
@@ -8,4 +8,4 @@ tag=$1
 dir="outputs/jobs/$tag"
 rm -rf "$dir" && mkdir -p "$dir"
 cp -r src scripts "$dir/"
-scripts/qsub_serial.sh "MODEL=.cache/models/owsm_v4_medium_1B,STAGES=${STAGES:-pyfile},PYFILE=$dir/scripts/long_job.py,$2" "${3:-01:00:00}"
+/path/to/owsm_trt/scripts/qsub_pool.sh "MODEL=.cache/models/owsm_v4_medium_1B,STAGES=${STAGES:-pyfile},PYFILE=$dir/scripts/long_job.py,$2" "${3:-01:00:00}"
