@@ -93,7 +93,7 @@ for stage in $STAGES; do
       run pytest 1200 env -u CONDA_PREFIX PYTHONPATH="$SNAP/src" OMP_NUM_THREADS=8 "$PBS_LOCALDIR/owsm-env/bin/python3" \
         -m pytest -q -p no:cacheprovider "$SNAP/tests" ;;
     pyfile)  # PYFILE=path/to/script.py (e.g. a one-off debug script under outputs/), run with MODEL as argument
-      run pyfile 1200 "${PY[@]}" "$PYFILE" "$MODEL" ;;
+      run pyfile "${PYFILE_TIMEOUT:-1200}" "${PY[@]}" "$PYFILE" "$MODEL" ;;
     engine_variants)  # TensorRT builder settings on encoder/decoder (VARIANTS=base:tile_fast:..., PARTS=decoder:encoder)
       run engine_variants 3300 "${PY[@]}" "$SNAP/scripts/engine_variants.py" --model "$MODEL" \
         ${VARIANTS:+--variants "${VARIANTS//:/,}"} ${PARTS:+--parts "${PARTS//:/,}"} ;;
