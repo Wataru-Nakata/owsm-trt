@@ -46,27 +46,27 @@ def bench(fn, iters=50):
 STAGE_NAMES = ("qkv", "self", "out", "crossq", "cross", "crossout", "ffn1", "ffn2")
 
 
-def breakdown(ts, L, P):
+def breakdown(ts, L, P, rec=6):
     """Wall time per stage type (from the previous barrier's release to this one's), the median / max
     work time of the programs (GEMMs: until the loads are consumed / the epilogue is done), barrier
-    latency (first exit - last arrival) and arrival skew. ts [stages, P, 6]: start, exit, -, loads done,
-    epilogue done, arrival."""
+    latency (first exit - last arrival) and arrival skew. ts [stages, P, rec]: start, exit, -, loads done,
+    epilogue done, arrival; with rec = 8 (Gluon): start, exit, slab ready, B side ready, MMAs done, arrival,
+    extraction done, epilogue done."""
     n = 8 * L + 2
-    t = ts[: n * P * 6].view(n, P, 6).double()
+    t = ts[: n * P * rec].view(n, P, rec).double()
     t0 = t[0, :, 0].min()
-    start, exit_, loads, epi, arrive = (t[:, :, i] - t0 for i in (0, 1, 3, 4, 5))
+    start, exit_, arrive = (t[:, :, i] - t0 for i in (0, 1, 5))
     rel = exit_.min(1).values
     rel[-1] = arrive[-1].max()  # the last stage has no barrier: its last program finishing
     wall = torch.cat([rel[:1], rel[1:] - rel[:-1]])
     work = arrive - start
-    gl = (loads - start).clamp(min=0)
-    ge = (epi - loads).clamp(min=0)
     lat = exit_.min(1).values - arrive.max(1).values
     skew = arrive.max(1).values - arrive.min(1).values
     rows = {"embed": [0], "output": [8 * L + 1]}
     for i, name in enumerate(STAGE_NAMES):
         rows[name] = [1 + 8 * layer + i for layer in range(L)]
     out = [f"total {rel[-1].item() / 1e3:.1f} us"]
+    gemm = ("qkv", "out", "crossq", "crossout", "ffn1", "ffn2", "output")
     for name, idx in rows.items():
         idx = torch.tensor(idx)
         line = (
@@ -74,11 +74,26 @@ def breakdown(ts, L, P):
             f"  work med {work[idx].median(1).values.mean().item() / 1e3:5.2f} max "
             f"{work[idx].max(1).values.mean().item() / 1e3:5.2f}"
         )
-        if name in ("qkv", "out", "crossq", "crossout", "ffn1", "ffn2", "output") and loads[idx].max() > 0:
+        if rec == 6 and name in gemm and t[idx][:, :, 3].max() > 0:
+            gl = (t[idx][:, :, 3] - t[idx][:, :, 0]).clamp(min=0)
+            ge = (t[idx][:, :, 4] - t[idx][:, :, 3]).clamp(min=0)
             line += (
-                f" [loads {gl[idx].median(1).values.mean().item() / 1e3:5.2f}"
-                f" epilogue {ge[idx].median(1).values.mean().item() / 1e3:5.2f}]"
+                f" [loads {gl.median(1).values.mean().item() / 1e3:5.2f}"
+                f" epilogue {ge.median(1).values.mean().item() / 1e3:5.2f}]"
             )
+        if rec == 8 and name in gemm and name != "output":
+            ti = t[idx]
+            live = ti[:, :, 4] > 0  # programs with a unit in this stage
+            # phases: slab wait (start -> 2), B side wait (2 -> 3), MMA (3 -> 4), extraction (4 -> 6),
+            # epilogue (6 -> 7), store + arrival (7 -> 5)
+            seq = [(0, 2, "slab"), (2, 3, "B"), (3, 4, "mma"), (4, 6, "extr"), (6, 7, "epi"), (7, 5, "store")]
+            parts = []
+            for a, b, nm in seq:
+                d = (ti[:, :, b] - ti[:, :, a]).where(live, torch.nan)
+                med = d.nanmedian(1).values.mean().item() / 1e3
+                mx = torch.nan_to_num(d, nan=-1e18).max(1).values.mean().item() / 1e3
+                parts.append(f"{nm} {med:4.2f}/{mx:4.2f}")
+            line += " [" + " ".join(parts) + "]"
         line += f"  barrier lat {lat[idx].mean().item() / 1e3:5.2f} skew {skew[idx].mean().item() / 1e3:5.2f}"
         out.append(line)
     return "\n      ".join(out)
@@ -161,6 +176,31 @@ def main():
         nws = [int(v) for v in os.environ.get("MEGA_GLUON_WARPS", "4").split(":")]
         mks = [GluonDecoder(mks[0], num_warps=nw, ts=True) for nw in nws]
         opts_list = [{"gluon": 1, "warps": nw} for nw in nws]
+    if os.environ.get("MEGA_RING"):  # the ring kernel with these numbers of programs (0: its default)
+        import re
+
+        from owsm_trt.megakernel_ring import RingDecoder
+
+        base = mks[0] if isinstance(mks[0], MegaDecoder) else mks[0].m
+        ring = []
+        for spec in os.environ["MEGA_RING"].split(
+            ":"
+        ):  # <programs>[r<row programs>][a<L2 ahead>][c<chunk>][x]
+            m = re.fullmatch(r"(\d+)(?:r(\d+))?(?:a(\d+))?(?:c(\d+))?(?:w(\d+))?(x?)", spec)
+            kw = {"row_programs": int(m[2])} if m[2] else {}
+            if m[3]:
+                kw["ahead"] = int(m[3])
+            if m[4]:
+                kw["chunk"] = int(m[4])
+            if m[5]:
+                kw["num_warps"] = int(m[5])
+            if m[6]:
+                kw["exclusive"] = True
+            ring.append(RingDecoder(base, programs=int(m[1]) or None, ts=True, **kw))
+        mks += ring
+        opts_list += [
+            {"ring": 1, "programs": r.P, "rows": r.P_rows, "chunk": r.ck, "warps": r.nw} for r in ring
+        ]
     print(f"model {model_dir}: L={L} d={cfg.d_model} H={H} V={V} T={T}; option sets {opts_list}", flush=True)
 
     cases = [(1, 1), (1, 2), (1, 4), (1, 8), (1, 16), (1, 32), (4, 8), (8, 1), (8, 8), (16, 1), (16, 4), (16, 8),
@@ -205,9 +245,15 @@ def main():
                 run64 = mk.step_fn(tokens, off20, k64, v64, ck, cv, logits, new_kv)
                 ms = bench(run64)
                 if getattr(mk, "opts", {}).get("TS") and f"{R}x{S}" in profile:
+                    mk.ts.zero_()
                     run64()
                     torch.cuda.synchronize()
-                    prof = "\n      " + breakdown(mk.ts, L, mk.programs)
+                    prof = "\n      " + breakdown(
+                        mk.ts,
+                        L,
+                        getattr(run64, "programs", mk.programs),
+                        8 if mk.name in ("megakernel-gluon", "megakernel-ring") else 6,
+                    )
                     if os.environ.get("MEGA_ONE") == "1":
                         prof += "\n      " + one_stage(run64, mk.ts, L, mk.programs)
                 else:

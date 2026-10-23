@@ -676,8 +676,19 @@ class GreedySession(_Session):
             bufs = _Verify(cfg, batch, w, self.kw, rules, self.t_notime, eos)
             for c, (k, v) in self.caches.items():
                 kind = "verify" if w > 1 else "decode"
+                # a decoder megakernel can do the plain argmax itself (timestamp rules: kernels.choose)
+                extra = {"pred": bufs.pred} if getattr(backend, "argmax", False) and rules is None else {}
                 step = backend.step_fn(
-                    bufs.tok, bufs.offs, k, v, self.cross_k, self.cross_v, bufs.logits, bufs.new_kv, kind=kind
+                    bufs.tok,
+                    bufs.offs,
+                    k,
+                    v,
+                    self.cross_k,
+                    self.cross_v,
+                    bufs.logits,
+                    bufs.new_kv,
+                    kind=kind,
+                    **extra,
                 )
                 self._verify[c, w] = bufs.bind(step, k, v)
         if use_cuda_graph:
@@ -1185,7 +1196,8 @@ class _Bound:
         if b.fast:
             if not written:
                 kernels.write_kv(b.new_kv, self.k, self.v, b.offs)
-            kernels.choose(b.logits, b.inp, b.notime, b.pred, b.rules)
+            if not getattr(self.step, "writes_pred", False):
+                kernels.choose(b.logits, b.inp, b.notime, b.pred, b.rules)
             kernels.accept(b.pred, b.inp, b.res, b.eos)
         else:
             if not written:

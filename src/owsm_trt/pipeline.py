@@ -425,6 +425,10 @@ class OWSM:
             sess = self._session(bs)
             # similar durations in an encoder batch: its features stop after the longest recording
             order = sorted(range(len(items)), key=lambda i: duration(items[i], sr or self.cfg.sample_rate))
+            if bs == 1 and os.environ.get("OWSM_TRT_INTERLEAVE") == "1":
+                # longest, shortest, 2nd longest, ...: the encoder (a fixed cost per utterance) works ahead
+                # while long utterances decode, rather than all the short ones (few calls) coming first
+                order = [order[-1 - i // 2] if i % 2 == 0 else order[i // 2] for i in range(len(order))]
             chunks = (order[i : i + bs] for i in range(0, len(order), bs))
             batches = (self._features([self._wave(items[j], sr) for j in chunk]) for chunk in chunks)
             outs, calls = sess.decode_stream(
@@ -900,11 +904,33 @@ def _decoder_kernel(runner, cfg, checkpoint: Path, dev: torch.device, which):
         return runner
     mega = megakernel.MegaDecoder(_load_decoder(cfg, checkpoint), dev)
     try:
-        kernel = megakernel_gluon.GluonDecoder(mega)
+        gk = megakernel_gluon.GluonDecoder(mega)
+        route = megakernel_gluon.ROUTE_TOKENS, megakernel_gluon.ROUTE_ROWS
+        rows_kernel = None
+        if isinstance(which, str) and which.startswith("ring"):
+            # ring[:<programs>][:r<P>][:c<n>][:a<n>][:w<warps>][:x][:rr]: single-row calls on the ring kernel
+            # (few SMs: decode_stream's encoder runs beside it), calls of several rows on the Gluon kernel (all
+            # SMs), with rr on the ring kernel too
+            from . import megakernel_ring
+
+            kw, opts = {}, which.split(":")[1:]
+            for o in opts:
+                if o.isdigit():
+                    kw["programs"] = int(o)
+                elif o == "x":
+                    kw["exclusive"] = True
+                elif o[:1] in ("r", "c", "a", "w") and o[1:].isdigit():
+                    kw[{"r": "row_programs", "c": "chunk", "a": "ahead", "w": "num_warps"}[o[0]]] = int(o[1:])
+            kernel = megakernel_ring.RingDecoder(mega, **kw)
+            if "rr" not in opts:
+                rows_kernel = (gk, *route)
+            route = megakernel_ring.ROUTE_TOKENS, megakernel_ring.ROUTE_ROWS
+        else:
+            kernel = gk
     except ValueError as e:
         log.warning("decoder megakernel not used: %s", e)
         return runner
-    return megakernel.MegaBackend(runner, kernel, megakernel_gluon.ROUTE_TOKENS, megakernel_gluon.ROUTE_ROWS)
+    return megakernel.MegaBackend(runner, kernel, *route, rows_kernel=rows_kernel)
 
 
 def _load_decoder(cfg, checkpoint: Path) -> Decoder:

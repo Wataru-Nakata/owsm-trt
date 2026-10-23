@@ -684,23 +684,41 @@ class MegaDecoder:
 class MegaBackend:
     """A backend whose decoder calls (decode, verify) of up to ``max_tokens`` tokens (rows x window) and
     ``max_rows`` rows run as a megakernel (``kernel.step_fn``); everything else (encoder, prompt prefill, larger
-    calls) is the wrapped backend's (TensorRT)."""
+    calls) is the wrapped backend's (TensorRT). ``rows_kernel`` = (kernel, max_tokens, max_rows): another
+    megakernel (and its limits) for the calls of several rows."""
 
-    def __init__(self, inner, kernel, max_tokens: int | None = None, max_rows: int | None = None):
+    def __init__(self, inner, kernel, max_tokens: int | None = None, max_rows: int | None = None,
+                 rows_kernel: tuple | None = None):  # fmt: skip
         self.inner, self.kernel = inner, kernel
         self.max_tokens, self.max_rows = max_tokens, max_rows
+        self.rows_kernel = rows_kernel
 
     def __getattr__(self, name):  # encode, encode_fn, trimmed, cfg, name, ...
         return getattr(self.inner, name)
 
-    def step_fn(self, tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv, kind="decode"):
+    @property
+    def argmax(self) -> bool:
+        """Whether step_fn takes ``pred``: calls on a kernel that can then write the logits' argmax there too
+        (see writes_pred on the returned function; other calls ignore it)."""
+        return getattr(self.kernel, "argmax", False) or getattr(
+            (self.rows_kernel or (None,))[0], "argmax", False
+        )
+
+    def step_fn(
+        self, tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv, kind="decode", pred=None
+    ):
         args = (tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv)
-        big = (self.max_tokens is not None and tokens.numel() > self.max_tokens) or (
-            self.max_rows is not None and tokens.shape[0] > self.max_rows
+        kernel, max_tokens, max_rows = self.kernel, self.max_tokens, self.max_rows
+        if tokens.shape[0] > 1 and self.rows_kernel is not None:
+            kernel, max_tokens, max_rows = self.rows_kernel
+        big = (max_tokens is not None and tokens.numel() > max_tokens) or (
+            max_rows is not None and tokens.shape[0] > max_rows
         )
         if kind == "prefill" or big:
             return self.inner.step_fn(*args, kind=kind)
-        return self.kernel.step_fn(*args, kind=kind)
+        if pred is not None and getattr(kernel, "argmax", False):
+            return kernel.step_fn(*args, kind=kind, pred=pred)
+        return kernel.step_fn(*args, kind=kind)
 
     def check(self) -> None:
         self.kernel.check()

@@ -7,7 +7,7 @@ import pytest
 import torch
 from test_model import TINY
 
-from owsm_trt import megakernel, megakernel_gluon
+from owsm_trt import megakernel, megakernel_gluon, megakernel_ring
 from owsm_trt.modeling import OWSMModel
 from owsm_trt.runtime import GreedySession, TorchBackend
 
@@ -112,7 +112,7 @@ gluon_only = pytest.mark.skipif(
 
 @gluon_only
 @pytest.mark.parametrize("rows,window", [(1, 1), (1, 8), (2, 3), (8, 1), (1, 16), (1, 32), (4, 8), (2, 16)])
-def test_gluon_step_matches_decoder(model, rows, window):
+def test_gluon_step_matches_decoder(model, rows, window, kind="gluon", programs=None, chunk=2, warps=4):
     dec = model.decoder
     L, H, dk, C, T = CFG.dec_layers, CFG.dec_heads, CFG.d_model // CFG.dec_heads, 128, CFG.enc_frames
     torch.manual_seed(rows * 100 + window)
@@ -129,10 +129,23 @@ def test_gluon_step_matches_decoder(model, rows, window):
     logits = torch.zeros(rows, window, CFG.vocab_size, device=dev)
     new_kv = torch.zeros(L, 2, rows, H, window, dk, **f16)
     k2, v2 = k.clone(), v.clone()
-    gk = megakernel_gluon.GluonDecoder(megakernel.MegaDecoder(dec, dev))
-    run = gk.step_fn(tokens, offset, k2, v2, ck, cv, logits, new_kv)
+    mega = megakernel.MegaDecoder(dec, dev)
+    if kind == "ring":
+        gk = megakernel_ring.RingDecoder(
+            mega, programs=programs, row_programs=programs, chunk=chunk, num_warps=warps
+        )
+    else:
+        gk = megakernel_gluon.GluonDecoder(mega)
+    pred = torch.full((rows, window), -1, dtype=torch.long, device=dev)
+    if kind == "ring":  # with the argmax
+        run = gk.step_fn(tokens, offset, k2, v2, ck, cv, logits, new_kv, pred=pred)
+        assert run.writes_pred
+    else:
+        run = gk.step_fn(tokens, offset, k2, v2, ck, cv, logits, new_kv)
     run()
     gk.check()
+    if kind == "ring":
+        assert torch.equal(pred, logits.argmax(-1))
     assert (logits - ref).abs().max().item() < 0.02 * ref.abs().max().item()
     assert (logits.argmax(-1) == ref.argmax(-1)).float().mean().item() >= 0.95
     torch.testing.assert_close(new_kv.float(), ref_kv, atol=0.05, rtol=0.02)
@@ -145,22 +158,42 @@ def test_gluon_step_matches_decoder(model, rows, window):
 
 
 @gluon_only
+@pytest.mark.parametrize("rows,window", [(1, 1), (1, 8), (2, 3), (8, 1), (1, 16), (1, 32), (4, 8), (2, 16)])
+@pytest.mark.parametrize(
+    "programs,chunk,warps", [(None, 2, 4), (3, 2, 4), (None, 1, 4), (3, 1, 8), (None, 2, 8)]
+)
+def test_ring_step_matches_decoder(model, rows, window, programs, chunk, warps):
+    """The ring kernel, with as many programs as the largest stage has units or with fewer (several units per
+    program and stage), ring slots of 1 or 2 weight tiles, units of 64 or 128 rows (4 or 8 warps)."""
+    test_gluon_step_matches_decoder(model, rows, window, "ring", programs, chunk, warps)
+
+
+@gluon_only
 @pytest.mark.parametrize("drafted", [False, True], ids=["steps", "drafted"])
-def test_gluon_session_matches_torch(model, drafted):
-    """Greedy decoding with the Gluon kernel for calls of up to 8 tokens (the PyTorch backend for the rest)."""
+@pytest.mark.parametrize("kind,batch", [("gluon", 3), ("ring", 3), ("hybrid", 1), ("hybrid", 3)])
+def test_gluon_session_matches_torch(model, drafted, kind, batch):
+    """Greedy decoding with a Gluon kernel for calls of up to 32 tokens (the PyTorch backend for the rest);
+    hybrid: the ring kernel for single-row calls, the Gluon kernel for the others (as pipeline's "ring")."""
     m16 = copy.deepcopy(model).half()
     m16.frontend.float()
-    gk = megakernel_gluon.GluonDecoder(megakernel.MegaDecoder(model.decoder, torch.device("cuda")))
-    mega_be = megakernel.MegaBackend(TorchBackend(m16), gk, megakernel_gluon.MAX_TOKENS)
-    batch = 3
+    mega = megakernel.MegaDecoder(model.decoder, torch.device("cuda"))
+    if kind == "gluon":
+        mega_be = megakernel.MegaBackend(
+            TorchBackend(m16), megakernel_gluon.GluonDecoder(mega), megakernel_gluon.MAX_TOKENS
+        )
+    else:
+        rows = (megakernel_gluon.GluonDecoder(mega), 16, 8) if kind == "hybrid" else None
+        mega_be = megakernel.MegaBackend(TorchBackend(m16), megakernel_ring.RingDecoder(mega), megakernel_ring.MAX_TOKENS,
+                                         rows_kernel=rows)  # fmt: skip
     feats = m16.frontend(torch.randn(batch, CFG.num_samples, device="cuda"))
     primer = torch.tensor([[2, 3, 4]] * batch, device="cuda")
+    drafts = [[5, 6, 7, 8, 9, 10], [11, 12], []][:batch]
     outs = []
     for be in (TorchBackend(m16), mega_be):
         sess = _session(be, batch, (2, 4, 8) if drafted else ())
         sess.encode(feats)
         if drafted:
-            out, _ = sess.decode_drafted(primer, [[5, 6, 7, 8, 9, 10], [11, 12], []], 20)
+            out, _ = sess.decode_drafted(primer, drafts, 20)
         else:
             out = sess.decode(primer, 20)
         outs.append(out)

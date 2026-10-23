@@ -61,6 +61,14 @@ if gluon is not None:
         )
 
     @gluon.jit
+    def _opaque0():
+        """A runtime 0 the compiler cannot see through. Added (times 128: the compiler keeps the alignment it
+        knows) to the program id and the base pointers at the top of the layer loop, it keeps the stages' index
+        and address tensors inside the loop: hoisted out of it (loop-invariant), they stay live across the
+        whole loop and spill to local memory."""
+        return gl.inline_asm_elementwise("mov.u32 $0, 0;", "=r", [], dtype=gl.int32, is_pure=False, pack=1)
+
+    @gluon.jit
     def _ld_acquire(p):
         return gl.inline_asm_elementwise(
             "ld.global.acquire.gpu.b32 $0, [$1];", "=r,l", [p], dtype=gl.int32, is_pure=False, pack=1
@@ -132,13 +140,19 @@ if gluon is not None:
         async_copy.commit_group()
 
     @gluon.jit
-    def _mma(wslot, xb, wbar, phase, K: gl.constexpr, BN: gl.constexpr, NB: gl.constexpr, NW: gl.constexpr):
+    def _mma(wslot, xb, wbar, phase, K: gl.constexpr, BN: gl.constexpr, NB: gl.constexpr, NW: gl.constexpr,
+             tsp=None, TS: gl.constexpr = False):  # fmt: skip
         """Wait for the slab and the B side (xb: B tiles of NB rows per K chunk), then the wgmma chain (two
-        accumulators while they are small) -> [64, NB] fp32."""
+        accumulators while they are small) -> [64, NB] fp32. TS: stamps slab / B side ready, MMAs done at
+        tsp + 2, 3, 4."""
         S: gl.constexpr = 64 // BN
         NKC: gl.constexpr = K // S // 64
         mbarrier.wait(wbar, phase)
+        if TS:
+            gl.store(tsp + 2, _now())
         async_copy.wait_group(0)
+        if TS:
+            gl.store(tsp + 3, _now())
         fence_async_shared()
         gl.barrier()
         mma: gl.constexpr = gl.NVMMADistributedLayout(
@@ -156,11 +170,15 @@ if gluon is not None:
                     acc1 = warpgroup_mma(a_t, b_t, acc1, is_async=True)
             acc0, acc1 = warpgroup_mma_wait(0, deps=[acc0, acc1])
             acc0 = acc0 + acc1
+            if TS:
+                gl.store(tsp + 4, _now())
         else:
             for kc in gl.static_range(NKC):
                 acc0 = warpgroup_mma(wslot.slice(kc * 64, 64), xb.slice(kc * NB, NB).permute((1, 0)), acc0,
                                      is_async=True)  # fmt: skip
             acc0 = warpgroup_mma_wait(0, deps=[acc0])
+            if TS:
+                gl.store(tsp + 4, _now())
         return acc0
 
     @gluon.jit
@@ -404,7 +422,7 @@ if gluon is not None:
     def _gemm_g(x, XS, M, wslot, xbuf, scratch, wbar, phase, bias, cvec, st, eps, res, n0,
                 K: gl.constexpr, BN: gl.constexpr, LBN: gl.constexpr, MT: gl.constexpr, LMT: gl.constexpr,
                 LN: gl.constexpr, HL: gl.constexpr, RES: gl.constexpr, D: gl.constexpr, NPART: gl.constexpr,
-                PART: gl.constexpr, NW: gl.constexpr):  # fmt: skip
+                PART: gl.constexpr, NW: gl.constexpr, tsp=None, TS: gl.constexpr = False):  # fmt: skip
         """One program's unit of y = X @ W^T + b: BN weight rows from n0 (slab already requested into wslot),
         MT tokens; with LN the LayerNorm is folded in (statistics from NPART parts of PART features). Loads
         that do not wait for the MMAs (bias, column sums, statistics, residual) are issued first. Returns
@@ -422,8 +440,10 @@ if gluon is not None:
             r = gl.load(res + tt[None, :] * D + n0 + rr[:, None], mask=(tt < M)[None, :] & (rr >= 0)[:, None],
                         other=0.0, cache_modifier=".cg")  # fmt: skip
         _x_issue(x, XS, M, xbuf, K, BN, LBN, MT, LMT, HL, D, NW)
-        acc = _mma(wslot, xbuf, wbar, phase, K, BN, NB, NW)
+        acc = _mma(wslot, xbuf, wbar, phase, K, BN, NB, NW, tsp, TS)
         out = _extract(acc, scratch, BN, MT, HL, NB, NW)
+        if TS:
+            gl.store(tsp + 6, _now())
         if LN:
             mean, rstd = _stats_finish(mu, m2, eps, NPART, PART, D)
             mean = gl.convert_layout(mean, gl.SliceLayout(0, ol))
@@ -432,6 +452,8 @@ if gluon is not None:
         out += b[:, None]
         if RES:
             out += r
+        if TS:
+            gl.store(tsp + 7, _now())
         return out
 
     @gluon.jit
@@ -447,7 +469,8 @@ if gluon is not None:
 
     @gluon.jit
     def _ffn2_g(pid, hb, M, wslot, xbuf, wbar, phase, bias, x, x2, st, part, cnt, D: gl.constexpr,
-                F: gl.constexpr, LKS: gl.constexpr, MT: gl.constexpr, LMT: gl.constexpr, NW: gl.constexpr):  # fmt: skip
+                F: gl.constexpr, LKS: gl.constexpr, MT: gl.constexpr, LMT: gl.constexpr, NW: gl.constexpr,
+                tsp=None, TS: gl.constexpr = False):  # fmt: skip
         """FFN2 + residual, split-K: unit pid = (block of 64 features rb, slice ks of 512 columns of K; F / 512 =
         2^LKS slices). Every slice stores its partial sum and counts itself; the last one of a block adds the
         partials up in order, adds bias and residual and stores the residual stream (statistics in D / 64 parts
@@ -457,7 +480,7 @@ if gluon is not None:
         rb = pid >> LKS
         n0 = rb * 64
         _x_issue(hb + ks * 512, F, M, xbuf, 512, 64, 6, MT, LMT, 1, D, NW)
-        acc = _mma(wslot, xbuf, wbar, phase, 512, 64, MT, NW)
+        acc = _mma(wslot, xbuf, wbar, phase, 512, 64, MT, NW, tsp, TS)
         el: gl.constexpr = _el(64, NW)
         ra = gl.arange(0, 64, layout=gl.SliceLayout(1, el))
         ta = gl.arange(0, MT, layout=gl.SliceLayout(0, el))
@@ -468,6 +491,8 @@ if gluon is not None:
         gl.barrier()
         arrived = gl.atomic_add(cnt + rb, 1, sem="acq_rel", scope="gpu")
         gl.barrier()
+        if TS:
+            gl.store(tsp + 6, _now())
         if arrived == KS - 1:
             ol: gl.constexpr = _el(64, NW)
             rr = gl.arange(0, 64, layout=gl.SliceLayout(1, ol))
@@ -479,6 +504,8 @@ if gluon is not None:
                 tot += gl.load(part + j * M * D + o, mask=m, other=0.0, cache_modifier=".cg")
             gl.atomic_xchg(cnt + rb, 0, sem="relaxed", scope="gpu")
             _store_res(tot, x, x2, st, n0, rb, M, 64, MT, D, D // 64, NW)
+        if TS:
+            gl.store(tsp + 7, _now())
 
     @gluon.jit
     def _out_half(wslot, xb, wbar, phase, KH: gl.constexpr, MT: gl.constexpr, NW: gl.constexpr):
@@ -554,159 +581,213 @@ if gluon is not None:
         p0 = 0  # phases of the two slots' barriers
         p1 = 0
         if TS:
-            gl.store(ts + pid * 6, _now())
+            gl.store(ts + pid * 8, _now())
         _embed_g(pid, M, S, tok, offs, emb, pe, xscale, V, x, x2, st, D, P2, NP2, MTF, NW)
         g = 1
         if TS:
-            gl.store(ts + pid * 6 + 5, _now())
+            gl.store(ts + pid * 8 + 5, _now())
         _garrive(bar)
         _gwait(bar, err, g * P, MAXS)
         if TS:
-            gl.store(ts + pid * 6 + 1, _now())
-            gl.store(ts + (g * P + pid) * 6, _now())
+            gl.store(ts + pid * 8 + 1, _now())
+            gl.store(ts + (g * P + pid) * 8, _now())
         for layer in range(L):
+            z = _opaque0() * 128  # (see _opaque0)
+            x2_z = x2 + z
+            x_z = x + z
+            qkv_z = qkv + z
+            ob_z = ob + z
+            q2_z = q2 + z
+            hb_z = hb + z
+            st_z = st + z
+            part_z = part + z
+            cnt2_z = cnt2 + z
+            xp_z = xp + z
+            xml_z = xml + z
+            xcnt_z = xcnt + z
+            kc_z = kc + z
+            vc_z = vc + z
+            ck_z = ck + z
+            cv_z = cv + z
+            new_kv_z = new_kv + z
+            offs_z = offs + z
+            pid_z = pid + z
+            nq_z = nq + z
+            npt_z = npt + z
+            nf_z = nf + z
+            n2_z = n2 + z
             last = layer + 1 == L
             # LN1 + QKV (slot 0) -> qkv; then LN2+cross-Q's slab, and the self-attention's cache rows into L2
             if has_q:
-                out = _gemm_g(x2, 2 * D, M, w0, xbuf, scratch, mb.index(0), p0, bqkv + layer * 3 * D,
-                              cqkv + layer * 3 * D, st, eps, x, nq, D, BNQ, LBNQ, MT, LMT, True, HL, False, D, NP2,
-                              P2, NW)  # fmt: skip
+                out = _gemm_g(x2_z, 2 * D, M, w0, xbuf, scratch, mb.index(0), p0, bqkv + layer * 3 * D,
+                              cqkv + layer * 3 * D, st_z, eps, x_z, nq_z, D, BNQ, LBNQ, MT, LMT, True, HL, False, D, NP2,
+                              P2, NW,
+                              ts + (g * P + pid_z) * 8, TS)  # fmt: skip
                 p0 = p0 ^ 1
-                _store16(out, qkv, 3 * D, nq, M, BNQ, MT, False, NW)
+                _store16(out, qkv_z, 3 * D, nq_z, M, BNQ, MT, False, NW)
             if TS:
-                gl.store(ts + (g * P + pid) * 6 + 5, _now())
+                gl.store(ts + (g * P + pid_z) * 8 + 5, _now())
             g += 1
             _garrive(bar)
-            _issue_w(dcq, layer * D + npt, 0, mb.index(0), w0, PART, D, has_p)
+            _issue_w(dcq, layer * D + npt_z, 0, mb.index(0), w0, PART, D, has_p)
             if PFA:
-                if pid < R * H:
-                    cb = ((layer * R + pid // H) * H + pid % H).to(gl.int64) * C * DK
-                    off = gl.load(offs + pid // H)
-                    _prefetch_rows(kc + cb, off, 128, NW)
-                    _prefetch_rows(vc + cb, off, 128, NW)
+                if pid_z < R * H:
+                    cb = ((layer * R + pid_z // H) * H + pid_z % H).to(gl.int64) * C * DK
+                    off = gl.load(offs_z + pid_z // H)
+                    _prefetch_rows(kc_z + cb, off, 128, NW)
+                    _prefetch_rows(vc_z + cb, off, 128, NW)
             _gwait(bar, err, g * P, MAXS)
             if TS:
-                gl.store(ts + ((g - 1) * P + pid) * 6 + 1, _now())
-                gl.store(ts + (g * P + pid) * 6, _now())
+                gl.store(ts + ((g - 1) * P + pid_z) * 8 + 1, _now())
+                gl.store(ts + (g * P + pid_z) * 8, _now())
             # self-attention -> ob
-            _self_attn_g(pid, P, R, S, layer, qkv, offs, kc, vc, C, new_kv, ob, D, H, DK, SP, BT, NW)
+            _self_attn_g(
+                pid_z, P, R, S, layer, qkv_z, offs_z, kc_z, vc_z, C, new_kv_z, ob_z, D, H, DK, SP, BT, NW
+            )
             if TS:
-                gl.store(ts + (g * P + pid) * 6 + 5, _now())
+                gl.store(ts + (g * P + pid_z) * 8 + 5, _now())
             g += 1
             _garrive(bar)
             _gwait(bar, err, g * P, MAXS)
             if TS:
-                gl.store(ts + ((g - 1) * P + pid) * 6 + 1, _now())
-                gl.store(ts + (g * P + pid) * 6, _now())
+                gl.store(ts + ((g - 1) * P + pid_z) * 8 + 1, _now())
+                gl.store(ts + (g * P + pid_z) * 8, _now())
             # out-projection + residual (slot 1); then cross-out's slab
             if has_p:
-                out = _gemm_g(ob, D, M, w1, xbuf, scratch, mb.index(1), p1, bo + layer * D, bo, st, eps, x, npt,
-                              D, PART, LPART, MT, LMT, False, 1, True, D, NPO, PART, NW)  # fmt: skip
+                out = _gemm_g(ob_z, D, M, w1, xbuf, scratch, mb.index(1), p1, bo + layer * D, bo, st_z, eps, x_z, npt_z,
+                              D, PART, LPART, MT, LMT, False, 1, True, D, NPO, PART, NW,
+                              ts + (g * P + pid_z) * 8, TS)  # fmt: skip
                 p1 = p1 ^ 1
-                _store_res(out, x, x2, st, npt, pid, M, PART, MT, D, NPO, NW)
+                _store_res(out, x_z, x2_z, st_z, npt_z, pid_z, M, PART, MT, D, NPO, NW)
             if TS:
-                gl.store(ts + (g * P + pid) * 6 + 5, _now())
+                gl.store(ts + (g * P + pid_z) * 8 + 5, _now())
             g += 1
             _garrive(bar)
-            _issue_w(dco, layer * D + npt, 0, mb.index(1), w1, PART, D, has_p)
+            _issue_w(dco, layer * D + npt_z, 0, mb.index(1), w1, PART, D, has_p)
             _gwait(bar, err, g * P, MAXS)
             if TS:
-                gl.store(ts + ((g - 1) * P + pid) * 6 + 1, _now())
-                gl.store(ts + (g * P + pid) * 6, _now())
+                gl.store(ts + ((g - 1) * P + pid_z) * 8 + 1, _now())
+                gl.store(ts + (g * P + pid_z) * 8, _now())
             # LN2 + cross-Q (slot 0) -> q2; then LN3+FFN1's slab, and the cross-attention's keys/values into L2
             if has_p:
-                out = _gemm_g(x2, 2 * D, M, w0, xbuf, scratch, mb.index(0), p0, bcq + layer * D, ccq + layer * D,
-                              st, eps, x, npt, D, PART, LPART, MT, LMT, True, HL, False, D, NPO, PART, NW)  # fmt: skip
+                out = _gemm_g(x2_z, 2 * D, M, w0, xbuf, scratch, mb.index(0), p0, bcq + layer * D, ccq + layer * D,
+                              st_z, eps, x_z, npt_z, D, PART, LPART, MT, LMT, True, HL, False, D, NPO, PART, NW,
+                              ts + (g * P + pid_z) * 8, TS)  # fmt: skip
                 p0 = p0 ^ 1
-                _store16(out, q2, D, npt, M, PART, MT, False, NW)
+                _store16(out, q2_z, D, npt_z, M, PART, MT, False, NW)
             if TS:
-                gl.store(ts + (g * P + pid) * 6 + 5, _now())
+                gl.store(ts + (g * P + pid_z) * 8 + 5, _now())
             g += 1
             _garrive(bar)
-            _issue_w(d1, layer * F + nf, 0, mb.index(0), w0, BNF, D, has_f)
+            _issue_w(d1, layer * F + nf_z, 0, mb.index(0), w0, BNF, D, has_f)
             if PFA:
-                if pid < R * H * NS:
-                    sp = pid % NS
-                    bh = pid // NS
+                if pid_z < R * H * NS:
+                    sp = pid_z % NS
+                    bh = pid_z // NS
                     tch = ((T + NS - 1) // NS + 15) // 16 * 16
                     t_lo = sp * tch
                     nk = gl.minimum(T, t_lo + tch) - t_lo
                     cb = ((layer * R + bh // H) * H + bh % H).to(gl.int64) * T * DK + t_lo * DK
-                    _prefetch_rows(ck + cb, nk, 128, NW)
-                    _prefetch_rows(cv + cb, nk, 128, NW)
+                    _prefetch_rows(ck_z + cb, nk, 128, NW)
+                    _prefetch_rows(cv_z + cb, nk, 128, NW)
             _gwait(bar, err, g * P, MAXS)
             if TS:
-                gl.store(ts + ((g - 1) * P + pid) * 6 + 1, _now())
-                gl.store(ts + (g * P + pid) * 6, _now())
+                gl.store(ts + ((g - 1) * P + pid_z) * 8 + 1, _now())
+                gl.store(ts + (g * P + pid_z) * 8, _now())
             # cross-attention -> ob
-            _cross_attn_g(pid, P, R, S, layer, q2, ck, cv, T, ob, xp, xml, xcnt, D, H, DK, SP, BT, NS, NW)
+            _cross_attn_g(
+                pid_z,
+                P,
+                R,
+                S,
+                layer,
+                q2_z,
+                ck_z,
+                cv_z,
+                T,
+                ob_z,
+                xp_z,
+                xml_z,
+                xcnt_z,
+                D,
+                H,
+                DK,
+                SP,
+                BT,
+                NS,
+                NW,
+            )
             if TS:
-                gl.store(ts + (g * P + pid) * 6 + 5, _now())
+                gl.store(ts + (g * P + pid_z) * 8 + 5, _now())
             g += 1
             _garrive(bar)
             _gwait(bar, err, g * P, MAXS)
             if TS:
-                gl.store(ts + ((g - 1) * P + pid) * 6 + 1, _now())
-                gl.store(ts + (g * P + pid) * 6, _now())
+                gl.store(ts + ((g - 1) * P + pid_z) * 8 + 1, _now())
+                gl.store(ts + (g * P + pid_z) * 8, _now())
             # cross-out + residual (slot 1); then FFN2's slab
             if has_p:
-                out = _gemm_g(ob, D, M, w1, xbuf, scratch, mb.index(1), p1, bco + layer * D, bco, st, eps, x, npt,
-                              D, PART, LPART, MT, LMT, False, 1, True, D, NPO, PART, NW)  # fmt: skip
+                out = _gemm_g(ob_z, D, M, w1, xbuf, scratch, mb.index(1), p1, bco + layer * D, bco, st_z, eps, x_z, npt_z,
+                              D, PART, LPART, MT, LMT, False, 1, True, D, NPO, PART, NW,
+                              ts + (g * P + pid_z) * 8, TS)  # fmt: skip
                 p1 = p1 ^ 1
-                _store_res(out, x, x2, st, npt, pid, M, PART, MT, D, NPO, NW)
+                _store_res(out, x_z, x2_z, st_z, npt_z, pid_z, M, PART, MT, D, NPO, NW)
             if TS:
-                gl.store(ts + (g * P + pid) * 6 + 5, _now())
+                gl.store(ts + (g * P + pid_z) * 8 + 5, _now())
             g += 1
             _garrive(bar)
             if F2S:
-                _issue_w(d2s, layer * D + npt, 0, mb.index(1), w1, PART, F, has_p)
+                _issue_w(d2s, layer * D + npt_z, 0, mb.index(1), w1, PART, F, has_p)
             else:
-                _issue_w(d2, layer * D + n2, k2, mb.index(1), w1, 64, 512, has_2)
+                _issue_w(d2, layer * D + n2_z, k2, mb.index(1), w1, 64, 512, has_2)
             _gwait(bar, err, g * P, MAXS)
             if TS:
-                gl.store(ts + ((g - 1) * P + pid) * 6 + 1, _now())
-                gl.store(ts + (g * P + pid) * 6, _now())
+                gl.store(ts + ((g - 1) * P + pid_z) * 8 + 1, _now())
+                gl.store(ts + (g * P + pid_z) * 8, _now())
             # LN3 + FFN1 + ReLU (slot 0) -> hb; then the next layer's QKV slab (or the first output half)
             if has_f:
-                out = _gemm_g(x2, 2 * D, M, w0, xbuf, scratch, mb.index(0), p0, b1 + layer * F, c1 + layer * F, st,
-                              eps, x, nf, D, BNF, LBNF, MT, LMT, True, HL, False, D, NPO, PART, NW)  # fmt: skip
+                out = _gemm_g(x2_z, 2 * D, M, w0, xbuf, scratch, mb.index(0), p0, b1 + layer * F, c1 + layer * F, st_z,
+                              eps, x_z, nf_z, D, BNF, LBNF, MT, LMT, True, HL, False, D, NPO, PART, NW,
+                              ts + (g * P + pid_z) * 8, TS)  # fmt: skip
                 p0 = p0 ^ 1
-                _store16(out, hb, F, nf, M, BNF, MT, True, NW)
+                _store16(out, hb_z, F, nf_z, M, BNF, MT, True, NW)
             if TS:
-                gl.store(ts + (g * P + pid) * 6 + 5, _now())
+                gl.store(ts + (g * P + pid_z) * 8 + 5, _now())
             g += 1
             _garrive(bar)
             if last:
-                _issue_w(dout, pid * 64, 0, mb.index(0), w0, 64, D // 2, pid < nrb)
+                _issue_w(dout, pid_z * 64, 0, mb.index(0), w0, 64, D // 2, pid_z < nrb)
             else:
-                _issue_w(dqkv, (layer + 1) * 3 * D + nq, 0, mb.index(0), w0, BNQ, D, has_q)
+                _issue_w(dqkv, (layer + 1) * 3 * D + nq_z, 0, mb.index(0), w0, BNQ, D, has_q)
             _gwait(bar, err, g * P, MAXS)
             if TS:
-                gl.store(ts + ((g - 1) * P + pid) * 6 + 1, _now())
-                gl.store(ts + (g * P + pid) * 6, _now())
+                gl.store(ts + ((g - 1) * P + pid_z) * 8 + 1, _now())
+                gl.store(ts + (g * P + pid_z) * 8, _now())
             # FFN2 + residual (slot 1, split-K); then the next layer's out-projection slab (or the second half)
             if F2S:
                 if has_p:
-                    out = _gemm_g(hb, F, M, w1, xbuf, scratch, mb.index(1), p1, b2 + layer * D, b2, st, eps, x, npt,
-                                  F, PART, LPART, MT, LMT, False, 1, True, D, NPO, PART, NW)  # fmt: skip
+                    out = _gemm_g(hb_z, F, M, w1, xbuf, scratch, mb.index(1), p1, b2 + layer * D, b2, st_z, eps, x_z, npt_z,
+                                  F, PART, LPART, MT, LMT, False, 1, True, D, NPO, PART, NW,
+                              ts + (g * P + pid_z) * 8, TS)  # fmt: skip
                     p1 = p1 ^ 1
-                    _store_res(out, x, x2, st, npt, pid, M, PART, MT, D, NPO, NW)
+                    _store_res(out, x_z, x2_z, st_z, npt_z, pid_z, M, PART, MT, D, NPO, NW)
             elif has_2:
-                _ffn2_g(pid, hb, M, w1, xbuf, mb.index(1), p1, b2 + layer * D, x, x2, st, part, cnt2, D, F, LKS,
-                        MTF, LMTF, NW)  # fmt: skip
+                _ffn2_g(pid_z, hb_z, M, w1, xbuf, mb.index(1), p1, b2 + layer * D, x_z, x2_z, st_z, part_z, cnt2_z, D, F, LKS,
+                        MTF, LMTF, NW,
+                              ts + (g * P + pid_z) * 8, TS)  # fmt: skip
                 p1 = p1 ^ 1
             if TS:
-                gl.store(ts + (g * P + pid) * 6 + 5, _now())
+                gl.store(ts + (g * P + pid_z) * 8 + 5, _now())
             g += 1
             _garrive(bar)
             if last:
-                _issue_w(dout, pid * 64, NKH, mb.index(1), w1, 64, D // 2, pid < nrb)
+                _issue_w(dout, pid_z * 64, NKH, mb.index(1), w1, 64, D // 2, pid_z < nrb)
             else:
-                _issue_w(do_, (layer + 1) * D + npt, 0, mb.index(1), w1, PART, D, has_p)
+                _issue_w(do_, (layer + 1) * D + npt_z, 0, mb.index(1), w1, PART, D, has_p)
             _gwait(bar, err, g * P, MAXS)
             if TS:
-                gl.store(ts + ((g - 1) * P + pid) * 6 + 1, _now())
-                gl.store(ts + (g * P + pid) * 6, _now())
+                gl.store(ts + ((g - 1) * P + pid_z) * 8 + 1, _now())
+                gl.store(ts + (g * P + pid_z) * 8, _now())
         # final LayerNorm + output layer: blocks of 64 rows pid, pid + P, ..., each in two halves of K (slots 0, 1)
         _x_issue(
             x2, 2 * D, M, xbuf, D, 64, 6, MTF, LMTF, 1, D, NW
@@ -726,7 +807,7 @@ if gluon is not None:
             _issue_w(dout, (rb + P) * 64, NKH, mb.index(1), w1, 64, D // 2, nxt)
             _out_store(acc, mean, rstd, bout, cout, logits, M, V, rb * 64, MTF, NW)
         if TS:
-            gl.store(ts + (g * P + pid) * 6 + 5, _now())
+            gl.store(ts + (g * P + pid) * 8 + 5, _now())
         mbarrier.invalidate(mb.index(0))
         mbarrier.invalidate(mb.index(1))
         _gexit(bar, done, P)
@@ -779,7 +860,7 @@ class GluonDecoder:
         self.err = mega.err
         self.opts = {"TS": ts}
         self.programs = self.P
-        self.ts = torch.zeros((8 * mega.L + 2) * self.P * 6 if ts else 1, dtype=torch.int64, device=dev)
+        self.ts = torch.zeros((8 * mega.L + 2) * self.P * 8 if ts else 1, dtype=torch.int64, device=dev)
 
     def check(self) -> None:
         self.m.check()
