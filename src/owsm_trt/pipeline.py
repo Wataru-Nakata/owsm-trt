@@ -425,9 +425,10 @@ class OWSM:
             sess = self._session(bs)
             # similar durations in an encoder batch: its features stop after the longest recording
             order = sorted(range(len(items)), key=lambda i: duration(items[i], sr or self.cfg.sample_rate))
-            if bs == 1 and os.environ.get("OWSM_TRT_INTERLEAVE") == "1":
+            if bs == 1:
                 # longest, shortest, 2nd longest, ...: the encoder (a fixed cost per utterance) works ahead
                 # while long utterances decode, rather than all the short ones (few calls) coming first
+                # (same output, RTFx +1.5% on the 73 test utterances and +2-6% on test-clean)
                 order = [order[-1 - i // 2] if i % 2 == 0 else order[i // 2] for i in range(len(order))]
             chunks = (order[i : i + bs] for i in range(0, len(order), bs))
             batches = (self._features([self._wave(items[j], sr) for j in chunk]) for chunk in chunks)
