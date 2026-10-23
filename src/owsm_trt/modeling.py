@@ -195,6 +195,14 @@ def explicit_attention(
     return scores.softmax(-1) @ v
 
 
+class FusableSiLU(nn.Module):
+    """SiLU written x / (1 + exp(-x)), the same function: TensorRT fuses this form into the GEMM before it
+    (x * sigmoid(x) becomes a kernel of its own). For export."""
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return x / (1 + torch.exp(-x))
+
+
 class FeedForward(nn.Module):
     def __init__(self, d: int, units: int, activation: nn.Module):
         super().__init__()
@@ -232,10 +240,7 @@ class DepthwiseConv1d(nn.Conv1d):
         if DepthwiseConv1d.plugin:
             from . import plugins
 
-            w = self.weight.float()[:, 0].t()  # [K, C]
-            if residual:  # x + conv(x): one more tap of weight 1 at the centre
-                w = w + (torch.arange(w.shape[0], device=w.device) == self.padding[0]).to(w)[:, None]
-            b = self.bias.float()
+            w, b = self.plugin_weights(residual)
             if isinstance(x, tuple):
                 return plugins.dwconv1d_cat(*x, w, b)
             if gate is not None:
@@ -247,6 +252,25 @@ class DepthwiseConv1d(nn.Conv1d):
         if gate is not None:
             y = gate[..., : y.shape[-1]] * y
         return y
+
+    def plugin_weights(self, residual: bool) -> tuple[torch.Tensor, torch.Tensor]:
+        """The plugin's fp32 taps [K, C] (``residual``: x + conv(x), one more tap of weight 1 at the centre)
+        and bias [C]. After :meth:`freeze_plugin_weights` they are constants of an exported graph (not
+        computed from the parameters by TensorRT on every call)."""
+        frozen = getattr(self, "_plugin_frozen", None)
+        if frozen is not None:
+            return frozen[residual], frozen[2]
+        w = self.weight.float()[:, 0].t()  # [K, C]
+        if residual:
+            w = w + (torch.arange(w.shape[0], device=w.device) == self.padding[0]).to(w)[:, None]
+        return w, self.bias.float()
+
+    @torch.no_grad()
+    def freeze_plugin_weights(self, frozen: bool = True) -> None:
+        self._plugin_frozen = None
+        if frozen:
+            w, b = self.plugin_weights(False)
+            self._plugin_frozen = (w.contiguous(), self.plugin_weights(True)[0].contiguous(), b.contiguous())
 
 
 class ConvolutionalSpatialGatingUnit(nn.Module):
@@ -381,8 +405,7 @@ class Encoder(nn.Module):
             if self.normalized_layers:
                 x = x.to(dt)  # LayerNorm output: back to the model dtype after the first layer
             if i + 1 in self.interctc_layers:
-                probs = ctc.ctc_lo(x.to(dt)).float().softmax(-1).to(dt)
-                x = x + self.conditioning_layer(probs).to(x.dtype)
+                x = x + ctc.condition(x.to(dt), self.conditioning_layer).to(x.dtype)
         return self.after_norm(x).to(dt)
 
 
@@ -524,7 +547,15 @@ class Decoder(nn.Module):
 
 
 class CTC(nn.Module):
-    """The auxiliary CTC head of the encoder-decoder models; only used to draft tokens."""
+    """The CTC head: OWSM-CTC's output (and intermediate CTC), the encoder-decoder models' drafts.
+
+    With ``plugin`` set (TensorRT export, OWSM-CTC), the argmax and the softmax over the vocabulary are
+    custom ops that become TensorRT plugins (see :mod:`owsm_trt.plugins`), on time-major rows [T, B, V]:
+    TensorRT keeps the encoder's residual stream time-major after the cross-attention layers, and would
+    otherwise transpose the vocabulary-wide logits for the plugins (several ms at batch 16). The
+    transposes are on the d-wide encoder states instead (free where they are time-major anyway)."""
+
+    plugin = False
 
     def __init__(self, d: int, vocab_size: int):
         super().__init__()
@@ -532,7 +563,20 @@ class CTC(nn.Module):
 
     def forward(self, enc: torch.Tensor) -> torch.Tensor:
         # [B, T, d] -> best-path ids [B, T] (int32; blank = 0, repeats not collapsed)
+        if CTC.plugin:
+            from . import plugins
+
+            return plugins.argmax_rows(self.ctc_lo(enc.transpose(0, 1))).transpose(0, 1)
         return self.ctc_lo(enc).argmax(-1).to(torch.int32)
+
+    def condition(self, x: torch.Tensor, layer: nn.Linear) -> torch.Tensor:
+        """Intermediate CTC conditioning: ``layer`` (vocabulary -> d) of the posteriors of ``x`` [B, T, d],
+        computed in fp32 and rounded to x.dtype."""
+        if CTC.plugin:
+            from . import plugins
+
+            return layer(plugins.softmax_rows(self.ctc_lo(x.transpose(0, 1)))).transpose(0, 1)
+        return layer(self.ctc_lo(x).float().softmax(-1).to(x.dtype))
 
 
 class OWSMModel(nn.Module):

@@ -141,6 +141,19 @@ def compile_ptx(
 ) -> tuple[str, str]:  # fmt: skip
     """PTX of the kernel ``dwconv1d`` for one configuration (and the compile log). ``arch``: e.g.
     ``compute_90`` (default: the current GPU's); ``sm_90`` compiles to a cubin, for the ptxas log only."""
+    defs = dict(K=k, V=v, TT=tt, NT=nt, NCH=nch, MINB=minb, GATED=int(gated), CAT=int(cat))
+    return nvrtc_ptx(DWCONV_SOURCE, "dwconv1d.cu", tuple(defs.items()), arch, cubin_log)
+
+
+@functools.lru_cache(maxsize=None)
+def nvrtc_ptx(
+    source: str,
+    name: str,
+    defs: tuple[tuple[str, int], ...],
+    arch: str | None = None,
+    cubin_log: bool = False,
+) -> tuple[str, str]:
+    """PTX of CUDA C ``source`` compiled with the macros ``defs`` (and the compile log); see compile_ptx."""
     from cuda.bindings import nvrtc
 
     def check(res):
@@ -151,9 +164,8 @@ def compile_ptx(
     if arch is None:
         major, minor = torch.cuda.get_device_capability()
         arch = f"compute_{major}{minor}"
-    prog = check(nvrtc.nvrtcCreateProgram(DWCONV_SOURCE.encode(), b"dwconv1d.cu", 0, [], []))
-    defs = dict(K=k, V=v, TT=tt, NT=nt, NCH=nch, MINB=minb, GATED=int(gated), CAT=int(cat))
-    opts = [f"-D{n}={x}".encode() for n, x in defs.items()]
+    prog = check(nvrtc.nvrtcCreateProgram(source.encode(), name.encode(), 0, [], []))
+    opts = [f"-D{n}={x}".encode() for n, x in defs]
     opts += [f"--gpu-architecture={arch}".encode(), b"-std=c++17"]
     if cubin_log:
         opts.append(b"--ptxas-options=-v")
@@ -363,3 +375,221 @@ def register() -> None:
         return _aot(trtp, "cat", x, x2, w, tactic)
 
     _registered = True
+
+
+# --- OWSM-CTC: softmax and argmax over the vocabulary ---------------------------------------------------
+
+ROWS_SOURCE = r"""
+// Row-wise operations on x [rows, V] fp16 (V a multiple of 8, rows in any number of leading dimensions):
+// one block of NT threads per row, thread t reading the vectors of 8 halves t, t + NT, ... of the row.
+//   softmax_rows: y [rows, V] fp16 = softmax(x) computed in fp32 (each value rounded once). Two passes over
+//                 the row: running maximum and sum (online softmax), then the output (the row again: from
+//                 L2). Few registers, so that several blocks share an SM and overlap their passes.
+//   argmax_rows:  y [rows] int32 = the first index of the largest value.
+typedef unsigned short u16;
+#define NV (V / 8)
+#define NW (NT / 32)
+#define LOG2E 1.4426950408889634f
+#define LOWEST -3.0e38f  // a start for maxima (not -inf: -inf - -inf would make NaNs)
+__device__ __forceinline__ float h2f(u16 h) { float f; asm("cvt.f32.f16 %0, %1;" : "=f"(f) : "h"(h)); return f; }
+__device__ __forceinline__ u16 f2h(float f) { u16 h; asm("cvt.rn.f16.f32 %0, %1;" : "=h"(h) : "f"(f)); return h; }
+__device__ __forceinline__ void unpack8(const uint4& v, float* f) {
+  const unsigned w[4] = {v.x, v.y, v.z, v.w};
+#pragma unroll
+  for (int i = 0; i < 4; i++) { f[2 * i] = h2f((u16)(w[i] & 0xffff)); f[2 * i + 1] = h2f((u16)(w[i] >> 16)); }
+}
+__device__ __forceinline__ uint4 pack8(const float* f) {
+  unsigned w[4];
+#pragma unroll
+  for (int i = 0; i < 4; i++) w[i] = (unsigned)f2h(f[2 * i]) | ((unsigned)f2h(f[2 * i + 1]) << 16);
+  return make_uint4(w[0], w[1], w[2], w[3]);
+}
+// (m, s): s = sum of exp(a - m) over the values a seen; merged with (m2, s2)
+__device__ __forceinline__ void merge(float& m, float& s, float m2, float s2) {
+  const float mm = fmaxf(m, m2);
+  s = s * exp2f((m - mm) * LOG2E) + s2 * exp2f((m2 - mm) * LOG2E);
+  m = mm;
+}
+
+extern "C" __global__ void __launch_bounds__(NT) softmax_rows(const uint4* __restrict__ x, uint4* __restrict__ y) {
+  __shared__ float sh_m[NW], sh_s[NW];
+  const long row = (long)blockIdx.y * gridDim.x + blockIdx.x;
+  x += row * NV;
+  y += row * NV;
+  float m = LOWEST, s = 0.f;
+#pragma unroll 4
+  for (int j = threadIdx.x; j < NV; j += NT) {
+    float f[8];
+    unpack8(x[j], f);
+    float mv = f[0];
+#pragma unroll
+    for (int k = 1; k < 8; k++) mv = fmaxf(mv, f[k]);
+    float sv = 0.f;
+#pragma unroll
+    for (int k = 0; k < 8; k++) sv += exp2f((f[k] - mv) * LOG2E);
+    merge(m, s, mv, sv);
+  }
+#pragma unroll
+  for (int o = 16; o; o >>= 1) merge(m, s, __shfl_xor_sync(0xffffffffu, m, o), __shfl_xor_sync(0xffffffffu, s, o));
+  if ((threadIdx.x & 31) == 0) { sh_m[threadIdx.x >> 5] = m; sh_s[threadIdx.x >> 5] = s; }
+  __syncthreads();
+  m = sh_m[0];
+  s = sh_s[0];
+#pragma unroll
+  for (int w = 1; w < NW; w++) merge(m, s, sh_m[w], sh_s[w]);
+#pragma unroll 4
+  for (int j = threadIdx.x; j < NV; j += NT) {
+    float f[8];
+    unpack8(x[j], f);
+#pragma unroll
+    for (int k = 0; k < 8; k++) f[k] = exp2f((f[k] - m) * LOG2E) / s;
+    y[j] = pack8(f);
+  }
+}
+
+extern "C" __global__ void __launch_bounds__(NT) argmax_rows(const uint4* __restrict__ x, int* __restrict__ y) {
+  __shared__ float sh_v[NW];
+  __shared__ int sh_i[NW];
+  const long row = (long)blockIdx.y * gridDim.x + blockIdx.x;
+  x += row * NV;
+  float best = LOWEST;
+  int arg = 0x7fffffff;
+#pragma unroll 4
+  for (int j = threadIdx.x; j < NV; j += NT) {
+    float f[8];
+    unpack8(x[j], f);
+#pragma unroll
+    for (int k = 0; k < 8; k++)
+      if (f[k] > best) { best = f[k]; arg = j * 8 + k; }  // indices increase: the first maximum stays
+  }
+#pragma unroll
+  for (int o = 16; o; o >>= 1) {
+    const float b2 = __shfl_xor_sync(0xffffffffu, best, o);
+    const int a2 = __shfl_xor_sync(0xffffffffu, arg, o);
+    if (b2 > best || (b2 == best && a2 < arg)) { best = b2; arg = a2; }
+  }
+  if ((threadIdx.x & 31) == 0) { sh_v[threadIdx.x >> 5] = best; sh_i[threadIdx.x >> 5] = arg; }
+  __syncthreads();
+  if (threadIdx.x == 0) {
+    for (int w = 1; w < NW; w++)  // (warp 0's is already in best / arg)
+      if (sh_v[w] > best || (sh_v[w] == best && sh_i[w] < arg)) { best = sh_v[w]; arg = sh_i[w]; }
+    y[row] = arg;
+  }
+}
+"""
+
+# Threads per row (tactic i + 1 = ROW_THREADS[i]); a 50048-wide fp16 row is 6256 vectors of 8.
+ROW_THREADS = (128, 256, 512)
+VOCAB_MULTIPLE = 64  # CTC export: vocabulary padded to a multiple of this (see build._padded_vocab)
+
+
+@torch.library.custom_op("owsm_trt::softmax_rows", mutates_args=())
+def softmax_rows(x: torch.Tensor) -> torch.Tensor:
+    """Softmax over the last dimension, computed in fp32 and rounded once to x.dtype."""
+    return x.float().softmax(-1).to(x.dtype)
+
+
+@softmax_rows.register_fake
+def _(x: torch.Tensor) -> torch.Tensor:
+    return x.new_empty(x.shape)
+
+
+@torch.library.custom_op("owsm_trt::argmax_rows", mutates_args=())
+def argmax_rows(x: torch.Tensor) -> torch.Tensor:
+    """Index (int32) of the largest value along the last dimension; the first one of equal values."""
+    return x.argmax(-1).to(torch.int32)
+
+
+@argmax_rows.register_fake
+def _(x: torch.Tensor) -> torch.Tensor:
+    return x.new_empty(x.shape[:-1], dtype=torch.int32)
+
+
+def _onnx_rows_op(name: str, out_type: str):
+    def translate(x):
+        from onnx.defs import OpSchema
+        from onnxscript import values
+
+        param = OpSchema.FormalParameter
+        schema = OpSchema(
+            name,
+            NAMESPACE,
+            1,
+            inputs=[param("x", "T")],
+            outputs=[param("y", "U")],
+            type_constraints=[
+                ("T", ["tensor(float16)"], ""),
+                ("U", [out_type], ""),
+            ],  # fmt: skip
+            attributes=[
+                OpSchema.Attribute(a, OpSchema.AttrType.STRING, "")
+                for a in ("plugin_namespace", "plugin_version")
+            ],
+        )
+        op = values.Op(values.Opset(NAMESPACE, 1), name, schema)
+        return op(x, plugin_namespace=NAMESPACE, plugin_version="1")
+
+    return translate
+
+
+CTC_ONNX_TRANSLATIONS = {
+    torch.ops.owsm_trt.softmax_rows.default: _onnx_rows_op("softmax_rows", "tensor(float16)"),
+    torch.ops.owsm_trt.argmax_rows.default: _onnx_rows_op("argmax_rows", "tensor(int32)"),
+}
+_ctc_registered = False
+
+
+def _rows_aot(trtp, kernel: str, x, tactic: int):
+    try:
+        nt = ROW_THREADS[max(tactic, 1) - 1]
+        vocab = int(x.shape[2])
+        if vocab % 8:
+            raise ValueError(f"{kernel}: the vocabulary ({vocab}) must be a multiple of 8")
+        ptx, _ = nvrtc_ptx(ROWS_SOURCE, "rows.cu", (("V", vocab), ("NT", nt)))
+        launch = trtp.KernelLaunchParams()
+        launch.grid_x = x.shape_expr[1]
+        launch.grid_y = x.shape_expr[0]
+        launch.block_x = nt
+        return kernel, ptx, launch, trtp.SymIntExprs(0)
+    except Exception:  # TensorRT reports only "launch param computation failed"
+        log.error("%s plugin:\n%s", kernel, traceback.format_exc())
+        raise
+
+
+def register_ctc() -> None:
+    """Register ``owsm::softmax_rows`` and ``owsm::argmax_rows`` (inputs [B, T, V] fp16) with TensorRT."""
+    global _ctc_registered
+    if _ctc_registered:
+        return
+    import tensorrt as trt
+    import tensorrt.plugin as trtp
+
+    tactics = list(range(1, len(ROW_THREADS) + 1))
+
+    @trtp.register(f"{NAMESPACE}::softmax_rows")
+    def _desc_s(x: trtp.TensorDesc) -> Tuple[trtp.TensorDesc]:
+        return x.like()
+
+    @trtp.autotune(f"{NAMESPACE}::softmax_rows")
+    def _tune_s(x: trtp.TensorDesc, outputs: Tuple[trtp.TensorDesc]) -> List[trtp.AutoTuneCombination]:
+        return [trtp.AutoTuneCombination("FP16, FP16", "LINEAR", tactics)]
+
+    @trtp.aot_impl(f"{NAMESPACE}::softmax_rows")
+    def _impl_s(x: trtp.TensorDesc, outputs: Tuple[trtp.TensorDesc], tactic: int
+                ) -> Tuple[Union[str, bytes], Union[str, bytes], trtp.KernelLaunchParams, trtp.SymExprs]:  # fmt: skip
+        return _rows_aot(trtp, "softmax_rows", x, tactic)
+
+    @trtp.register(f"{NAMESPACE}::argmax_rows")
+    def _desc_a(x: trtp.TensorDesc) -> Tuple[trtp.TensorDesc]:
+        return trtp.from_shape_expr((x.shape_expr[0], x.shape_expr[1]), dtype=trt.int32)
+
+    @trtp.autotune(f"{NAMESPACE}::argmax_rows")
+    def _tune_a(x: trtp.TensorDesc, outputs: Tuple[trtp.TensorDesc]) -> List[trtp.AutoTuneCombination]:
+        return [trtp.AutoTuneCombination("FP16, INT32", "LINEAR", tactics)]
+
+    @trtp.aot_impl(f"{NAMESPACE}::argmax_rows")
+    def _impl_a(x: trtp.TensorDesc, outputs: Tuple[trtp.TensorDesc], tactic: int
+                ) -> Tuple[Union[str, bytes], Union[str, bytes], trtp.KernelLaunchParams, trtp.SymExprs]:  # fmt: skip
+        return _rows_aot(trtp, "argmax_rows", x, tactic)
+
+    _ctc_registered = True
