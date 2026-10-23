@@ -336,3 +336,15 @@ def test_encoder_graph_ctc_head_plugin_mode():
             CTC.plugin = False
     assert torch.equal(out[2], ref[2]) and out[2].dtype == torch.int32
     assert torch.equal(out[0], ref[0]) and torch.equal(out[1], ref[1])
+
+
+def test_nvrtc_leaves_shared_bytes_alone():
+    """NVRTC writes its log and PTX into the buffers it is given. An empty log is one NUL byte, and b" " * 1
+    is Python's shared b" ": writing it made every later single-space read a NUL (the next torch.load in the
+    process failed at memo index 32)."""
+    pytest.importorskip("cuda.bindings.nvrtc")
+    ptx, log = plugins.nvrtc_ptx(
+        'extern "C" __global__ void k(float* x) { x[0] = 1; }', "k.cu", (), "compute_80"
+    )
+    assert ".entry k" in ptx and log == ""
+    assert bytes([32]) == b"\x20" and b"a b".split(b" ") == [b"a", b"b"]

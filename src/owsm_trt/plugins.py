@@ -170,14 +170,17 @@ def nvrtc_ptx(
     if cubin_log:
         opts.append(b"--ptxas-options=-v")
     res = nvrtc.nvrtcCompileProgram(prog, len(opts), opts)
-    log = b" " * check(nvrtc.nvrtcGetProgramLogSize(prog))
+    # NVRTC writes into these buffers, so they must be bytearrays: b" " * 1 (an empty log is its NUL) is
+    # Python's shared b" ", and writing it made every later single-space read in the process a NUL (which
+    # broke the next checkpoint's unpickling)
+    log = bytearray(check(nvrtc.nvrtcGetProgramLogSize(prog)))
     check(nvrtc.nvrtcGetProgramLog(prog, log))
     log = log.decode(errors="replace").rstrip("\x00").strip()
     if res[0] != nvrtc.nvrtcResult.NVRTC_SUCCESS:
         raise RuntimeError(f"NVRTC compile failed: {log}")
     if arch.startswith("sm_"):
         return "", log
-    ptx = b" " * check(nvrtc.nvrtcGetPTXSize(prog))
+    ptx = bytearray(check(nvrtc.nvrtcGetPTXSize(prog)))
     check(nvrtc.nvrtcGetPTX(prog, ptx))
     nvrtc.nvrtcDestroyProgram(prog)
     return ptx.decode().rstrip("\x00"), log

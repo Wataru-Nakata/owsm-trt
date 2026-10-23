@@ -13,9 +13,7 @@ per utterance (``cross_kv``). Both functions are export-friendly (pure tensor op
 control flow on tensor values) so the same code serves the eager path and the TensorRT export.
 """
 
-import logging
 import math
-import pickle
 
 import torch
 import torch.nn.functional as F
@@ -693,13 +691,8 @@ def convert_espnet_state_dict(sd: dict[str, torch.Tensor]) -> dict[str, torch.Te
 
 
 def load_checkpoint(path: str) -> dict[str, torch.Tensor]:
-    """``torch.load`` of an ESPnet checkpoint, tried twice: on a cluster file system under load, reading a
-    multi-GB checkpoint has failed now and then with an unpickling error that the next read did not repeat."""
-    try:
-        return torch.load(path, map_location="cpu", weights_only=True)
-    except pickle.UnpicklingError as e:
-        logging.getLogger(__name__).warning("reading %s failed (%s); trying once more", path, str(e)[:200])
-        return torch.load(path, map_location="cpu", weights_only=True)
+    """``torch.load`` of an ESPnet checkpoint (tensors only)."""
+    return torch.load(path, map_location="cpu", weights_only=True)
 
 
 def load_model(
