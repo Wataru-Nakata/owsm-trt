@@ -177,6 +177,18 @@ def cached_attention(
     return p[..., :cap] @ v_cache + p[..., cap:] @ v  # [B, H, S, d_k]
 
 
+def explicit_attention(
+    q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, mask: torch.Tensor | None = None
+) -> torch.Tensor:
+    """softmax(q k^T / sqrt(d_k)) v with the scale on ``q``, for export: the ONNX exporter's
+    ``scaled_dot_product_attention`` also scales ``k``, which TensorRT then computes in full on every
+    multi-token decoder call (the whole cross-attention keys and KV cache of every layer)."""
+    scores = (q * q.shape[-1] ** -0.5) @ k.transpose(-1, -2)
+    if mask is not None:
+        scores = scores.masked_fill(~mask, float("-inf"))
+    return scores.softmax(-1) @ v
+
+
 class FeedForward(nn.Module):
     def __init__(self, d: int, units: int, activation: nn.Module):
         super().__init__()
@@ -188,17 +200,26 @@ class FeedForward(nn.Module):
         return self.w_2(self.activation(self.w_1(x)))
 
 
+class DepthwiseConv1d(nn.Conv1d):
+    """Depthwise convolution over time of [B, T, C] input ('same' padding, ``nn.Conv1d`` weights)."""
+
+    def __init__(self, channels: int, kernel: int):
+        super().__init__(channels, channels, kernel, 1, (kernel - 1) // 2, groups=channels)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return super().forward(x.transpose(1, 2)).transpose(1, 2)
+
+
 class ConvolutionalSpatialGatingUnit(nn.Module):
     def __init__(self, units: int, kernel: int):
         super().__init__()
         c = units // 2
         self.norm = LayerNorm(c)
-        self.conv = nn.Conv1d(c, c, kernel, 1, (kernel - 1) // 2, groups=c)
+        self.conv = DepthwiseConv1d(c, kernel)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x_r, x_g = x.chunk(2, dim=-1)
-        x_g = self.conv(self.norm(x_g).transpose(1, 2)).transpose(1, 2)
-        return x_r * x_g
+        return x_r * self.conv(self.norm(x_g))
 
 
 class ConvolutionalGatingMLP(nn.Module):
@@ -226,7 +247,7 @@ class EBranchformerLayer(nn.Module):
         self.norm_mlp = LayerNorm(d)
         self.norm_final = LayerNorm(d)
         k = cfg.merge_kernel
-        self.depthwise_conv_fusion = nn.Conv1d(2 * d, 2 * d, k, 1, (k - 1) // 2, groups=2 * d)
+        self.depthwise_conv_fusion = DepthwiseConv1d(2 * d, k)
         self.merge_proj = nn.Linear(2 * d, d)
         if cross_attn:  # OWSM-CTC: attention to the prompt after the feed-forward module
             self.cross_attn = MultiHeadedAttention(d, cfg.n_heads)
@@ -243,8 +264,7 @@ class EBranchformerLayer(nn.Module):
         x1 = self.attn(self.norm_mha(x).to(dt))
         x2 = self.cgmlp(self.norm_mlp(x).to(dt))
         x_concat = torch.cat([x1, x2], dim=-1)  # [B, T, 2d]
-        x_tmp = self.depthwise_conv_fusion(x_concat.transpose(1, 2)).transpose(1, 2)
-        x = x + self.merge_proj(x_concat + x_tmp).to(r)
+        x = x + self.merge_proj(x_concat + self.depthwise_conv_fusion(x_concat)).to(r)
         x = x + 0.5 * self.feed_forward(self.norm_ff(x).to(dt)).to(r)
         if memory is not None and hasattr(self, "cross_attn"):
             x = x + self.cross_attn.cross(self.norm_cross_attn(x).to(dt), memory).to(r)
@@ -296,6 +316,9 @@ class Encoder(nn.Module):
             self.conditioning_layer = nn.Linear(cfg.vocab_size, d)
         n = cfg.enc_frames + cfg.n_prefix
         self.register_buffer("pe", sinusoidal_positions(n, d), persistent=False)
+        self.n_frames = cfg.enc_frames
+        # The subsampled frame of padding only (see padding_frame); when set, ``feats`` may stop early.
+        self.fill: torch.Tensor | None = None
 
     def forward(
         self,
@@ -307,6 +330,8 @@ class Encoder(nn.Module):
         # feats: [B, T, n_mels] (fp32) -> [B, (2 +) T', d]
         dt = self.embed.out.weight.dtype
         x = self.embed(feats.to(dt))
+        if self.fill is not None:  # feats stop early: every later frame sees padding only
+            x = torch.cat([x, self.fill.expand(x.shape[0], self.n_frames, -1)], dim=1)[:, : self.n_frames]
         if prefix is not None:
             x = torch.cat([prefix.to(dt), x], dim=1)
         # The residual stream starts in fp32 (the layers compute in the model dtype): the subsampled
@@ -320,6 +345,28 @@ class Encoder(nn.Module):
                 probs = ctc.ctc_lo(x.to(dt)).float().softmax(-1).to(dt)
                 x = x + self.conditioning_layer(probs).to(x.dtype)
         return self.after_norm(x).to(dt)
+
+
+@torch.no_grad()
+def padding_frame(model: "OWSMModel | OWSMCTCModel") -> torch.Tensor:
+    """The subsampled encoder input [1, 1, d] of a stretch of padding (zeros): the same for every
+    recording, given global mean normalization. Frames whose receptive field holds padding only need
+    not be computed."""
+    cfg, enc = model.cfg, model.encoder
+    dev = enc.embed.out.weight.device
+    feats = model.frontend(torch.zeros(1, cfg.num_samples, device=dev))
+    x = enc.embed(feats.to(enc.embed.out.weight.dtype))
+    return x[:, x.shape[1] // 2 :][:, :1].clone()
+
+
+def frames_needed(cfg: OWSMConfig, samples: int) -> int:
+    """Feature frames to compute for ``samples`` of audio, so that every subsampled frame left out
+    sees padding only (see :func:`padding_frame`)."""
+    first_pad = (samples + cfg.n_fft // 2) // cfg.hop_length + 1  # the first frame of padding only
+    field, step = 1, 1  # receptive field and step of a subsampled frame, in feature frames
+    for s in cfg.strides:
+        field, step = field + 2 * step, step * s
+    return min(cfg.num_frames, first_pad + field + step)
 
 
 class DecoderLayer(nn.Module):
@@ -345,8 +392,8 @@ class Decoder(nn.Module):
         self.output_layer = nn.Linear(d, cfg.vocab_size)
         self.xscale = math.sqrt(d)
         self.register_buffer("pe", sinusoidal_positions(max_positions, d), persistent=False)
-        # Eager PyTorch is faster with split attention; TensorRT fuses the concat + SDPA form into one
-        # MHA kernel, so the export switches this off.
+        # Eager PyTorch is faster with split attention and SDPA; TensorRT fuses the concat + explicit
+        # attention form into MHA kernels, so the export switches this off.
         self.split_attention = True
 
     def cross_kv(self, enc: torch.Tensor) -> torch.Tensor:
@@ -402,12 +449,16 @@ class Decoder(nn.Module):
             else:
                 k_all = torch.cat([self_k[i], k], dim=2)  # [B, H, C+S, d_k]
                 v_all = torch.cat([self_v[i], v], dim=2)
-                y = F.scaled_dot_product_attention(q, k_all, v_all, attn_mask=mask)
+                y = explicit_attention(q, k_all, v_all, mask)
             x = x + att.merge(y)
 
             src = layer.src_attn
             q = src.heads(src.linear_q(layer.norm2(x)))
-            x = x + src.merge(F.scaled_dot_product_attention(q, cross_k[i], cross_v[i]))
+            if self.split_attention:
+                y = F.scaled_dot_product_attention(q, cross_k[i], cross_v[i])
+            else:
+                y = explicit_attention(q, cross_k[i], cross_v[i])
+            x = x + src.merge(y)
 
             x = x + layer.feed_forward(layer.norm3(x))
 

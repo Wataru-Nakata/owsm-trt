@@ -13,7 +13,7 @@ from . import fp8, hub
 from .audio import AudioLike, duration, load_audio
 from .build import DTYPES, BuildOptions, build_engines, check_config, engine_tag
 from .config import load_espnet_config, parse_config
-from .modeling import Frontend, OWSMCTCModel, OWSMModel, load_model
+from .modeling import Frontend, OWSMCTCModel, OWSMModel, frames_needed, load_model
 from .runtime import (
     BeamSession,
     CTCSession,
@@ -30,6 +30,11 @@ log = logging.getLogger(__name__)
 
 # Window sizes (drafted tokens + 1) of CTC-drafted greedy decoding; one CUDA graph each per cache bucket.
 DRAFT_WINDOWS = (1, 2, 4, 8, 16, 32)
+# At most this many tokens (rows x window) per decoder call: wider calls cost more than they save
+# (batch 16: 3.7 ms with windows of 16, 5.0 ms with 32, on the 1B model).
+DRAFT_TOKENS = 256
+# Feature lengths a trimming encoder engine gets (multiples of this, 5 s): one CUDA graph each.
+FEATURE_STEP = 500
 
 
 @dataclass
@@ -80,6 +85,7 @@ class OWSM:
         self.opts, self.device, self.use_cuda_graph = opts, device, use_cuda_graph
         self.ctc_draft = ctc_draft
         self.draft_stats = [0, 0]  # tokens emitted, decoder calls made by drafted decoding
+        self.stream_priority = True  # decoder calls go first while the encoder works ahead
         self.dtype = DTYPES[opts.dtype]
         t = tokenizer
         self.rules = (
@@ -176,17 +182,23 @@ class OWSM:
                 self._sessions.popitem(last=False)
             args = (self.opts.capacity, self.tokenizer.eos, self.dtype, self.device, self.use_cuda_graph)
             if beam == 1:
-                windows = tuple(w for w in DRAFT_WINDOWS if w <= self.opts.max_verify)
+                windows = self._draft_windows(batch)
                 self._sessions[key] = GreedySession(
-                    self.backend, self.cfg, batch, *args,
-                    draft_windows=windows if self.ctc_draft else (), rules=self.rules,
-                )  # fmt: skip
+                    self.backend, self.cfg, batch, *args, draft_windows=windows, rules=self.rules
+                )
             else:
                 self._sessions[key] = BeamSession(
                     self.backend, self.cfg, batch, beam, *args, rules=self.rules
                 )
         self._sessions.move_to_end(key)
         return self._sessions[key]
+
+    def _draft_windows(self, batch: int) -> tuple[int, ...]:
+        if not self.ctc_draft:
+            return ()
+        return tuple(
+            w for w in DRAFT_WINDOWS if w <= self.opts.max_verify and w * batch <= max(DRAFT_TOKENS, batch)
+        )
 
     def _check_beam(self, beam: int) -> int:
         if beam < 1 or beam > self.opts.max_batch:
@@ -209,8 +221,15 @@ class OWSM:
                 )
         batch = torch.zeros(len(waves), n, device=self.device)  # pad on the device: copy only the audio
         for row, w in zip(batch, waves):
-            row[: min(n, w.shape[0])] = w[:n].to(self.device)
-        return self.frontend(batch)  # [B, T, n_mels]
+            w = w[:n]
+            if batch.is_cuda and w.device.type == "cpu":
+                w = w.pin_memory()  # a copy from pageable memory would first wait for the stream's work
+            row[: w.shape[0]].copy_(w, non_blocking=True)
+        feats = self.frontend(batch)  # [B, T, n_mels]
+        if getattr(self.backend, "trimmed", False):  # the encoder fills in the frames of padding only
+            t = max(frames_needed(self.cfg, w.shape[0]) for w in waves)
+            feats = feats[:, : min(self.cfg.num_frames, -(-t // FEATURE_STEP) * FEATURE_STEP)]
+        return feats
 
     def _primer(self, lang: str, task: str, timestamps: bool, prompt: str | None) -> list[int]:
         t = self.tokenizer
@@ -265,6 +284,25 @@ class OWSM:
             return results[0] if single else results
         bs = self._batch_size(batch_size, beam_size)
         primer = self._primer(lang, task, timestamps, prompt)
+        stream = len(items) > bs and beam_size == 1 and task == "asr"
+        if stream and len(primer) < max(self._draft_windows(bs), default=0):
+            # Rows take the next utterance as soon as theirs is done, and the encoder works ahead. (A
+            # single batch goes the direct way below: no staging buffers to copy from.)
+            sess = self._session(bs)
+            # similar durations in an encoder batch: its features stop after the longest recording
+            order = sorted(range(len(items)), key=lambda i: duration(items[i], sr or self.cfg.sample_rate))
+            chunks = (order[i : i + bs] for i in range(0, len(order), bs))
+            batches = (self._features([self._wave(items[j], sr) for j in chunk]) for chunk in chunks)
+            outs, calls = sess.decode_stream(
+                primer, batches, self._ctc_draft, self._max_new(), self.tokenizer.not_drafted,
+                priority=self.stream_priority,
+            )  # fmt: skip
+            self.draft_stats[0] += sum(len(o) + 1 for o in outs)
+            self.draft_stats[1] += calls
+            results = [None] * len(items)
+            for j, ids in zip(order, outs):
+                results[j] = self._result(ids, offset=0.0)
+            return results[0] if single else results
         # A batch decodes until its longest member finishes, so batch utterances of similar duration.
         order = sorted(range(len(items)), key=lambda i: duration(items[i], sr or self.cfg.sample_rate))
         results: list[Result | None] = [None] * len(items)

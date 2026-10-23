@@ -12,6 +12,7 @@ from pathlib import Path
 
 import torch
 
+import owsm_trt.pipeline
 from owsm_trt import OWSM
 from owsm_trt.audio import load_audio
 
@@ -41,6 +42,9 @@ def main() -> None:
     ap.add_argument("--no-draft", action="store_true", help="plain greedy steps, no CTC-drafted windows")
     ap.add_argument("--timestamps", action="store_true", help="save generated token ids, not text")
     ap.add_argument("--max-batch-size", type=int, default=16)
+    ap.add_argument("--no-priority", action="store_true", help="decoder calls without stream priority")
+    ap.add_argument("--max-window", type=int, help="largest draft window (default: all built)")
+    ap.add_argument("--draft-tokens", type=int, help="most tokens per decoder call (rows x window)")
     ap.add_argument("--no-cuda-graph", action="store_true")
     ap.add_argument("--data", default=".cache/testdata/librispeech_dummy/manifest.json")
     ap.add_argument("--repeat", type=int, default=3)
@@ -69,9 +73,16 @@ def main() -> None:
         fp8_calibration=waves[: args.fp8_calib] if args.fp8_calib else None,
     )
     load_s = time.perf_counter() - t0
+    model.stream_priority = not args.no_priority
+    if args.draft_tokens:
+        owsm_trt.pipeline.DRAFT_TOKENS = args.draft_tokens
+    if args.max_window:
+        owsm_trt.pipeline.DRAFT_WINDOWS = tuple(
+            w for w in owsm_trt.pipeline.DRAFT_WINDOWS if w <= args.max_window
+        )
 
     kw = {"batch_size": args.batch_size, "beam_size": args.beam, "timestamps": args.timestamps}
-    model.transcribe(waves[: args.batch_size], **kw)  # warm-up / graph capture
+    model.transcribe(waves, **kw)  # warm-up: CUDA graphs for every batch size and feature length
     model.draft_stats = [0, 0]
     times = []
     for _ in range(args.repeat):

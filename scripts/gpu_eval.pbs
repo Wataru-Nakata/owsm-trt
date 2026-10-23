@@ -63,18 +63,26 @@ for stage in $STAGES; do
     trt16_b8)
       run trt16_b8 900 "${PY[@]}" "$SNAP/scripts/eval_wer.py" --model "$MODEL" --backend tensorrt --dtype float16 \
         --batch-size 8 --compare "$REF" ;;
-    eval_*)  # eval_<trt|torch><16|32>_b<batch>_k<beam>[_nodraft][_ts][_r1][_fp8], e.g. eval_trt16_b1_k5_ts
+    eval_*)  # eval_<trt|torch><16|32>_b<batch>_k<beam>[_nodraft][_ts][_r1][_fp8][_noprio][_w<max window>][_t<draft tokens>], e.g. eval_trt16_b1_k5_ts
       IFS=_ read -r _ cfg bb kk extra <<< "$stage"
       be=${cfg%%[0-9]*}; bits=${cfg#"$be"}; [ "$be" = trt ] && be=tensorrt
       ref=$REF; [ "${kk#k}" -gt 1 ] && ref=$REF_BEAM
       ref=${ref//:/ }  # several files separated by ':'
       flags=(); [[ "$extra" == *nodraft* ]] && flags+=(--no-draft); [[ "$extra" == *r1* ]] && flags+=(--repeat 1)
       [[ "$extra" == *fp8* ]] && flags+=(--fp8-calib "${FP8_CALIB:-8}")
+      [[ "$extra" == *noprio* ]] && flags+=(--no-priority)
+      [[ "$extra" =~ w([0-9]+) ]] && flags+=(--max-window "${BASH_REMATCH[1]}")
+      [[ "$extra" =~ t([0-9]+) ]] && flags+=(--draft-tokens "${BASH_REMATCH[1]}")
       if [[ "$extra" == *ts* ]]; then flags+=(--timestamps); ref="${REF_TS:-$OUT}/espnet_${kk#k}_float32_ts.json"; fi
       run "$stage" 1800 "${PY[@]}" "$SNAP/scripts/eval_wer.py" --model "$MODEL" --backend "$be" --dtype "float$bits" \
         --batch-size "${bb#b}" --beam "${kk#k}" "${flags[@]}" --save "$OUT/$stage.json" --compare $ref ;;
     check_models)  # MODELS=a:b:c (HF ids, optionally id@task): TensorRT fp16 vs torch fp32 for each
       run check_models 3300 "${PY[@]}" "$SNAP/scripts/check_models.py" ${MODELS//:/ } ;;
+    enc_variants)  # encoder engine variants (VARIANTS=base:b1:unroll...), timed per batch size
+      run enc_variants 2400 "${PY[@]}" "$SNAP/scripts/encoder_variants.py" --model "$MODEL" \
+        ${VARIANTS:+--variants "${VARIANTS//:/,}"} ;;
+    pyfile)  # PYFILE=path/to/script.py (e.g. a one-off debug script under outputs/), run with MODEL as argument
+      run pyfile 1200 "${PY[@]}" "$PYFILE" "$MODEL" ;;
     fp8_toy)  # does TensorRT build FP8 kernels from our quantize/dequantize pairs?
       run fp8_toy 900 "${PY[@]}" "$SNAP/scripts/fp8_toy.py" ;;
     draft_report)

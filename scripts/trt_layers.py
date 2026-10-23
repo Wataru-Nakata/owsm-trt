@@ -50,7 +50,7 @@ def main() -> None:
     targets += [
         (f"verify_{w}", model.backend.verifier, None) for w in map(int, filter(None, args.windows.split(",")))
     ]
-    targets += [("encoder", model.backend.encoder, model.backend.enc_ctx)]
+    targets += [("encoder", model.backend.encoder, model.backend.enc_ctx(args.batch))]
     for name, engine, run_ctx in targets:
         if name == "decoder_step":
             b = sess
@@ -97,6 +97,8 @@ def main() -> None:
         for k, (n, ms) in sorted(kinds.items(), key=lambda kv: -kv[1][1])[:15]:
             print(f"    {n:4d} {ms:8.4f}  {k}")
 
+        times = {layer: ms / args.iters for layer, ms in prof.ms.items()}
+        (out / f"{name}_times.json").write_text(json.dumps(times, indent=0))
         insp = engine.create_engine_inspector()
         insp.execution_context = ctx
         (out / f"{name}.json").write_text(insp.get_engine_information(trt.LayerInformationFormat.JSON))

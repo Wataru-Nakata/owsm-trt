@@ -13,7 +13,7 @@ from torch import nn
 
 from . import fp8
 from .config import OWSMConfig
-from .modeling import OWSMCTCModel, OWSMModel
+from .modeling import OWSMCTCModel, OWSMModel, padding_frame
 from .runtime import cache_buckets
 
 log = logging.getLogger(__name__)
@@ -21,7 +21,8 @@ log = logging.getLogger(__name__)
 DTYPES = {"float16": torch.float16, "bfloat16": torch.bfloat16, "float32": torch.float32}
 
 # Bump whenever the exported graphs change, so cached engines from older exports are not reused.
-EXPORT_VERSION = 9
+EXPORT_VERSION = 12
+MIN_FEATURE_FRAMES = 64  # shortest feature input of a trimming encoder engine
 
 
 @dataclass(frozen=True)
@@ -81,18 +82,25 @@ def export_onnx(model: OWSMModel, out_dir: Path, opts: BuildOptions) -> tuple[Pa
     cache = torch.export.Dim("cache", min=16, max=opts.capacity)  # KV-cache bucket length
 
     enc_path = out_dir / "encoder.onnx"
-    feats = torch.randn(2, cfg.num_frames, cfg.n_mels, device=dev)
-    torch.onnx.export(
-        _EncoderGraph(model).eval(),
-        (feats,),
-        enc_path,
-        input_names=["feats"],
-        output_names=["cross_k", "cross_v", "ctc_ids"],
-        dynamic_shapes={"feats": {0: batch}},
-        dynamo=True,
-        external_data=True,
-        custom_translation_table=fp8.ONNX_TRANSLATIONS if opts.fp8_encoder else None,
-    )
+    feats_dims = {0: batch}
+    if trims_features(cfg):  # feats may stop after the audio: the encoder fills in frames of padding
+        feats_dims[1] = torch.export.Dim("time", min=MIN_FEATURE_FRAMES, max=cfg.num_frames)
+        model.encoder.fill = padding_frame(model)
+    feats = torch.randn(2, cfg.num_frames - 8, cfg.n_mels, device=dev)  # < max: not specialised
+    try:
+        torch.onnx.export(
+            _EncoderGraph(model).eval(),
+            (feats,),
+            enc_path,
+            input_names=["feats"],
+            output_names=["cross_k", "cross_v", "ctc_ids"],
+            dynamic_shapes={"feats": feats_dims},
+            dynamo=True,
+            external_data=True,
+            custom_translation_table=fp8.ONNX_TRANSLATIONS if opts.fp8_encoder else None,
+        )
+    finally:
+        model.encoder.fill = None
 
     dec_path = out_dir / "decoder.onnx"
     b, s = 2, 3  # sizes > 1 so the exporter does not specialise them
@@ -177,22 +185,29 @@ def export_ctc_onnx(model: OWSMCTCModel, out_dir: Path, opts: BuildOptions) -> P
     batch = torch.export.Dim("batch", min=1, max=opts.max_batch)
     plen = torch.export.Dim("prompt", min=1, max=opts.max_prefill)
     path = out_dir / "ctc.onnx"
+    feats_dims = {0: batch}
+    if trims_features(cfg):  # as in export_onnx
+        feats_dims[1] = torch.export.Dim("time", min=MIN_FEATURE_FRAMES, max=cfg.num_frames)
+        model.encoder.fill = padding_frame(model)
     args = (
-        torch.randn(2, cfg.num_frames, cfg.n_mels, device=dev),
+        torch.randn(2, cfg.num_frames - 8, cfg.n_mels, device=dev),
         torch.zeros(2, 3, dtype=torch.long, device=dev),
         torch.zeros(2, 2, dtype=torch.long, device=dev),
     )
-    torch.onnx.export(
-        _CTCGraph(model).eval(),
-        args,
-        path,
-        input_names=["feats", "prompt", "prefix"],
-        output_names=["ctc_ids"],
-        dynamic_shapes={"feats": {0: batch}, "prompt": {0: batch, 1: plen}, "prefix": {0: batch}},
-        dynamo=True,
-        external_data=True,
-        custom_translation_table=fp8.ONNX_TRANSLATIONS if opts.fp8_encoder else None,
-    )
+    try:
+        torch.onnx.export(
+            _CTCGraph(model).eval(),
+            args,
+            path,
+            input_names=["feats", "prompt", "prefix"],
+            output_names=["ctc_ids"],
+            dynamic_shapes={"feats": feats_dims, "prompt": {0: batch, 1: plen}, "prefix": {0: batch}},
+            dynamo=True,
+            external_data=True,
+            custom_translation_table=fp8.ONNX_TRANSLATIONS if opts.fp8_encoder else None,
+        )
+    finally:
+        model.encoder.fill = None
     return path
 
 
@@ -205,22 +220,29 @@ def build_engines(
     onnx_dir = engine_dir / "onnx"
     log.info("exporting ONNX to %s", onnx_dir)
     B = opts.max_batch
+    # Batch 1 gets an encoder profile of its own: kernels picked for 16 recordings are ~20% slower on one.
+    batches = [{"batch": (1, 1, 1)}] + ([{"batch": (2, B, B)}] if B > 1 else [])
+    frames = (MIN_FEATURE_FRAMES, cfg.num_frames // 3, cfg.num_frames) if trims_features(cfg) else None
+    frames = frames or (cfg.num_frames,) * 3
     if cfg.ctc_only:
         path = export_ctc_onnx(model, onnx_dir, opts)
-        profile = {
-            "feats": tuple((n, cfg.num_frames, cfg.n_mels) for n in (1, B, B)),
-            "prompt": ((1, 1), (B, 1), (B, opts.max_prefill)),
-            "prefix": ((1, 2), (B, 2), (B, 2)),
-        }
+        shapes = [
+            {
+                "feats": tuple((n, t, cfg.n_mels) for n, t in zip(p["batch"], frames)),
+                "prompt": tuple((n, t) for n, t in zip(p["batch"], (1, 1, opts.max_prefill))),
+                "prefix": tuple((n, 2) for n in p["batch"]),
+            }
+            for p in batches
+        ]
         log.info("building the CTC engine (this can take a few minutes)")
-        _build(path, engine_dir / "ctc.engine", [profile], opts)
-        _finish(engine_dir, onnx_dir, opts, cfg, {}, keep_onnx)
+        _build(path, engine_dir / "ctc.engine", shapes, opts)
+        _finish(engine_dir, onnx_dir, opts, cfg, {"ctc": batches}, keep_onnx)
         return
     enc_onnx, dec_onnx = export_onnx(model, onnx_dir, opts)
 
-    enc_profile = {"feats": tuple((n, cfg.num_frames, cfg.n_mels) for n in (1, B, B))}
+    shapes = [{"feats": tuple((n, t, cfg.n_mels) for n, t in zip(p["batch"], frames))} for p in batches]
     log.info("building encoder engine (this can take a few minutes)")
-    _build(enc_onnx, engine_dir / "encoder.engine", [enc_profile], opts)
+    _build(enc_onnx, engine_dir / "encoder.engine", shapes, opts)
 
     log.info("building decoder engines (this can take a few minutes)")
     profiles = decoder_profiles(opts.max_batch)
@@ -230,13 +252,22 @@ def build_engines(
         shapes = [decoder_profile_shapes(cfg, opts, p) for p in profs]
         _build(dec_onnx, engine_dir / f"{name}.engine", shapes, opts, level)
 
-    _finish(engine_dir, onnx_dir, opts, cfg, {"decoder": steps, "verify": verify}, keep_onnx)
+    _finish(
+        engine_dir, onnx_dir, opts, cfg, {"encoder": batches, "decoder": steps, "verify": verify}, keep_onnx
+    )
+
+
+def trims_features(cfg: OWSMConfig) -> bool:
+    """Whether the encoder engine takes features that stop after the audio (:func:`padding_frame`):
+    when padding has the same features in every recording (global MVN)."""
+    return cfg.normalize == "global_mvn"
 
 
 def _finish(
     engine_dir: Path, onnx_dir: Path, opts: BuildOptions, cfg: OWSMConfig, profiles: dict, keep_onnx: bool
 ) -> None:
     meta = {"options": asdict(opts), "config": asdict(cfg), "profiles": profiles}
+    meta["trimmed_features"] = trims_features(cfg)
     (engine_dir / "build.json").write_text(json.dumps(meta, indent=1))
     if not keep_onnx:
         shutil.rmtree(onnx_dir, ignore_errors=True)

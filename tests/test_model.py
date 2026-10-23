@@ -368,6 +368,17 @@ def test_ctc_model_shapes():
     a = m.encoder(feats, prefix, torch.zeros(3, 1, cfg.d_model), m.ctc)
     b = m.encoder(feats, prefix, torch.ones(3, 1, cfg.d_model), m.ctc)
     assert not torch.allclose(a, b)
+    # features trimmed after the audio + the padding frame: the same encoder output
+    from owsm_trt.modeling import frames_needed, padding_frame
+
+    speech = torch.zeros(3, cfg.num_samples)
+    speech[:, :1000] = torch.randn(3, 1000)
+    feats = m.frontend(speech)
+    memory = torch.randn(3, 1, cfg.d_model)
+    ref = m.encoder(feats, prefix, memory, m.ctc)
+    m.encoder.fill = padding_frame(m)
+    trimmed = m.encoder(feats[:, : frames_needed(cfg, 1000)], prefix, memory, m.ctc)
+    torch.testing.assert_close(trimmed, ref, rtol=1e-4, atol=1e-4)
 
 
 def test_drafted_decoding_recovers_from_draft_errors(model):
@@ -462,6 +473,112 @@ def test_batched_drafted_decoding_is_greedy(model, primer, rules):
     # a batch runs until its slowest row is done: with every draft right, a few calls suffice
     out, calls = sess.decode_drafted(pr, ref, 20, insertions)
     assert out == ref and calls <= 5, calls
+
+
+@pytest.mark.parametrize("rules", [False, True], ids=["free", "rules"])
+def test_drafted_decoding_with_a_long_primer(model, rules):
+    """A primer longer than the largest window is prefilled on its own; then drafts as usual."""
+    torch.manual_seed(7)
+    feats = model.frontend(torch.randn(2, TINY.num_samples))
+    kw = {"dtype": torch.float32, "device": torch.device("cpu"), "use_cuda_graph": False, "buckets": [16, 32]}
+    kw["rules"] = _rules() if rules else None
+    pr = torch.tensor([[2, 3, 30, 31, 32, 33, 34, 35, 4]] * 2)  # e.g. sop + prompt + sos lang task
+    greedy = GreedySession(_DistinctBackend(model), TINY, 2, 32, eos=1, **kw)
+    greedy.encode(feats)
+    ref = greedy.decode(pr, 20)
+    assert min(len(r) for r in ref) > 10
+    sess = GreedySession(_DistinctBackend(model), TINY, 2, 32, eos=1, draft_windows=(2, 4, 8), **kw)
+    sess.encode(feats)
+    bad = list(ref[0])
+    bad[2:4] = [7, 8, 9]
+    insertions = set(range(FIRST_T, LAST_T + 1)) if rules else set()
+    for drafts in ([ref[0], ref[1]], [bad, []]):
+        out, _ = sess.decode_drafted(pr, drafts, 20, insertions)
+        assert out == ref
+
+
+class _DistinctBackend(TorchBackend):
+    """Cross-attention values that differ a lot between utterances (the tiny random model hardly
+    listens to its input), so that a row decoding with another row's encoder output shows."""
+
+    def encode(self, feats, cross_k, cross_v, ctc_ids):
+        super().encode(feats, cross_k, cross_v, ctc_ids)
+        for b, f in enumerate(feats):
+            g = torch.Generator().manual_seed(int(f.abs().sum() * 100))
+            cross_v[:, b] += 10 * torch.randn(cross_v[:, b].shape, generator=g)
+
+
+@pytest.mark.parametrize("primer", [[2, 3, 4], [2, 3, 4, NOTIME]], ids=["timestamps", "notimestamps"])
+@pytest.mark.parametrize("rules", [False, True], ids=["free", "rules"])
+def test_streamed_drafted_decoding_is_greedy(model, primer, rules):
+    """decode_stream refills a row as soon as its utterance is done: whatever the order of the
+    utterances and of the refills, each one gets its greedy output, in fewer calls than fixed batches."""
+    import random
+
+    torch.manual_seed(5)
+    n, rows, backend = 8, 3, _DistinctBackend(model)
+    feats = model.frontend(torch.randn(n, TINY.num_samples))
+    pr = torch.tensor([primer] * n)
+    insertions = set(range(FIRST_T, LAST_T + 1)) if rules else set()
+
+    def session(batch: int, eos: int, **kw) -> GreedySession:
+        return GreedySession(
+            backend, TINY, batch, 32, eos=eos, dtype=torch.float32, device=torch.device("cpu"),
+            use_cuda_graph=False, buckets=[8, 16, 32], rules=_rules(eos) if rules else None, **kw,
+        )  # fmt: skip
+
+    full = session(n, eos=1)
+    full.encode(feats)
+    eos = max(full.decode(pr, 20), key=len)[4]  # an <eos> some utterances emit early (rules permitting)
+    greedy = session(n, eos)
+    greedy.encode(feats)
+    ref = greedy.decode(pr, 20)
+    assert len({tuple(r) for r in ref}) > n // 2
+
+    rng = random.Random(0)
+    drafts = []
+    for i, r in enumerate(ref):
+        bad = list(r)
+        bad[1:3] = [7, 8, 9]
+        drafts.append([r, bad, [], [rng.randrange(2, 50) for _ in range(20)]][i % 4])
+    sess = session(rows, eos, draft_windows=(2, 4, 8))
+    for seed in range(3):
+        order = list(range(n))
+        random.Random(seed).shuffle(order)
+        given = iter([drafts[j] for j in order])
+        batches = (feats[order[i : i + rows]] for i in range(0, n, rows))
+        out, calls = sess.decode_stream(primer, batches, lambda path: next(given), 20, insertions)
+        assert out == [ref[j] for j in order], seed
+        fixed = 0
+        for i in range(0, n, rows):
+            idx = order[i : i + rows]
+            batch = session(len(idx), eos, draft_windows=(2, 4, 8))
+            batch.encode(feats[idx])
+            got, c = batch.decode_drafted(pr[idx], [drafts[j] for j in idx], 20, insertions)
+            assert got == [ref[j] for j in idx]
+            fixed += c
+        assert calls <= fixed, (calls, fixed)
+
+
+@pytest.mark.parametrize("seconds", [0.3, 1.0, 1.9, 2.0])
+def test_encoder_on_trimmed_features(model, seconds):
+    """Features cut after frames_needed, the rest of the subsampled frames filled with padding_frame,
+    give the encoder output of the whole padded input."""
+    from owsm_trt.modeling import frames_needed, padding_frame
+
+    torch.manual_seed(6)
+    n = int(seconds * TINY.sample_rate)
+    speech = torch.zeros(2, TINY.num_samples)
+    speech[:, :n] = torch.randn(2, n)
+    feats = model.frontend(speech)
+    ref = model.encoder(feats)
+    t = frames_needed(TINY, n)
+    assert t < TINY.num_frames or seconds >= 1.9
+    model.encoder.fill = padding_frame(model)
+    try:
+        torch.testing.assert_close(model.encoder(feats[:, :t]), ref, rtol=1e-4, atol=1e-4)
+    finally:
+        model.encoder.fill = None
 
 
 def test_fp8_encoder_quantization():

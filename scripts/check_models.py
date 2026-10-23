@@ -20,7 +20,7 @@ from owsm_trt.audio import load_audio
 
 def run(model: OWSM, waves, task: str, lang: str, batch_size: int) -> tuple[list[str], float]:
     kw = {"task": task, "lang": lang, "batch_size": batch_size}
-    model.transcribe(waves[:batch_size], **kw)  # warm-up / graph capture
+    model.transcribe(waves, **kw)  # warm-up: CUDA graphs for every batch size and feature length
     torch.cuda.synchronize()
     t0 = time.perf_counter()
     res = model.transcribe(waves, **kw)
