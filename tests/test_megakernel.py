@@ -304,3 +304,39 @@ def test_gluon_session_matches_torch(model, drafted, kind, batch):
             out = sess.decode(primer, 20)
         outs.append(out)
     assert outs[0] == outs[1]
+
+
+@gluon_only
+def test_decoder_kernel_falls_back(model, monkeypatch):
+    """pipeline._decoder_kernel leaves the wrapped backend when making the kernels fails in any way (here: out
+    of memory) and, in auto mode, when a kernel's check call does not match the decoder; else the ring / Gluon
+    backend."""
+    from owsm_trt import pipeline
+
+    dev, runner = torch.device("cuda"), object()
+    dec = copy.deepcopy(model.decoder).float().cpu()
+    monkeypatch.setattr(pipeline, "_load_decoder", lambda cfg, ckpt: dec)
+    be = pipeline._decoder_kernel(runner, CFG, None, dev, "auto")
+    assert isinstance(be, megakernel.MegaBackend) and be.trial and be.rows_kernel[0] is not None
+
+    def oom(*a, **k):
+        raise torch.OutOfMemoryError("CUDA out of memory")
+
+    with monkeypatch.context() as mp:
+        mp.setattr(megakernel, "MegaDecoder", oom)
+        assert pipeline._decoder_kernel(runner, CFG, None, dev, "auto") is runner
+        assert pipeline._decoder_kernel(runner, CFG, None, dev, "ring") is runner
+    orig = megakernel_ring.RingDecoder.step_fn
+
+    def wrong(self, *a, **k):  # logits off
+        run = orig(self, *a, **k)
+
+        def bad():
+            run()
+            a[6].mul_(-1.0)
+
+        return bad
+
+    with monkeypatch.context() as mp:
+        mp.setattr(megakernel_ring.RingDecoder, "step_fn", wrong)
+        assert pipeline._decoder_kernel(runner, CFG, None, dev, "auto") is runner
