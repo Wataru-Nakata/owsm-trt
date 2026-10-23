@@ -682,20 +682,23 @@ class MegaDecoder:
 
 
 class MegaBackend:
-    """A backend whose decoder calls (decode, verify) of up to ``max_tokens`` tokens (rows x window) run as a
-    megakernel (``kernel.step_fn``); everything else (encoder, prompt prefill, larger calls) is the wrapped
-    backend's (TensorRT)."""
+    """A backend whose decoder calls (decode, verify) of up to ``max_tokens`` tokens (rows x window) and
+    ``max_rows`` rows run as a megakernel (``kernel.step_fn``); everything else (encoder, prompt prefill, larger
+    calls) is the wrapped backend's (TensorRT)."""
 
-    def __init__(self, inner, kernel, max_tokens: int | None = None):
+    def __init__(self, inner, kernel, max_tokens: int | None = None, max_rows: int | None = None):
         self.inner, self.kernel = inner, kernel
-        self.max_tokens = max_tokens
+        self.max_tokens, self.max_rows = max_tokens, max_rows
 
     def __getattr__(self, name):  # encode, encode_fn, trimmed, cfg, name, ...
         return getattr(self.inner, name)
 
     def step_fn(self, tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv, kind="decode"):
         args = (tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv)
-        if kind == "prefill" or (self.max_tokens is not None and tokens.numel() > self.max_tokens):
+        big = (self.max_tokens is not None and tokens.numel() > self.max_tokens) or (
+            self.max_rows is not None and tokens.shape[0] > self.max_rows
+        )
+        if kind == "prefill" or big:
             return self.inner.step_fn(*args, kind=kind)
         return self.kernel.step_fn(*args, kind=kind)
 

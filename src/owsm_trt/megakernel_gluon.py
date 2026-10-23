@@ -35,9 +35,11 @@ except ImportError:  # no Triton, or a Triton without Gluon
     gluon = None
 
 MAX_TOKENS = 32  # rows x window of a call
-# calls of up to this many tokens go to the kernel (MegaBackend): measured faster than TensorRT with attention
-# plugins up to 16 (H200, 1B model: 0.65-0.97 ms vs 0.78-1.10 ms per call), slower at 32 (1.45 vs 1.13 ms)
+# calls of up to ROUTE_TOKENS tokens and ROUTE_ROWS rows go to the kernel (MegaBackend): faster than TensorRT
+# with attention plugins per call there (H200, 1B model, whole graphed call: 1 row 0.66-1.05 ms vs 0.77-1.10 ms
+# for windows 1..16), slower with 32 tokens (1.45 vs 1.13 ms) and with 16 rows (1.32-1.46 vs 1.24-1.35 ms)
 ROUTE_TOKENS = 16
+ROUTE_ROWS = 8
 
 
 def available(device: torch.device) -> bool:
