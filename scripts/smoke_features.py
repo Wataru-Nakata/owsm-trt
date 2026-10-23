@@ -27,11 +27,14 @@ def main() -> None:
     wav = load_audio(items[0]["path"])
     print("reference :", items[0]["text"])
 
-    print("language  :", [(lang, round(p, 3)) for lang, p in model.detect_language(wav, top_k=3)])
-    res = model.transcribe(wav, timestamps=True)
-    print("timestamps:", res.text)
-    for s in res.segments:
-        print(f"    [{s.start:6.2f} - {s.end:6.2f}] {s.text}")
+    if model.cfg.ctc_only:  # no decoder: no language identification, no timestamps
+        print("ctc       :", model.transcribe(wav).text)
+    else:
+        print("language  :", [(lang, round(p, 3)) for lang, p in model.detect_language(wav, top_k=3)])
+        res = model.transcribe(wav, timestamps=True)
+        print("timestamps:", res.text)
+        for s in res.segments:
+            print(f"    [{s.start:6.2f} - {s.end:6.2f}] {s.text}")
     for task in ("st_deu", "st_jpn"):
         if task in model.tokenizer.tasks:
             print(f"{task:10s}:", model.transcribe(wav, task=task).text)

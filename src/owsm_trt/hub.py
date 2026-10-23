@@ -6,14 +6,6 @@ from pathlib import Path
 
 import yaml
 
-_PATTERNS = [
-    "meta.yaml",
-    "exp/*/config.yaml",
-    "exp/*/*.pth",
-    "exp/*/*/*/feats_stats.npz",
-    "data/token_list/*/*",
-]
-
 
 @dataclass(frozen=True)
 class ModelFiles:
@@ -48,14 +40,26 @@ def _from_dir(root: Path, name: str) -> ModelFiles:
 
 
 def resolve(model: str | os.PathLike) -> ModelFiles:
-    """``model`` is a local directory or a Hugging Face repo id such as ``espnet/owsm_v4_medium_1B``."""
+    """``model`` is a local directory or a Hugging Face repo id such as ``espnet/owsm_v4_medium_1B``.
+
+    From a repo only the files ``meta.yaml`` and the training config point to are downloaded (some
+    repos hold several checkpoints).
+    """
     path = Path(model).expanduser()
     if path.is_dir():
         return _from_dir(path.resolve(), path.resolve().name)
-    from huggingface_hub import snapshot_download
+    from huggingface_hub import hf_hub_download, snapshot_download
 
-    root = Path(snapshot_download(str(model), allow_patterns=_PATTERNS))
-    return _from_dir(root, str(model))
+    from .config import load_espnet_config
+
+    repo = str(model)
+    meta = yaml.safe_load(Path(hf_hub_download(repo, "meta.yaml")).read_text())
+    config = meta["yaml_files"]["s2t_train_config"]
+    raw = load_espnet_config(hf_hub_download(repo, config))
+    files = ["meta.yaml", config, meta["files"]["s2t_model_file"], raw["bpemodel"]]
+    stats = (raw.get("normalize_conf") or {}).get("stats_file")
+    root = Path(snapshot_download(repo, allow_patterns=files + ([stats] if stats else [])))
+    return _from_dir(root, repo)
 
 
 def resolve_relative(files: ModelFiles, rel: str) -> Path:

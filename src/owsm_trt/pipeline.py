@@ -1,6 +1,7 @@
 """High-level API: ``OWSM.from_pretrained(...).transcribe(...)``."""
 
 import logging
+import math
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -8,15 +9,27 @@ from pathlib import Path
 import torch
 import torch.nn.functional as F
 
-from . import hub
+from . import fp8, hub
 from .audio import AudioLike, duration, load_audio
 from .build import DTYPES, BuildOptions, build_engines, check_config, engine_tag
 from .config import load_espnet_config, parse_config
-from .modeling import Frontend, OWSMModel, load_model
-from .runtime import GreedySession, TorchBackend, TRTBackend
+from .modeling import Frontend, OWSMCTCModel, OWSMModel, load_model
+from .runtime import (
+    BeamSession,
+    CTCSession,
+    GreedySession,
+    TimestampRules,
+    TorchBackend,
+    TorchCTCBackend,
+    TRTBackend,
+    TRTCTCBackend,
+)
 from .tokenizer import Tokenizer
 
 log = logging.getLogger(__name__)
+
+# Window sizes (drafted tokens + 1) of CTC-drafted greedy decoding; one CUDA graph each per cache bucket.
+DRAFT_WINDOWS = (1, 2, 4, 8, 16, 32)
 
 
 @dataclass
@@ -33,8 +46,20 @@ class Result:
     segments: list[Segment] = field(default_factory=list)
 
 
+def ctc_collapse(best_path: list[int], blank: int) -> list[int]:
+    """CTC best path -> tokens: merge repeats, drop blanks."""
+    out, prev = [], None
+    for i in best_path:
+        if i != prev and i != blank:
+            out.append(i)
+        prev = i
+    return out
+
+
 class OWSM:
     """OWSM speech recognition / translation with a TensorRT (or PyTorch) backend.
+
+    Works with the encoder-decoder models (OWSM v1-v4, OWLS, POWSM) and the CTC-only OWSM-CTC models.
 
     >>> model = OWSM.from_pretrained("espnet/owsm_v4_medium_1B")
     >>> model.transcribe("speech.wav", lang="eng").text
@@ -49,11 +74,20 @@ class OWSM:
         opts: BuildOptions,
         device: torch.device,
         use_cuda_graph: bool = True,
+        ctc_draft: bool = True,
     ):
         self.cfg, self.tokenizer, self.frontend, self.backend = cfg, tokenizer, frontend, backend
         self.opts, self.device, self.use_cuda_graph = opts, device, use_cuda_graph
+        self.ctc_draft = ctc_draft
+        self.draft_stats = [0, 0]  # tokens emitted, decoder calls made by drafted decoding
         self.dtype = DTYPES[opts.dtype]
-        self._sessions: OrderedDict[int, GreedySession] = OrderedDict()
+        t = tokenizer
+        self.rules = (
+            TimestampRules(t.notime, t.first_time, t.last_time, t.eos, cfg.vocab_size, device)
+            if not cfg.ctc_only and t.first_time is not None and t.notime is not None
+            else None
+        )
+        self._sessions: OrderedDict[tuple, GreedySession | BeamSession | CTCSession] = OrderedDict()
 
     @classmethod
     def from_pretrained(
@@ -68,12 +102,21 @@ class OWSM:
         max_prompt_tokens: int = 256,
         use_cuda_graph: bool = True,
         rebuild: bool = False,
-        optimization_level: int = 3,
+        optimization_level: int | None = None,
+        ctc_draft: bool = True,
+        fp8_calibration: list[AudioLike] | None = None,
     ) -> "OWSM":
         """Load an OWSM model from a Hugging Face repo id or local ESPnet model directory.
 
         With ``backend="tensorrt"`` engines are built on first use (a few minutes) and cached under
         ``~/.cache/owsm_trt`` (override with ``OWSM_TRT_CACHE``). ``backend="torch"`` skips TensorRT.
+
+        ``ctc_draft``: for greedy ASR, let the encoder's CTC head propose the transcript and check up
+        to 31 proposed tokens per utterance and decoder call. The output is the greedy output; only the
+        number of decoder calls changes.
+
+        ``fp8_calibration`` (experimental, TensorRT): run the encoder's linear layers and subsampling
+        convolutions in FP8, with input ranges measured on these recordings.
         """
         files = hub.resolve(model)
         raw = load_espnet_config(files.config)
@@ -83,22 +126,28 @@ class OWSM:
             hub.resolve_relative(files, raw["bpemodel"]),
             raw.get("preprocessor_conf", {}).get("notime_symbol", "<notimestamps>"),
         )
+        levels = {}  # builder optimization levels: BuildOptions' defaults unless one is given for both
+        if optimization_level is not None:
+            levels = {"opt_level": optimization_level, "verify_opt_level": optimization_level}
         opts = BuildOptions(
             dtype=dtype,
             max_batch=max_batch_size,
             capacity=capacity,
             max_prefill=max_prompt_tokens,
-            opt_level=optimization_level,
+            **levels,
+            fp8_encoder=fp8_calibration is not None,
         )
+        if fp8_calibration is not None and backend != "tensorrt":
+            raise ValueError("FP8 is available for the TensorRT backend only")
         dev = torch.device(device)
         if backend == "tensorrt" and dev.type != "cuda":
             raise ValueError("the TensorRT backend needs a CUDA device")
 
         if backend == "torch":
             net = load_model(cfg, str(files.checkpoint), dev, DTYPES[dtype])
-            return cls(
-                cfg, tok, net.frontend, TorchBackend(net), opts, dev, use_cuda_graph and dev.type == "cuda"
-            )
+            graphs = use_cuda_graph and dev.type == "cuda"
+            runner = TorchCTCBackend(net) if cfg.ctc_only else TorchBackend(net)
+            return cls(cfg, tok, net.frontend, runner, opts, dev, graphs, ctc_draft)
         if backend != "tensorrt":
             raise ValueError(f"unknown backend {backend!r} (use 'tensorrt' or 'torch')")
 
@@ -107,32 +156,47 @@ class OWSM:
             if rebuild or not check_config(cfg, engine_dir):
                 log.warning("building TensorRT engines for %s into %s", files.name, engine_dir)
                 net = load_model(cfg, str(files.checkpoint), dev, DTYPES[dtype])
+                if fp8_calibration is not None:
+                    _quantize_encoder(net, tok, fp8_calibration, opts.max_batch)
                 build_engines(net, engine_dir, opts)
                 frontend = net.frontend
                 del net
                 torch.cuda.empty_cache()
             else:
                 frontend = _load_frontend(cfg, files.checkpoint, dev)
-            return cls(cfg, tok, frontend, TRTBackend(cfg, engine_dir), opts, dev, use_cuda_graph)
+            runner = TRTCTCBackend(cfg, engine_dir) if cfg.ctc_only else TRTBackend(cfg, engine_dir)
+            return cls(cfg, tok, frontend, runner, opts, dev, use_cuda_graph, ctc_draft)
 
     # ------------------------------------------------------------------ helpers
 
-    def _session(self, batch: int) -> GreedySession:
-        if batch not in self._sessions:
+    def _session(self, batch: int, beam: int = 1) -> GreedySession | BeamSession:
+        key = (batch, beam)
+        if key not in self._sessions:
             if len(self._sessions) >= 2:
                 self._sessions.popitem(last=False)
-            self._sessions[batch] = GreedySession(
-                self.backend,
-                self.cfg,
-                batch,
-                self.opts.capacity,
-                self.tokenizer.eos,
-                self.dtype,
-                self.device,
-                use_cuda_graph=self.use_cuda_graph,
-            )
-        self._sessions.move_to_end(batch)
-        return self._sessions[batch]
+            args = (self.opts.capacity, self.tokenizer.eos, self.dtype, self.device, self.use_cuda_graph)
+            if beam == 1:
+                windows = tuple(w for w in DRAFT_WINDOWS if w <= self.opts.max_verify)
+                self._sessions[key] = GreedySession(
+                    self.backend, self.cfg, batch, *args,
+                    draft_windows=windows if self.ctc_draft else (), rules=self.rules,
+                )  # fmt: skip
+            else:
+                self._sessions[key] = BeamSession(
+                    self.backend, self.cfg, batch, beam, *args, rules=self.rules
+                )
+        self._sessions.move_to_end(key)
+        return self._sessions[key]
+
+    def _check_beam(self, beam: int) -> int:
+        if beam < 1 or beam > self.opts.max_batch:
+            raise ValueError(f"beam_size must be between 1 and max_batch_size={self.opts.max_batch}")
+        return beam
+
+    def _batch_size(self, batch_size: int | None, beam: int) -> int:
+        self._check_beam(beam)
+        # a decoder call runs batch * beam rows, which the engines allow up to max_batch_size
+        return max(1, min(batch_size or self.opts.max_batch, self.opts.max_batch // beam))
 
     def _features(self, waves: list[torch.Tensor]) -> torch.Tensor:
         n = self.cfg.num_samples
@@ -143,7 +207,9 @@ class OWSM:
                     w.shape[0] / self.cfg.sample_rate,
                     self.cfg.speech_seconds,
                 )
-        batch = torch.stack([F.pad(w[:n], (0, n - min(n, w.shape[0]))) for w in waves]).to(self.device)
+        batch = torch.zeros(len(waves), n, device=self.device)  # pad on the device: copy only the audio
+        for row, w in zip(batch, waves):
+            row[: min(n, w.shape[0])] = w[:n].to(self.device)
         return self.frontend(batch)  # [B, T, n_mels]
 
     def _primer(self, lang: str, task: str, timestamps: bool, prompt: str | None) -> list[int]:
@@ -175,15 +241,29 @@ class OWSM:
         prompt: str | None = None,
         sr: int | None = None,
         batch_size: int | None = None,
+        beam_size: int = 1,
     ) -> Result | list[Result]:
         """Transcribe (``task="asr"``) or translate (``task="st_eng"`` etc.) up to 30 s of audio.
 
         ``audio`` is a path, a waveform (np.ndarray / torch.Tensor, sampled at ``sr`` or 16 kHz),
         or a list of those, which is decoded in batches of ``batch_size``.
+
+        ``beam_size=1`` is greedy decoding; ``beam_size=5`` is ESPnet's default beam search. A batch
+        holds at most ``max_batch_size // beam_size`` utterances.
         """
         single = not isinstance(audio, list)
         items = [audio] if single else audio
-        bs = min(batch_size or self.opts.max_batch, self.opts.max_batch)
+        if self.cfg.ctc_only:
+            if timestamps or beam_size != 1:
+                raise ValueError("CTC-only models have no timestamps or beam search; use the defaults")
+            results = []
+            bs = min(batch_size or self.opts.max_batch, self.opts.max_batch)
+            for i in range(0, len(items), bs):
+                waves = [self._wave(a, sr) for a in items[i : i + bs]]
+                for row in self._ctc_paths(waves, lang, task, prompt).tolist():
+                    results.append(self._result(ctc_collapse(row, self.tokenizer.blank), offset=0.0))
+            return results[0] if single else results
+        bs = self._batch_size(batch_size, beam_size)
         primer = self._primer(lang, task, timestamps, prompt)
         # A batch decodes until its longest member finishes, so batch utterances of similar duration.
         order = sorted(range(len(items)), key=lambda i: duration(items[i], sr or self.cfg.sample_rate))
@@ -191,14 +271,50 @@ class OWSM:
         for i in range(0, len(order), bs):
             idx = order[i : i + bs]
             waves = [self._wave(items[j], sr) for j in idx]
-            for j, ids in zip(idx, self._decode(waves, [primer] * len(idx))):
+            draft = task == "asr"  # the CTC head is trained on transcripts
+            for j, ids in zip(idx, self._decode(waves, [primer] * len(idx), beam_size, draft)):
                 results[j] = self._result(ids, offset=0.0)
         return results[0] if single else results
 
-    def _decode(self, waves: list[torch.Tensor], primers: list[list[int]]) -> list[list[int]]:
-        sess = self._session(len(waves))
+    def _decode(
+        self, waves: list[torch.Tensor], primers: list[list[int]], beam: int = 1, draft: bool = False
+    ) -> list[list[int]]:
+        sess = self._session(len(waves), beam)
         sess.encode(self._features(waves))
-        return sess.decode(torch.tensor(primers, device=self.device), self._max_new())
+        primer = torch.tensor(primers, device=self.device)
+        if draft and isinstance(sess, GreedySession) and sess.windows:
+            proposals = [self._ctc_draft(row) for row in sess.ctc_ids.tolist()]
+            outs, calls = sess.decode_drafted(primer, proposals, self._max_new(), self.tokenizer.not_drafted)
+            self.draft_stats[0] += sum(len(o) + 1 for o in outs)
+            self.draft_stats[1] += calls
+            return outs
+        return sess.decode(primer, self._max_new())
+
+    def _ctc_draft(self, best_path: list[int]) -> list[int]:
+        return ctc_collapse(best_path, self.tokenizer.blank)
+
+    def _ctc_paths(self, waves: list[torch.Tensor], lang: str, task: str, prompt: str | None) -> torch.Tensor:
+        """OWSM-CTC best paths [B, 2 + T'] (frame-wise argmax, the first two frames are the prefix).
+
+        The tensor is a session buffer, overwritten by the next call."""
+        t = self.tokenizer
+        prev = t.encode(prompt) if prompt else [t.na]
+        if t.na in prev:
+            prev = [t.na]
+        b = len(waves)
+        key = ("ctc", b, len(prev))
+        if key not in self._sessions:
+            if len(self._sessions) >= 2:
+                self._sessions.popitem(last=False)
+            self._sessions[key] = CTCSession(
+                self.backend, self.cfg, b, len(prev), self.device, self.use_cuda_graph
+            )
+        self._sessions.move_to_end(key)
+        return self._sessions[key](
+            self._features(waves),
+            torch.tensor([prev] * b, device=self.device),
+            torch.tensor([[t.lang_id(lang), t.task_id(task)]] * b, device=self.device),
+        )
 
     def _result(self, ids: list[int], offset: float) -> Result:
         t = self.tokenizer
@@ -219,13 +335,15 @@ class OWSM:
         self, audio: AudioLike, *, sr: int | None = None, top_k: int = 5
     ) -> list[tuple[str, float]]:
         """Most likely spoken languages with probabilities, from the first decoder step."""
+        if self.cfg.ctc_only:
+            raise NotImplementedError("language identification needs a decoder; OWSM-CTC has none")
         sess = self._session(1)
         sess.encode(self._features([self._wave(audio, sr)]))
         t = self.tokenizer
         sess.decode(torch.tensor([[t.sos]], device=self.device), max_new_tokens=1)
         names = list(t.languages)
         ids = torch.tensor([t.languages[n] for n in names], device=self.device)
-        probs = sess.logits[0, ids].softmax(-1)
+        probs = sess.logits[0, -1, ids].softmax(-1)
         top = probs.topk(min(top_k, len(names)))
         return [(names[i], p) for p, i in zip(top.values.tolist(), top.indices.tolist())]
 
@@ -240,10 +358,17 @@ class OWSM:
         condition_on_prev_text: bool = False,
         end_time_threshold: float = 29.0,
         skip_last_chunk_seconds: float = 0.2,
+        beam_size: int = 1,
     ) -> Result:
-        """Long-form decoding with timestamps (port of ESPnet's ``Speech2Text.decode_long``)."""
+        """Long-form decoding with timestamps (port of ESPnet's ``Speech2Text.decode_long``).
+
+        OWSM-CTC models are decoded in overlapping windows instead (ESPnet's ``ctc_log_probs``) and
+        return a single segment.
+        """
         t, cfg = self.tokenizer, self.cfg
         wav = self._wave(audio, sr)
+        if cfg.ctc_only:
+            return self._transcribe_long_ctc(wav, lang, task)
         fs, seg_len = cfg.sample_rate, cfg.num_samples
         end_id = t.first_time + round(end_time_threshold / cfg.time_resolution)
         segments: list[Segment] = []
@@ -253,7 +378,7 @@ class OWSM:
             if len(chunk) / fs < skip_last_chunk_seconds:
                 break
             primer = self._primer(lang, task, True, prev if condition_on_prev_text else None)
-            ids = self._decode([chunk], [primer])[0]
+            ids = self._decode([chunk], [primer], self._check_beam(beam_size), task == "asr")[0]
             times = [i for i, x in enumerate(ids) if t.is_time(x)]
             if len(times) == 1:  # only a start time
                 ids.append(t.last_time)
@@ -279,14 +404,70 @@ class OWSM:
         text = " ".join(s.text.strip() for s in segments if s.text.strip())
         return Result(text=text, tokens=[], segments=segments)
 
+    def _transcribe_long_ctc(
+        self, wav: torch.Tensor, lang: str, task: str, context_seconds: float = 2.0
+    ) -> Result:
+        """OWSM-CTC over a recording: windows of the training length overlapping by ``context_seconds``
+        on each side, keeping each window's middle frames (as ESPnet's ``ctc_log_probs``)."""
+        cfg, fs = self.cfg, self.cfg.sample_rate
+        context = int(fs * context_seconds)
+        chunk = cfg.num_samples - 2 * context
+        padded = F.pad(wav, (context, context))
+        windows = []
+        for start in range(0, len(padded), chunk):
+            windows.append(padded[start : start + cfg.num_samples])
+            if len(windows[-1]) < cfg.num_samples:
+                break
+        fps = fs / cfg.hop_length / math.prod(cfg.strides)
+        # ESPnet cuts the window's frames before dropping the two prefix frames, so it keeps these:
+        keep = slice(int(fps * context_seconds), int(fps * cfg.speech_seconds) - int(fps * context_seconds))
+        frames = []
+        for i in range(0, len(windows), self.opts.max_batch):
+            paths = self._ctc_paths(windows[i : i + self.opts.max_batch], lang, task, None)
+            frames.append(paths[:, keep].reshape(-1).clone())  # paths is reused by the next call
+        wanted = int(round(len(wav) / fs * fps))
+        ids = ctc_collapse(torch.cat(frames)[:wanted].tolist(), self.tokenizer.blank)
+        text = self.tokenizer.decode(ids)
+        return Result(text=text, tokens=ids, segments=[Segment(0.0, round(len(wav) / fs, 2), text)])
+
+
+@torch.inference_mode()
+def _quantize_encoder(
+    net: OWSMModel | OWSMCTCModel, tok: Tokenizer, recordings: list[AudioLike], batch: int
+) -> None:
+    """Measure the encoder's layer inputs on ``recordings`` (as English ASR) and switch them to FP8."""
+    prefix = [tok.lang_id("eng"), tok.task_id("asr")]
+    n = net.cfg.num_samples
+    waves = [load_audio(a, net.cfg.sample_rate)[:n] for a in recordings]
+    dev = next(net.encoder.parameters()).device
+    batches = []
+    for i in range(0, len(waves), batch):
+        x = torch.zeros(len(waves[i : i + batch]), n, device=dev)
+        for row, w in zip(x, waves[i : i + batch]):
+            row[: len(w)] = w.to(dev)
+        batches.append(net.frontend(x))
+    if net.cfg.ctc_only:  # the encoder also reads the prompt and the language/task prefix
+
+        def run(feats: torch.Tensor) -> None:
+            b = feats.shape[0]
+            net(feats, torch.tensor([[tok.na]] * b, device=dev), torch.tensor([prefix] * b, device=dev))
+
+    else:
+        run = net.encoder
+    amax = fp8.calibrate(net.encoder, run, batches)
+    log.warning(
+        "FP8 encoder: %d layers calibrated on %d recordings", fp8.quantize(net.encoder, amax), len(waves)
+    )
+
 
 def _load_frontend(cfg, checkpoint: Path, device: torch.device) -> Frontend:
     """Only the fp32 frontend buffers are needed at runtime when the engines are cached."""
     sd = torch.load(checkpoint, map_location="cpu", weights_only=True)
     fe = Frontend(cfg)
-    fe.load_state_dict(
-        {"melmat": sd["frontend.logmel.melmat"], "mean": sd["normalize.mean"], "std": sd["normalize.std"]}
-    )
+    state = {"melmat": sd["frontend.logmel.melmat"]}
+    if fe.global_mvn:
+        state.update(mean=sd["normalize.mean"], std=sd["normalize.std"])
+    fe.load_state_dict(state)
     return fe.to(device).eval()
 
 

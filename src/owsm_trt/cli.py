@@ -12,6 +12,8 @@ def _add_model_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--dtype", default="float16", choices=["float16", "bfloat16", "float32"])
     p.add_argument("--max-batch-size", type=int, default=16)
     p.add_argument("--device", default="cuda")
+    p.add_argument("--beam-size", type=int, default=1, help="1 = greedy; 5 = ESPnet's default beam search")
+    p.add_argument("--no-ctc-draft", action="store_true", help="greedy without CTC-drafted token windows")
 
 
 def _load(args, **kw):
@@ -23,6 +25,7 @@ def _load(args, **kw):
         device=args.device,
         dtype=args.dtype,
         max_batch_size=args.max_batch_size,
+        ctc_draft=not args.no_ctc_draft,
         **kw,
     )
 
@@ -61,10 +64,11 @@ def main(argv: list[str] | None = None) -> None:
     elif args.cmd == "transcribe":
         model = _load(args)
         for path in args.audio:
+            kw = {"lang": args.lang, "task": args.task, "beam_size": args.beam_size}
             if args.long:
-                res = model.transcribe_long(path, lang=args.lang, task=args.task)
+                res = model.transcribe_long(path, **kw)
             else:
-                res = model.transcribe(path, lang=args.lang, task=args.task, timestamps=args.timestamps)
+                res = model.transcribe(path, timestamps=args.timestamps, **kw)
             if args.json:
                 segs = [s.__dict__ for s in res.segments]
                 print(json.dumps({"audio": path, "text": res.text, "segments": segs}, ensure_ascii=False))
@@ -78,11 +82,12 @@ def main(argv: list[str] | None = None) -> None:
         model = _load(args)
         audio = args.audio or [torch.randn(16000 * 10).numpy() * 0.01]
         batch = (audio * args.batch_size)[: max(args.batch_size, len(audio))]
-        model.transcribe(batch, batch_size=args.batch_size)  # warm-up / graph capture
+        kw = {"batch_size": args.batch_size, "beam_size": args.beam_size}
+        model.transcribe(batch, **kw)  # warm-up / graph capture
         torch.cuda.synchronize()
         t0 = time.perf_counter()
         for _ in range(args.iters):
-            out = model.transcribe(batch, batch_size=args.batch_size)
+            out = model.transcribe(batch, **kw)
         torch.cuda.synchronize()
         dt = (time.perf_counter() - t0) / args.iters
         n_tok = sum(len(r.tokens) for r in out)

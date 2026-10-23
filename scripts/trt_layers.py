@@ -33,6 +33,7 @@ def main() -> None:
     ap.add_argument("--iters", type=int, default=20)
     ap.add_argument("--data", default=".cache/testdata/librispeech_dummy/manifest.json")
     ap.add_argument("--out", default="outputs/layers")
+    ap.add_argument("--windows", default="", help="also profile batch-1 verify windows, e.g. 2,8,32")
     args = ap.parse_args()
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -45,21 +46,34 @@ def main() -> None:
     primer = torch.tensor([[t.sos, t.lang_id("eng"), t.task_id("asr"), t.notime]] * args.batch, device="cuda")
     sess.decode(primer, 8)  # realistic cache state; pos is now past the prompt
 
-    for name, engine, run_ctx in (
-        ("decoder_step", model.backend.decoder, None),
-        ("encoder", model.backend.encoder, model.backend.enc_ctx),
-    ):
+    targets = [("decoder_step", model.backend.decoder, None)]
+    targets += [
+        (f"verify_{w}", model.backend.verifier, None) for w in map(int, filter(None, args.windows.split(",")))
+    ]
+    targets += [("encoder", model.backend.encoder, model.backend.enc_ctx)]
+    for name, engine, run_ctx in targets:
         if name == "decoder_step":
             b = sess
             run = model.backend.step_fn(
-                b.tok, b.pos, b.self_k, b.self_v, b.cross_k, b.cross_v, b.logits, b.new_kv
+                b.tok, b.offs, b.self_k, b.self_v, b.cross_k, b.cross_v, b.logits, b.new_kv
             )
+            ctx = run.ctx
+        elif name.startswith("verify_"):
+            w = int(name.split("_")[1])
+            k, v = sess.caches[64]
+            vt = torch.full((args.batch, w), t.eos, device="cuda")
+            offs = torch.zeros(args.batch, dtype=torch.long, device="cuda")
+            vl = torch.zeros(args.batch, w, model.cfg.vocab_size, device="cuda")
+            vkv = torch.zeros(
+                sess.new_kv.shape[:4] + (w, sess.new_kv.shape[-1]), dtype=sess.new_kv.dtype, device="cuda"
+            )
+            run = model.backend.step_fn(vt, offs, k, v, sess.cross_k, sess.cross_v, vl, vkv, kind="verify")
             ctx = run.ctx
         else:
             feats = model._features([load_audio(it["path"]) for it in items])
 
-            def run():
-                sess.encode(feats)
+            def run():  # the backend's own context, not the session's CUDA graph
+                model.backend.encode(feats, sess.cross_k, sess.cross_v, sess.ctc_ids)
 
             ctx = run_ctx
         run()

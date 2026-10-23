@@ -1,4 +1,8 @@
-"""Pure-PyTorch reimplementation of OWSM v3.1 / v4 (ESPnet ``s2t`` E-Branchformer models).
+"""Pure-PyTorch reimplementation of the OWSM models (ESPnet ``s2t`` and ``s2t_ctc``).
+
+* :class:`OWSMModel`: encoder-decoder (OWSM v1-v4, OWLS, POWSM). The encoder is an E-Branchformer or
+  a Transformer, the decoder a Transformer.
+* :class:`OWSMCTCModel`: OWSM-CTC, an E-Branchformer encoder conditioned on a prompt, read with CTC.
 
 Parameter names mirror ESPnet's so official checkpoints load with ``strict=True``. Inference-only:
 inputs are always padded/trimmed to the fixed training length (30 s), so no padding masks exist.
@@ -40,9 +44,17 @@ class LayerNorm(nn.LayerNorm):
     def __init__(self, d: int):
         super().__init__(d, eps=LN_EPS)
 
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if x.dtype == self.weight.dtype:
+            return super().forward(x)
+        # an fp32 residual stream through fp16 weights (see Encoder.forward)
+        return F.layer_norm(
+            x, self.normalized_shape, self.weight.to(x.dtype), self.bias.to(x.dtype), self.eps
+        )
+
 
 class Frontend(nn.Module):
-    """STFT -> power -> log-mel -> global MVN. Always runs in fp32."""
+    """STFT -> power -> log-mel -> global or per-utterance mean normalisation. Always runs in fp32."""
 
     def __init__(self, cfg: OWSMConfig):
         super().__init__()
@@ -50,8 +62,10 @@ class Frontend(nn.Module):
         self.register_buffer("window", torch.hann_window(cfg.win_length), persistent=False)
         # Filled from the checkpoint ("frontend.logmel.melmat", "normalize.mean/std").
         self.register_buffer("melmat", torch.zeros(cfg.n_fft // 2 + 1, cfg.n_mels))
-        self.register_buffer("mean", torch.zeros(cfg.n_mels))
-        self.register_buffer("std", torch.ones(cfg.n_mels))
+        self.global_mvn = cfg.normalize == "global_mvn"
+        if self.global_mvn:
+            self.register_buffer("mean", torch.zeros(cfg.n_mels))
+            self.register_buffer("std", torch.ones(cfg.n_mels))
 
     def forward(self, speech: torch.Tensor) -> torch.Tensor:
         # speech: [B, N] -> feats: [B, T, n_mels]
@@ -69,17 +83,21 @@ class Frontend(nn.Module):
         )  # [B, F, T]
         power = (spec.real**2 + spec.imag**2).transpose(1, 2)  # [B, T, F]
         mel = torch.matmul(power, self.melmat).clamp(min=1e-10).log()
-        return (mel - self.mean) / self.std
+        if self.global_mvn:
+            return (mel - self.mean) / self.std
+        return mel - mel.mean(dim=1, keepdim=True)  # utterance MVN, means only
 
 
 class Conv2dSubsampling(nn.Module):
-    def __init__(self, n_mels: int, d: int, n_convs: int):
+    """ESPnet's Conv2dSubsampling{,2,8}: 3x3 convolutions with the given strides, then a linear layer."""
+
+    def __init__(self, n_mels: int, d: int, strides: tuple[int, ...]):
         super().__init__()
         layers: list[nn.Module] = []
         f = n_mels
-        for i in range(n_convs):
-            layers += [nn.Conv2d(1 if i == 0 else d, d, 3, 2), nn.ReLU()]
-            f = (f - 1) // 2
+        for i, s in enumerate(strides):
+            layers += [nn.Conv2d(1 if i == 0 else d, d, 3, s), nn.ReLU()]
+            f = (f - 3) // s + 1
         self.conv = nn.Sequential(*layers)
         self.out = nn.Linear(d * f, d)
 
@@ -128,6 +146,15 @@ class MultiHeadedAttention(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.merge(F.scaled_dot_product_attention(*self.qkv(x)))
 
+    def cross(self, x: torch.Tensor, memory: torch.Tensor) -> torch.Tensor:
+        """Attention from ``x`` [B, T, d] to ``memory`` [B, M, d]."""
+        q, k, v = (
+            self.heads(self.linear_q(x)),
+            self.heads(self.linear_k(memory)),
+            self.heads(self.linear_v(memory)),
+        )
+        return self.merge(F.scaled_dot_product_attention(q, k, v))
+
 
 def cached_attention(
     q: torch.Tensor,
@@ -139,7 +166,7 @@ def cached_attention(
 ) -> torch.Tensor:
     """Attention over [cache | new] without materialising the concatenated keys/values.
 
-    q, k, v: [B, H, S, d_k]; k_cache, v_cache: [B, H, C, d_k]; mask: [S, C+S] (True = attend)
+    q, k, v: [B, H, S, d_k]; k_cache, v_cache: [B, H, C, d_k]; mask: [B, 1, S, C+S] (True = attend)
     Only the score rows are concatenated, so the cache is read in place instead of copied every step.
     """
     cap = k_cache.shape[2]
@@ -186,7 +213,7 @@ class ConvolutionalGatingMLP(nn.Module):
 
 
 class EBranchformerLayer(nn.Module):
-    def __init__(self, cfg: OWSMConfig):
+    def __init__(self, cfg: OWSMConfig, cross_attn: bool = False):
         super().__init__()
         d = cfg.d_model
         self.attn = MultiHeadedAttention(d, cfg.n_heads)
@@ -201,34 +228,98 @@ class EBranchformerLayer(nn.Module):
         k = cfg.merge_kernel
         self.depthwise_conv_fusion = nn.Conv1d(2 * d, 2 * d, k, 1, (k - 1) // 2, groups=2 * d)
         self.merge_proj = nn.Linear(2 * d, d)
+        if cross_attn:  # OWSM-CTC: attention to the prompt after the feed-forward module
+            self.cross_attn = MultiHeadedAttention(d, cfg.n_heads)
+            self.norm_cross_attn = LayerNorm(d)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = x + 0.5 * self.feed_forward_macaron(self.norm_ff_macaron(x))
-        x1 = self.attn(self.norm_mha(x))
-        x2 = self.cgmlp(self.norm_mlp(x))
+    @property
+    def self_attn(self) -> MultiHeadedAttention:
+        return self.attn
+
+    def forward(self, x: torch.Tensor, memory: torch.Tensor | None = None) -> torch.Tensor:
+        # x may be an fp32 residual stream around fp16 modules; the casts are no-ops otherwise
+        dt, r = self.merge_proj.weight.dtype, x.dtype
+        x = x + 0.5 * self.feed_forward_macaron(self.norm_ff_macaron(x).to(dt)).to(r)
+        x1 = self.attn(self.norm_mha(x).to(dt))
+        x2 = self.cgmlp(self.norm_mlp(x).to(dt))
         x_concat = torch.cat([x1, x2], dim=-1)  # [B, T, 2d]
         x_tmp = self.depthwise_conv_fusion(x_concat.transpose(1, 2)).transpose(1, 2)
-        x = x + self.merge_proj(x_concat + x_tmp)
-        x = x + 0.5 * self.feed_forward(self.norm_ff(x))
+        x = x + self.merge_proj(x_concat + x_tmp).to(r)
+        x = x + 0.5 * self.feed_forward(self.norm_ff(x).to(dt)).to(r)
+        if memory is not None and hasattr(self, "cross_attn"):
+            x = x + self.cross_attn.cross(self.norm_cross_attn(x).to(dt), memory).to(r)
         return self.norm_final(x)
 
 
+class TransformerEncoderLayer(nn.Module):
+    """Pre-norm self-attention + ReLU feed-forward (ESPnet ``EncoderLayer``)."""
+
+    def __init__(self, d: int, n_heads: int, units: int):
+        super().__init__()
+        self.self_attn = MultiHeadedAttention(d, n_heads)
+        self.feed_forward = FeedForward(d, units, nn.ReLU())
+        self.norm1 = LayerNorm(d)
+        self.norm2 = LayerNorm(d)
+
+    def forward(self, x: torch.Tensor, memory: torch.Tensor | None = None) -> torch.Tensor:
+        dt, r = self.feed_forward.w_1.weight.dtype, x.dtype
+        x = x + self.self_attn(self.norm1(x).to(dt)).to(r)
+        return x + self.feed_forward(self.norm2(x).to(dt)).to(r)
+
+
 class Encoder(nn.Module):
+    """Speech encoder: convolutional subsampling, positional encoding, E-Branchformer or Transformer layers.
+
+    For OWSM-CTC, ``prefix`` [B, 2, d] (language and task embeddings) is prepended to the subsampled
+    frames, layers in ``cfg.cross_attn_layers`` attend to ``memory`` (the encoded prompt), and the
+    intermediate CTC posteriors after the layers in ``cfg.interctc_layers`` are added back through
+    ``conditioning_layer``.
+    """
+
     def __init__(self, cfg: OWSMConfig):
         super().__init__()
-        self.embed = Conv2dSubsampling(cfg.n_mels, cfg.d_model, cfg.subsample_convs)
-        self.encoders = nn.ModuleList(EBranchformerLayer(cfg) for _ in range(cfg.enc_layers))
-        self.after_norm = LayerNorm(cfg.d_model)
-        self.xscale = math.sqrt(cfg.d_model)
-        self.register_buffer("pe", sinusoidal_positions(cfg.enc_frames, cfg.d_model), persistent=False)
+        d = cfg.d_model
+        self.embed = Conv2dSubsampling(cfg.n_mels, d, cfg.strides)
+        if cfg.encoder == "transformer":
+            self.encoders = nn.ModuleList(
+                TransformerEncoderLayer(d, cfg.n_heads, cfg.enc_ffn) for _ in range(cfg.enc_layers)
+            )
+        else:
+            self.encoders = nn.ModuleList(
+                EBranchformerLayer(cfg, i in cfg.cross_attn_layers) for i in range(cfg.enc_layers)
+            )
+        self.after_norm = LayerNorm(d)
+        self.xscale = math.sqrt(d)
+        self.normalized_layers = cfg.encoder == "e_branchformer"  # each layer ends with a LayerNorm
+        self.interctc_layers = cfg.interctc_layers
+        if cfg.interctc_layers:
+            self.conditioning_layer = nn.Linear(cfg.vocab_size, d)
+        n = cfg.enc_frames + cfg.n_prefix
+        self.register_buffer("pe", sinusoidal_positions(n, d), persistent=False)
 
-    def forward(self, feats: torch.Tensor) -> torch.Tensor:
-        # feats: [B, T, n_mels] (fp32) -> [B, T', d]
-        x = self.embed(feats.to(self.embed.out.weight.dtype))
-        x = x * self.xscale + self.pe[: x.shape[1]].to(x.dtype)
-        for layer in self.encoders:
-            x = layer(x)
-        return self.after_norm(x)
+    def forward(
+        self,
+        feats: torch.Tensor,
+        prefix: torch.Tensor | None = None,
+        memory: torch.Tensor | None = None,
+        ctc: "CTC | None" = None,
+    ) -> torch.Tensor:
+        # feats: [B, T, n_mels] (fp32) -> [B, (2 +) T', d]
+        dt = self.embed.out.weight.dtype
+        x = self.embed(feats.to(dt))
+        if prefix is not None:
+            x = torch.cat([prefix.to(dt), x], dim=1)
+        # The residual stream starts in fp32 (the layers compute in the model dtype): the subsampled
+        # features times sqrt(d) can exceed the fp16 range (OWSM-CTC v3.2: 4.5e5, v4 1B: 4.4e4).
+        x = x.float() * self.xscale + self.pe[: x.shape[1]]
+        for i, layer in enumerate(self.encoders):
+            x = layer(x, memory)
+            if self.normalized_layers:
+                x = x.to(dt)  # LayerNorm output: back to the model dtype after the first layer
+            if i + 1 in self.interctc_layers:
+                probs = ctc.ctc_lo(x.to(dt)).float().softmax(-1).to(dt)
+                x = x + self.conditioning_layer(probs).to(x.dtype)
+        return self.after_norm(x).to(dt)
 
 
 class DecoderLayer(nn.Module):
@@ -278,27 +369,28 @@ class Decoder(nn.Module):
         cross_k: list[torch.Tensor],
         cross_v: list[torch.Tensor],
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Run ``S`` new tokens through the decoder against a static KV cache.
+        """Run ``S`` new tokens per row through the decoder against a static KV cache.
 
-        tokens:          [B, S] token ids at positions offset .. offset+S-1
-        offset:          [1] int64, number of tokens already in the cache
-        self_k, self_v:  per layer [B, H, C, d_k] cache with capacity C (slots >= offset are ignored)
+        tokens:          [B, S] token ids; row b at positions offset[b] .. offset[b]+S-1
+        offset:          [B] int64, number of tokens already in each row's cache
+        self_k, self_v:  per layer [B, H, C, d_k] cache with capacity C (slots >= offset[b] are ignored)
         cross_k, cross_v: per layer [B, H, T, d_k] from :meth:`cross_kv`
-        returns:         logits of the last position [B, V] (fp32), new keys/values [L, 2, B, H, S, d_k]
+        returns:         logits [B, S, V] (fp32), new keys/values [L, 2, B, H, S, d_k]
 
         The caller writes the new keys/values into the cache at ``offset``.
         """
-        s = tokens.shape[1]
+        b, s = tokens.shape
         cap = self_k[0].shape[2]
         dtype = self.output_layer.weight.dtype
         new_idx = torch.arange(s, device=tokens.device)
-        x = self.embed[0](tokens) * self.xscale + self.pe[offset + new_idx].to(dtype)  # [B, S, d]
+        positions = offset.unsqueeze(1) + new_idx  # [B, S]
+        x = self.embed[0](tokens) * self.xscale + self.pe[positions].to(dtype)  # [B, S, d]
 
-        # Attend to the cache slots < offset and causally to the new tokens.
+        # Each row attends to its cache slots < offset[b] and causally to its new tokens.
         slot = torch.arange(cap, device=tokens.device)
-        cache_ok = (slot < offset).unsqueeze(0).expand(s, cap)  # [S, C]
-        new_ok = new_idx.unsqueeze(0) <= new_idx.unsqueeze(1)  # [S, S]
-        mask = torch.cat([cache_ok, new_ok], dim=1)  # [S, C+S]
+        cache_ok = (slot < offset.unsqueeze(1))[:, None, None, :].expand(b, 1, s, cap)  # [B, 1, S, C]
+        new_ok = (new_idx.unsqueeze(0) <= new_idx.unsqueeze(1)).expand(b, 1, s, s)  # [B, 1, S, S]
+        mask = torch.cat([cache_ok, new_ok], dim=-1)  # [B, 1, S, C+S]
 
         new_kv = []
         for i, layer in enumerate(self.decoders):
@@ -319,8 +411,20 @@ class Decoder(nn.Module):
 
             x = x + layer.feed_forward(layer.norm3(x))
 
-        logits = self.output_layer(self.after_norm(x[:, -1])).float()  # [B, V]
+        logits = self.output_layer(self.after_norm(x)).float()  # [B, S, V]
         return logits, torch.stack(new_kv)
+
+
+class CTC(nn.Module):
+    """The auxiliary CTC head of the encoder-decoder models; only used to draft tokens."""
+
+    def __init__(self, d: int, vocab_size: int):
+        super().__init__()
+        self.ctc_lo = nn.Linear(d, vocab_size)
+
+    def forward(self, enc: torch.Tensor) -> torch.Tensor:
+        # [B, T, d] -> best-path ids [B, T] (int32; blank = 0, repeats not collapsed)
+        return self.ctc_lo(enc).argmax(-1).to(torch.int32)
 
 
 class OWSMModel(nn.Module):
@@ -330,11 +434,12 @@ class OWSMModel(nn.Module):
         self.frontend = Frontend(cfg)
         self.encoder = Encoder(cfg)
         self.decoder = Decoder(cfg)
+        self.ctc = CTC(cfg.d_model, cfg.vocab_size)
 
     def fuse_projections(self) -> None:
         """Fuse Q/K/V of every self-attention (cross-attention Q and K/V run at different times)."""
         for layer in self.encoder.encoders:
-            layer.attn.fuse_qkv()
+            layer.self_attn.fuse_qkv()
         for layer in self.decoder.decoders:
             layer.self_attn.fuse_qkv()
 
@@ -343,12 +448,58 @@ class OWSMModel(nn.Module):
         return self.decoder.cross_kv(self.encoder(self.frontend(speech)))
 
 
+class PromptEncoder(nn.Module):
+    """OWSM-CTC's Transformer over the prompt tokens (ESPnet ``TransformerEncoder``, no input layer)."""
+
+    def __init__(self, cfg: OWSMConfig):
+        super().__init__()
+        self.encoders = nn.ModuleList(
+            TransformerEncoderLayer(cfg.prompt_d, cfg.prompt_heads, cfg.prompt_ffn)
+            for _ in range(cfg.prompt_layers)
+        )
+        self.after_norm = LayerNorm(cfg.prompt_d)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        for layer in self.encoders:
+            x = layer(x)
+        return self.after_norm(x)
+
+
+class OWSMCTCModel(nn.Module):
+    """OWSM-CTC: an encoder conditioned on a prompt and on language/task tokens, read with CTC."""
+
+    def __init__(self, cfg: OWSMConfig, max_prompt: int = 5000):
+        super().__init__()
+        self.cfg = cfg
+        self.frontend = Frontend(cfg)
+        self.encoder = Encoder(cfg)
+        self.prompt_encoder = PromptEncoder(cfg)
+        self.embed = nn.Embedding(cfg.vocab_size, cfg.prompt_d)  # shared by the prompt and the prefix
+        same = cfg.prompt_d == cfg.d_model
+        self.embed_proj = nn.Identity() if same else nn.Linear(cfg.prompt_d, cfg.d_model)
+        self.prompt_proj = nn.Identity() if same else nn.Linear(cfg.prompt_d, cfg.d_model)
+        self.ctc = CTC(cfg.d_model, cfg.vocab_size)
+        self.prompt_xscale = math.sqrt(cfg.prompt_d)
+        self.register_buffer("prompt_pe", sinusoidal_positions(max_prompt, cfg.prompt_d), persistent=False)
+
+    def fuse_projections(self) -> None:
+        for layer in list(self.encoder.encoders) + list(self.prompt_encoder.encoders):
+            layer.self_attn.fuse_qkv()
+
+    def forward(self, feats: torch.Tensor, prompt: torch.Tensor, prefix: torch.Tensor) -> torch.Tensor:
+        """feats [B, T, n_mels], prompt [B, P] and prefix [B, 2] (language, task) token ids
+        -> CTC best-path ids [B, 2 + T'] (the first two frames belong to the prefix)."""
+        p = self.embed(prompt)
+        p = p * self.prompt_xscale + self.prompt_pe[: p.shape[1]].to(p.dtype)
+        memory = self.prompt_proj(self.prompt_encoder(p))
+        enc = self.encoder(feats, self.embed_proj(self.embed(prefix)), memory, self.ctc)
+        return self.ctc(enc)
+
+
 def convert_espnet_state_dict(sd: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
     """Map an ESPnet s2t checkpoint onto :class:`OWSMModel` parameter names."""
     out = {}
     for k, v in sd.items():
-        if k.startswith("ctc."):
-            continue  # CTC head is unused for attention decoding
         if k.startswith("frontend.logmel."):
             k = "frontend." + k[len("frontend.logmel.") :]
         elif k.startswith("normalize."):
@@ -367,14 +518,16 @@ def load_model(
     device: str | torch.device = "cpu",
     dtype: torch.dtype = torch.float32,
     fuse: bool = True,
-) -> OWSMModel:
-    model = OWSMModel(cfg)
+) -> OWSMModel | OWSMCTCModel:
+    model = OWSMCTCModel(cfg) if cfg.ctc_only else OWSMModel(cfg)
     sd = torch.load(checkpoint, map_location="cpu", weights_only=True)
     model.load_state_dict(convert_espnet_state_dict(sd), strict=True)
     model.eval().requires_grad_(False)
     if fuse:
         model.fuse_projections()
-    model.encoder.to(device=device, dtype=dtype)
-    model.decoder.to(device=device, dtype=dtype)
-    model.frontend.to(device=device)  # stays fp32
-    return model
+    for name, module in model.named_children():
+        if name == "frontend":
+            module.to(device=device)  # stays fp32
+        else:
+            module.to(device=device, dtype=dtype)
+    return model.to(device)

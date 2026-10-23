@@ -5,6 +5,7 @@ import re
 import sentencepiece as spm
 
 _TIME = re.compile(r"<\d+\.\d+>")
+_TASK = re.compile(r"<(asr|pr|g2p|p2g|st_\w+)>")
 
 
 class Tokenizer:
@@ -18,13 +19,16 @@ class Tokenizer:
         self.sos = self.ids["<sos>"]
         self.eos = self.ids["<eos>"]
         self.sop = self.ids["<sop>"]
-        self.notime = self.ids[notime]
+        self.notime = self.ids.get(notime)  # CTC-only models have no timestamps
         times = [i for i, t in enumerate(token_list) if _TIME.fullmatch(t)]
-        self.first_time, self.last_time = min(times), max(times)
-        # Language tokens sit between <nospeech> and the first task token <asr>.
-        lo, hi = self.ids["<nospeech>"] + 1, self.ids["<asr>"]
-        self.languages = {token_list[i][1:-1]: i for i in range(lo, hi)}
-        self.tasks = {t[1:-1]: i for i, t in enumerate(token_list) if t == "<asr>" or t.startswith("<st_")}
+        self.first_time, self.last_time = (min(times), max(times)) if times else (None, None)
+        # Language tokens sit between <nospeech> (<nolang> in OWSM-CTC) and the first task token.
+        self.tasks = {t[1:-1]: i for i, t in enumerate(token_list) if _TASK.fullmatch(t)}
+        lo = self.ids["<nospeech>" if "<nospeech>" in self.ids else "<nolang>"] + 1
+        self.languages = {token_list[i][1:-1]: i for i in range(lo, min(self.tasks.values()))}
+        # tokens a CTC head never writes but the decoder does: drafted decoding skips over them
+        times = range(self.first_time, self.last_time + 1) if times else range(0)
+        self.not_drafted = frozenset(times) | ({self.notime} if self.notime is not None else set())
 
     def lang_id(self, lang: str) -> int:
         key = lang.strip("<>")
@@ -39,7 +43,7 @@ class Tokenizer:
         return self.tasks[key]
 
     def is_time(self, i: int) -> bool:
-        return self.first_time <= i <= self.last_time
+        return self.first_time is not None and self.first_time <= i <= self.last_time
 
     def encode(self, text: str) -> list[int]:
         return [self.ids.get(p, self.unk) for p in self.sp.encode(text, out_type=str)]

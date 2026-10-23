@@ -11,8 +11,9 @@ from pathlib import Path
 import torch
 from torch import nn
 
+from . import fp8
 from .config import OWSMConfig
-from .modeling import OWSMModel
+from .modeling import OWSMCTCModel, OWSMModel
 from .runtime import cache_buckets
 
 log = logging.getLogger(__name__)
@@ -20,7 +21,7 @@ log = logging.getLogger(__name__)
 DTYPES = {"float16": torch.float16, "bfloat16": torch.bfloat16, "float32": torch.float32}
 
 # Bump whenever the exported graphs change, so cached engines from older exports are not reused.
-EXPORT_VERSION = 4
+EXPORT_VERSION = 9
 
 
 @dataclass(frozen=True)
@@ -29,18 +30,25 @@ class BuildOptions:
     max_batch: int = 16
     capacity: int = 512  # decoder KV-cache slots = max prompt + generated tokens
     max_prefill: int = 256  # longest prompt (incl. previous-text condition) processed in one call
+    max_verify: int = 32  # longest window of drafted tokens checked in one batch-1 decoder call
     workspace_gb: float = 8.0
     opt_level: int = 3  # TensorRT builder optimization level (0-5); higher = longer build, maybe faster
+    # Multi-token decoder calls get kernels about twice as fast from level 4 on (1.3 vs 2.3 ms on the 1B
+    # model), so they get an engine of their own (verify.engine) built at this level. (Level 5: same
+    # kernels, 3x the build time; the encoder and single-token steps gain nothing above level 3.)
+    verify_opt_level: int = 4
+    fp8_encoder: bool = False  # experimental: FP8 encoder GEMMs/convolutions (needs calibration audio)
 
 
 class _EncoderGraph(nn.Module):
     def __init__(self, model: OWSMModel):
         super().__init__()
-        self.encoder, self.decoder = model.encoder, model.decoder
+        self.encoder, self.decoder, self.ctc = model.encoder, model.decoder, model.ctc
 
-    def forward(self, feats: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        kv = self.decoder.cross_kv(self.encoder(feats))  # [L, 2, B, H, T, d_k]
-        return kv[:, 0], kv[:, 1]
+    def forward(self, feats: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        enc = self.encoder(feats)
+        kv = self.decoder.cross_kv(enc)  # [L, 2, B, H, T, d_k]
+        return kv[:, 0], kv[:, 1], self.ctc(enc)
 
 
 class _DecoderGraph(nn.Module):
@@ -69,7 +77,7 @@ def export_onnx(model: OWSMModel, out_dir: Path, opts: BuildOptions) -> tuple[Pa
     dtype = DTYPES[opts.dtype]
     H, dk, T = cfg.dec_heads, cfg.d_model // cfg.dec_heads, cfg.enc_frames
     batch = torch.export.Dim("batch", min=1, max=opts.max_batch)
-    seq = torch.export.Dim("seq", min=1, max=opts.max_prefill)
+    seq = torch.export.Dim("seq", min=1, max=max(opts.max_prefill, opts.max_verify))
     cache = torch.export.Dim("cache", min=16, max=opts.capacity)  # KV-cache bucket length
 
     enc_path = out_dir / "encoder.onnx"
@@ -79,16 +87,17 @@ def export_onnx(model: OWSMModel, out_dir: Path, opts: BuildOptions) -> tuple[Pa
         (feats,),
         enc_path,
         input_names=["feats"],
-        output_names=["cross_k", "cross_v"],
+        output_names=["cross_k", "cross_v", "ctc_ids"],
         dynamic_shapes={"feats": {0: batch}},
         dynamo=True,
         external_data=True,
+        custom_translation_table=fp8.ONNX_TRANSLATIONS if opts.fp8_encoder else None,
     )
 
     dec_path = out_dir / "decoder.onnx"
     b, s = 2, 3  # sizes > 1 so the exporter does not specialise them
     tokens = torch.zeros(b, s, dtype=torch.long, device=dev)
-    offset = torch.zeros(1, dtype=torch.long, device=dev)
+    offset = torch.zeros(b, dtype=torch.long, device=dev)
     caches = [
         torch.zeros(b, H, opts.capacity, dk, device=dev, dtype=dtype) for _ in range(2 * cfg.dec_layers)
     ]
@@ -96,7 +105,7 @@ def export_onnx(model: OWSMModel, out_dir: Path, opts: BuildOptions) -> tuple[Pa
     names = decoder_input_names(cfg.dec_layers)
     n_self = 2 * cfg.dec_layers
     cache_shapes = tuple({0: batch, 2: cache} if i < n_self else {0: batch} for i in range(len(caches)))
-    shapes = {"tokens": {0: batch, 1: seq}, "offset": None, "caches": cache_shapes}
+    shapes = {"tokens": {0: batch, 1: seq}, "offset": {0: batch}, "caches": cache_shapes}
     split = model.decoder.split_attention
     model.decoder.split_attention = False  # TensorRT fuses concat + SDPA into a single MHA kernel
     try:
@@ -115,7 +124,9 @@ def export_onnx(model: OWSMModel, out_dir: Path, opts: BuildOptions) -> tuple[Pa
     return enc_path, dec_path
 
 
-def _build(onnx_path: Path, engine_path: Path, profiles: list[dict], opts: BuildOptions) -> None:
+def _build(
+    onnx_path: Path, engine_path: Path, profiles: list[dict], opts: BuildOptions, opt_level: int | None = None
+) -> None:
     import tensorrt as trt
 
     logger = trt.Logger(trt.Logger.WARNING)
@@ -130,7 +141,7 @@ def _build(onnx_path: Path, engine_path: Path, profiles: list[dict], opts: Build
         raise RuntimeError(f"failed to parse {onnx_path}:\n{errors}")
     config = builder.create_builder_config()
     config.set_memory_pool_limit(trt.MemoryPoolType.WORKSPACE, int(opts.workspace_gb * (1 << 30)))
-    config.builder_optimization_level = opts.opt_level
+    config.builder_optimization_level = opts.opt_level if opt_level is None else opt_level
     config.profiling_verbosity = trt.ProfilingVerbosity.DETAILED  # layer names for profiling; no runtime cost
     dynamic = {
         network.get_input(i).name
@@ -147,32 +158,85 @@ def _build(onnx_path: Path, engine_path: Path, profiles: list[dict], opts: Build
     if serialized is None:
         raise RuntimeError(f"TensorRT failed to build {engine_path.name}")
     engine_path.write_bytes(serialized)
-    log.info("built %s in %.0fs", engine_path.name, time.time() - t0)
+    log.warning("built %s in %.0fs", engine_path.name, time.time() - t0)
 
 
-def build_engines(model: OWSMModel, engine_dir: Path, opts: BuildOptions, keep_onnx: bool = False) -> None:
-    """Export ``model`` (already on GPU in the target dtype) and build both engines into ``engine_dir``."""
+class _CTCGraph(nn.Module):
+    def __init__(self, model: OWSMCTCModel):
+        super().__init__()
+        self.model = model
+
+    def forward(self, feats: torch.Tensor, prompt: torch.Tensor, prefix: torch.Tensor) -> torch.Tensor:
+        return self.model(feats, prompt, prefix)
+
+
+def export_ctc_onnx(model: OWSMCTCModel, out_dir: Path, opts: BuildOptions) -> Path:
+    cfg = model.cfg
+    out_dir.mkdir(parents=True, exist_ok=True)
+    dev = next(model.encoder.parameters()).device
+    batch = torch.export.Dim("batch", min=1, max=opts.max_batch)
+    plen = torch.export.Dim("prompt", min=1, max=opts.max_prefill)
+    path = out_dir / "ctc.onnx"
+    args = (
+        torch.randn(2, cfg.num_frames, cfg.n_mels, device=dev),
+        torch.zeros(2, 3, dtype=torch.long, device=dev),
+        torch.zeros(2, 2, dtype=torch.long, device=dev),
+    )
+    torch.onnx.export(
+        _CTCGraph(model).eval(),
+        args,
+        path,
+        input_names=["feats", "prompt", "prefix"],
+        output_names=["ctc_ids"],
+        dynamic_shapes={"feats": {0: batch}, "prompt": {0: batch, 1: plen}, "prefix": {0: batch}},
+        dynamo=True,
+        external_data=True,
+        custom_translation_table=fp8.ONNX_TRANSLATIONS if opts.fp8_encoder else None,
+    )
+    return path
+
+
+def build_engines(
+    model: OWSMModel | OWSMCTCModel, engine_dir: Path, opts: BuildOptions, keep_onnx: bool = False
+) -> None:
+    """Export ``model`` (already on GPU in the target dtype) and build its engines into ``engine_dir``."""
     cfg = model.cfg
     engine_dir.mkdir(parents=True, exist_ok=True)
     onnx_dir = engine_dir / "onnx"
     log.info("exporting ONNX to %s", onnx_dir)
+    B = opts.max_batch
+    if cfg.ctc_only:
+        path = export_ctc_onnx(model, onnx_dir, opts)
+        profile = {
+            "feats": tuple((n, cfg.num_frames, cfg.n_mels) for n in (1, B, B)),
+            "prompt": ((1, 1), (B, 1), (B, opts.max_prefill)),
+            "prefix": ((1, 2), (B, 2), (B, 2)),
+        }
+        log.info("building the CTC engine (this can take a few minutes)")
+        _build(path, engine_dir / "ctc.engine", [profile], opts)
+        _finish(engine_dir, onnx_dir, opts, cfg, {}, keep_onnx)
+        return
     enc_onnx, dec_onnx = export_onnx(model, onnx_dir, opts)
 
-    B = opts.max_batch
     enc_profile = {"feats": tuple((n, cfg.num_frames, cfg.n_mels) for n in (1, B, B))}
     log.info("building encoder engine (this can take a few minutes)")
     _build(enc_onnx, engine_dir / "encoder.engine", [enc_profile], opts)
 
-    log.info("building decoder engine (this can take a few minutes)")
+    log.info("building decoder engines (this can take a few minutes)")
     profiles = decoder_profiles(opts.max_batch)
-    _build(
-        dec_onnx,
-        engine_dir / "decoder.engine",
-        [decoder_profile_shapes(cfg, opts, p) for p in profiles],
-        opts,
-    )
+    steps = [p for p in profiles if p["kind"] != "verify"]
+    verify = [p for p in profiles if p["kind"] == "verify"]
+    for name, profs, level in (("decoder", steps, opts.opt_level), ("verify", verify, opts.verify_opt_level)):
+        shapes = [decoder_profile_shapes(cfg, opts, p) for p in profs]
+        _build(dec_onnx, engine_dir / f"{name}.engine", shapes, opts, level)
 
-    meta = {"options": asdict(opts), "config": asdict(cfg), "decoder_profiles": profiles}
+    _finish(engine_dir, onnx_dir, opts, cfg, {"decoder": steps, "verify": verify}, keep_onnx)
+
+
+def _finish(
+    engine_dir: Path, onnx_dir: Path, opts: BuildOptions, cfg: OWSMConfig, profiles: dict, keep_onnx: bool
+) -> None:
+    meta = {"options": asdict(opts), "config": asdict(cfg), "profiles": profiles}
     (engine_dir / "build.json").write_text(json.dumps(meta, indent=1))
     if not keep_onnx:
         shutil.rmtree(onnx_dir, ignore_errors=True)
@@ -182,10 +246,14 @@ def decoder_profile_shapes(cfg: OWSMConfig, opts: BuildOptions, profile: dict) -
     """(min, opt, max) shape of every decoder input for one entry of :func:`decoder_profiles`."""
     H, dk, T = cfg.dec_heads, cfg.d_model // cfg.dec_heads, cfg.enc_frames
     b = profile["batch"]
-    s = (1, 1, 1) if profile["kind"] == "decode" else (1, 4, opts.max_prefill)  # new tokens per call
+    s = {  # new tokens per call
+        "decode": (1, 1, 1),
+        "verify": (1, max(1, opts.max_verify // 2), opts.max_verify),
+        "prefill": (1, 4, opts.max_prefill),
+    }[profile["kind"]]
     smallest = cache_buckets(opts.capacity)[0]
     cache_len = (smallest, smallest, opts.capacity)
-    shapes = {"tokens": tuple(zip(b, s)), "offset": ((1,), (1,), (1,))}
+    shapes = {"tokens": tuple(zip(b, s)), "offset": tuple((n,) for n in b)}
     for i in range(cfg.dec_layers):
         for kind in ("self_k", "self_v"):
             shapes[f"{kind}_{i}"] = tuple((n, H, c, dk) for n, c in zip(b, cache_len))
@@ -200,6 +268,11 @@ def decoder_profiles(max_batch: int) -> list[dict]:
     profiles = [{"kind": "decode", "batch": (1, 1, 1)}]
     if max_batch > 1:
         profiles.append({"kind": "decode", "batch": (2, max(2, max_batch // 2), max_batch)})
+    # Several drafted tokens per row, with batch 1 again on its own profile. (A static profile per
+    # window size was tried: no faster.)
+    profiles.append({"kind": "verify", "batch": (1, 1, 1)})
+    if max_batch > 1:
+        profiles.append({"kind": "verify", "batch": (2, max(2, max_batch // 2), max_batch)})
     profiles.append({"kind": "prefill", "batch": (1, max_batch, max_batch)})
     return profiles
 
@@ -216,4 +289,5 @@ def engine_tag(opts: BuildOptions) -> str:
 
 def check_config(cfg: OWSMConfig, engine_dir: Path) -> bool:
     meta = engine_dir / "build.json"
-    return meta.exists() and json.loads(meta.read_text())["config"] == asdict(cfg)
+    expected = json.loads(json.dumps(asdict(cfg)))  # tuples come back from JSON as lists
+    return meta.exists() and json.loads(meta.read_text())["config"] == expected
