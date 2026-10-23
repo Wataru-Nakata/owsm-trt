@@ -54,7 +54,7 @@ Test setup:
 |---|---:|---:|---:|---:|
 | ESPnet `Speech2Text`, beam 5 (its default), fp32 | 1 | 15 | 4.00% | |
 | ESPnet `Speech2Text`, greedy, fp32 | 1 | 25 | 3.91% | |
-| **owsm-trt, greedy** | 1 | **1836** | 3.91% | 73/73 |
+| **owsm-trt, greedy** | 1 | **1949** | 3.91% | 73/73 |
 | **owsm-trt, greedy** | 8 | **2943** | 3.91% | 73/73 |
 | **owsm-trt, greedy** | 16 | **3075** | 3.74% | 72/73 |
 | **owsm-trt, beam 5** | 1 | **139** | 4.00% | 73/73 |
@@ -65,16 +65,16 @@ Test setup:
 | **owsm-trt, OWSM-CTC** | 1 | **1506** | 4.43% | 72/73 |
 | **owsm-trt, OWSM-CTC** | 16 | **2264** | 4.35% | 69/73 |
 
-For one stream that is 73× ESPnet's greedy decoding and 122× its default beam search, and 123× with batch 16; beam
+For one stream that is 78× ESPnet's greedy decoding and 130× its default beam search, and 123× with batch 16; beam
 search itself is 9× (batch 1) to 15× (batch 3) faster, and OWSM-CTC 11× to 17×. On all of LibriSpeech test-clean
-(2620 utterances, 5.4 h) greedy decoding runs at RTFx 1937 with batch 1 and 3825 with batch 16, with the WER of the
+(2620 utterances, 5.4 h) greedy decoding runs at RTFx 2085 with batch 1 and 3825 with batch 16, with the WER of the
 PyTorch backend (2.42%); OWSM-CTC at 1603 with batch 1 and 2529 with batch 16 (WER 2.66-2.69%).
 
 Rows are TensorRT fp16, with the decoder megakernel (below) unless marked "TensorRT decoder only". Where their
 transcripts differ from ESPnet's fp32 output, it is by a comma, a casing or a single word (fp16 rounding at a near-tie:
 rebuilding the same engine moves as many), and the WER moves by at most 0.17 points. In fp32 (`backend="torch",
 dtype="float32"`) the transcripts are identical to ESPnet's: 73/73 for greedy, beam 5, greedy and beam 5 with
-timestamps, and OWSM-CTC. (TensorRT fp16 greedy with timestamps: 73/73, RTFx 1308; with the TensorRT decoder only
+timestamps, and OWSM-CTC. (TensorRT fp16 greedy with timestamps: 73/73, RTFx 1315; with the TensorRT decoder only
 72/73, RTFx 1070.)
 
 **FP8 encoder (experimental, opt-in).** `fp8=True` uses activation scales shipped with the package for
@@ -197,7 +197,9 @@ decoder megakernel, about 11 s, also cached.
   batch would wait for its slowest one. Instead a row whose utterance is done takes the next one for the following
   call, at its own cache offset (on the test set: 29 instead of 92 calls per pass at batch 8). The encoder works
   ahead on a second CUDA stream, one batch at a time, into two staging buffers the rows are filled from; a smaller
-  last batch is encoded at its own size rather than padded with empty rows.
+  last batch is encoded at its own size rather than padded with empty rows. With batch 1 the two staging buffers are
+  encoded at the same time on two streams, each with its own TensorRT contexts (+6% with the decoder megakernel,
+  same output; `OWSM_TRT_ENCODER_LANES=0` turns it off).
 * **Long recordings.** `transcribe_long` follows ESPnet's `decode_long`: 30 s windows, each starting at the last
   complete utterance of the one before, decoded with timestamps. The drafts also guess the timestamps (the first
   one is `<0.00>` and the last the window's end in most windows, and a start time usually equals the end time
@@ -253,7 +255,7 @@ OWSM-CTC models. Each checkpoint below was checked two ways on LibriSpeech dev-c
 
 | model (`espnet/...`) | ESPnet parity | TensorRT RTFx b1 / b8 | WER fp32 → fp16 |
 |---|---|---|---|
-| `owsm_v4_medium_1B` | 73/73 | 1836 / 2943 | 3.91% → 3.91% |
+| `owsm_v4_medium_1B` | 73/73 | 1949 / 2943 | 3.91% → 3.91% |
 | `owsm_v4_small_370M` | 5/5 | 3399 / 6226 | 4.17% → 4.17% |
 | `owsm_v4_base_102M` | 8/8 | 4568 / 10607 | 8.70% → 8.70% |
 | `owsm_ctc_v4_1B` | 73/73 | 1276 / 2080 | 4.43% → 4.43% |
