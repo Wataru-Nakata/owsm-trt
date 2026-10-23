@@ -94,6 +94,22 @@ def breakdown(ts, L, P, rec=6):
                 mx = torch.nan_to_num(d, nan=-1e18).max(1).values.mean().item() / 1e3
                 parts.append(f"{nm} {med:4.2f}/{mx:4.2f}")
             line += " [" + " ".join(parts) + "]"
+        if rec == 8 and name in ("self", "cross") and (t[idx][:, :, 2] > t[idx][:, :, 0]).any():
+            ti = t[idx]
+            live = ti[:, :, 2] > ti[:, :, 0]  # programs with a unit in this stage (ring kernel stamps)
+            # self: queries loaded (0 -> 2), cache slots (2 -> 3), new keys + stores (3 -> 4); cross: queries,
+            # keys / values (2 -> 3), partial store + count (3 -> 4), combine by the last slice (4 -> 6)
+            if name == "self":
+                seq = [(0, 2, "q"), (2, 3, "cache"), (3, 4, "new"), (4, 5, "end")]
+            else:
+                seq = [(0, 2, "q"), (2, 3, "kv"), (3, 4, "part"), (4, 6, "comb"), (6, 5, "end")]
+            parts = []
+            for a, b, nm in seq:
+                d = (ti[:, :, b] - ti[:, :, a]).where(live, torch.nan)
+                med = d.nanmedian(1).values.mean().item() / 1e3
+                mx = torch.nan_to_num(d, nan=-1e18).max(1).values.mean().item() / 1e3
+                parts.append(f"{nm} {med:4.2f}/{mx:4.2f}")
+            line += " [" + " ".join(parts) + "]"
         line += f"  barrier lat {lat[idx].mean().item() / 1e3:5.2f} skew {skew[idx].mean().item() / 1e3:5.2f}"
         out.append(line)
     return "\n      ".join(out)

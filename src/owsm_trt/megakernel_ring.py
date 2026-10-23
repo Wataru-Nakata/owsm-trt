@@ -522,6 +522,8 @@ if gluon is not None:
                 SP,
                 BT,
                 NW,
+                ts + (g * P + pid_z) * 8,
+                TS,
             )
             g += 1
             _stage_end(bar, err, g, P, pid_z, ts, MAXS, TS)
@@ -575,6 +577,8 @@ if gluon is not None:
                 BT,
                 NS,
                 NW,
+                ts + (g * P + pid_z) * 8,
+                TS,
             )
             g += 1
             _stage_end(bar, err, g, P, pid_z, ts, MAXS, TS)

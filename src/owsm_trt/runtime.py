@@ -910,8 +910,9 @@ class GreedySession(_Session):
             dec.wait_stream(main)
             side.wait_stream(main)
 
-        def concurrent() -> bool:  # whether the encoder may run alongside the next decoder call
-            return not ended[0] or not (ready[0].query() and ready[1].query())
+        def concurrent() -> bool:  # whether the encoder may run alongside the next decoder call: it runs, or
+            # the call's meanwhile() (flush) launches it
+            return (bool(pending) and not ended[0]) or not (ready[0].query() and ready[1].query())
 
         pending += [0, 1]
         flush()
