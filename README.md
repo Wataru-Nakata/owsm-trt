@@ -27,6 +27,8 @@ ctc.transcribe(["a.wav", "b.wav"], lang="eng", batch_size=16)
 
 # experimental: FP8 encoder (Hopper), calibrated on a few recordings like the ones you will transcribe
 fast = OWSM.from_pretrained("espnet/owsm_v4_medium_1B", fp8_calibration=["c1.wav", "c2.wav", "c3.wav"])
+# experimental: decoder megakernel (Hopper; batch 1, beam search and timestamps 9-25% faster)
+fast = OWSM.from_pretrained("espnet/owsm_v4_medium_1B", decoder_kernel="auto")
 ```
 
 ```bash
@@ -50,51 +52,50 @@ Test setup:
 |---|---:|---:|---:|---:|
 | ESPnet `Speech2Text`, beam 5 (its default), fp32 | 1 | 15 | 4.00% | |
 | ESPnet `Speech2Text`, greedy, fp32 | 1 | 25 | 3.91% | |
-| **owsm-trt, greedy** | 1 | **1389** | 3.91% | 71/73 |
-| **owsm-trt, greedy** | 8 | **2732** | 3.91% | 72/73 |
-| **owsm-trt, greedy** | 16 | **2857** | 3.91% | 72/73 |
-| owsm-trt, greedy, FP8 encoder (experimental) | 1 | 1577 | 3.91% | 69/73 |
-| owsm-trt, greedy, FP8 encoder (experimental) | 8 | 3036 | 3.83% | 70/73 |
-| owsm-trt, greedy, FP8 encoder (experimental) | 16 | 2788 | 3.91% | 68/73 |
-| **owsm-trt, beam 5** | 1 | **114** | 4.09% | 72/73 |
-| **owsm-trt, beam 5** | 3 | **215** | 4.00% | 73/73 |
+| **owsm-trt, greedy** | 1 | **1556** | 3.91% | 72/73 |
+| **owsm-trt, greedy** | 8 | **2893** | 3.91% | 73/73 |
+| **owsm-trt, greedy** | 16 | **3025** | 3.74% | 72/73 |
+| **owsm-trt, beam 5** | 1 | **114** | 4.00% | 73/73 |
+| **owsm-trt, beam 5** | 3 | **215** | 4.09% | 72/73 |
+| owsm-trt, greedy, decoder megakernel (opt-in, Hopper) | 1 | 1735 | 3.91% | 73/73 |
+| owsm-trt, beam 5, decoder megakernel (opt-in, Hopper) | 1 | 143 | 4.00% | 73/73 |
 | ESPnet OWSM-CTC `best_path`, fp32 | 1 | 131 | 4.43% | |
-| **owsm-trt, OWSM-CTC** | 1 | **981** | 4.43% | 64/73 |
-| **owsm-trt, OWSM-CTC** | 16 | **1682** | 4.52% | 63/73 |
+| **owsm-trt, OWSM-CTC** | 1 | **1251** | 4.43% | 72/73 |
+| **owsm-trt, OWSM-CTC** | 16 | **2208** | 4.35% | 69/73 |
 
-For one stream that is 56× ESPnet's greedy decoding and 93× its default beam search, and 114× with batch 16; beam
-search itself is 8× (batch 1) to 14× (batch 3) faster, and OWSM-CTC 7× to 13×. On all of LibriSpeech test-clean
-(2620 utterances, 5.4 h) greedy decoding runs at RTFx 1611 with batch 1 and 3588 with batch 16, with the WER of the
-PyTorch backend (2.42%); with the FP8 encoder about 3900 with batch 16 (WER 2.44%, calibrated on 8 of the
-utterances).
+For one stream that is 62× ESPnet's greedy decoding and 104× its default beam search, and 121× with batch 16; beam
+search itself is 8× (batch 1) to 14× (batch 3) faster, and OWSM-CTC 10× to 17×. On all of LibriSpeech test-clean
+(2620 utterances, 5.4 h) greedy decoding runs at RTFx 1680 with batch 1 and 3829 with batch 16, with the WER of the
+PyTorch backend (2.42%); OWSM-CTC at 2529 with batch 16 (WER 2.66%).
 
-Rows are TensorRT fp16 unless marked FP8. Where their transcripts differ from ESPnet's fp32 output, it is by a comma,
-a casing or a single word (fp16 rounding at a near-tie: rebuilding the same engine moves as many), and the WER moves
-by at most 0.17 points. In fp32 (`backend="torch", dtype="float32"`) the transcripts are identical to ESPnet's: 73/73
-for greedy, beam 5, greedy and beam 5 with timestamps, and OWSM-CTC. (TensorRT fp16 greedy with timestamps: 71/73,
-RTFx 1053.)
+Rows are TensorRT fp16. Where their transcripts differ from ESPnet's fp32 output, it is by a comma, a casing or a
+single word (fp16 rounding at a near-tie: rebuilding the same engine moves as many), and the WER moves by at most
+0.17 points. In fp32 (`backend="torch", dtype="float32"`) the transcripts are identical to ESPnet's: 73/73 for greedy,
+beam 5, greedy and beam 5 with timestamps, and OWSM-CTC. (TensorRT fp16 greedy with timestamps: 71/73, RTFx 1070;
+with the decoder megakernel 73/73, RTFx 1239.)
 
-The 1B model's FP8 rows were calibrated on 8 LibriSpeech test-clean utterances, so all 73 test utterances are held
-out: WER 3.83-3.91% vs ESPnet's 3.91%; on all of test-clean 2.41-2.44% vs 2.42% in fp16. With OWSM-CTC, FP8 was 22%
-faster at batch 16 in an earlier version, with WER within one word on held-out utterances. Check FP8 on your own data
-before relying on it. Here it is 11-14% faster at batch 1 and 8; at batch 16 the difference is within the
-run-to-run spread.
+With the experimental FP8 encoder, calibrated on 8 test-clean utterances, test-clean runs at RTFx 4350 with batch 16
+(+14%), WER 2.43% (2.43% on the 2612 held-out utterances too) vs 2.42% in fp16. Check FP8 on your own data before
+relying on it.
 
 Long recordings (`transcribe_long`), on the 87 chapters of LibriSpeech test-clean concatenated (5.4 h, 17-497 s
 each):
 
 | mode | RTFx | WER |
 |---|---:|---:|
-| ESPnet's `decode_long` (30 s windows, one after another) | 1085 | 2.78% |
-| same windows, 16 recordings at a time (`batch_size=16`) | 4487 | 2.81% |
-| windows cut at pauses, 16 at a time (`cut_at_pauses=True`) | 6245 | 2.27% |
+| ESPnet's `decode_long` (30 s windows, one after another) | 1046 | 2.67% |
+| same windows, 16 recordings at a time (`batch_size=16`) | 4688 | 2.80% |
+| windows cut at pauses, 16 at a time (`cut_at_pauses=True`) | 6714 | 2.27% |
+| OWSM-CTC (30 s windows overlapping by 2 s, as ESPnet), one recording per call | 6053 | 2.70% |
+| OWSM-CTC, all recordings in one call | 6550 | 2.68% |
 
 The first two decode the same windows; their WER differs by fp16 near-ties (rebuilding the engine alone moves the
 first one between 2.67% and 2.81%). Cutting at pauses decodes every second of audio once instead of 1.5 times and is
 not ESPnet's segmentation.
 
-Single-utterance greedy decoding takes 4.6 ms for the first test utterance (6 s): 0.2 ms features, 2.9 ms encoder,
-1.4 ms decoding. With batch 16, sixteen utterances take 59 ms, 38 of them in the encoder.
+Single-utterance greedy decoding takes 4.6 ms for the first test utterance (6 s): 0.2 ms features, 2.8 ms encoder,
+1.6 ms decoding (4.3 ms in all with the decoder megakernel). With batch 16, sixteen utterances take 57 ms, 35 of them
+in the encoder.
 
 The first `from_pretrained` builds the engines: 5.5 minutes for the 1B model on an H200 (4.5 minutes with FP8),
 cached afterwards.
@@ -125,7 +126,14 @@ cached afterwards.
       +19% for beam search;
     * the E-Branchformer depthwise convolutions on [time, channel] activations (CUDA C, compiled with NVRTC), which
       drop the transposes around TensorRT's grouped convolution: 160 → 38 µs per convolution at batch 16, 8-12% off
-      the encoder.
+      the encoder;
+    * the subsampling's first convolution (one input channel, written in the layout the next convolution reads:
+      2.5 → 1.2 ms at batch 16) and its last ReLU + flatten, which reads TensorRT's convolution output layout
+      directly (0.57 → 0.18 ms);
+    * the argmax of the CTC heads and OWSM-CTC's intermediate-CTC softmax, on a vocabulary padded from 50002 to 50048
+      (the padded ids can never win) and on time-major rows, as TensorRT keeps the encoder states after
+      cross-attention: otherwise it transposes the vocabulary-wide logits (several ms per OWSM-CTC call at batch
+      16).
 
     Building them needs Triton and NVRTC (both come with PyTorch on Linux) and an Ampere or newer GPU; otherwise
     the engines are built without them.
@@ -149,9 +157,10 @@ cached afterwards.
   * Which drafted tokens a call accepts is also decided on the GPU, inside the call's CUDA graph: the host gets
     back two numbers per row, and its own work per call is 0.1 ms or less.
   * Each decoding step (engine, cache write, token choice) is one CUDA-graph replay; so is the encoder (one graph per
-    5 s of input length). The host checks for the end every 4 steps.
+    1 s of input length: the subsampling stops at the next whole second). The host checks for the end every 4 steps.
   * Batched inputs are sorted by duration, so an encoder batch stops early and a decoding batch does not wait on one
-    long utterance.
+    long utterance. With batch 1 the order alternates long and short utterances instead, so the encoder works ahead
+    while long ones decode (+1.5-6%, same output).
 * **CTC drafts (greedy).** The encoder-decoder models also have a CTC head. Its best path is a draft of the
   transcript, usually right down to casing and punctuation. One decoder call checks up to 31 drafted tokens per
   utterance and keeps those that equal the decoder's own choice, so the output is exactly the greedy output with far
@@ -184,20 +193,30 @@ cached afterwards.
   complete pair.
 * **OWSM-CTC** has no decoder: one engine runs the prompt encoder and the encoder (with language/task prefix,
   cross-attention to the prompt and intermediate-CTC conditioning) and returns the frame-wise best path. Inputs are
-  padded to 30 s, as on the model card. `transcribe_long` decodes 30 s windows overlapping by 2 s on each side and
-  keeps their middle frames, like ESPnet's `decode_long`.
+  padded to 30 s, as on the model card. Batches hold utterances of similar durations, and the next batch is queued on
+  the GPU before the host collapses the best paths of the one before. `transcribe_long` decodes 30 s windows
+  overlapping by 2 s on each side and keeps their middle frames, like ESPnet's `decode_long`; the windows of all
+  recordings go through the encoder together.
 * **FP8 encoder (experimental, opt-in).** `OWSM.from_pretrained(..., fp8_calibration=[recordings])` runs the
   encoder's linear layers and subsampling convolutions as FP8 (E4M3) GEMMs/convolutions on Hopper GPUs: inputs get a
   per-tensor scale measured on the given recordings, weights a per-channel scale. A few in-domain recordings are
   enough (8 LibriSpeech utterances above). It is not the default because the build needs that audio, and because
   the accuracy check above is one test set.
-* **Decoder megakernel (experimental, opt-in, Hopper).** `from_pretrained(..., decoder_kernel=True)` (or
-  `OWSM_TRT_MEGAKERNEL=1`) runs small decoder calls (at most 8 rows and 16 tokens) as one persistent Gluon kernel per
-  call: all 18 layers and the output layer, with grid-wide barriers between stages and each stage's weights copied
-  into shared memory (TMA) while the previous stage finishes. A one-token call takes 0.65 ms instead of 0.72-0.77 ms
-  with TensorRT, and drafted windows of 2-8 tokens 0.66-0.76 instead of 1.1 ms. On the test set it makes beam search
-  22% faster (and its output 73/73 ESPnet's), batch 8 5% faster, and greedy batch 1 4% slower: most of its calls are
-  32-token windows, which stay on TensorRT, and it shares the GPU worse with the encoder working ahead.
+* **Decoder megakernel (experimental, opt-in, Hopper).** `from_pretrained(..., decoder_kernel="auto")` (or
+  `OWSM_TRT_MEGAKERNEL=auto`) runs a decoder call as one persistent Gluon kernel: all layers and the output layer,
+  with grid-wide barriers between stages, while a producer warp streams the next weight tiles into a shared-memory
+  ring (TMA) across the barriers.
+  * Single-row calls (greedy batch 1, windows of up to 32 drafted tokens) run on 32 SMs while the encoder works
+    ahead on the others, and on 64 SMs when nothing runs alongside. They are bitwise the same either way.
+  * Calls of up to 8 rows and 16 tokens (beam search) run on a second kernel over all SMs. Larger calls stay on
+    TensorRT.
+  * A 32-token window takes 0.96 ms instead of 1.13 ms with TensorRT.
+  * On the 1B model it makes greedy batch 1 9-11% faster, timestamps 16% and beam 5 25% (all 73/73 ESPnet's); batch
+    8 and 16 are unchanged.
+  * Each kernel is checked against an fp32 decoder at load and on its first call. On any failure its calls go to
+    TensorRT.
+  * It costs about 1.2 GB more GPU memory (1B), about 11 s of Triton compilation on first use (cached) and 3.5 s
+    more load time.
 * **Same API without TensorRT.** `backend="torch"` runs the same decoding in PyTorch with CUDA graphs.
 
 ## Supported models
@@ -213,14 +232,14 @@ OWSM-CTC models. Each checkpoint below was checked two ways on LibriSpeech dev-c
 
 | model (`espnet/...`) | ESPnet parity | TensorRT RTFx b1 / b8 | WER fp32 → fp16 |
 |---|---|---|---|
-| `owsm_v4_medium_1B` | 73/73 | 1389 / 2732 | 3.91% → 3.91% |
-| `owsm_v4_small_370M` | 5/5 | 1052 / 1521 | 4.17% → 4.17% |
-| `owsm_v4_base_102M` | 8/8 | 3615 / 9672 | 8.70% → 8.61% |
-| `owsm_ctc_v4_1B` | 73/73 | 967 / 1465 | 4.43% → 4.43% |
-| `owsm_ctc_v3.2_ft_1B` | 2/2 | 623 / 1318 | 5.13% → 4.87% |
-| `owsm_ctc_v3.1_1B` | 2/2 | 717 / 1409 | 4.17% → 4.26% |
+| `owsm_v4_medium_1B` | 73/73 | 1556 / 2893 | 3.91% → 3.91% |
+| `owsm_v4_small_370M` | 5/5 | 2850 / 6025 | 4.17% → 4.17% |
+| `owsm_v4_base_102M` | 8/8 | 3692 / 10294 | 8.70% → 8.61% |
+| `owsm_ctc_v4_1B` | 73/73 | 1276 / 2080 | 4.43% → 4.43% |
+| `owsm_ctc_v3.2_ft_1B` | 2/2 | 1191 / 1854 | 5.13% → 5.04% |
+| `owsm_ctc_v3.1_1B` | 2/2 | 1306 / 2156 | 4.17% → 4.17% |
 | `owsm_v3.2` | 3/3 | 902 / 1247 | 4.17% → 4.17% |
-| `owsm_v3.1_ebf` | 3/3 | 541 / 626 | 3.74% → 3.65% |
+| `owsm_v3.1_ebf` | 3/3 | 1415 / 1940 | 3.74% → 3.65% |
 | `owsm_v3.1_ebf_small` | 2/2 | 1087 / 1354 | 4.43% → 4.26% |
 | `owsm_v3.1_ebf_small_lowrestriction` | 2/2 | (same architecture as `owsm_v3.1_ebf_small`) | |
 | `owsm_v3.1_ebf_base` | 3/3 | 833 / 2352 | 5.83% → 5.74% |
@@ -234,15 +253,16 @@ OWSM-CTC models. Each checkpoint below was checked two ways on LibriSpeech dev-c
 | `owls_025B_180K` | 3/3 | 731 / 1611 | 7.65% → 7.74% |
 | `powsm`, task `pr` (phones) | 3/3 | 189 / 641 | 72/73 identical to fp32 |
 | `powsm`, task `asr` | 3/3 | 138 / 509 | see below |
-| `powsm_ctc`, tasks `pr` / `asr` | 2/2 / 2/2 | 864 / 1823 (`pr`) | 72/73 identical to fp32 |
+| `powsm_ctc`, tasks `pr` / `asr` | 2/2 / 2/2 | 1965 / 3324 (`pr`) | 73/73 identical to fp32 |
 
-The first, third and fourth rows were measured with the current code. The others were measured earlier, before CTC
+The rows for `owsm_v4_medium_1B`, `owsm_v4_small_370M`, `owsm_v4_base_102M`, the three OWSM-CTC models,
+`owsm_v3.1_ebf` and `powsm_ctc` were measured with the current code. The others were measured earlier, before CTC
 drafts worked in batches, rows were refilled, the padding was left out of the subsampling, multi-token calls got their
-own engine and the plugins came; the current code is faster on them too (`owsm_v4_base_102M` went from 1401 / 2194 to
-3615 / 9672).
+own engine and the plugins came; the current code is faster on them too (`owsm_v3.1_ebf` went from 541 / 626 to
+1415 / 1940).
 
 With timestamps, greedy and beam-5 outputs are identical to ESPnet's too: `owsm_v3.1_ebf_base` 3/3 on CPU, and
-`owsm_v4_medium_1B` 73/73 for both searches in fp32 on GPU (TensorRT fp16 greedy: 71/73, RTFx 1053).
+`owsm_v4_medium_1B` 73/73 for both searches in fp32 on GPU (TensorRT fp16 greedy: 71/73, RTFx 1070).
 
 Notes:
 * Language codes follow each model's vocabulary (`eng`, or `en` for OWSM v1/v2). POWSM uses 20 s windows.
@@ -264,7 +284,7 @@ Tested with torch 2.14 + TensorRT 11.4 on an H200. (The ONNX export of v0.1's gr
 
 * CTC drafts speed up greedy ASR only; beam search, translation and POWSM take one decoder call per token. Rows are
   refilled only in greedy ASR; otherwise a batch runs until its slowest utterance is done.
-* The first input of each length (in 5 s steps) and batch size captures a CUDA graph, which takes a few encoder
+* The first input of each length (in 1 s steps) and batch size captures a CUDA graph, which takes a few encoder
   runs; benchmark after a warm-up over the whole set.
 * Beam search with timestamps is slow (RTFx ~18 on the 1B model, ESPnet ~2): ESPnet's `end_detect` rarely stops it
   early, and we keep its behavior.
