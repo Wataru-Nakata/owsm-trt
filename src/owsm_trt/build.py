@@ -11,7 +11,7 @@ from pathlib import Path
 import torch
 from torch import nn
 
-from . import fp8
+from . import attn_plugin, fp8
 from .config import OWSMConfig
 from .modeling import MultiHeadedAttention, OWSMCTCModel, OWSMModel, padding_frame
 from .runtime import cache_buckets
@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 DTYPES = {"float16": torch.float16, "bfloat16": torch.bfloat16, "float32": torch.float32}
 
 # Bump whenever the exported graphs change, so cached engines from older exports are not reused.
-EXPORT_VERSION = 13
+EXPORT_VERSION = 302
 MIN_FEATURE_FRAMES = 64  # shortest feature input of a trimming encoder engine
 
 
@@ -39,6 +39,12 @@ class BuildOptions:
     # kernels, 3x the build time; the encoder and single-token steps gain nothing above level 3.)
     verify_opt_level: int = 4
     fp8_encoder: bool = False  # experimental: FP8 encoder GEMMs/convolutions (needs calibration audio)
+    # Decoder attention as TensorRT plugins (attn_plugin): Triton kernels that read the KV cache and the
+    # cross-attention keys/values where they are, instead of TensorRT's copies into its own layouts
+    # every layer. In verify.engine (multi-token calls) and in decoder.engine (single-token steps and
+    # prefill). Triton is needed to build them, not to run them; without it they are left out.
+    attn_plugin: bool = True
+    attn_plugin_steps: bool = True
 
 
 class _EncoderGraph(nn.Module):
@@ -79,11 +85,7 @@ def export_onnx(
     cfg = model.cfg
     out_dir.mkdir(parents=True, exist_ok=True)
     dev = next(model.decoder.parameters()).device
-    dtype = DTYPES[opts.dtype]
-    H, dk, T = cfg.dec_heads, cfg.d_model // cfg.dec_heads, cfg.enc_frames
     batch = torch.export.Dim("batch", min=1, max=opts.max_batch)
-    seq = torch.export.Dim("seq", min=1, max=max(opts.max_prefill, opts.max_verify))
-    cache = torch.export.Dim("cache", min=16, max=opts.capacity)  # KV-cache bucket length
 
     enc_path = out_dir / "encoder.onnx"
     feats_dims = {0: batch}
@@ -108,7 +110,27 @@ def export_onnx(
         model.encoder.fill = None
         MultiHeadedAttention.explicit = False
 
-    dec_path = out_dir / "decoder.onnx"
+    dec_path = export_decoder_onnx(model, out_dir / "decoder.onnx", opts, split_self_attention)
+    return enc_path, dec_path
+
+
+def export_decoder_onnx(
+    model: OWSMModel,
+    path: Path,
+    opts: BuildOptions,
+    split_self_attention: bool = False,
+    plugins: frozenset[str] = frozenset(),
+) -> Path:
+    """The decoder call (``Decoder.step``) as ONNX. ``plugins``: attention as attn_plugin nodes (see
+    ``Decoder.plugins``)."""
+    cfg = model.cfg
+    path.parent.mkdir(parents=True, exist_ok=True)
+    dev = next(model.decoder.parameters()).device
+    dtype = DTYPES[opts.dtype]
+    H, dk, T = cfg.dec_heads, cfg.d_model // cfg.dec_heads, cfg.enc_frames
+    batch = torch.export.Dim("batch", min=1, max=opts.max_batch)
+    seq = torch.export.Dim("seq", min=1, max=max(opts.max_prefill, opts.max_verify))
+    cache = torch.export.Dim("cache", min=16, max=opts.capacity)  # KV-cache bucket length
     b, s = 2, 3  # sizes > 1 so the exporter does not specialise them
     tokens = torch.zeros(b, s, dtype=torch.long, device=dev)
     offset = torch.zeros(b, dtype=torch.long, device=dev)
@@ -120,28 +142,35 @@ def export_onnx(
     n_self = 2 * cfg.dec_layers
     cache_shapes = tuple({0: batch, 2: cache} if i < n_self else {0: batch} for i in range(len(caches)))
     shapes = {"tokens": {0: batch, 1: seq}, "offset": {0: batch}, "caches": cache_shapes}
-    split = model.decoder.split_attention
+    split, plug = model.decoder.split_attention, model.decoder.plugins
     model.decoder.split_attention = split_self_attention  # concatenated: TensorRT fuses it for one token
+    model.decoder.plugins = frozenset(plugins)
     MultiHeadedAttention.explicit = True  # cross-attention
     try:
         torch.onnx.export(
             _DecoderGraph(model).eval(),
             (tokens, offset, *caches),
-            dec_path,
+            path,
             input_names=names,
             output_names=["logits", "new_kv"],
             dynamic_shapes=shapes,
             dynamo=True,
             external_data=True,
+            custom_translation_table=attn_plugin.onnx_translations() if plugins else None,
         )
     finally:
-        model.decoder.split_attention = split
+        model.decoder.split_attention, model.decoder.plugins = split, plug
         MultiHeadedAttention.explicit = False
-    return enc_path, dec_path
+    return path
 
 
 def _build(
-    onnx_path: Path, engine_path: Path, profiles: list[dict], opts: BuildOptions, opt_level: int | None = None
+    onnx_path: Path,
+    engine_path: Path,
+    profiles: list[dict],
+    opts: BuildOptions,
+    opt_level: int | None = None,
+    aot_plugins: bool = False,
 ) -> None:
     import tensorrt as trt
 
@@ -150,6 +179,8 @@ def _build(
     flags = 0
     if hasattr(trt.NetworkDefinitionCreationFlag, "STRONGLY_TYPED"):
         flags |= 1 << int(trt.NetworkDefinitionCreationFlag.STRONGLY_TYPED)
+    if aot_plugins:  # Python plugins (attn_plugin) are compiled into the engine
+        flags |= 1 << int(trt.NetworkDefinitionCreationFlag.PREFER_AOT_PYTHON_PLUGINS)
     network = builder.create_network(flags)
     parser = trt.OnnxParser(network, logger)
     if not parser.parse_from_file(str(onnx_path)):
@@ -258,13 +289,50 @@ def build_engines(
     profiles = decoder_profiles(opts.max_batch)
     steps = [p for p in profiles if p["kind"] != "verify"]
     verify = [p for p in profiles if p["kind"] == "verify"]
-    for name, profs, level in (("decoder", steps, opts.opt_level), ("verify", verify, opts.verify_opt_level)):
+    plugin_onnx = None
+    if opts.attn_plugin or opts.attn_plugin_steps:
+        plugin_onnx = _export_plugin_decoder(model, onnx_dir / "plugins" / "decoder.onnx", opts)
+    plugins = {}
+    for name, profs, level, use in (
+        ("decoder", steps, opts.opt_level, opts.attn_plugin_steps),
+        ("verify", verify, opts.verify_opt_level, opts.attn_plugin),
+    ):
         shapes = [decoder_profile_shapes(cfg, opts, p) for p in profs]
-        _build(dec_onnx, engine_dir / f"{name}.engine", shapes, opts, level)
+        plugins[name] = bool(use and plugin_onnx)
+        if plugins[name]:
+            try:
+                _build(plugin_onnx, engine_dir / f"{name}.engine", shapes, opts, level, aot_plugins=True)
+            except Exception as e:  # noqa: BLE001 - e.g. kernels that do not compile for this GPU
+                log.warning("building %s.engine without attention plugins: %s", name, e)
+                plugins[name] = False
+        if not plugins[name]:
+            _build(dec_onnx, engine_dir / f"{name}.engine", shapes, opts, level)
 
     _finish(
-        engine_dir, onnx_dir, opts, cfg, {"encoder": batches, "decoder": steps, "verify": verify}, keep_onnx
+        engine_dir,
+        onnx_dir,
+        opts,
+        cfg,
+        {"encoder": batches, "decoder": steps, "verify": verify},
+        keep_onnx,
+        {"attn_plugin": plugins},
     )
+
+
+def _export_plugin_decoder(model: OWSMModel, path: Path, opts: BuildOptions) -> Path | None:
+    """The decoder with attention as attn_plugin nodes, its plugins registered; None if they cannot be
+    built here."""
+    cfg = model.cfg
+    head_dim = cfg.d_model // cfg.dec_heads
+    if not attn_plugin.available(head_dim):
+        log.warning("decoder engines without attention plugins (they need Triton and an Ampere+ GPU)")
+        return None
+    try:
+        attn_plugin.register_plugins(cfg.dec_heads, head_dim)
+        return export_decoder_onnx(model, path, opts, plugins=frozenset({"self", "cross"}))
+    except Exception as e:  # noqa: BLE001
+        log.warning("decoder engines without attention plugins: %s", e)
+        return None
 
 
 def trims_features(cfg: OWSMConfig) -> bool:
@@ -274,9 +342,15 @@ def trims_features(cfg: OWSMConfig) -> bool:
 
 
 def _finish(
-    engine_dir: Path, onnx_dir: Path, opts: BuildOptions, cfg: OWSMConfig, profiles: dict, keep_onnx: bool
+    engine_dir: Path,
+    onnx_dir: Path,
+    opts: BuildOptions,
+    cfg: OWSMConfig,
+    profiles: dict,
+    keep_onnx: bool,
+    extra: dict | None = None,
 ) -> None:
-    meta = {"options": asdict(opts), "config": asdict(cfg), "profiles": profiles}
+    meta = {"options": asdict(opts), "config": asdict(cfg), "profiles": profiles, **(extra or {})}
     meta["trimmed_features"] = trims_features(cfg)
     (engine_dir / "build.json").write_text(json.dumps(meta, indent=1))
     if not keep_onnx:

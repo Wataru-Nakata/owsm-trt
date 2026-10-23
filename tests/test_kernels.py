@@ -57,3 +57,33 @@ def test_write_kv_matches_scatter():
     rv.scatter_(3, slots, new_kv[:, 1])
     kernels.write_kv(new_kv, k, v, offs)
     assert torch.equal(k, rk) and torch.equal(v, rv)
+
+
+@pytest.mark.parametrize(
+    "shape", [(1, 1, 64), (1, 8, 64), (5, 8, 64), (16, 16, 128), (3, 32, 512), (2, 17, 64), (2, 256, 512)]
+)
+def test_attention_kernels_match_reference(shape):
+    """attn_plugin's Triton kernels (every tactic) == their PyTorch implementations; rows at their own
+    offsets, garbage in the cache slots past them."""
+    from owsm_trt import attn_plugin as ap
+
+    torch.manual_seed(0)
+    B, S, C = shape
+    H, D, T = 4, 64, 37
+    f16 = {"device": "cuda", "dtype": torch.float16}
+    qkv = torch.randn(B, S, 3 * H * D, **f16)
+    k_cache, v_cache = torch.randn(B, H, C, D, **f16), torch.randn(B, H, C, D, **f16)
+    offset = torch.randint(0, C - S + 1, (B,), device="cuda")
+    offset[0] = C - S
+    ref_self = ap.self_attn(qkv, k_cache, v_cache, offset)
+    q, k, v = torch.randn(B, S, H * D, **f16), torch.randn(B, H, T, D, **f16), torch.randn(B, H, T, D, **f16)
+    ref_cross = ap.cross_attn(q, k, v)
+    for config in ap.TACTICS["self_attn"]:
+        y = ap.self_attn_triton(qkv, k_cache, v_cache, offset, config=config)
+        torch.testing.assert_close(y, ref_self, rtol=1e-2, atol=2e-3)
+    # offsets out of range (TensorRT times the plugin on arbitrary data) are clamped to the cache
+    assert ap.self_attn_triton(qkv, k_cache, v_cache, torch.full_like(offset, 1 << 40)).isfinite().all()
+    for config in ap.TACTICS["cross_attn"]:
+        torch.testing.assert_close(
+            ap.cross_attn_triton(q, k, v, config=config), ref_cross, rtol=1e-2, atol=2e-3
+        )

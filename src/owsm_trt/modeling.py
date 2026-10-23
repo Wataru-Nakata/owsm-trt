@@ -19,6 +19,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
+from . import attn_plugin
 from .config import OWSMConfig
 
 LN_EPS = 1e-12
@@ -400,6 +401,9 @@ class Decoder(nn.Module):
         # Self-attention over [cache | new] without concatenating them (faster in eager PyTorch). For a
         # single new token TensorRT fuses the concatenated form into one MHA kernel instead.
         self.split_attention = True
+        # Export option: self- and/or cross-attention ("self", "cross") as attn_plugin ops, which
+        # become TensorRT plugins.
+        self.plugins: frozenset[str] = frozenset()
 
     def cross_kv(self, enc: torch.Tensor) -> torch.Tensor:
         """Project encoder output to every layer's cross-attention keys/values once.
@@ -447,24 +451,43 @@ class Decoder(nn.Module):
         new_kv = []
         for i, layer in enumerate(self.decoders):
             att = layer.self_attn
-            q, k, v = att.qkv(layer.norm1(x))
-            new_kv.append(torch.stack([k, v]))
-            if self.split_attention:
-                y = cached_attention(q, self_k[i], self_v[i], k, v, mask)
+            if "self" in self.plugins:
+                x = x + self._plugin_self_attention(att, layer.norm1(x), offset, self_k[i], self_v[i], new_kv)
             else:
-                k_all = torch.cat([self_k[i], k], dim=2)  # [B, H, C+S, d_k]
-                v_all = torch.cat([self_v[i], v], dim=2)
-                y = explicit_attention(q, k_all, v_all, mask)
-            x = x + att.merge(y)
+                q, k, v = att.qkv(layer.norm1(x))
+                new_kv.append(torch.stack([k, v]))
+                if self.split_attention:
+                    y = cached_attention(q, self_k[i], self_v[i], k, v, mask)
+                else:
+                    k_all = torch.cat([self_k[i], k], dim=2)  # [B, H, C+S, d_k]
+                    v_all = torch.cat([self_v[i], v], dim=2)
+                    y = explicit_attention(q, k_all, v_all, mask)
+                x = x + att.merge(y)
 
             src = layer.src_attn
-            q = src.heads(src.linear_q(layer.norm2(x)))
-            x = x + src.merge(src.attend(q, cross_k[i], cross_v[i]))
+            if "cross" in self.plugins:
+                q = src.linear_q(layer.norm2(x))
+                x = x + src.linear_out(attn_plugin.cross_attn(q, cross_k[i], cross_v[i]))
+            else:
+                q = src.heads(src.linear_q(layer.norm2(x)))
+                x = x + src.merge(src.attend(q, cross_k[i], cross_v[i]))
 
             x = x + layer.feed_forward(layer.norm3(x))
 
         logits = self.output_layer(self.after_norm(x)).float()  # [B, S, V]
         return logits, torch.stack(new_kv)
+
+    def _plugin_self_attention(
+        self, att: MultiHeadedAttention, x: torch.Tensor, offset: torch.Tensor, k_cache, v_cache, new_kv: list
+    ) -> torch.Tensor:
+        """Self-attention as one attn_plugin op on the fused Q/K/V projection (see ``plugins``)."""
+        if hasattr(att, "linear_qkv"):
+            qkv = att.linear_qkv(x)  # [B, S, 3d]
+        else:
+            qkv = torch.cat([att.linear_q(x), att.linear_k(x), att.linear_v(x)], dim=-1)
+        b, s = x.shape[:2]
+        new_kv.append(qkv.view(b, s, 3, att.h, att.d_k)[:, :, 1:].permute(2, 0, 3, 1, 4))  # [2, B, H, S, d_k]
+        return att.linear_out(attn_plugin.self_attn(qkv, k_cache, v_cache, offset))
 
 
 class CTC(nn.Module):
