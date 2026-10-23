@@ -118,7 +118,8 @@ encoder.
 
 The first `from_pretrained` builds the engines: 5.5 minutes for the 1B model on an H200, cached afterwards (an FP8
 build after it takes about a minute: it reuses the decoder engines). The first transcription then compiles the
-decoder megakernel, about 11 s, also cached.
+decoder megakernel, about 18 s, also cached. From a fresh `pip install`, the first `owsm-trt transcribe` with the 1B
+model takes about 5.5-6 minutes in all (download, engine build, megakernel); later runs start in about 10 s.
 
 ## How it works
 
@@ -238,7 +239,7 @@ decoder megakernel, about 11 s, also cached.
     ESPnet's in all three; batch 8 and 16 are unchanged (most of their calls stay on TensorRT).
   * Each kernel is checked against an fp32 decoder at load and on its first call. On any failure its calls go to
     TensorRT (logged).
-  * It costs about 1.2 GB more GPU memory (1B), about 11 s of Triton compilation the first time (cached) and 3.5 s
+  * It costs about 1.2 GB more GPU memory (1B), about 18 s of Triton compilation the first time (cached) and 3.5 s
     more load time. Other GPUs use TensorRT.
 * **Same API without TensorRT.** `backend="torch"` runs the same decoding in PyTorch with CUDA graphs.
 
@@ -299,15 +300,19 @@ Notes:
 
 ## Requirements
 
-You need an NVIDIA GPU, Python ≥ 3.10, torch ≥ 2.6, and PyTorch and TensorRT built for the **same CUDA major
-version**. The PyPI defaults (`torch`, `tensorrt`) are both CUDA 13. If your torch is a CUDA 12 build, run
-`pip install tensorrt-cu12`; owsm-trt warns at load time when the two do not match.
+You need an NVIDIA GPU (Ampere or newer for the custom kernels), Python ≥ 3.10, torch ≥ 2.10 and TensorRT ≥ 10.16;
+`pip install owsm-trt` brings everything else (on Linux, torch brings Triton and NVRTC's `cuda-bindings`). The
+PyPI defaults (`torch`, `tensorrt`) are both CUDA 13; a CUDA 12 torch with them works too (torch 2.10 cu12 +
+TensorRT 11.4 was tested). Don't install `tensorrt-cu12` next to `tensorrt`: the two overwrite each other's files
+(owsm-trt warns when it finds both).
 
-The decoder megakernel (Hopper GPUs) uses Triton's Gluon, which comes with PyTorch on Linux; where it is missing or
-fails its check, the TensorRT decoder is used.
+The decoder megakernel (Hopper GPUs) needs Triton 3.8's Gluon, i.e. torch 2.14. With torch 2.10-2.13 the TensorRT
+decoder is used (logged): about 18% slower at batch 1 on the 1B model, the same at batch 16. Any other slower
+fallback (e.g. engines without the custom kernels) is logged with its reason too.
 
-Tested with torch 2.14 + TensorRT 11.4 on an H200. (The ONNX export of v0.1's graphs also worked with torch 2.6 and
-2.8; v0.2's graphs have only been exported with torch 2.14.)
+Tested with torch 2.14 + TensorRT 11.4 on an H200, both in the development environment and from a fresh install of
+the wheel (same speed, every optimization engaged; `scripts/fresh_install.sh`, `scripts/engaged.py`). The export
+and the custom kernels also work with torch 2.10-2.13 and TensorRT 10.16, 11.0 and 11.2.
 
 ## Limitations
 
