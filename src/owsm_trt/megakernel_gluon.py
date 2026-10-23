@@ -54,6 +54,13 @@ if gluon is not None:
         tr = min(bn, 32)
         return gl.BlockedLayout([1, 1], [tr, 32 // tr], [1, nw], [0, 1])
 
+    @constexpr_function
+    def _els(bn, mt, nw):
+        """Layout of [bn features, mt tokens] tiles for per-token reductions over the features: a thread holds
+        consecutive features of one token (as few lanes per token as fit)."""
+        lf = 32 // max(1, min(32, mt // nw))  # lanes along the features
+        return gl.BlockedLayout([max(1, bn // lf), 1], [lf, 32 // lf], [1, nw], [0, 1])
+
     @gluon.jit
     def _now():
         return gl.inline_asm_elementwise(
@@ -248,13 +255,18 @@ if gluon is not None:
         o2 = x2 + tt[None, :] * (2 * D) + n0 + rr[:, None]
         gl.store(o2, hi, mask=m)
         gl.store(o2 + D, (val - hi.to(gl.float32)).to(gl.float16), mask=m)
-        mu = gl.sum(val, axis=0) / BN
-        dev = val - mu[None, :]
-        gl.store(st + nu * M + tt, mu, mask=tt < M)
-        gl.store(st + (NPART + nu) * M + tt, gl.sum(dev * dev, axis=0), mask=tt < M)
+        # the statistics in a layout with the features within threads: over the lanes (the store layout), the
+        # reductions take shuffle chains per token (~1 us per unit of 32 tokens)
+        sl: gl.constexpr = _els(BN, MT, NW)
+        v2 = gl.convert_layout(val, sl)
+        t2 = gl.arange(0, MT, layout=gl.SliceLayout(0, sl))
+        mu = gl.sum(v2, axis=0) / BN
+        dev = v2 - mu[None, :]
+        gl.store(st + nu * M + t2, mu, mask=t2 < M)
+        gl.store(st + (NPART + nu) * M + t2, gl.sum(dev * dev, axis=0), mask=t2 < M)
 
     @gluon.jit
-    def _embed_g(pid, M, S, tok, offs, emb, pe, xscale, V, x, x2, st, D: gl.constexpr, PART: gl.constexpr,
+    def _embed_g(pid, M, S, tok, offs, TSTR, OSTR, emb, pe, xscale, V, x, x2, st, D: gl.constexpr, PART: gl.constexpr,
                  NPART: gl.constexpr, MT: gl.constexpr, NW: gl.constexpr):  # fmt: skip
         """x = embedding * sqrt(d) + positional encoding, for the PART features of unit pid."""
         if pid < NPART:
@@ -262,9 +274,9 @@ if gluon is not None:
             rr = gl.arange(0, PART, layout=gl.SliceLayout(1, ol))
             tt = gl.arange(0, MT, layout=gl.SliceLayout(0, ol))
             tm = tt < M
-            ids = gl.load(tok + tt, mask=tm, other=0)
+            ids = gl.load(tok + (tt // S) * TSTR + tt % S, mask=tm, other=0)
             ids = gl.minimum(gl.maximum(ids, 0), V - 1).to(gl.int64)
-            pos = gl.load(offs + tt // S, mask=tm, other=0) + tt % S
+            pos = gl.load(offs + (tt // S) * OSTR, mask=tm, other=0) + tt % S
             n0 = pid * PART
             m = tm[None, :] & (rr >= 0)[:, None]
             e = gl.load(emb + ids[None, :] * D + n0 + rr[:, None], mask=m, other=0.0).to(gl.float32)
@@ -293,8 +305,18 @@ if gluon is not None:
         return m_new, l_i, acc * alpha[:, None] + pv
 
     @gluon.jit
-    def _self_attn_g(pid, P, R, S, layer, qkv, offs, kc, vc, C, new_kv, o, D: gl.constexpr, H: gl.constexpr,
-                     DK: gl.constexpr, SP: gl.constexpr, BT: gl.constexpr, NW: gl.constexpr):  # fmt: skip
+    def _kv_block(k, v, t0, t_end, tT, dT, tV, d_, DK: gl.constexpr):
+        """Keys [DK, BT] (transposed) and values [BT, DK] t0 .. t0 + BT - 1 (those < t_end; the rest zero)."""
+        kt = gl.load(k + (t0 + tT)[None, :] * DK + dT[:, None], mask=((t0 + tT) < t_end)[None, :] & (dT >= 0)[:, None],
+                     other=0.0, cache_modifier=".cg")  # fmt: skip
+        vt = gl.load(v + (t0 + tV)[:, None] * DK + d_[None, :], mask=((t0 + tV) < t_end)[:, None] & (d_ >= 0)[None, :],
+                     other=0.0, cache_modifier=".cg")  # fmt: skip
+        return kt, vt
+
+    @gluon.jit
+    def _self_attn_g(pid, P, R, S, layer, qkv, offs, OSTR, kc, vc, C, new_kv, o, D: gl.constexpr, H: gl.constexpr,
+                     DK: gl.constexpr, SP: gl.constexpr, BT: gl.constexpr, NW: gl.constexpr, tsp=None,
+                     TS: gl.constexpr = False):  # fmt: skip
         """Per (row, head): the queries attend to the row's cache slots < offset and causally to its new keys
         (from registers); then the new keys/values go into the cache at the offset and to new_kv."""
         mma2: gl.constexpr = gl.NVMMADistributedLayout(
@@ -315,24 +337,33 @@ if gluon is not None:
         for u in range(pid, R * H, P):
             b = u // H
             h = u % H
-            off = gl.load(offs + b)
+            off = gl.load(offs + b * OSTR)
             rows = b * S + s_
             qp = qkv + rows[:, None] * (3 * D) + h * DK + d_[None, :]
             q = gl.load(qp, mask=sm, other=0.0, cache_modifier=".cg")
             kn = gl.load(qp + D, mask=sm, other=0.0, cache_modifier=".cg")
             vn = gl.load(qp + 2 * D, mask=sm, other=0.0, cache_modifier=".cg")
             qa = gl.convert_layout((q.to(gl.float32) * (DK**-0.5)).to(gl.float16), la)
+            if TS:
+                gl.store(tsp + 2, _now())
             cb = ((layer * R + b) * H + h).to(gl.int64) * C * DK
             m_i = gl.full([SP], float("-inf"), gl.float32, layout=gl.SliceLayout(1, mma2))
             l_i = gl.zeros([SP], gl.float32, layout=gl.SliceLayout(1, mma2))
             acc = gl.zeros([SP, DK], gl.float32, layout=mma2)
-            for t0 in range(0, off, BT):
-                kt = gl.load(kc + cb + (t0 + tT)[None, :] * DK + dT[:, None], mask=((t0 + tT) < off)[None, :] & (dT >= 0)[:, None],
-                             other=0.0, cache_modifier=".cg")  # fmt: skip
-                vt = gl.load(vc + cb + (t0 + tV)[:, None] * DK + d_[None, :], mask=((t0 + tV) < off)[:, None] & (d_ >= 0)[None, :],
-                             other=0.0, cache_modifier=".cg")  # fmt: skip
-                ok = ((t0 + tS) < off)[None, :] & (iS >= 0)[:, None]
-                m_i, l_i, acc = _softmax_step(qa, kt, vt, ok, m_i, l_i, acc, SP, BT, DK, NW)
+            if SP <= 16:  # the next block's keys / values load during this block's MMAs (more rows: spills)
+                kt, vt = _kv_block(kc + cb, vc + cb, 0, off, tT, dT, tV, d_, DK)
+                for t0 in range(0, off, BT):
+                    kx, vx = _kv_block(kc + cb, vc + cb, t0 + BT, off, tT, dT, tV, d_, DK)
+                    ok = ((t0 + tS) < off)[None, :] & (iS >= 0)[:, None]
+                    m_i, l_i, acc = _softmax_step(qa, kt, vt, ok, m_i, l_i, acc, SP, BT, DK, NW)
+                    kt, vt = kx, vx
+            else:
+                for t0 in range(0, off, BT):
+                    kt, vt = _kv_block(kc + cb, vc + cb, t0, off, tT, dT, tV, d_, DK)
+                    ok = ((t0 + tS) < off)[None, :] & (iS >= 0)[:, None]
+                    m_i, l_i, acc = _softmax_step(qa, kt, vt, ok, m_i, l_i, acc, SP, BT, DK, NW)
+            if TS:
+                gl.store(tsp + 3, _now())
             ok = (jS[None, :] <= iS[:, None]) & (jS < S)[None, :]
             m_i, l_i, acc = _softmax_step(qa, gl.permute(kn, (1, 0)), vn, ok, m_i, l_i, acc, SP, SP, DK, NW)
             out = gl.convert_layout((acc / l_i[:, None]).to(gl.float16), bl)
@@ -343,10 +374,13 @@ if gluon is not None:
             nk = (((layer * 2) * R + b) * H + h).to(gl.int64) * S * DK + s_[:, None] * DK + d_[None, :]
             gl.store(new_kv + nk, kn, mask=sm)
             gl.store(new_kv + nk + R * H * S * DK, vn, mask=sm)
+            if TS:
+                gl.store(tsp + 4, _now())
 
     @gluon.jit
     def _cross_attn_g(pid, P, R, S, layer, q2, ck, cv, T, o, xp, xml, xcnt, D: gl.constexpr, H: gl.constexpr,
-                      DK: gl.constexpr, SP: gl.constexpr, BT: gl.constexpr, NS: gl.constexpr, NW: gl.constexpr):  # fmt: skip
+                      DK: gl.constexpr, SP: gl.constexpr, BT: gl.constexpr, NS: gl.constexpr, NW: gl.constexpr,
+                      tsp=None, TS: gl.constexpr = False):  # fmt: skip
         """Per (row, head, slice of the T keys); with NS > 1 slices every slice stores its partial softmax
         (running max, sum, output) in xml / xp and the last one of a (row, head) combines them."""
         mma2: gl.constexpr = gl.NVMMADistributedLayout(
@@ -375,19 +409,28 @@ if gluon is not None:
                 q2 + rows[:, None] * D + h * DK + d_[None, :], mask=sm, other=0.0, cache_modifier=".cg"
             )
             qa = gl.convert_layout((q.to(gl.float32) * (DK**-0.5)).to(gl.float16), la)
+            if TS:
+                gl.store(tsp + 2, _now())
             cb = ((layer * R + b) * H + h).to(gl.int64) * T * DK
             t_lo = sp * tch
             t_hi = gl.minimum(T, t_lo + tch)
             m_i = gl.full([SP], float("-inf"), gl.float32, layout=gl.SliceLayout(1, mma2))
             l_i = gl.zeros([SP], gl.float32, layout=gl.SliceLayout(1, mma2))
             acc = gl.zeros([SP, DK], gl.float32, layout=mma2)
-            for t0 in range(t_lo, t_hi, BT):
-                kt = gl.load(ck + cb + (t0 + tT)[None, :] * DK + dT[:, None], mask=((t0 + tT) < t_hi)[None, :] & (dT >= 0)[:, None],
-                             other=0.0, cache_modifier=".cg")  # fmt: skip
-                vt = gl.load(cv + cb + (t0 + tV)[:, None] * DK + d_[None, :], mask=((t0 + tV) < t_hi)[:, None] & (d_ >= 0)[None, :],
-                             other=0.0, cache_modifier=".cg")  # fmt: skip
-                ok = ((t0 + tS) < t_hi)[None, :] & (iS >= 0)[:, None]
-                m_i, l_i, acc = _softmax_step(qa, kt, vt, ok, m_i, l_i, acc, SP, BT, DK, NW)
+            if SP <= 16:  # the next block's keys / values load during this block's MMAs (more rows: spills)
+                kt, vt = _kv_block(ck + cb, cv + cb, t_lo, t_hi, tT, dT, tV, d_, DK)
+                for t0 in range(t_lo, t_hi, BT):
+                    kx, vx = _kv_block(ck + cb, cv + cb, t0 + BT, t_hi, tT, dT, tV, d_, DK)
+                    ok = ((t0 + tS) < t_hi)[None, :] & (iS >= 0)[:, None]
+                    m_i, l_i, acc = _softmax_step(qa, kt, vt, ok, m_i, l_i, acc, SP, BT, DK, NW)
+                    kt, vt = kx, vx
+            else:
+                for t0 in range(t_lo, t_hi, BT):
+                    kt, vt = _kv_block(ck + cb, cv + cb, t0, t_hi, tT, dT, tV, d_, DK)
+                    ok = ((t0 + tS) < t_hi)[None, :] & (iS >= 0)[:, None]
+                    m_i, l_i, acc = _softmax_step(qa, kt, vt, ok, m_i, l_i, acc, SP, BT, DK, NW)
+            if TS:
+                gl.store(tsp + 3, _now())
             out = o + rows[:, None] * D + h * DK + d_[None, :]
             if NS == 1:
                 gl.store(out, gl.convert_layout((acc / l_i[:, None]).to(gl.float16), bl), mask=sm)
@@ -400,6 +443,8 @@ if gluon is not None:
                 gl.barrier()
                 arrived = gl.atomic_add(xcnt + bh, 1, sem="acq_rel", scope="gpu")
                 gl.barrier()
+                if TS:
+                    gl.store(tsp + 4, _now())
                 if arrived == NS - 1:  # the last slice of (row, head): combine
                     mx = gl.full([SP], float("-inf"), gl.float32, layout=gl.SliceLayout(1, bl))
                     for j in gl.static_range(NS):
@@ -417,6 +462,8 @@ if gluon is not None:
                         den += wj * lj
                     gl.atomic_xchg(xcnt + bh, 0, sem="relaxed", scope="gpu")
                     gl.store(out, (num / den[:, None]).to(gl.float16), mask=sm)
+                if TS:
+                    gl.store(tsp + 6, _now())
 
     @gluon.jit
     def _gemm_g(x, XS, M, wslot, xbuf, scratch, wbar, phase, bias, cvec, st, eps, res, n0,
@@ -527,7 +574,7 @@ if gluon is not None:
 
     @gluon.jit
     def _decoder_kernel_g(
-        tok, offs, emb, pe, xscale,
+        tok, offs, TSTR, OSTR, emb, pe, xscale,
         dqkv, bqkv, cqkv, do_, bo, dcq, bcq, ccq, dco, bco, d1, b1, c1, d2, d2s, b2, dout, bout, cout,
         kc, vc, C, ck, cv, T, logits, new_kv,
         x, x2, qkv, ob, q2, hb, st, part, cnt2, xp, xml, xcnt, bar, err, done, ts,
@@ -582,7 +629,7 @@ if gluon is not None:
         p1 = 0
         if TS:
             gl.store(ts + pid * 8, _now())
-        _embed_g(pid, M, S, tok, offs, emb, pe, xscale, V, x, x2, st, D, P2, NP2, MTF, NW)
+        _embed_g(pid, M, S, tok, offs, TSTR, OSTR, emb, pe, xscale, V, x, x2, st, D, P2, NP2, MTF, NW)
         g = 1
         if TS:
             gl.store(ts + pid * 8 + 5, _now())
@@ -633,7 +680,7 @@ if gluon is not None:
             if PFA:
                 if pid_z < R * H:
                     cb = ((layer * R + pid_z // H) * H + pid_z % H).to(gl.int64) * C * DK
-                    off = gl.load(offs_z + pid_z // H)
+                    off = gl.load(offs_z + (pid_z // H) * OSTR)
                     _prefetch_rows(kc_z + cb, off, 128, NW)
                     _prefetch_rows(vc_z + cb, off, 128, NW)
             _gwait(bar, err, g * P, MAXS)
@@ -642,7 +689,25 @@ if gluon is not None:
                 gl.store(ts + (g * P + pid_z) * 8, _now())
             # self-attention -> ob
             _self_attn_g(
-                pid_z, P, R, S, layer, qkv_z, offs_z, kc_z, vc_z, C, new_kv_z, ob_z, D, H, DK, SP, BT, NW
+                pid_z,
+                P,
+                R,
+                S,
+                layer,
+                qkv_z,
+                offs_z,
+                OSTR,
+                kc_z,
+                vc_z,
+                C,
+                new_kv_z,
+                ob_z,
+                D,
+                H,
+                DK,
+                SP,
+                BT,
+                NW,
             )
             if TS:
                 gl.store(ts + (g * P + pid_z) * 8 + 5, _now())
@@ -894,7 +959,7 @@ class GluonDecoder:
         dq, do_, dcq, dco, d1, d2, d2s, dout = self.descs
         C, T = self_k.shape[3], cross_k.shape[3]
         args = (
-            tokens, offset, m.emb, m.pe, m.xscale,
+            tokens, offset, tokens.stride(0), offset.stride(0), m.emb, m.pe, m.xscale,
             dq, m.bqkv, m.cqkv, do_, m.bo, dcq, m.bcq, m.ccq, dco, m.bco, d1, m.b1, m.c1, d2, d2s, m.b2, dout, m.bout,
             m.cout,
             self_k, self_v, C, cross_k, cross_v, T, logits, new_kv,

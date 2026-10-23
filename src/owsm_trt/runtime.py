@@ -703,8 +703,14 @@ class GreedySession(_Session):
             bufs = _Verify(cfg, batch, w, self.kw, rules, self.t_notime, eos)
             for c, (k, v) in self.caches.items():
                 kind = "verify" if w > 1 else "decode"
-                # a decoder megakernel can do the plain argmax itself (timestamp rules: kernels.choose)
-                extra = {"pred": bufs.pred} if getattr(backend, "argmax", False) and rules is None else {}
+                # a decoder megakernel can do the argmax itself: plain, or with <notimestamps> (no timestamp
+                # tokens); kernels.choose for rows under the other timestamp rules
+                extra = {}
+                if getattr(backend, "argmax", False):  # (a megakernel backend)
+                    extra["inp"] = (bufs.inp, w)
+                    extra["pred"] = bufs.pred
+                    if rules is not None:
+                        extra["notime"] = (self.t_notime, rules.first_time, rules.last_time)
                 step = backend.step_fn(
                     bufs.tok,
                     bufs.offs,
@@ -928,8 +934,9 @@ class GreedySession(_Session):
             dec.wait_stream(main)
             side.wait_stream(main)
 
-        def concurrent() -> bool:  # whether the encoder may run alongside the next decoder call
-            return not ended[0] or not (ready[0].query() and ready[1].query())
+        def concurrent() -> bool:  # whether the encoder may run alongside the next decoder call: it runs, or
+            # the call's meanwhile() (flush) launches it
+            return (bool(pending) and not ended[0]) or not (ready[0].query() and ready[1].query())
 
         pending += [0, 1]
         flush()
@@ -1232,8 +1239,9 @@ class _Bound:
     def body(self) -> None:
         b = self.bufs
         b.inp.copy_(b.host, non_blocking=True)
-        b.tok.copy_(b.inp[:, : b.w])
-        b.offs.copy_(b.inp[:, b.w])
+        if not getattr(self.step, "reads_inp", False):  # (a decoder megakernel reads them in inp)
+            b.tok.copy_(b.inp[:, : b.w])
+            b.offs.copy_(b.inp[:, b.w])
         self.step()
         written = getattr(self.step, "writes_cache", False)  # the decoder megakernel writes the cache itself
         if b.fast:
@@ -1241,6 +1249,8 @@ class _Bound:
                 kernels.write_kv(b.new_kv, self.k, self.v, b.offs)
             if not getattr(self.step, "writes_pred", False):
                 kernels.choose(b.logits, b.inp, b.notime, b.pred, b.rules)
+            elif b.rules is not None:  # (the kernel's argmax holds for the rows with <notimestamps>)
+                kernels.choose(b.logits, b.inp, b.notime, b.pred, b.rules, skip_notime=True)
             kernels.accept(b.pred, b.inp, b.res, b.eos)
         else:
             if not written:

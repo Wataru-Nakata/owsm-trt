@@ -340,3 +340,53 @@ def test_decoder_kernel_falls_back(model, monkeypatch):
     with monkeypatch.context() as mp:
         mp.setattr(megakernel_ring.RingDecoder, "step_fn", wrong)
         assert pipeline._decoder_kernel(runner, CFG, None, dev, "auto") is runner
+
+
+@gluon_only
+def test_ring_argmax_without_timestamps(model):
+    """The kernel's argmax leaves out the timestamp tokens in the rows flagged <notimestamps>."""
+    dec, dev = model.decoder, torch.device("cuda")
+    L, H, dk, C, T = CFG.dec_layers, CFG.dec_heads, CFG.d_model // CFG.dec_heads, 64, CFG.enc_frames
+    torch.manual_seed(11)
+    f16 = {"device": dev, "dtype": torch.float16}
+    rows, window, ft, lt = 2, 4, 500, 990
+    tokens = torch.randint(0, 400, (rows, window), device=dev)
+    offset = torch.tensor([3, 5], device=dev)
+    k, v = torch.randn(L, rows, H, C, dk, **f16), torch.randn(L, rows, H, C, dk, **f16)
+    ck, cv = torch.randn(L, rows, H, T, dk, **f16), torch.randn(L, rows, H, T, dk, **f16)
+    ring = megakernel_ring.RingDecoder(megakernel.MegaDecoder(dec, dev))
+    logits = torch.zeros(rows, window, CFG.vocab_size, device=dev)
+    new_kv = torch.zeros(L, 2, rows, H, window, dk, **f16)
+    pred = torch.full((rows, window), -1, dtype=torch.long, device=dev)
+    flags = torch.tensor([True, False], device=dev)
+    ring.step_fn(tokens, offset, k, v, ck, cv, logits, new_kv, pred=pred, notime=(flags, ft, lt))()
+    masked = logits.clone()
+    masked[0, :, ft : lt + 1] = float("-inf")
+    assert torch.equal(pred[0], masked[0].argmax(-1))
+    assert torch.equal(
+        pred[1], logits[1].argmax(-1)
+    )  # (not final for an unflagged row: kernels.choose's then)
+
+
+@gluon_only
+@pytest.mark.parametrize("primer", [[2, 3, 999], [2, 3, 4]], ids=["notimestamps", "timestamps"])
+def test_ring_session_with_rules(model, primer):
+    """Greedy decoding under the timestamp rules (the kernel's argmax for <notimestamps>, kernels.choose for the
+    rest) gives the PyTorch backend's output."""
+    from owsm_trt.runtime import TimestampRules
+
+    m16 = copy.deepcopy(model).half()
+    m16.frontend.float()
+    mega = megakernel.MegaDecoder(model.decoder, torch.device("cuda"))
+    be = megakernel.MegaBackend(TorchBackend(m16), megakernel_ring.RingDecoder(mega), 32, 8, trial=True)
+    rules = TimestampRules(999, 900, 998, 1, CFG.vocab_size, torch.device("cuda"))
+    feats = m16.frontend(torch.randn(1, CFG.num_samples, device="cuda"))
+    outs = []
+    for b in (TorchBackend(m16), be):
+        sess = GreedySession(b, CFG, 1, 64, eos=1, dtype=torch.float16, device=torch.device("cuda"),
+                             buckets=[16, 32, 64], draft_windows=(2, 4, 8), rules=rules)  # fmt: skip
+        sess.encode(feats)
+        out, _ = sess.decode_drafted(torch.tensor([primer], device="cuda"), [[5, 6, 7, 8]], 20)
+        outs.append(out)
+    assert not be.failed
+    assert outs[0] == outs[1]

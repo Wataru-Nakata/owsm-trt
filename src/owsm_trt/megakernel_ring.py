@@ -37,6 +37,7 @@ if gluon is not None:
     from .megakernel_gluon import (
         _cross_attn_g,
         _el,
+        _els,
         _embed_g,
         _garrive,
         _gexit,
@@ -174,7 +175,12 @@ if gluon is not None:
         (mean, sum of squared deviations over PART features each; exact parallel combination; NPART need not be a
         power of 2)."""
         NPP: gl.constexpr = _np2(NPART)
-        ol: gl.constexpr = gl.BlockedLayout([1, 1], [32 // MTP, MTP], [NW, 1], [1, 0])
+        # 32 tokens: 4 parts per thread, over 4 lanes (short reductions; as below, slower for fewer tokens)
+        if MTP >= 32:
+            ol: gl.constexpr = gl.BlockedLayout([_np2(NPP // 4), 1], [_np2(min(4, NPP)), 32 // _np2(min(4, NPP))],
+                                                [1, NW], [0, 1])  # fmt: skip
+        else:
+            ol: gl.constexpr = gl.BlockedLayout([1, 1], [32 // MTP, MTP], [NW, 1], [1, 0])
         p = gl.arange(0, NPP, layout=gl.SliceLayout(1, ol))
         t = gl.arange(0, MTP, layout=gl.SliceLayout(0, ol))
         m = (t < M)[None, :] & (p < NPART)[:, None]
@@ -316,6 +322,23 @@ if gluon is not None:
         return c
 
     @gluon.jit
+    def _ffn2_sum(x, x2, st, bias, part, cnt, rb, M, D: gl.constexpr, KS: gl.constexpr, MTP: gl.constexpr,
+                  NPART: gl.constexpr, NW: gl.constexpr, BM: gl.constexpr):  # fmt: skip
+        """The residual stream of block rb: x + bias + its KS partials, in slice order."""
+        el: gl.constexpr = _el(BM, NW)
+        rr = gl.arange(0, BM, layout=gl.SliceLayout(1, el))
+        tt = gl.arange(0, MTP, layout=gl.SliceLayout(0, el))
+        po = tt[None, :] * BM + rr[:, None]
+        tm = (tt < M)[None, :] & (rr >= 0)[:, None]
+        n0 = rb * BM
+        tot = gl.load(x + tt[None, :] * D + n0 + rr[:, None], mask=tm, other=0.0, cache_modifier=".cg")
+        tot += gl.load(bias + n0 + rr)[:, None]
+        for j in gl.static_range(KS):
+            tot += gl.load(part + ((rb * KS + j) * BM) * MTP + po, cache_modifier=".cg")
+        gl.atomic_xchg(cnt + rb, 0, sem="relaxed", scope="gpu")
+        _store_res(tot, x, x2, st, n0, rb, M, BM, MTP, D, NPART, NW)
+
+    @gluon.jit
     def _ffn2_r(hb, M, ring, full, empty, c, xbuf, scratch, bias, x, x2, st, part, cnt, pid, P, tsp,
                 D: gl.constexpr, F: gl.constexpr, LKS: gl.constexpr, N: gl.constexpr, LN_: gl.constexpr,
                 MTP: gl.constexpr, LMTP: gl.constexpr, NPART: gl.constexpr, NW: gl.constexpr,
@@ -323,7 +346,7 @@ if gluon is not None:
                 BM: gl.constexpr):  # fmt: skip
         """FFN2 + residual, split-K: unit u = (block of BM features u >> LKS, K slice u & (KS - 1) of D
         columns). Every slice stores its partial [tokens, BM] (fp32) into part and counts itself; the last one
-        of a block adds the others, bias and residual and stores the residual stream."""
+        of a block adds them (in slice order), bias and residual and stores the residual stream."""
         KS: gl.constexpr = F // D
         NKC: gl.constexpr = D // 64
         el: gl.constexpr = _el(BM, NW)
@@ -331,7 +354,50 @@ if gluon is not None:
         tt = gl.arange(0, MTP, layout=gl.SliceLayout(0, el))
         po = tt[None, :] * BM + rr[:, None]  # token-major partials: coalesced
         tm = (tt < M)[None, :] & (rr >= 0)[:, None]
-        for u in range(pid, F // BM, P):
+        NU: gl.constexpr = F // BM
+        # programs with two units (fewer than 32 tokens: their sums are short): both partials first, then both
+        # counts at once (one atomic round trip, not two); else unit after unit (a block's sum overlaps the
+        # other programs' second units)
+        two = False
+        if MTP < 32:
+            two = (2 * P >= NU) & (P < NU)
+        if two:
+            ll: gl.constexpr = gl.BlockedLayout([1], [32], [NW], [0])
+            i = gl.arange(0, 32 * NW, layout=ll)
+            ones = gl.full([32 * NW], 1, gl.int32, layout=ll)
+            u1 = pid + P
+            has1 = u1 < NU
+            rb0 = pid >> LKS
+            rb1 = u1 >> LKS
+            _x_load(hb + (pid & (KS - 1)) * D, F, 0, M, xbuf, NKC, N, MTP, LMTP, 1, NW)
+            _x_wait()
+            if TS:
+                gl.store(tsp + 2, _now())
+                gl.store(tsp + 3, _now())
+            acc, c = _consume(ring, full, empty, c, xbuf, N, NKC, NSLOT, LNS, NW, CK, BM)
+            gl.store(part + (pid * BM) * MTP + po, _sum_hl(acc, scratch, N, MTP, 1, NW, BM))
+            if has1:
+                if (P & (KS - 1)) != 0:
+                    _x_load(hb + (u1 & (KS - 1)) * D, F, 0, M, xbuf, NKC, N, MTP, LMTP, 1, NW)
+                    _x_wait()
+                acc, c = _consume(ring, full, empty, c, xbuf, N, NKC, NSLOT, LNS, NW, CK, BM)
+                gl.store(part + (u1 * BM) * MTP + po, _sum_hl(acc, scratch, N, MTP, 1, NW, BM))
+            if TS:
+                gl.store(tsp + 4, _now())
+            gl.barrier()
+            a0 = gl.atomic_add(cnt + rb0 + i * 0, ones, mask=i == 0, sem="acq_rel", scope="gpu")
+            a1 = gl.atomic_add(cnt + rb1 + i * 0, ones, mask=(i == 0) & has1, sem="acq_rel", scope="gpu")
+            arrived0 = gl.sum(gl.where(i == 0, a0, 0), axis=0)
+            arrived1 = gl.sum(gl.where((i == 0) & has1, a1, 0), axis=0)
+            if TS:
+                gl.store(tsp + 6, _now())
+            if arrived0 == KS - 1:
+                _ffn2_sum(x, x2, st, bias, part, cnt, rb0, M, D, KS, MTP, NPART, NW, BM)
+            if has1 & (arrived1 == KS - 1):
+                _ffn2_sum(x, x2, st, bias, part, cnt, rb1, M, D, KS, MTP, NPART, NW, BM)
+            if TS:
+                gl.store(tsp + 7, _now())
+        for u in range(pid, NU if not two else 0, P):
             rb = u >> LKS
             ks = u & (KS - 1)
             n0 = rb * BM
@@ -368,13 +434,15 @@ if gluon is not None:
         return c
 
     @gluon.jit
-    def _out_r(x2, M, ring, full, empty, c, xbuf, scratch, st, eps, bout, cout, logits, amax, aidx, V, nrb, pid, P,
+    def _out_r(x2, M, ring, full, empty, c, xbuf, scratch, st, eps, bout, cout, logits, amax, aidx, ntm, FT, LT, S, V,
+               nrb, pid, P,
                D: gl.constexpr, N: gl.constexpr, MTP: gl.constexpr, LMTP: gl.constexpr, NPART: gl.constexpr,
                NW: gl.constexpr, NSLOT: gl.constexpr, LNS: gl.constexpr, CK: gl.constexpr, ARGMAX: gl.constexpr,
-               BM: gl.constexpr):  # fmt: skip
+               BM: gl.constexpr, NOTIME: gl.constexpr):  # fmt: skip
         """Final LayerNorm (folded) + output layer: blocks of BM rows pid, pid + P, ..., the B side (the
         residual stream's hi part) loaded once. ARGMAX: every block also stores its maximum per token and the
-        first row where it occurs (amax, aidx [blocks, MTP])."""
+        first row where it occurs (amax, aidx [blocks, MTP]); NOTIME: not over the timestamp tokens FT .. LT for
+        the tokens of rows whose flag ntm [R] is set (<notimestamps>)."""
         NKC: gl.constexpr = D // 64
         el: gl.constexpr = _el(BM, NW)
         rr = gl.arange(0, BM, layout=gl.SliceLayout(1, el))
@@ -384,6 +452,8 @@ if gluon is not None:
         mean = gl.convert_layout(mean, gl.SliceLayout(0, el))
         rstd = gl.convert_layout(rstd, gl.SliceLayout(0, el))
         _x_wait()
+        if NOTIME:
+            nt = gl.load(ntm + tt // S, mask=tt < M, other=0).to(gl.int32)
         for rb in range(pid, nrb, P):
             n0 = rb * BM
             rm = n0 + rr < V
@@ -395,10 +465,18 @@ if gluon is not None:
             gl.store(logits + tt[None, :] * V + n0 + rr[:, None], out, mask=(tt < M)[None, :] & rm[:, None])
             if ARGMAX:
                 om = gl.where(rm[:, None] & (tt >= 0)[None, :], out, float("-inf"))
-                mx = gl.max(om, axis=0)
-                ix = gl.min(gl.where(om == mx[None, :], rr[:, None], BM), axis=0) + n0
-                gl.store(amax + rb * MTP + tt, mx)
-                gl.store(aidx + rb * MTP + tt, ix)
+                if NOTIME:
+                    vv = n0 + rr
+                    om = gl.where(((vv >= FT) & (vv <= LT))[:, None] & (nt != 0)[None, :], float("-inf"), om)
+                # the reductions over the block's rows with the rows within threads (see _store_res)
+                sl: gl.constexpr = _els(BM, MTP, NW)
+                om2 = gl.convert_layout(om, sl)
+                r2 = gl.arange(0, BM, layout=gl.SliceLayout(1, sl))
+                t2 = gl.arange(0, MTP, layout=gl.SliceLayout(0, sl))
+                mx = gl.max(om2, axis=0)
+                ix = gl.min(gl.where(om2 == mx[None, :], r2[:, None], BM), axis=0) + n0
+                gl.store(amax + rb * MTP + t2, mx)
+                gl.store(aidx + rb * MTP + t2, ix)
         return c
 
     @gluon.jit
@@ -434,14 +512,14 @@ if gluon is not None:
             gl.store(ts + (g * P + pid) * 8, _now())
 
     @gluon.jit
-    def _consumer(tok, offs, emb, pe, xscale, bqkv, cqkv, bo, bcq, ccq, bco, b1, c1, b2, bout, cout,
+    def _consumer(tok, offs, TSTR, OSTR, emb, pe, xscale, bqkv, cqkv, bo, bcq, ccq, bco, b1, c1, b2, bout, cout,
                   kc, vc, C, ck, cv, T, logits, new_kv, x, x2, qkv, ob, q2, hb, st, part, cnt2, xp, xml, xcnt,
-                  bar, err, done, ts, amax, aidx, pred, R, S, L, V, eps, ring, full, empty, xbuf, scratch, pid, P,
+                  bar, err, done, ts, amax, aidx, pred, ntm, FT, LT, R, S, L, V, eps, ring, full, empty, xbuf, scratch, pid, P,
                   D: gl.constexpr, H: gl.constexpr, DK: gl.constexpr, F: gl.constexpr, LKS: gl.constexpr,
                   MTP: gl.constexpr, LMTP: gl.constexpr, HL: gl.constexpr, NL: gl.constexpr, LNL: gl.constexpr,
                   N1: gl.constexpr, LN1: gl.constexpr, SP: gl.constexpr, BT: gl.constexpr, NS: gl.constexpr,
                   NW: gl.constexpr, NSLOT: gl.constexpr, LNS: gl.constexpr, CK: gl.constexpr, MAXS: gl.constexpr, PFA: gl.constexpr,
-                  TS: gl.constexpr, ARGMAX: gl.constexpr, BM: gl.constexpr):  # fmt: skip
+                  TS: gl.constexpr, ARGMAX: gl.constexpr, BM: gl.constexpr, NOTIME: gl.constexpr):  # fmt: skip
         """The consumer warps: embedding, L layers of 8 stages, the output layer; a grid barrier between
         stages."""
         M = R * S
@@ -451,7 +529,7 @@ if gluon is not None:
         if TS:
             gl.store(ts + pid * 8, _now())
         for nu in range(pid, NPART, P):  # parts of BM features
-            _embed_g(nu, M, S, tok, offs, emb, pe, xscale, V, x, x2, st, D, BM, NPART, MTP, NW)
+            _embed_g(nu, M, S, tok, offs, TSTR, OSTR, emb, pe, xscale, V, x, x2, st, D, BM, NPART, MTP, NW)
         g = 1
         _stage_end(bar, err, g, P, pid, ts, MAXS, TS)
         c = 0
@@ -487,7 +565,7 @@ if gluon is not None:
             if PFA:
                 if pid_z < R * H:
                     cb = ((layer * R + pid_z // H) * H + pid_z % H).to(gl.int64) * C * DK
-                    off = gl.load(offs_z + pid_z // H)
+                    off = gl.load(offs_z + (pid_z // H) * OSTR)
                     _prefetch_rows(kc_z + cb, off, 128, NW)
                     _prefetch_rows(vc_z + cb, off, 128, NW)
             _gwait(bar, err, g * P, MAXS)
@@ -496,7 +574,27 @@ if gluon is not None:
                 gl.store(ts + (g * P + pid_z) * 8, _now())
             # self-attention -> ob
             _self_attn_g(
-                pid_z, P, R, S, layer, qkv_z, offs_z, kc_z, vc_z, C, new_kv_z, ob_z, D, H, DK, SP, BT, NW
+                pid_z,
+                P,
+                R,
+                S,
+                layer,
+                qkv_z,
+                offs_z,
+                OSTR,
+                kc_z,
+                vc_z,
+                C,
+                new_kv_z,
+                ob_z,
+                D,
+                H,
+                DK,
+                SP,
+                BT,
+                NW,
+                ts + (g * P + pid_z) * 8,
+                TS,
             )
             g += 1
             _stage_end(bar, err, g, P, pid_z, ts, MAXS, TS)
@@ -550,6 +648,8 @@ if gluon is not None:
                 BT,
                 NS,
                 NW,
+                ts + (g * P + pid_z) * 8,
+                TS,
             )
             g += 1
             _stage_end(bar, err, g, P, pid_z, ts, MAXS, TS)
@@ -570,8 +670,8 @@ if gluon is not None:
                         ts + (g * P + pid_z) * 8, D, F, LKS, N1, LN1, MTP, LMTP, NPART, NW, NSLOT, LNS, CK, TS, BM)  # fmt: skip
             g += 1
             _stage_end(bar, err, g, P, pid_z, ts, MAXS, TS)
-        _out_r(x2, M, ring, full, empty, c, xbuf, scratch, st, eps, bout, cout, logits, amax, aidx, V, nrb, pid, P, D,
-               N1, MTP, LMTP, NPART, NW, NSLOT, LNS, CK, ARGMAX, BM)  # fmt: skip
+        _out_r(x2, M, ring, full, empty, c, xbuf, scratch, st, eps, bout, cout, logits, amax, aidx, ntm, FT, LT, S, V,
+               nrb, pid, P, D, N1, MTP, LMTP, NPART, NW, NSLOT, LNS, CK, ARGMAX, BM, NOTIME)  # fmt: skip
         if ARGMAX:  # the argmax over the output blocks' partials
             g += 1
             _stage_end(bar, err, g, P, pid, ts, MAXS, TS)
@@ -582,17 +682,18 @@ if gluon is not None:
 
     @gluon.jit
     def _decoder_kernel_r(
-        tok, offs, emb, pe, xscale,
+        tok, offs, TSTR, OSTR, emb, pe, xscale,
         dqkv, bqkv, cqkv, do_, bo, dcq, bcq, ccq, dco, bco, d1, b1, c1, d2, b2, dout, bout, cout,
         wqkv, wo, wcq, wco, w1, w2,
         kc, vc, C, ck, cv, T, logits, new_kv,
-        x, x2, qkv, ob, q2, hb, st, part, cnt2, xp, xml, xcnt, bar, err, done, ts, amax, aidx, pred,
+        x, x2, qkv, ob, q2, hb, st, part, cnt2, xp, xml, xcnt, bar, err, done, ts, amax, aidx, pred, ntm, FT, LT,
         R, S, L, V, eps,
         D: gl.constexpr, H: gl.constexpr, DK: gl.constexpr, F: gl.constexpr, LKS: gl.constexpr,
         MTP: gl.constexpr, LMTP: gl.constexpr, HL: gl.constexpr, NL: gl.constexpr, LNL: gl.constexpr,
         N1: gl.constexpr, LN1: gl.constexpr, SP: gl.constexpr, BT: gl.constexpr, NS: gl.constexpr,
         NW: gl.constexpr, NSLOT: gl.constexpr, LNS: gl.constexpr, CK: gl.constexpr, MAXS: gl.constexpr, PFA: gl.constexpr,
         AHEAD: gl.constexpr = 0, TS: gl.constexpr = False, ARGMAX: gl.constexpr = False, PW: gl.constexpr = 1,
+        NOTIME: gl.constexpr = False,
         BM: gl.constexpr = 64,
     ):  # fmt: skip
         """A decoder call (see the module docstring): shared memory, then the consumer warps and the producer
@@ -614,11 +715,11 @@ if gluon is not None:
         nrb = (V + BM - 1) // BM
         gl.warp_specialize(
             [
-                (_consumer, (tok, offs, emb, pe, xscale, bqkv, cqkv, bo, bcq, ccq, bco, b1, c1, b2, bout, cout, kc, vc,
+                (_consumer, (tok, offs, TSTR, OSTR, emb, pe, xscale, bqkv, cqkv, bo, bcq, ccq, bco, b1, c1, b2, bout, cout, kc, vc,
                              C, ck, cv, T, logits, new_kv, x, x2, qkv, ob, q2, hb, st, part, cnt2, xp, xml, xcnt, bar,
-                             err, done, ts, amax, aidx, pred, R, S, L, V, eps, ring, full, empty, xbuf, scratch, pid, P,
+                             err, done, ts, amax, aidx, pred, ntm, FT, LT, R, S, L, V, eps, ring, full, empty, xbuf, scratch, pid, P,
                              D, H, DK, F, LKS, MTP, LMTP, HL, NL, LNL, N1, LN1, SP, BT, NS, NW, NSLOT, LNS, CK, MAXS, PFA,
-                             TS, ARGMAX, BM)),
+                             TS, ARGMAX, BM, NOTIME)),
                 (_producer, (dqkv, do_, dcq, dco, d1, d2, dout, wqkv, wo, wcq, wco, w1, w2, ring, full, empty, pid, P,
                              L, nrb, D, F, LKS, NSLOT, LNS, CK, AHEAD, BM)),
             ],
@@ -691,10 +792,11 @@ class RingDecoder:
         return self.P_solo != self.P
 
     def step_fn(self, tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv, kind="decode", pred=None,
-                solo=False):  # fmt: skip
+                solo=False, notime=None):  # fmt: skip
         """The call on these buffers (see MegaDecoder.step_fn); with ``pred`` [R, S] (int64) it also writes the
-        argmax of the logits there (``run.writes_pred``). ``solo``: no encoder runs alongside (single-row calls
-        take ``solo_programs`` then)."""
+        argmax of the logits there (``run.writes_pred``), with ``notime`` = (flags [R] bool, first timestamp
+        token, last one) not over the timestamp tokens in the flagged rows (see MegaBackend.argmax). ``solo``: no
+        encoder runs alongside (single-row calls take ``solo_programs`` then)."""
         m = self.m
         R, S = tokens.shape
         M = R * S
@@ -730,20 +832,21 @@ class RingDecoder:
         argmax = pred is not None
         if pred is None:
             pred = torch.zeros(1, device=dev, dtype=torch.long)
+        ntm, ft, lt = notime if notime is not None else (torch.zeros(1, dtype=torch.bool, device=dev), 0, -1)
         dq, do_, dcq, dco, d1, d2, dout = self.descs
         C, T = self_k.shape[3], cross_k.shape[3]
         args = (
-            tokens, offset, m.emb, m.pe, m.xscale,
+            tokens, offset, tokens.stride(0), offset.stride(0), m.emb, m.pe, m.xscale,
             dq, m.bqkv, m.cqkv, do_, m.bo, dcq, m.bcq, m.ccq, dco, m.bco, d1, m.b1, m.c1, d2, m.b2, dout, m.bout,
             m.cout, m.wqkv, m.wo, m.wcq, m.wco, m.w1, m.w2,
             self_k, self_v, C, cross_k, cross_v, T, logits, new_kv,
-            x, x2, qkv, ob, q2, hb, st, part, cnt2, xp, xml, xcnt, bar, self.err, done, self.ts, amax, aidx, pred,
+            x, x2, qkv, ob, q2, hb, st, part, cnt2, xp, xml, xcnt, bar, self.err, done, self.ts, amax, aidx, pred, ntm, ft, lt,
             R, S, L, m.V, m.eps,
         )  # fmt: skip
         const = dict(
             D=D, H=H, DK=D // H, F=F, LKS=_log2(F // D), MTP=mtp, LMTP=_log2(mtp), HL=hl, NL=nl, LNL=_log2(nl), N1=n1,
             LN1=_log2(n1), SP=max(16, _pow2(S)), BT=64, NS=ns, NW=self.nw, NSLOT=self.slots, LNS=_log2(self.slots), CK=self.ck,
-            MAXS=self.maxs, PFA=self.pfa, AHEAD=self.ahead, TS=bool(self.opts["TS"]), ARGMAX=argmax, PW=self.pw, BM=bm,
+            MAXS=self.maxs, PFA=self.pfa, AHEAD=self.ahead, TS=bool(self.opts["TS"]), ARGMAX=argmax, PW=self.pw, BM=bm, NOTIME=argmax and notime is not None,
         )  # fmt: skip
 
         def run() -> None:
@@ -754,4 +857,5 @@ class RingDecoder:
         run.writes_cache = True
         run.writes_pred = argmax
         run.programs = P
+        run.kernel = self  # (profiling: the time stamps in self.ts)
         return run

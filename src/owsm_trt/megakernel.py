@@ -712,7 +712,9 @@ class MegaBackend:
     @property
     def argmax(self) -> bool:
         """Whether step_fn takes ``pred``: calls on a kernel that can then write the logits' argmax there too
-        (see writes_pred on the returned function; other calls ignore it)."""
+        (see writes_pred on the returned function; other calls ignore it). ``notime`` = (flags [R] bool,
+        first timestamp token, last one): rows flagged get the argmax over the other tokens (the timestamp
+        rules under <notimestamps>); the others' are not final then."""
         return any(getattr(k, "argmax", False) for k in self._kernels())
 
     @property
@@ -721,8 +723,10 @@ class MegaBackend:
         return getattr(self.kernel, "solo_differs", False) and id(self.kernel) not in self.failed
 
     def step_fn(self, tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv, kind="decode", pred=None,
-                solo=False):  # fmt: skip
-        """``pred``: see argmax; ``solo``: nothing runs alongside the call (see solo_differs)."""
+                solo=False, notime=None, inp=None):  # fmt: skip
+        """``pred`` (and ``notime``): see argmax; ``solo``: nothing runs alongside the call (see solo_differs);
+        ``inp`` = (the call's input rows [R, W + 4]: W tokens, offset, ...; W): a kernel reads the tokens and
+        offsets there rather than from ``tokens`` / ``offset`` (``run.reads_inp``: no copies needed)."""
         args = (tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv)
         kernel, max_tokens, max_rows = self.kernel, self.max_tokens, self.max_rows
         if tokens.shape[0] > 1 and self.rows_kernel is not None:
@@ -732,13 +736,20 @@ class MegaBackend:
         )
         if kind == "prefill" or big or kernel is None or id(kernel) in self.failed:
             return self.inner.step_fn(*args, kind=kind)
-        kw = {"pred": pred} if pred is not None and getattr(kernel, "argmax", False) else {}
+        kw = {"pred": pred, "notime": notime} if pred is not None and getattr(kernel, "argmax", False) else {}
         if solo and getattr(kernel, "solo_differs", False):
             kw["solo"] = True
+        kargs = args
+        if inp is not None:  # (the kernels take strided tokens / offsets)
+            rows, w = inp
+            kargs = (rows[:, :w], rows[:, w], *args[2:])
         if not self.trial:
-            return kernel.step_fn(*args, kind=kind, **kw)
+            run = kernel.step_fn(*kargs, kind=kind, **kw)
+            run.reads_inp = inp is not None
+            return run
         try:
-            run = kernel.step_fn(*args, kind=kind, **kw)
+            run = kernel.step_fn(*kargs, kind=kind, **kw)
+            run.reads_inp = inp is not None
             run()
             torch.cuda.synchronize(logits.device)
             kernel.check()

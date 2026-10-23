@@ -24,10 +24,14 @@ if triton is not None:
 
     @triton.jit
     def _choose(logits, inp, notime, pred, V, W: tl.constexpr, RULES: tl.constexpr, first_time, last_time, eos,
-                BV: tl.constexpr):  # fmt: skip
-        """One window position: inp row = [W tokens | offset | #timestamps | last timestamp | first position]."""
+                BV: tl.constexpr, SKIP_NOTIME: tl.constexpr = False):  # fmt: skip
+        """One window position: inp row = [W tokens | offset | #timestamps | last timestamp | first position].
+        SKIP_NOTIME: rows with <notimestamps> are left alone (their argmax is there already)."""
         r = tl.program_id(0)
         i = tl.program_id(1)
+        if SKIP_NOTIME:
+            if tl.load(notime + r) != 0:
+                return
         row = inp + r * (W + 4)
         if RULES:
             count = tl.load(row + W + 1)
@@ -97,12 +101,15 @@ if triton is not None:
         tl.store(res + r * 2 + 1, tl.load(pred + r * W + end))
 
 
-def choose(logits: torch.Tensor, inp: torch.Tensor, notime: torch.Tensor, pred: torch.Tensor, rules) -> None:
+def choose(logits: torch.Tensor, inp: torch.Tensor, notime: torch.Tensor, pred: torch.Tensor, rules,
+           skip_notime: bool = False) -> None:  # fmt: skip
     """``pred`` [R, W] = argmax of ``logits`` [R, W, V] under ``rules`` (None: plain argmax); ``inp``
-    [R, W + 4] as in runtime._Verify, ``notime`` [R] bool."""
+    [R, W + 4] as in runtime._Verify, ``notime`` [R] bool; ``skip_notime``: only the rows without
+    <notimestamps> (``pred`` holds the others' already)."""
     R, W, V = logits.shape
     args = (rules.first_time, rules.last_time, rules.eos) if rules is not None else (0, -1, -1)
-    _choose[(R, W)](logits, inp, notime, pred, V, W, rules is not None, *args, BV=2048, num_warps=4)
+    _choose[(R, W)](logits, inp, notime, pred, V, W, rules is not None, *args, BV=2048, SKIP_NOTIME=skip_notime,
+                    num_warps=4)  # fmt: skip
 
 
 def write_kv(new_kv: torch.Tensor, k: torch.Tensor, v: torch.Tensor, offs: torch.Tensor) -> None:

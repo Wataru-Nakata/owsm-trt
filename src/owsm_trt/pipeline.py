@@ -974,6 +974,8 @@ def _decoder_kernel(runner, cfg, checkpoint: Path, dev: torch.device, which):
                     kw["programs"] = int(o)
                 elif o == "x":
                     kw["exclusive"] = True
+                elif o == "t":  # (profiling: time stamps)
+                    kw["ts"] = True
                 elif o[:1] in ("r", "s", "c", "a", "w") and o[1:].isdigit():
                     key = {
                         "r": "row_programs",

@@ -94,6 +94,22 @@ def breakdown(ts, L, P, rec=6):
                 mx = torch.nan_to_num(d, nan=-1e18).max(1).values.mean().item() / 1e3
                 parts.append(f"{nm} {med:4.2f}/{mx:4.2f}")
             line += " [" + " ".join(parts) + "]"
+        if rec == 8 and name in ("self", "cross") and (t[idx][:, :, 2] > t[idx][:, :, 0]).any():
+            ti = t[idx]
+            live = ti[:, :, 2] > ti[:, :, 0]  # programs with a unit in this stage (ring kernel stamps)
+            # self: queries loaded (0 -> 2), cache slots (2 -> 3), new keys + stores (3 -> 4); cross: queries,
+            # keys / values (2 -> 3), partial store + count (3 -> 4), combine by the last slice (4 -> 6)
+            if name == "self":
+                seq = [(0, 2, "q"), (2, 3, "cache"), (3, 4, "new"), (4, 5, "end")]
+            else:
+                seq = [(0, 2, "q"), (2, 3, "kv"), (3, 4, "part"), (4, 6, "comb"), (6, 5, "end")]
+            parts = []
+            for a, b, nm in seq:
+                d = (ti[:, :, b] - ti[:, :, a]).where(live, torch.nan)
+                med = d.nanmedian(1).values.mean().item() / 1e3
+                mx = torch.nan_to_num(d, nan=-1e18).max(1).values.mean().item() / 1e3
+                parts.append(f"{nm} {med:4.2f}/{mx:4.2f}")
+            line += " [" + " ".join(parts) + "]"
         line += f"  barrier lat {lat[idx].mean().item() / 1e3:5.2f} skew {skew[idx].mean().item() / 1e3:5.2f}"
         out.append(line)
     return "\n      ".join(out)
@@ -224,7 +240,10 @@ def main():
                 logits = torch.zeros(R, S, V, device=dev)
                 new_kv = torch.zeros(L, 2, R, H, S, dk, device=dev, dtype=torch.float16)
                 mk.err.zero_()
-                run = mk.step_fn(tokens, offset, k, v, ck, cv, logits, new_kv)
+                kw = {}
+                if os.environ.get("MEGA_ARGMAX") == "1" and getattr(mk, "argmax", False):  # (as in decoding)
+                    kw["pred"] = torch.zeros(R, S, dtype=torch.long, device=dev)
+                run = mk.step_fn(tokens, offset, k, v, ck, cv, logits, new_kv, **kw)
                 run()
                 torch.cuda.synchronize()
                 e_mk = (logits - ref32).abs().max().item()
@@ -242,7 +261,7 @@ def main():
                 k64 = torch.zeros(L, R, H, 64, dk, device=dev, dtype=torch.float16)
                 v64 = torch.zeros_like(k64)
                 off20 = torch.full((R,), 20, dtype=torch.long, device=dev)
-                run64 = mk.step_fn(tokens, off20, k64, v64, ck, cv, logits, new_kv)
+                run64 = mk.step_fn(tokens, off20, k64, v64, ck, cv, logits, new_kv, **kw)
                 ms = bench(run64)
                 if getattr(mk, "opts", {}).get("TS") and f"{R}x{S}" in profile:
                     mk.ts.zero_()
