@@ -14,6 +14,9 @@ def _add_model_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--device", default="cuda")
     p.add_argument("--beam-size", type=int, default=1, help="1 = greedy; 5 = ESPnet's default beam search")
     p.add_argument("--no-ctc-draft", action="store_true", help="greedy without CTC-drafted token windows")
+    p.add_argument(
+        "--fp8", action="store_true", help="experimental: FP8 encoder with the scales the package ships"
+    )
 
 
 def _load(args, **kw):
@@ -26,6 +29,7 @@ def _load(args, **kw):
         dtype=args.dtype,
         max_batch_size=args.max_batch_size,
         ctc_draft=not args.no_ctc_draft,
+        fp8=args.fp8,
         **kw,
     )
 

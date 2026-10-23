@@ -1,5 +1,6 @@
 """High-level API: ``OWSM.from_pretrained(...).transcribe(...)``."""
 
+import dataclasses
 import hashlib
 import itertools
 import logging
@@ -13,7 +14,8 @@ from pathlib import Path
 import torch
 import torch.nn.functional as F
 
-from . import fp8, hub, megakernel
+from . import fp8 as fp8_mod
+from . import hub, megakernel
 from .audio import AudioLike, duration, load_audio
 from .build import DTYPES, BuildOptions, build_engines, check_config, engine_tag
 from .config import load_espnet_config, parse_config
@@ -237,6 +239,9 @@ class OWSM:
         ctc_draft: bool = True,
         fp8_calibration: list[AudioLike] | None = None,
         decoder_kernel: bool | str | None = None,
+        fp8: bool | str = False,
+        fp8_margin: float = 1.0,
+        fp8_skip: str = "",
     ) -> "OWSM":
         """Load an OWSM model from a Hugging Face repo id or local ESPnet model directory.
 
@@ -249,6 +254,11 @@ class OWSM:
 
         ``fp8_calibration`` (experimental, TensorRT): run the encoder's linear layers and subsampling
         convolutions in FP8, with input ranges measured on these recordings.
+
+        ``fp8`` (experimental, TensorRT): the same with the input ranges of a scale file: True takes the one
+        the package ships for this checkpoint (``owsm_trt/fp8_scales``, matched by the checkpoint's sha256;
+        without one, a warning and an fp16 encoder), a path that file. ``fp8_margin`` multiplies the ranges,
+        ``fp8_skip`` (a regular expression on the encoder's layer names) keeps the layers it matches fp16.
 
         ``decoder_kernel`` (TensorRT, fp16): run small decoder calls as one persistent Gluon kernel per call
         instead of the TensorRT decoder engine (Hopper GPUs; larger calls and prompt prefill stay on TensorRT).
@@ -271,20 +281,28 @@ class OWSM:
         levels = {}  # builder optimization levels: BuildOptions' defaults unless one is given for both
         if optimization_level is not None:
             levels = {"opt_level": optimization_level, "verify_opt_level": optimization_level}
-        calibration, digest = None, ""
+        calibration, scales, digest = None, None, ""
         if fp8_calibration is not None:
             calibration = [load_audio(a, cfg.sample_rate) for a in fp8_calibration]
             digest = hashlib.sha1(b"".join(w.numpy().tobytes() for w in calibration)).hexdigest()[:12]
+        elif fp8:
+            scales = _fp8_scales(files, fp8)
+            if scales is not None:
+                digest = "s" + fp8_mod.scales_digest(scales)
+        if digest and (fp8_margin != 1.0 or fp8_skip):  # (other ranges, other engines)
+            digest += f"-m{fp8_margin:g}" + (
+                "-k" + hashlib.sha1(fp8_skip.encode()).hexdigest()[:8] if fp8_skip else ""
+            )
         opts = BuildOptions(
             dtype=dtype,
             max_batch=max_batch_size,
             capacity=capacity,
             max_prefill=max_prompt_tokens,
             **levels,
-            fp8_encoder=fp8_calibration is not None,
+            fp8_encoder=bool(digest),
             fp8_calibration=digest,
         )
-        if fp8_calibration is not None and backend != "tensorrt":
+        if digest and backend != "tensorrt":
             raise ValueError("FP8 is available for the TensorRT backend only")
         dev = torch.device(device)
         if backend == "tensorrt" and dev.type != "cuda":
@@ -304,8 +322,23 @@ class OWSM:
                 log.warning("building TensorRT engines for %s into %s", files.name, engine_dir)
                 net = load_model(cfg, str(files.checkpoint), dev, DTYPES[dtype])
                 if calibration is not None:
-                    _quantize_encoder(net, tok, calibration, opts.max_batch)
-                build_engines(net, engine_dir, opts)
+                    _quantize_encoder(net, tok, calibration, opts.max_batch, fp8_margin, fp8_skip)
+                elif scales is not None:
+                    amax = fp8_mod.load_scales(scales)["amax"]
+                    n = fp8_mod.quantize(net.encoder, amax, fp8_margin, fp8_skip)
+                    log.warning("FP8 encoder: %d layers, input ranges from %s", n, scales)
+                decoders = None
+                if opts.fp8_encoder and not cfg.ctc_only:  # an fp16 build's decoder engines are the same
+                    plain = (
+                        hub.cache_dir()
+                        / files.name.replace("/", "--")
+                        / engine_tag(dataclasses.replace(opts, fp8_encoder=False, fp8_calibration=""))
+                    )
+                    if check_config(cfg, plain) and all(
+                        (plain / f"{e}.engine").exists() for e in ("decoder", "verify")
+                    ):
+                        decoders = plain
+                build_engines(net, engine_dir, opts, decoders_from=decoders)
                 frontend = net.frontend
                 del net
                 torch.cuda.empty_cache()
@@ -906,9 +939,32 @@ class OWSM:
         return results
 
 
+def _fp8_scales(files, fp8: bool | str) -> Path | None:
+    """The FP8 scale file of ``from_pretrained(fp8=...)``: a given path, or the one the package ships for
+    this checkpoint (None, with a warning, if there is none)."""
+    sha = fp8_mod.checkpoint_sha256(files.checkpoint, hub.cache_dir() / "checkpoint_sha256.json")
+    if not isinstance(fp8, bool):
+        path = Path(fp8)
+        if fp8_mod.load_scales(path).get("checkpoint_sha256") != sha:
+            log.warning("FP8 scales %s were not calibrated on this checkpoint (sha256 %s)", path, sha[:12])
+        return path
+    path = fp8_mod.packaged_scales(sha)
+    if path is None:
+        log.warning(
+            "no FP8 scales shipped for %s (checkpoint sha256 %s): fp16 encoder (fp8_calibration=[recordings] "
+            "calibrates on given audio)", files.name, sha[:12],
+        )  # fmt: skip
+    return path
+
+
 @torch.inference_mode()
 def _quantize_encoder(
-    net: OWSMModel | OWSMCTCModel, tok: Tokenizer, recordings: list[AudioLike], batch: int
+    net: OWSMModel | OWSMCTCModel,
+    tok: Tokenizer,
+    recordings: list[AudioLike],
+    batch: int,
+    margin: float = 1.0,
+    skip: str = "",
 ) -> None:
     """Measure the encoder's layer inputs on ``recordings`` (as English ASR) and switch them to FP8."""
     prefix = [tok.lang_id("eng"), tok.task_id("asr")]
@@ -929,9 +985,11 @@ def _quantize_encoder(
 
     else:
         run = net.encoder
-    amax = fp8.calibrate(net.encoder, run, batches)
+    amax = fp8_mod.calibrate(net.encoder, run, batches)
     log.warning(
-        "FP8 encoder: %d layers calibrated on %d recordings", fp8.quantize(net.encoder, amax), len(waves)
+        "FP8 encoder: %d layers calibrated on %d recordings",
+        fp8_mod.quantize(net.encoder, amax, margin, skip),
+        len(waves),
     )
 
 

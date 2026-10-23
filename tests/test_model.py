@@ -832,3 +832,69 @@ def test_export_without_trimming_runs_at_num_frames(tmp_path, kind):
     torch.testing.assert_close(torch.from_numpy(k), kv[:, 0], rtol=1e-4, atol=1e-4)
     full = m.ctc(enc)  # every frame computed: then two blanks (see build._EncoderGraph)
     assert torch.equal(torch.from_numpy(ids), torch.cat([full, torch.zeros_like(full[:, :2])], 1))
+
+
+def test_fp8_scale_files(tmp_path, monkeypatch):
+    """Scale files: per-recording calibration, a file keyed by the checkpoint's sha256, found by it,
+    margin and fp16 layers when quantizing."""
+    import copy
+    import hashlib
+
+    from owsm_trt import fp8
+
+    torch.manual_seed(0)
+    m = OWSMModel(TINY).eval().requires_grad_(False)
+    m.frontend.melmat.uniform_(0, 1)
+    feats = m.frontend(torch.randn(3, TINY.num_samples))
+    rows = fp8.calibrate_rows(m.encoder, m.encoder, [feats[:2], feats[2:]])
+    amax = fp8.calibrate(m.encoder, m.encoder, [feats])
+    assert all(len(v) == 3 for v in rows.values())
+    assert {k: max(v) for k, v in rows.items()} == pytest.approx(amax)
+    ckpt = tmp_path / "model.pth"
+    ckpt.write_bytes(b"weights")
+    sha = fp8.checkpoint_sha256(ckpt, tmp_path / "ids.json")
+    assert sha == hashlib.sha256(b"weights").hexdigest() and (tmp_path / "ids.json").exists()
+    blob = tmp_path / "blobs" / ("a" * 64)
+    blob.parent.mkdir()
+    blob.write_bytes(b"x")
+    (tmp_path / "link.pth").symlink_to(blob)
+    assert fp8.checkpoint_sha256(tmp_path / "link.pth") == "a" * 64  # a Hugging Face cache blob: its name
+    monkeypatch.setattr(fp8, "SCALES_DIR", tmp_path / "scales")
+    (tmp_path / "scales").mkdir()
+    assert fp8.packaged_scales(sha) is None
+    fp8.save_scales(tmp_path / "scales" / "tiny.json", amax, "tiny", sha, {"recordings": 3})
+    assert fp8.packaged_scales(sha) == tmp_path / "scales" / "tiny.json"
+    assert fp8.load_scales(fp8.packaged_scales(sha))["amax"] == pytest.approx(amax)
+    q = copy.deepcopy(m)
+    n = fp8.quantize(q.encoder, amax, margin=2.0, skip=r"feed_forward\.w_2")
+    assert 0 < n < len(amax)
+    w1 = q.encoder.encoders[0].feed_forward.w_1
+    assert isinstance(w1, fp8.QLinear) and not isinstance(q.encoder.encoders[0].feed_forward.w_2, fp8.QLinear)
+    key = "encoders.0.feed_forward.w_1"
+    assert float(w1.x_scale) == pytest.approx(2.0 * amax[key] / fp8.E4M3_MAX, rel=1e-3)
+
+
+def test_packaged_fp8_scales(tmp_path, monkeypatch, caplog):
+    """The scale files the package ships load, name encoder layers, and are found only for their checkpoint:
+    from_pretrained(fp8=True) of another checkpoint warns and stays fp16."""
+    import logging
+
+    from owsm_trt import fp8, hub
+    from owsm_trt.pipeline import _fp8_scales
+
+    files = sorted(fp8.SCALES_DIR.glob("*.json"))
+    assert {f.stem for f in files} >= {"owsm_v4_medium_1B", "owsm_ctc_v4_1B"}
+    for f in files:
+        d = fp8.load_scales(f)
+        assert len(d["checkpoint_sha256"]) == 64 and d["model"].startswith("espnet/")
+        assert all(k.startswith(("embed.", "encoders.", "conditioning_layer")) for k in d["amax"])
+        assert all(v > 0 for v in d["amax"].values())
+        assert fp8.packaged_scales(d["checkpoint_sha256"]) == f
+    ckpt = tmp_path / "other.pth"
+    ckpt.write_bytes(b"not a packaged checkpoint")
+    monkeypatch.setattr(hub, "cache_dir", lambda: tmp_path / "cache")
+    model = hub.ModelFiles(name="someone/else", root=tmp_path, config=tmp_path / "c.yaml", checkpoint=ckpt)
+    with caplog.at_level(logging.WARNING):
+        assert _fp8_scales(model, True) is None
+    assert "no FP8 scales shipped" in caplog.text
+    assert _fp8_scales(model, str(files[0])) == files[0]  # a given file (with a warning: other checkpoint)

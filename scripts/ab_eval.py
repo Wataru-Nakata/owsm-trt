@@ -38,7 +38,7 @@ def run(src: str, model: str, config: str, ref: str, save: Path, extra: list[str
     text = out.stdout + out.stderr
     res = {"ok": out.returncode == 0}
     for key, pat in (
-        ("wer", r"WER ([\d.]+)%"),
+        ("wer", r"(?:WER|CER) ([\d.]+)%"),
         ("rtfx", r"RTFx (\d+)"),
         ("same", r"identical to \S+: (\d+/\d+)"),
         ("calls", r"tokens, (\d+) calls\)"),  # decoder calls of CTC-drafted decoding (eval_wer.py)
