@@ -682,20 +682,22 @@ class MegaDecoder:
 
 
 class MegaBackend:
-    """A backend whose decoder calls (decode, verify) run as the megakernel; everything else (encoder,
-    prompt prefill, ...) is the wrapped backend's (TensorRT)."""
+    """A backend whose decoder calls (decode, verify) of up to ``max_tokens`` tokens (rows x window) run as a
+    megakernel (``kernel.step_fn``); everything else (encoder, prompt prefill, larger calls) is the wrapped
+    backend's (TensorRT)."""
 
-    def __init__(self, inner, mega: MegaDecoder):
-        self.inner, self.mega = inner, mega
+    def __init__(self, inner, kernel, max_tokens: int | None = None):
+        self.inner, self.kernel = inner, kernel
+        self.max_tokens = max_tokens
 
     def __getattr__(self, name):  # encode, encode_fn, trimmed, cfg, name, ...
         return getattr(self.inner, name)
 
     def step_fn(self, tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv, kind="decode"):
         args = (tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv)
-        if kind == "prefill":
+        if kind == "prefill" or (self.max_tokens is not None and tokens.numel() > self.max_tokens):
             return self.inner.step_fn(*args, kind=kind)
-        return self.mega.step_fn(*args, kind=kind)
+        return self.kernel.step_fn(*args, kind=kind)
 
     def check(self) -> None:
-        self.mega.check()
+        self.kernel.check()

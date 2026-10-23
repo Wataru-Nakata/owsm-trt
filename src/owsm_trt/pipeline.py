@@ -120,7 +120,7 @@ class OWSM:
         optimization_level: int | None = None,
         ctc_draft: bool = True,
         fp8_calibration: list[AudioLike] | None = None,
-        decoder_kernel: bool | None = None,
+        decoder_kernel: bool | str | None = None,
     ) -> "OWSM":
         """Load an OWSM model from a Hugging Face repo id or local ESPnet model directory.
 
@@ -134,9 +134,11 @@ class OWSM:
         ``fp8_calibration`` (experimental, TensorRT): run the encoder's linear layers and subsampling
         convolutions in FP8, with input ranges measured on these recordings.
 
-        ``decoder_kernel`` (TensorRT, fp16): run decoding steps as one persistent Triton kernel per
-        decoder call instead of the TensorRT decoder engine (needs Triton and an Ampere or newer GPU).
-        None: the ``OWSM_TRT_MEGAKERNEL`` environment variable (1/0), off if unset.
+        ``decoder_kernel`` (TensorRT, fp16): run decoder calls of up to 8 tokens (rows x drafted window) as one
+        persistent Gluon kernel per call instead of the TensorRT decoder engine (Hopper GPUs; larger calls
+        and prompt prefill stay on TensorRT). ``"triton"``: every decode/verify call as the (slower) Triton
+        megakernel (Ampere or newer). None: the ``OWSM_TRT_MEGAKERNEL`` environment variable (1 / triton / 0),
+        off if unset.
         """
         files = hub.resolve(model)
         raw = load_espnet_config(files.config)
@@ -186,11 +188,9 @@ class OWSM:
                 frontend = _load_frontend(cfg, files.checkpoint, dev)
             runner = TRTCTCBackend(cfg, engine_dir) if cfg.ctc_only else TRTBackend(cfg, engine_dir)
             if decoder_kernel is None:
-                decoder_kernel = os.environ.get("OWSM_TRT_MEGAKERNEL", "0") == "1"
-            if decoder_kernel and not cfg.ctc_only and dtype == "float16" and megakernel.available(dev):
-                runner = megakernel.MegaBackend(
-                    runner, megakernel.MegaDecoder(_load_decoder(cfg, files.checkpoint), dev)
-                )
+                decoder_kernel = os.environ.get("OWSM_TRT_MEGAKERNEL", "0")
+            if decoder_kernel and decoder_kernel != "0" and not cfg.ctc_only and dtype == "float16":
+                runner = _decoder_kernel(runner, cfg, files.checkpoint, dev, decoder_kernel)
             return cls(cfg, tok, frontend, runner, opts, dev, use_cuda_graph, ctc_draft)
 
     # ------------------------------------------------------------------ helpers
@@ -517,6 +517,27 @@ def _quantize_encoder(
     log.warning(
         "FP8 encoder: %d layers calibrated on %d recordings", fp8.quantize(net.encoder, amax), len(waves)
     )
+
+
+def _decoder_kernel(runner, cfg, checkpoint: Path, dev: torch.device, which):
+    """``runner`` with its small decoder calls on a megakernel (see from_pretrained's ``decoder_kernel``)."""
+    from . import megakernel_gluon
+
+    if which == "triton":
+        if not megakernel.available(dev):
+            log.warning("the Triton decoder megakernel needs Triton and an Ampere or newer GPU; not used")
+            return runner
+        return megakernel.MegaBackend(runner, megakernel.MegaDecoder(_load_decoder(cfg, checkpoint), dev))
+    if not megakernel_gluon.available(dev):
+        log.warning("the Gluon decoder megakernel needs Triton with Gluon and a Hopper GPU; not used")
+        return runner
+    mega = megakernel.MegaDecoder(_load_decoder(cfg, checkpoint), dev)
+    try:
+        kernel = megakernel_gluon.GluonDecoder(mega)
+    except ValueError as e:
+        log.warning("decoder megakernel not used: %s", e)
+        return runner
+    return megakernel.MegaBackend(runner, kernel, megakernel_gluon.MAX_TOKENS)
 
 
 def _load_decoder(cfg, checkpoint: Path) -> Decoder:

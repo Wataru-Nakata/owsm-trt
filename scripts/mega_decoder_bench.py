@@ -155,6 +155,12 @@ def main():
 
     opts_list = parse_opts(os.environ.get("MEGA_OPTS", "BK=128,STAGES=3"))
     mks = [MegaDecoder(dec16, dev, **o) for o in opts_list]
+    if os.environ.get("MEGA_GLUON") == "1":  # the Gluon kernel (built on the first option set's weights)
+        from owsm_trt.megakernel_gluon import GluonDecoder
+
+        nws = [int(v) for v in os.environ.get("MEGA_GLUON_WARPS", "4").split(":")]
+        mks = [GluonDecoder(mks[0], num_warps=nw) for nw in nws]
+        opts_list = [{"gluon": 1, "warps": nw} for nw in nws]
     print(f"model {model_dir}: L={L} d={cfg.d_model} H={H} V={V} T={T}; option sets {opts_list}", flush=True)
 
     cases = [(1, 1), (1, 2), (1, 4), (1, 8), (1, 16), (1, 32), (4, 8), (8, 1), (8, 8), (16, 1), (16, 4), (16, 8),
@@ -198,7 +204,7 @@ def main():
                 off20 = torch.full((R,), 20, dtype=torch.long, device=dev)
                 run64 = mk.step_fn(tokens, off20, k64, v64, ck, cv, logits, new_kv)
                 ms = bench(run64)
-                if mk.opts.get("TS") and f"{R}x{S}" in profile:
+                if getattr(mk, "opts", {}).get("TS") and f"{R}x{S}" in profile:
                     run64()
                     torch.cuda.synchronize()
                     prof = "\n      " + breakdown(mk.ts, L, mk.programs)
