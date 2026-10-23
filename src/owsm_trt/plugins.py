@@ -311,7 +311,7 @@ def unavailable() -> str | None:
     except ImportError as e:
         return f"TensorRT's Python plugin API does not import ({e})"
     if not hasattr(trtp, "aot_impl"):
-        return f"TensorRT {tensorrt.__version__} has no ahead-of-time Python plugins (TensorRT >= 10.9 has)"
+        return f"TensorRT {tensorrt.__version__} has no ahead-of-time Python plugins (owsm-trt needs TensorRT >= 10.16)"
     cuda = (torch.version.cuda or "").split(".")[0]
     hint = f"pip install 'cuda-bindings=={cuda}.*' (torch is built for CUDA {torch.version.cuda})"
     try:

@@ -59,7 +59,7 @@ def unavailable() -> str | None:
     except ImportError as e:
         return f"TensorRT's Python plugin API does not import ({e})"
     if not hasattr(trtp, "aot_impl"):
-        return f"TensorRT {tensorrt.__version__} has no ahead-of-time Python plugins (TensorRT >= 10.9 has)"
+        return f"TensorRT {tensorrt.__version__} has no ahead-of-time Python plugins (owsm-trt needs TensorRT >= 10.16)"
     return None
 
 
