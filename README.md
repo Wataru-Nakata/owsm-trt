@@ -189,6 +189,13 @@ cached afterwards.
   per-tensor scale measured on the given recordings, weights a per-channel scale. A few in-domain recordings are
   enough (8 LibriSpeech utterances above). It is not the default because the build needs that audio, and because
   the accuracy check above is one test set.
+* **Decoder megakernel (experimental, opt-in, Hopper).** `from_pretrained(..., decoder_kernel=True)` (or
+  `OWSM_TRT_MEGAKERNEL=1`) runs small decoder calls (at most 8 rows and 16 tokens) as one persistent Gluon kernel per
+  call: all 18 layers and the output layer, with grid-wide barriers between stages and each stage's weights copied
+  into shared memory (TMA) while the previous stage finishes. A one-token call takes 0.65 ms instead of 0.72-0.77 ms
+  with TensorRT, and drafted windows of 2-8 tokens 0.66-0.76 instead of 1.1 ms. On the test set it makes beam search
+  22% faster (and its output 73/73 ESPnet's), batch 8 5% faster, and greedy batch 1 4% slower: most of its calls are
+  32-token windows, which stay on TensorRT, and it shares the GPU worse with the encoder working ahead.
 * **Same API without TensorRT.** `backend="torch"` runs the same decoding in PyTorch with CUDA graphs.
 
 ## Supported models
