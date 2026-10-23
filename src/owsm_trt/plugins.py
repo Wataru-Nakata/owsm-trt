@@ -29,6 +29,9 @@ DWCONV_SOURCE = r"""
 #ifndef MINB
 #define MINB 1
 #endif
+#ifndef ILP
+#define ILP 1
+#endif
 typedef unsigned short u16;
 __device__ __forceinline__ float h2f(u16 h) { float f; asm("cvt.f32.f16 %0, %1;" : "=f"(f) : "h"(h)); return f; }
 __device__ __forceinline__ u16 f2h(float f) { u16 h; asm("cvt.rn.f16.f32 %0, %1;" : "=h"(h) : "f"(f)); return h; }
@@ -110,23 +113,33 @@ extern "C" __global__ void __launch_bounds__(NT, MINB) dwconv1d(
       if (t >= 0 && t < T) v = src[(frame0 + t) * SV + sv]; else v = vec();
       unpack<V>(v, a[i]);
     }
+    // ILP outputs at a time, their taps interleaved: ILP * V independent chains of multiply-adds, each
+    // summed in the same order as one output at a time (the compiler would not interleave them itself)
 #pragma unroll
-    for (int i = 0; i < TT; i++) {
-      float s[V];
+    for (int i0 = 0; i0 < TT; i0 += ILP) {
+      float s[ILP][V];
 #pragma unroll
-      for (int j = 0; j < V; j++) s[j] = b[j];
+      for (int u = 0; u < ILP; u++)
+#pragma unroll
+        for (int j = 0; j < V; j++) s[u][j] = b[j];
 #pragma unroll
       for (int k = 0; k < K; k++)
 #pragma unroll
-        for (int j = 0; j < V; j++) s[j] = fmaf(wr[k][j], a[i + k][j], s[j]);
-      if (t0 + i < T) {
-#if GATED
-        float gf[V];
-        unpack<V>(gv[i], gf);
+        for (int u = 0; u < ILP; u++)
 #pragma unroll
-        for (int j = 0; j < V; j++) s[j] *= gf[j];
+          for (int j = 0; j < V; j++) s[u][j] = fmaf(wr[k][j], a[i0 + u + k][j], s[u][j]);
+#pragma unroll
+      for (int u = 0; u < ILP; u++) {
+        const int i = i0 + u;
+        if (t0 + i < T) {
+#if GATED
+          float gf[V];
+          unpack<V>(gv[i], gf);
+#pragma unroll
+          for (int j = 0; j < V; j++) s[u][j] *= gf[j];
 #endif
-        y[(frame0 + t0 + i) * CV + cv] = pack<V>(s);
+          y[(frame0 + t0 + i) * CV + cv] = pack<V>(s[u]);
+        }
       }
     }
   }
@@ -136,8 +149,8 @@ extern "C" __global__ void __launch_bounds__(NT, MINB) dwconv1d(
 
 @functools.lru_cache(maxsize=None)
 def compile_ptx(
-    k: int, v: int = 2, tt: int = 32, nt: int = 128, nch: int = 1, minb: int = 1, gated: bool = False,
-    cat: bool = False, arch: str | None = None, cubin_log: bool = False,
+    k: int, v: int = 2, tt: int = 32, nt: int = 128, nch: int = 1, minb: int = 1, ilp: int = 1,
+    gated: bool = False, cat: bool = False, arch: str | None = None, cubin_log: bool = False,
 ) -> tuple[str, str]:  # fmt: skip
     """PTX of the kernel ``dwconv1d`` for one configuration (and the compile log). ``arch``: e.g.
     ``compute_90`` (default: the current GPU's); ``sm_90`` compiles to a cubin, for the ptxas log only."""
@@ -152,7 +165,9 @@ def compile_ptx(
         major, minor = torch.cuda.get_device_capability()
         arch = f"compute_{major}{minor}"
     prog = check(nvrtc.nvrtcCreateProgram(DWCONV_SOURCE.encode(), b"dwconv1d.cu", 0, [], []))
-    defs = dict(K=k, V=v, TT=tt, NT=nt, NCH=nch, MINB=minb, GATED=int(gated), CAT=int(cat))
+    if tt % ilp:
+        raise ValueError(f"tt={tt} is not a multiple of ilp={ilp}")
+    defs = dict(K=k, V=v, TT=tt, NT=nt, NCH=nch, MINB=minb, ILP=ilp, GATED=int(gated), CAT=int(cat))
     opts = [f"-D{n}={x}".encode() for n, x in defs.items()]
     opts += [f"--gpu-architecture={arch}".encode(), b"-std=c++17"]
     if cubin_log:

@@ -16,7 +16,7 @@ from pathlib import Path
 import tensorrt as trt
 import torch
 
-from owsm_trt import hub
+from owsm_trt import hub, plugins
 from owsm_trt.audio import load_audio
 from owsm_trt.build import MIN_FEATURE_FRAMES, BuildOptions, _build, export_onnx, trims_features
 from owsm_trt.config import load_espnet_config, parse_config
@@ -81,6 +81,12 @@ def main() -> None:
     ap.add_argument("model")
     ap.add_argument("--data", default=".cache/testdata/librispeech_dummy/manifest.json")
     ap.add_argument("--rounds", type=int, default=5)
+    ap.add_argument(
+        "--configs", type=json.loads, default=[],
+        help='plugin engines (merge input concatenated by the plugin) with one kernel configuration each '
+        'instead of TensorRT choosing among plugins.TACTICS, e.g. \'[{"v": 2, "tt": 16, "nt": 128, "nch": 1}]\'',
+    )  # fmt: skip
+    ap.add_argument("--no-plugin", action="store_true", help="skip the TensorRT-concatenation variant")
     args = ap.parse_args()
     files = hub.resolve(args.model)
     cfg = parse_config(load_espnet_config(files.config))
@@ -93,19 +99,28 @@ def main() -> None:
 
     tmp = Path(tempfile.mkdtemp())
     engines = {}
-    variants = {"conv": (False, False), "plugin": (True, False), "plugin_cat": (True, True)}
-    for name, (flag, cat) in variants.items():
+    # name: (dwconv_plugin, plugin_cat, kernel configuration or None for TensorRT's choice)
+    variants = {"conv": (False, False, None), "plugin": (True, False, None), "plugin_cat": (True, True, None)}
+    if args.no_plugin:
+        del variants["plugin"]
+    for c in args.configs:
+        variants["cat_" + "_".join(f"{k}{v}" for k, v in c.items())] = (True, True, c)
+    exported = {}
+    for name, (flag, cat, override) in variants.items():
         opts = BuildOptions(dwconv_plugin=flag)
-        DepthwiseConv1d.plugin_cat = cat  # the merge convolution's input concatenated by the plugin
         t0 = time.time()
+        DepthwiseConv1d.plugin_cat = cat  # the merge convolution's input concatenated by the plugin
+        plugins.override = override
         try:
-            enc_onnx, _ = export_onnx(model, tmp / name, opts)
-            _build(enc_onnx, tmp / name / "encoder.engine", shapes, opts)
+            if (flag, cat) not in exported:
+                exported[flag, cat] = export_onnx(model, tmp / name, opts)[0]
+            _build(exported[flag, cat], tmp / name / "encoder.engine", shapes, opts)
         except Exception:  # noqa: BLE001
             print(f"{name}: export/build failed:\n{traceback.format_exc()}", flush=True)
             continue
         finally:
             DepthwiseConv1d.plugin_cat = True
+            plugins.override = None
         data = (tmp / name / "encoder.engine").read_bytes()
         engines[name] = trt.Runtime(trt.Logger(trt.Logger.WARNING)).deserialize_cuda_engine(data)
         print(f"{name}: {engines[name].num_layers} layers, {len(data) / 2**20:.0f} MiB, "

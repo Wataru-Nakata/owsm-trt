@@ -123,11 +123,13 @@ def direct(
     bias: np.ndarray,
     g,
     cat: bool = False,
-    calls: int = 20,
+    sets: int = 1,
+    calls: int = 24,
     reps: int = 10,
 ):
     """The kernel launched with the CUDA driver API (no TensorRT): output and microseconds per call.
-    ``cat``: x given as two tensors (C // 2 + 2 channels and the rest)."""
+    ``cat``: x given as two tensors (C // 2 + 2 channels and the rest). ``sets`` > 1: consecutive calls
+    rotate over that many copies of the inputs and outputs, so that they find them in DRAM, not L2."""
     import ctypes
 
     from cuda.bindings import driver as cu
@@ -143,38 +145,38 @@ def direct(
     fn = check(cu.cuModuleGetFunction(mod, b"dwconv1d"))
     wt = torch.tensor(w.T.astype(np.float32), device="cuda").contiguous()
     bt = torch.tensor(bias.astype(np.float32), device="cuda")
-    y = torch.empty_like(x)
     ptr, i32 = ctypes.c_void_p, ctypes.c_int
     c1 = C // 2 + 2
-    x1, x2 = x[..., :c1].contiguous(), x[..., c1:].contiguous()
-    if cat:
-        params = (
-            (x1.data_ptr(), x2.data_ptr(), wt.data_ptr(), bt.data_ptr(), T, C, c1, y.data_ptr()),
-            (ptr, ptr, ptr, ptr, i32, i32, i32, ptr),
-        )
-    elif g is None:
-        params = (
-            (x.data_ptr(), wt.data_ptr(), bt.data_ptr(), T, C, y.data_ptr()),
-            (ptr, ptr, ptr, i32, i32, ptr),
-        )
-    else:
-        params = (
-            (x.data_ptr(), g.data_ptr(), wt.data_ptr(), bt.data_ptr(), T, C, g.shape[2], y.data_ptr()),
-            (ptr, ptr, ptr, ptr, i32, i32, i32, ptr),
-        )
+    keep, params, outs = [], [], []
+    for i in range(sets):
+        xi = x if i == 0 else x.clone()
+        gi = g if g is None or i == 0 else g.clone()
+        y = torch.empty_like(x)
+        x1, x2 = xi[..., :c1].contiguous(), xi[..., c1:].contiguous()
+        keep += [xi, gi, x1, x2]
+        outs.append(y)
+        if cat:
+            p = (x1.data_ptr(), x2.data_ptr(), wt.data_ptr(), bt.data_ptr(), T, C, c1, y.data_ptr())
+            params.append((p, (ptr, ptr, ptr, ptr, i32, i32, i32, ptr)))
+        elif g is None:
+            p = (xi.data_ptr(), wt.data_ptr(), bt.data_ptr(), T, C, y.data_ptr())
+            params.append((p, (ptr, ptr, ptr, i32, i32, ptr)))
+        else:
+            p = (xi.data_ptr(), gi.data_ptr(), wt.data_ptr(), bt.data_ptr(), T, C, gi.shape[2], y.data_ptr())
+            params.append((p, (ptr, ptr, ptr, ptr, i32, i32, i32, ptr)))
     v, nt = cfg["v"], cfg["nt"]
     grid = ((C // v + nt - 1) // nt, -(-T // (cfg["tt"] * cfg["nch"])), x.shape[0])
 
-    def launch():
+    def launch(i: int = 0):
         stream = cu.CUstream(torch.cuda.current_stream().cuda_stream)
-        check(cu.cuLaunchKernel(fn, *grid, nt, 1, 1, 0, stream, params, 0))
+        check(cu.cuLaunchKernel(fn, *grid, nt, 1, 1, 0, stream, params[i % sets], 0))
 
     launch()
     torch.cuda.synchronize()
     graph = torch.cuda.CUDAGraph()
     with torch.cuda.graph(graph):
-        for _ in range(calls):
-            launch()
+        for i in range(calls):
+            launch(i)
     graph.replay()
     torch.cuda.synchronize()
     start, end = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
@@ -183,7 +185,7 @@ def direct(
         graph.replay()
     end.record()
     torch.cuda.synchronize()
-    return y, start.elapsed_time(end) * 1000 / (calls * reps)
+    return outs[0], start.elapsed_time(end) * 1000 / (calls * reps)
 
 
 class Toy(torch.nn.Module):
@@ -245,10 +247,67 @@ def child(tmp: Path) -> None:
     print(f"child (plugin never registered): loaded and ran, {us:.1f} us, max abs err {err:.2e}")
 
 
+def cold(w: np.ndarray, bias: np.ndarray) -> None:
+    """Each configuration at B=16 with its inputs in L2 (the same buffers every call) and in DRAM (calls
+    rotating over 6 copies, ~0.5 GB): inside the encoder, the inputs come from the layers before."""
+    x = torch.randn(16, T, C, device="cuda", dtype=torch.float16)
+    g = torch.randn(16, T, 2 * C, device="cuda", dtype=torch.float16)
+    extras = [
+        dict(v=1, tt=16, nt=128, nch=1, minb=4),
+        dict(v=1, tt=32, nt=128, nch=1, minb=4),
+        dict(v=1, tt=8, nt=128, nch=1, minb=6),
+        dict(v=2, tt=64, nt=128, nch=1, minb=3),
+        dict(v=2, tt=16, nt=64, nch=1),
+    ]
+    for kind in ("plain", "gated", "cat"):
+        ref = reference(x, w, bias, g if kind == "gated" else None)
+        for cfg in list(plugins.TACTICS) + extras:
+            try:
+                args = (cfg, x, w, bias, g if kind == "gated" else None, kind == "cat")
+                y, warm = direct(*args)
+                _, cold_us = direct(*args, sets=6)
+            except Exception:  # noqa: BLE001
+                print(f"{kind} {cfg}: failed:\n{traceback.format_exc()}", flush=True)
+                continue
+            err = float((y.float() - ref).abs().max())
+            print(
+                f"B=16 {kind:5s} {cfg}: L2 {warm:6.1f} us, DRAM {cold_us:6.1f} us, max abs err {err:.2e}",
+                flush=True,
+            )
+
+
+def ilp_sweep(w: np.ndarray, bias: np.ndarray) -> None:
+    """plugins.TACTICS with 1, 2, 4, 8 outputs interleaved per thread, at B=16 and B=1."""
+    for batch in (16, 1):
+        x = torch.randn(batch, T, C, device="cuda", dtype=torch.float16)
+        g = torch.randn(batch, T, 2 * C, device="cuda", dtype=torch.float16)
+        for kind in ("plain", "gated", "cat"):
+            ref = reference(x, w, bias, g if kind == "gated" else None)
+            for base in plugins.TACTICS:
+                times = []
+                for ilp in (1, 2, 4, 8):
+                    cfg = {**base, "ilp": ilp}
+                    try:
+                        y, us = direct(cfg, x, w, bias, g if kind == "gated" else None, kind == "cat")
+                    except Exception:  # noqa: BLE001
+                        print(f"{kind} {cfg}: failed:\n{traceback.format_exc()}", flush=True)
+                        times.append(float("nan"))
+                        continue
+                    if float((y.float() - ref).abs().max()) > 1e-2:
+                        print(f"{kind} {cfg}: WRONG, max abs err {float((y.float() - ref).abs().max()):.2e}")
+                    times.append(us)
+                print(
+                    f"B={batch:2d} {kind:5s} {base}: ILP 1/2/4/8 " + " ".join(f"{t:6.1f}" for t in times),
+                    flush=True,
+                )
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("model", nargs="?")
     ap.add_argument("--quick", action="store_true")
+    ap.add_argument("--cold", action="store_true", help="direct launches only, inputs in L2 and in DRAM")
+    ap.add_argument("--ilp", action="store_true", help="direct launches only, plugins.TACTICS x ILP 1/2/4/8")
     ap.add_argument("--child")
     args = ap.parse_args()
     if args.child:
@@ -257,6 +316,10 @@ def main() -> None:
     rng = np.random.default_rng(0)
     w = (rng.standard_normal((C, K)) * 0.1).astype(np.float16)
     bias = (rng.standard_normal(C) * 0.1).astype(np.float16)
+    if args.cold:
+        return cold(w, bias)
+    if args.ilp:
+        return ilp_sweep(w, bias)
     plugins.override = dict(v=2, tt=32, nt=128, nch=1)  # replaced per configuration below
     plugins.register()
     tmp = Path(tempfile.mkdtemp())
