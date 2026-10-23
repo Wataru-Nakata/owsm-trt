@@ -15,8 +15,9 @@ import traceback
 import torch
 import triton
 import triton.language as tl
+from mega_bench import _grid_sync, _prefetch_l2
 
-from owsm_trt.megakernel import _grid_exit, _grid_sync, _prefetch_l2
+from owsm_trt.megakernel import _grid_exit
 
 MAXS = 1 << 22
 

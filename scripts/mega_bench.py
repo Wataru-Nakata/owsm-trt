@@ -18,7 +18,121 @@ import torch
 import triton
 import triton.language as tl
 
-from owsm_trt.megakernel import _gemm, _grid_exit, _grid_sync, _prefetch_l2
+from owsm_trt.megakernel import _grid_exit, _ld_acquire
+
+# ------------------------------------------------------------------------------- building blocks (variants)
+
+
+@triton.jit
+def _arrive(bar, ARRIVE: tl.constexpr):
+    if ARRIVE == 0:
+        tl.atomic_add(bar, 1, sem="release", scope="gpu")  # scalar atomics run on one thread
+    else:
+        tl.inline_asm_elementwise(
+            """{
+            .reg .pred p;
+            .reg .b32 t;
+            mov.u32 t, %tid.x;
+            setp.eq.u32 p, t, 0;
+            @p fence.acq_rel.gpu;
+            @p red.relaxed.gpu.global.add.s32 [$1], 1;
+            mov.u32 $0, 0;
+            }""",
+            "=r,l",
+            [bar],
+            dtype=tl.int32,
+            is_pure=False,
+            pack=1,
+        )
+
+
+@triton.jit
+def _grid_sync(bar, err, target, MAX_SPIN: tl.constexpr, ARRIVE: tl.constexpr, SPIN: tl.constexpr):
+    """Grid barrier variants: arrival by atom.release (0) or fence + red (1); spin with ld.acquire (0) or
+    volatile loads + a final acquire (1)."""
+    tl.debug_barrier()
+    _arrive(bar, ARRIVE)
+    if SPIN == 0:
+        v = _ld_acquire(bar)
+    else:
+        v = tl.load(bar, volatile=True)
+    e = tl.load(err, volatile=True)
+    n = tl.full([], 0, tl.int32)
+    while (v < target) & (e == 0) & (n < MAX_SPIN):
+        if SPIN == 0:
+            v = _ld_acquire(bar)
+        else:
+            v = tl.load(bar, volatile=True)
+        e = tl.load(err, volatile=True)
+        n += 1
+    if SPIN != 0:
+        tl.atomic_add(bar, 0, sem="acquire", scope="gpu")
+    if n >= MAX_SPIN:
+        tl.atomic_xchg(err, 1, sem="relaxed", scope="gpu")
+    tl.debug_barrier()
+
+
+@triton.jit
+def _prefetch_l2(base, nbytes, PF: tl.constexpr, NT: tl.constexpr):
+    """Ask L2 for ``nbytes`` bytes at ``base`` (an fp16 pointer). PF=1: one prefetch per 128-byte line,
+    PF=2: one bulk prefetch (sm90) per thread of an equal share."""
+    if PF == 1:
+        lines = (nbytes + 127) // 128
+        i = tl.arange(0, NT)
+        for i0 in range(0, lines, NT):
+            li = tl.minimum(i0 + i, lines - 1)
+            tl.inline_asm_elementwise(
+                "prefetch.global.L2 [$1]; mov.u32 $0, 0;", "=r,l", [base + li * 64], dtype=tl.int32,
+                is_pure=False, pack=1,
+            )  # fmt: skip
+    elif PF == 2:
+        share = ((nbytes + NT * 16 - 1) // (NT * 16)) * 16  # bytes per thread, a multiple of 16
+        i = tl.arange(0, NT)
+        start = tl.minimum(i * share, nbytes)
+        size = tl.minimum(share, nbytes - start)
+        tl.inline_asm_elementwise(
+            """{
+            .reg .pred p;
+            setp.gt.u32 p, $2, 0;
+            @p cp.async.bulk.prefetch.L2.global [$1], $2;
+            mov.u32 $0, 0;
+            }""",
+            "=r,l,r",
+            [base + start // 2, size.to(tl.uint32)],
+            dtype=tl.int32,
+            is_pure=False,
+            pack=1,
+        )
+
+
+@triton.jit
+def _gemm(pid, P, M, x, x_stride, w, bias, N, K: tl.constexpr, y, y_stride, RELU: tl.constexpr,
+          BMT: tl.constexpr, TB: tl.constexpr, NU: tl.constexpr, BN: tl.constexpr, BK: tl.constexpr,
+          STAGES: tl.constexpr):  # fmt: skip
+    """y[m, n] = act(sum_k x[m, k] w[n, k] + bias[n]) (fp16), units of BMT tokens x a range of features."""
+    for u in range(pid, TB * NU, P):
+        tb = u // NU
+        nu = u % NU
+        r0 = nu * N // NU
+        r1 = (nu + 1) * N // NU
+        tok = tb * BMT + tl.arange(0, BMT)
+        tmask = tok < M
+        for n0 in range(r0, r1, BN):
+            rn = n0 + tl.arange(0, BN)
+            nmask = rn < r1
+            acc = tl.zeros([BN, BMT], dtype=tl.float32)
+            for k0 in tl.range(0, K, BK, num_stages=STAGES):
+                rk = k0 + tl.arange(0, BK)
+                wt = tl.load(w + rn[:, None] * K + rk[None, :], mask=nmask[:, None], other=0.0)
+                xt = tl.load(x + tok[None, :] * x_stride + rk[:, None], mask=tmask[None, :], other=0.0,
+                             cache_modifier=".cg")  # fmt: skip
+                acc = tl.dot(wt, xt, acc)
+            acc += tl.load(bias + rn, mask=nmask, other=0.0).to(tl.float32)[:, None]
+            if RELU:
+                acc = tl.maximum(acc, 0.0)
+            tl.store(y + tok[None, :] * y_stride + rn[:, None], acc.to(tl.float16),
+                     mask=nmask[:, None] & tmask[None, :])  # fmt: skip
+
 
 MAX_SPIN = 1 << 22
 
@@ -148,8 +262,7 @@ def _chain_kernel(
         # QKV: xa -> xb
         if PF > 0:
             _slab(lo if PFD == 1 else l1, D if PFD == 1 else F, D, pid, TB, NU, PF)
-        _gemm(pid, P, M, xa, S, st, 1, bq, bq, 0.0, lq, bq + layer * 3 * D, 3 * D, D, xb, S, st,
-              0, 0, False, BMT, TB, NU, BNQ, BK, STAGES, 16)  # fmt: skip
+        _gemm(pid, P, M, xa, S, lq, bq + layer * 3 * D, 3 * D, D, xb, S, False, BMT, TB, NU, BNQ, BK, STAGES)  # fmt: skip
         _grid_sync(bar, err, (layer * 4 + 1) * P, MAXS, 0, 0)
         # out: xb[:, :D] -> xa
         if PF > 0:
@@ -157,8 +270,7 @@ def _chain_kernel(
                 _slab(l1, F, D, pid, TB, NU, PF)
             else:
                 _slab(l2, D, F, pid, TB, NU, PF)
-        _gemm(pid, P, M, xb, S, st, 1, bq, bq, 0.0, lo, bo + layer * D, D, D, xa, S, st,
-              0, 0, False, BMT, TB, NU, BNO, BK, STAGES, 16)  # fmt: skip
+        _gemm(pid, P, M, xb, S, lo, bo + layer * D, D, D, xa, S, False, BMT, TB, NU, BNO, BK, STAGES)  # fmt: skip
         _grid_sync(bar, err, (layer * 4 + 2) * P, MAXS, 0, 0)
         # FFN1: xa -> xb (ReLU)
         if PF > 0:
@@ -166,8 +278,7 @@ def _chain_kernel(
                 _slab(l2, D, F, pid, TB, NU, PF)
             elif more:
                 _slab(nq, 3 * D, D, pid, TB, NU, PF)
-        _gemm(pid, P, M, xa, S, st, 1, bq, bq, 0.0, l1, b1 + layer * F, F, D, xb, S, st,
-              0, 0, True, BMT, TB, NU, BN1, BK, STAGES, 16)  # fmt: skip
+        _gemm(pid, P, M, xa, S, l1, b1 + layer * F, F, D, xb, S, True, BMT, TB, NU, BN1, BK, STAGES)  # fmt: skip
         _grid_sync(bar, err, (layer * 4 + 3) * P, MAXS, 0, 0)
         # FFN2: xb -> xa
         if PF > 0:
@@ -176,8 +287,7 @@ def _chain_kernel(
                     _slab(nq, 3 * D, D, pid, TB, NU, PF)
                 else:
                     _slab(no, D, D, pid, TB, NU, PF)
-        _gemm(pid, P, M, xb, S, st, 1, bq, bq, 0.0, l2, b2 + layer * D, D, F, xa, S, st,
-              0, 0, False, BMT, TB, NU, BN2, BK, STAGES, 16)  # fmt: skip
+        _gemm(pid, P, M, xb, S, l2, b2 + layer * D, D, F, xa, S, False, BMT, TB, NU, BN2, BK, STAGES)  # fmt: skip
         _grid_sync(bar, err, (layer * 4 + 4) * P, MAXS, 0, 0)
     _grid_exit(bar, done, P)
 

@@ -6,7 +6,6 @@ Building blocks (this module grows into the whole decoder step):
   resident at once; a monotonic counter in global memory counts arrivals, and the last program to leave the
   kernel resets it (:func:`_grid_exit`), so CUDA-graph replays need no memset. A barrier that waits too long
   sets an error flag; every later barrier then falls through, so a bug cannot hang the GPU.
-* :func:`_prefetch_l2` -- L2 prefetch of a program's next weight slab before it waits at a barrier.
 * :func:`_gemm` -- ``y = x @ w.T + b`` for a few rows: weights are the MMA's M side ("swap AB"), every program
   owns a contiguous range of output features over the full K (no split-K), larger inputs are cut into token
   blocks.
@@ -76,38 +75,6 @@ if triton is not None:
             tl.atomic_xchg(bar, 0, sem="relaxed", scope="gpu")
 
     @triton.jit
-    def _prefetch_l2(base, nbytes, PF: tl.constexpr, NT: tl.constexpr):
-        """Ask L2 for ``nbytes`` bytes at ``base`` (an fp16 pointer). PF=1: one prefetch per 128-byte line,
-        PF=2: one bulk prefetch (sm90) per thread of an equal share."""
-        if PF == 1:
-            lines = (nbytes + 127) // 128
-            i = tl.arange(0, NT)
-            for i0 in range(0, lines, NT):
-                li = tl.minimum(i0 + i, lines - 1)
-                tl.inline_asm_elementwise(
-                    "prefetch.global.L2 [$1]; mov.u32 $0, 0;", "=r,l", [base + li * 64], dtype=tl.int32,
-                    is_pure=False, pack=1,
-                )  # fmt: skip
-        elif PF == 2:
-            share = ((nbytes + NT * 16 - 1) // (NT * 16)) * 16  # bytes per thread, a multiple of 16
-            i = tl.arange(0, NT)
-            start = tl.minimum(i * share, nbytes)
-            size = tl.minimum(share, nbytes - start)
-            tl.inline_asm_elementwise(
-                """{
-                .reg .pred p;
-                setp.gt.u32 p, $2, 0;
-                @p cp.async.bulk.prefetch.L2.global [$1], $2;
-                mov.u32 $0, 0;
-                }""",
-                "=r,l,r",
-                [base + start // 2, size.to(tl.uint32)],
-                dtype=tl.int32,
-                is_pure=False,
-                pack=1,
-            )
-
-    @triton.jit
     def _ln_load(st, NU_R, M, tok, tmask, NUP: tl.constexpr):
         """The producers' partial LayerNorm statistics of tokens ``tok``: st = [2, NU_R, M] holds, per range
         nu of features, their mean and sum of squared deviations."""
@@ -130,29 +97,29 @@ if triton is not None:
         return mean, 1.0 / tl.sqrt(m2 / D + eps)
 
     @triton.jit
-    def _store_x(val, rn, nmask, tok, tmask, x, xh, xl, st_out, nu, M, cnt,
-                 D: tl.constexpr, NU: tl.constexpr):  # fmt: skip
-        """Store residual-stream values val [BN features, BMT tokens]: fp32, as an fp16 hi/lo pair (the
-        LayerNorm GEMMs' operand) and the tile's partial statistics (its features must be all of unit nu's)."""
+    def _store_x(val, rn, nmask, tok, tmask, x, x2, st_out, nu, M, cnt, D: tl.constexpr, NU: tl.constexpr):
+        """Store residual-stream values val [BN features, BMT tokens]: fp32 in x [M, D], as an fp16 hi/lo
+        pair in x2 [M, 2, D] (the LayerNorm GEMMs' operand) and the tile's partial statistics (its features
+        must be all of unit nu's)."""
         omask = nmask[:, None] & tmask[None, :]
-        off = tok[None, :] * D + rn[:, None]
-        tl.store(x + off, val, mask=omask)
+        tl.store(x + tok[None, :] * D + rn[:, None], val, mask=omask)
         hi = val.to(tl.float16)
-        tl.store(xh + off, hi, mask=omask)
-        tl.store(xl + off, (val - hi.to(tl.float32)).to(tl.float16), mask=omask)
+        off2 = tok[None, :] * (2 * D) + rn[:, None]
+        tl.store(x2 + off2, hi, mask=omask)
+        tl.store(x2 + off2 + D, (val - hi.to(tl.float32)).to(tl.float16), mask=omask)
         mu = tl.sum(tl.where(omask, val, 0.0), 0) / cnt
         dev = tl.where(omask, val - mu[None, :], 0.0)
         tl.store(st_out + nu * M + tok, mu, mask=tmask)
         tl.store(st_out + (NU + nu) * M + tok, tl.sum(dev * dev, 0), mask=tmask)
 
     @triton.jit
-    def _finish(acc, b, res, rn, nmask, tok, tmask, y, y_stride, yh, yl, st_out, nu, M, cnt,
+    def _finish(acc, b, res, rn, nmask, tok, tmask, y, y_stride, y2, st_out, nu, M, cnt,
                 YM: tl.constexpr, RELU: tl.constexpr, NU: tl.constexpr):  # fmt: skip
         acc += b[:, None]
         if RELU:
             acc = tl.maximum(acc, 0.0)
         if YM == 2:
-            _store_x(acc + res, rn, nmask, tok, tmask, y, yh, yl, st_out, nu, M, cnt, y_stride, NU)
+            _store_x(acc + res, rn, nmask, tok, tmask, y, y2, st_out, nu, M, cnt, y_stride, NU)
         else:
             omask = nmask[:, None] & tmask[None, :]
             out = y + tok[None, :] * y_stride + rn[:, None]
@@ -162,11 +129,25 @@ if triton is not None:
                 tl.store(out, acc, mask=omask)
 
     @triton.jit
+    def _kloop(w, x, x_stride, rn, nmask, xr, xm, k_lo, k_hi, K: tl.constexpr, BN: tl.constexpr,
+               XC: tl.constexpr, BK: tl.constexpr, STAGES: tl.constexpr):  # fmt: skip
+        """sum over k in [k_lo, k_hi) of w[rn, k] * x[xr, k] -> [BN, XC] (fp32)."""
+        acc = tl.zeros([BN, XC], dtype=tl.float32)
+        for k0 in tl.range(k_lo, k_hi, BK, num_stages=STAGES):
+            rk = k0 + tl.arange(0, BK)
+            wt = tl.load(w + rn[:, None] * K + rk[None, :], mask=nmask[:, None], other=0.0)
+            xt = tl.load(
+                x + xr[None, :] * x_stride + rk[:, None], mask=xm[None, :], other=0.0, cache_modifier=".cg"
+            )
+            acc = tl.dot(wt, xt, acc)
+        return acc
+
+    @triton.jit
     def _gemm(
         pid, P, M,
-        x, xl, x_stride, st_in, NU_IN, cvec, eps,
+        x, x_stride, st_in, NU_IN, cvec, eps,
         w, bias, N, K: tl.constexpr,
-        y, y_stride, yh, yl, st_out, part, cnt,
+        y, y_stride, y2, st_out, part, cnt,
         LN: tl.constexpr, YM: tl.constexpr, RELU: tl.constexpr,
         BMT: tl.constexpr, TB: tl.constexpr, NU: tl.constexpr,
         BN: tl.constexpr, BK: tl.constexpr, STAGES: tl.constexpr, NUP: tl.constexpr, KS: tl.constexpr,
@@ -179,13 +160,13 @@ if triton is not None:
         (fp32) and counts itself in ``cnt`` [TB * NU]; the last slice of a unit adds the partials up in a
         fixed order and finishes the unit.
 
-        X = x (fp16 [M, K]). With LN, X = LayerNorm(x_hi + x_lo) instead, folded into the weights:
-        w = W * gamma, cvec = row sums of w, bias = b + W beta, so that
-        y = rstd * (x . w - mean * cvec) + bias, with mean / rstd from the partial statistics ``st_in``.
-        Every load a unit needs is issued before its K loop.
+        X = x (fp16 [M, K], row stride x_stride). With LN, X = LayerNorm(x_hi + x_lo) instead, x = [M, 2, K]
+        the residual stream as an fp16 hi/lo pair, the LayerNorm folded into the weights: w = W * gamma,
+        cvec = row sums of w, bias = b + W beta, so that y = rstd * (x . w - mean * cvec) + bias, with mean /
+        rstd from the partial statistics ``st_in``. Every load a unit needs is issued before its K loop.
         YM=0: y = fp16 store; YM=1: fp32 store; YM=2: residual stream y (fp32) += result, also stored as
-        an fp16 hi/lo pair (yh, yl) with the unit's partial statistics in ``st_out`` [2, NU, M] (YM=2 and
-        KS > 1 need BN >= the unit's features).
+        the hi/lo pair y2 with the unit's partial statistics in ``st_out`` [2, NU, M] (YM=2 and KS > 1 need
+        BN >= the unit's features).
         """
         KK: tl.constexpr = K // KS
         for u in range(pid, TB * NU * KS, P):
@@ -204,31 +185,45 @@ if triton is not None:
                 nmask = rn < r1
                 omask = nmask[:, None] & tmask[None, :]
                 b = tl.load(bias + rn, mask=nmask, other=0.0)
-                if LN:
-                    cv = tl.load(cvec + rn, mask=nmask, other=0.0)
                 res = tl.zeros([BN, BMT], dtype=tl.float32)
                 if YM == 2:
                     if KS == 1:
                         res = tl.load(y + tok[None, :] * y_stride + rn[:, None], mask=omask, other=0.0,
                                       cache_modifier=".cg")  # fmt: skip
-                acc = tl.zeros([BN, BMT], dtype=tl.float32)
-                for k0 in tl.range(ks * KK, (ks + 1) * KK, BK, num_stages=STAGES):
-                    rk = k0 + tl.arange(0, BK)
-                    wt = tl.load(w + rn[:, None] * K + rk[None, :], mask=nmask[:, None], other=0.0)
-                    xo = tok[None, :] * x_stride + rk[:, None]
-                    xt = tl.load(x + xo, mask=tmask[None, :], other=0.0, cache_modifier=".cg")
-                    acc = tl.dot(wt, xt, acc)
-                    if LN:
-                        xlt = tl.load(xl + xo, mask=tmask[None, :], other=0.0, cache_modifier=".cg")
-                        acc = tl.dot(wt, xlt, acc)
+                if LN:
+                    cv = tl.load(cvec + rn, mask=nmask, other=0.0)
+                    xr = 2 * tb * BMT + tl.arange(0, 2 * BMT)  # rows of x viewed as [2M, K]: (token, hi/lo)
+                    acc2 = _kloop(w, x, x_stride, rn, nmask, xr, xr < 2 * M, ks * KK, (ks + 1) * KK, K, BN,
+                                  2 * BMT, BK, STAGES)  # fmt: skip
+                    acc = tl.sum(tl.reshape(acc2, [BN, BMT, 2]), 2)
+                else:
+                    acc = _kloop(w, x, x_stride, rn, nmask, tok, tmask, ks * KK, (ks + 1) * KK, K, BN, BMT, BK,
+                                 STAGES)  # fmt: skip
                 if TS:
                     _stamp(tsp + 3)
                 if LN:
                     mean, rstd = _ln_finish(mu_p, m2_p, NU_IN, K, eps, NUP)
                     acc = (acc - cv[:, None] * mean[None, :]) * rstd[None, :]
                 if KS == 1:
-                    _finish(acc, b, res, rn, nmask, tok, tmask, y, y_stride, yh, yl, st_out, nu, M, cnt_f,
-                            YM, RELU, NU)  # fmt: skip
+                    _finish(
+                        acc,
+                        b,
+                        res,
+                        rn,
+                        nmask,
+                        tok,
+                        tmask,
+                        y,
+                        y_stride,
+                        y2,
+                        st_out,
+                        nu,
+                        M,
+                        cnt_f,
+                        YM,
+                        RELU,
+                        NU,
+                    )
                     if TS:
                         _stamp(tsp + 4)
                 else:
@@ -245,33 +240,13 @@ if triton is not None:
                         for j in tl.static_range(KS):
                             tot += tl.load(pp + j * M * N, mask=omask, other=0.0, cache_modifier=".cg")
                         tl.atomic_xchg(cnt + tb * NU + nu, 0, sem="relaxed", scope="gpu")
-                        _finish(tot, b, res, rn, nmask, tok, tmask, y, y_stride, yh, yl, st_out, nu, M, cnt_f,
-                                YM, RELU, NU)  # fmt: skip
+                        _finish(tot, b, res, rn, nmask, tok, tmask, y, y_stride, y2, st_out, nu, M, cnt_f, YM, RELU,
+                                NU)  # fmt: skip
+                        if TS:
+                            _stamp(tsp + 4)
 
     @triton.jit
-    def _prefetch_gemm(w, N, K: tl.constexpr, pid, TB: tl.constexpr, NU: tl.constexpr, KS: tl.constexpr,
-                       MAXROWS: tl.constexpr, NT: tl.constexpr):  # fmt: skip
-        """L2 prefetch (one instruction per 128-byte line) of the weights program ``pid`` reads first in a
-        :func:`_gemm` over [N, K] weights: up to MAXROWS rows of its feature range, its slice of K."""
-        if pid < TB * NU * KS:
-            KK: tl.constexpr = K // KS
-            LPR: tl.constexpr = KK // 64  # 128-byte lines per row
-            ks = pid % KS
-            nu = (pid // KS) % NU
-            r0 = nu * N // NU
-            r1 = tl.minimum((nu + 1) * N // NU, r0 + MAXROWS)
-            lines = (r1 - r0) * LPR
-            i = tl.arange(0, NT)
-            for i0 in range(0, lines, NT):
-                li = tl.minimum(i0 + i, lines - 1)
-                addr = w + (r0 + li // LPR).to(tl.int64) * K + ks * KK + (li % LPR) * 64
-                tl.inline_asm_elementwise(
-                    "prefetch.global.L2 [$1]; mov.u32 $0, 0;", "=r,l", [addr], dtype=tl.int32, is_pure=False,
-                    pack=1,
-                )  # fmt: skip
-
-    @triton.jit
-    def _embed(pid, P, M, S, tok, offs, emb, pe, x, xh, xl, st, xscale, V,
+    def _embed(pid, P, M, S, tok, offs, emb, pe, x, x2, st, xscale, V,
                D: tl.constexpr, BMT: tl.constexpr, TB: tl.constexpr, NU: tl.constexpr, BN: tl.constexpr):  # fmt: skip
         """x = embedding * sqrt(d) + positional encoding (see _store_x)."""
         for u in range(pid, TB * NU, P):
@@ -290,7 +265,7 @@ if triton is not None:
             e = tl.load(emb + ids[None, :] * D + n[:, None], mask=msk, other=0.0).to(tl.float32)
             p = tl.load(pe + pos[None, :] * D + n[:, None], mask=msk, other=0.0)
             val = tl.where(msk, e * xscale + p, 0.0)
-            _store_x(val, n, nm, t, tm, x, xh, xl, st, nu, M, (r1 - r0).to(tl.float32), D, NU)
+            _store_x(val, n, nm, t, tm, x, x2, st, nu, M, (r1 - r0).to(tl.float32), D, NU)
 
     @triton.jit
     def _online(q, kt, vt, ok, m_i, l_i, acc):
@@ -412,36 +387,12 @@ if triton is not None:
                     tl.store(out, (num / den[:, None]).to(tl.float16), mask=sm)
 
     @triton.jit
-    def _prefetch_stage(g, L, V, pid, wqkv, wo, wcq, wco, w1, w2, wout,
-                        D: tl.constexpr, F: tl.constexpr, TB: tl.constexpr, NU: tl.constexpr, NU2: tl.constexpr,
-                        KS2: tl.constexpr):  # fmt: skip
-        """L2 prefetch of the weights this program reads first in stage ``g`` (see _decoder_kernel)."""
-        if (g >= 1) & (g <= 8 * L):
-            layer = (g - 1) // 8
-            i = (g - 1) % 8
-            l64 = layer.to(tl.int64)
-            if i == 0:
-                _prefetch_gemm(wqkv + l64 * 3 * D * D, 3 * D, D, pid, TB, NU, 1, 64, 128)
-            elif i == 2:
-                _prefetch_gemm(wo + l64 * D * D, D, D, pid, TB, NU, 1, 64, 128)
-            elif i == 3:
-                _prefetch_gemm(wcq + l64 * D * D, D, D, pid, TB, NU, 1, 64, 128)
-            elif i == 5:
-                _prefetch_gemm(wco + l64 * D * D, D, D, pid, TB, NU, 1, 64, 128)
-            elif i == 6:
-                _prefetch_gemm(w1 + l64 * F * D, F, D, pid, TB, NU, 1, 64, 128)
-            elif i == 7:
-                _prefetch_gemm(w2 + l64 * D * F, D, F, pid, TB, NU2, KS2, 64, 128)
-        elif g == 8 * L + 1:
-            _prefetch_gemm(wout, V, D, pid, TB, NU, 1, 64, 128)
-
-    @triton.jit
     def _decoder_kernel(
         tok, offs, emb, pe, xscale,
         wqkv, bqkv, cqkv, wo, bo, wcq, bcq, ccq, wco, bco, w1, b1, c1, w2, b2, wout, bout, cout,
         kc, vc, C, ck, cv, T, logits, new_kv,
-        x, xh, xl, qkv, ob, q2, hb, st, part, cnt, xp, xml, xcnt, bar, err, done, ts,
-        R, S, L, V, eps, g_lo, g_hi,
+        x, x2, qkv, ob, q2, hb, st, part, cnt, xp, xml, xcnt, bar, err, done, ts,
+        R, S, L, V, eps, g_lo, g_hi, nu_a, nu_b,
         D: tl.constexpr, H: tl.constexpr, DK: tl.constexpr, F: tl.constexpr,
         BMT: tl.constexpr, TB: tl.constexpr, NU: tl.constexpr, NU2: tl.constexpr, KS2: tl.constexpr,
         NUP: tl.constexpr, NS: tl.constexpr,
@@ -450,18 +401,18 @@ if triton is not None:
         BNF: tl.constexpr, BKF: tl.constexpr, SF: tl.constexpr,
         BN2: tl.constexpr, BK2: tl.constexpr, S2: tl.constexpr,
         BNV: tl.constexpr, BKV: tl.constexpr, SV: tl.constexpr,
-        SP: tl.constexpr, BTS: tl.constexpr, BTX: tl.constexpr,
-        PF: tl.constexpr, SYNC: tl.constexpr, MAXS: tl.constexpr, TS: tl.constexpr = False,
+        SP: tl.constexpr, BTS: tl.constexpr, BTX: tl.constexpr, SYNC: tl.constexpr, MAXS: tl.constexpr, TS: tl.constexpr = False,
         ONE: tl.constexpr = False,
     ):  # fmt: skip
         """Stages g_lo .. g_hi-1 of a decoder call: 0 = embedding, 1 + 8 * layer + i = stage i of a layer
         (LN1+QKV, self-attention, out-proj, LN2+cross-Q, cross-attention, cross-out, LN3+FFN1, FFN2),
-        8 * L + 1 = final LayerNorm + output layer. With SYNC, a grid barrier separates the stages; with PF,
-        a program prefetches its weights of stage g + PF into L2 while it waits at the barrier after g.
+        8 * L + 1 = final LayerNorm + output layer. With SYNC, a grid barrier separates the stages.
 
         Weights of the GEMMs after a LayerNorm come with it folded in (see _gemm). The residual stream x
-        (fp32, with an fp16 hi/lo copy) gets LayerNorm statistics in NU parts from the embedding and the
-        out-projections and NU2 parts from FFN2 (NU2 feature ranges x KS2 slices of K).
+        (fp32, with an fp16 hi/lo copy x2) gets LayerNorm statistics in NU parts from the embedding and the
+        out-projections and NU2 parts from FFN2 (NU2 feature ranges x KS2 slices of K); nu_a / nu_b are NU / NU2
+        again as run-time values for the consumers of those statistics: with a compile-time number of parts,
+        Triton 3.8 miscompiles _ln_finish's vector division by it in some builds (wrong mean, NaN 1/std).
 
         Profiling: TS stamps the time per (stage, program) into ts [stages, P, 6] (start, GEMM loads done,
         GEMM epilogue done, arrival, barrier exit); ONE repeats stage g_lo g_hi - g_lo times."""
@@ -476,49 +427,45 @@ if triton is not None:
             if TS:
                 _stamp(tsp)
             if g == 0:
-                _embed(pid, P, M, S, tok, offs, emb, pe, x, xh, xl, st, xscale, V, D, BMT, TB, NU, BND)
+                _embed(pid, P, M, S, tok, offs, emb, pe, x, x2, st, xscale, V, D, BMT, TB, NU, BND)
             elif g == 8 * L + 1:
-                _gemm(pid, P, M, xh, xl, D, st, NU2, cout, eps, wout, bout, V, D, logits, V, xh, xl, st, part, cnt,
+                _gemm(pid, P, M, x2, D, st, nu_b, cout, eps, wout, bout, V, D, logits, V, x2, st, part, cnt,
                       True, 1, False, BMT, TB, NU, BNV, BKV, SV, NUP, 1, True, tsp, TS)  # fmt: skip
             else:
                 layer = (g - 1) // 8
                 i = (g - 1) % 8
                 l64 = layer.to(tl.int64)
                 if i == 0:
-                    nu_in = tl.where(layer == 0, NU, NU2)
-                    _gemm(pid, P, M, xh, xl, D, st, nu_in, cqkv + layer * 3 * D, eps, wqkv + l64 * 3 * D * D,
-                          bqkv + layer * 3 * D, 3 * D, D, qkv, 3 * D, xh, xl, st, part, cnt,
+                    nu_in = tl.where(layer == 0, nu_a, nu_b)
+                    _gemm(pid, P, M, x2, D, st, nu_in, cqkv + layer * 3 * D, eps, wqkv + l64 * 3 * D * D,
+                          bqkv + layer * 3 * D, 3 * D, D, qkv, 3 * D, x2, st, part, cnt,
                           True, 0, False, BMT, TB, NU, BNQ, BKQ, SQ, NUP, 1, False, tsp, TS)  # fmt: skip
                 elif i == 1:
                     _self_attn(pid, P, R, S, layer, qkv, offs, kc, vc, C, new_kv, ob, D, H, DK, SP, BTS)
                 elif i == 2:
-                    _gemm(pid, P, M, ob, ob, D, st, NU, bo, eps, wo + l64 * D * D, bo + layer * D, D, D,
-                          x, D, xh, xl, st, part, cnt, False, 2, False, BMT, TB, NU, BND, BKD, SD, NUP, 1, False, tsp, TS)  # fmt: skip
+                    _gemm(pid, P, M, ob, D, st, NU, bo, eps, wo + l64 * D * D, bo + layer * D, D, D,
+                          x, D, x2, st, part, cnt, False, 2, False, BMT, TB, NU, BND, BKD, SD, NUP, 1, False, tsp, TS)  # fmt: skip
                 elif i == 3:
-                    _gemm(pid, P, M, xh, xl, D, st, NU, ccq + layer * D, eps, wcq + l64 * D * D, bcq + layer * D,
-                          D, D, q2, D, xh, xl, st, part, cnt, True, 0, False, BMT, TB, NU, BND, BKD, SD, NUP, 1,
+                    _gemm(pid, P, M, x2, D, st, nu_a, ccq + layer * D, eps, wcq + l64 * D * D, bcq + layer * D,
+                          D, D, q2, D, x2, st, part, cnt, True, 0, False, BMT, TB, NU, BND, BKD, SD, NUP, 1,
                           False, tsp, TS)  # fmt: skip
                 elif i == 4:
                     _cross_attn(pid, P, R, S, layer, q2, ck, cv, T, ob, xp, xml, xcnt, D, H, DK, SP, BTX, NS)
                 elif i == 5:
-                    _gemm(pid, P, M, ob, ob, D, st, NU, bco, eps, wco + l64 * D * D, bco + layer * D, D, D,
-                          x, D, xh, xl, st, part, cnt, False, 2, False, BMT, TB, NU, BND, BKD, SD, NUP, 1, False, tsp, TS)  # fmt: skip
+                    _gemm(pid, P, M, ob, D, st, NU, bco, eps, wco + l64 * D * D, bco + layer * D, D, D,
+                          x, D, x2, st, part, cnt, False, 2, False, BMT, TB, NU, BND, BKD, SD, NUP, 1, False, tsp, TS)  # fmt: skip
                 elif i == 6:
-                    _gemm(pid, P, M, xh, xl, D, st, NU, c1 + layer * F, eps, w1 + l64 * F * D, b1 + layer * F,
-                          F, D, hb, F, xh, xl, st, part, cnt, True, 0, True, BMT, TB, NU, BNF, BKF, SF, NUP, 1,
+                    _gemm(pid, P, M, x2, D, st, nu_a, c1 + layer * F, eps, w1 + l64 * F * D, b1 + layer * F,
+                          F, D, hb, F, x2, st, part, cnt, True, 0, True, BMT, TB, NU, BNF, BKF, SF, NUP, 1,
                           False, tsp, TS)  # fmt: skip
                 else:
-                    _gemm(pid, P, M, hb, hb, F, st, NU, b2, eps, w2 + l64 * D * F, b2 + layer * D, D, F,
-                          x, D, xh, xl, st, part, cnt, False, 2, False, BMT, TB, NU2, BN2, BK2, S2, NUP, KS2, False, tsp, TS)  # fmt: skip
+                    _gemm(pid, P, M, hb, F, st, NU, b2, eps, w2 + l64 * D * F, b2 + layer * D, D, F,
+                          x, D, x2, st, part, cnt, False, 2, False, BMT, TB, NU2, BN2, BK2, S2, NUP, KS2, False, tsp, TS)  # fmt: skip
             if TS:
                 _stamp(tsp + 5)
             if SYNC:
                 if gi < g_hi - 1:
                     _grid_arrive(bar)
-                    if PF > 0:
-                        _prefetch_stage(
-                            g + PF, L, V, pid, wqkv, wo, wcq, wco, w1, w2, wout, D, F, TB, NU, NU2, KS2
-                        )
                     _grid_wait(bar, err, (gi - g_lo + 1) * P, MAXS)
             if TS:
                 _stamp(tsp + 1)
@@ -655,7 +602,7 @@ class MegaDecoder:
         if programs is None:
             programs = torch.cuda.get_device_properties(device).multi_processor_count
         self.programs = programs
-        self.opts = {"PF": 0, "num_warps": 8, "MAXS": 1 << 24}
+        self.opts = {"num_warps": 8, "MAXS": 1 << 24}
         self.opts.update(opts)
         self.err = torch.zeros(1, dtype=torch.int32, device=device)
         # per (stage, program): 6 time stamps (opts TS=True, profiling only; see _decoder_kernel)
@@ -680,13 +627,13 @@ class MegaDecoder:
         cfg = kernel_config(R, S, P, D, F, H, o)
         const = dict(
             D=D, H=H, DK=D // H, F=F, **cfg, SP=max(16, _pow2(S)), BTS=64, BTX=64,
-            PF=0 if interpret else o["PF"], MAXS=o["MAXS"], TS=bool(o.get("TS")) and not interpret,
+            MAXS=o["MAXS"], TS=bool(o.get("TS")) and not interpret,
         )  # fmt: skip
         nu, ns = max(cfg["NU"], cfg["NU2"]), cfg["NS"]
         f16 = {"device": dev, "dtype": torch.float16}
         i32 = {"device": dev, "dtype": torch.int32}
         x = torch.zeros(M, D, device=dev)
-        xh, xl = torch.zeros(M, D, **f16), torch.zeros(M, D, **f16)
+        x2 = torch.zeros(M, 2, D, **f16)
         qkv = torch.zeros(M, 3 * D, **f16)
         ob, q2 = torch.zeros(M, D, **f16), torch.zeros(M, D, **f16)
         hb = torch.zeros(M, F, **f16)
@@ -703,24 +650,32 @@ class MegaDecoder:
             self.wqkv, self.bqkv, self.cqkv, self.wo, self.bo, self.wcq, self.bcq, self.ccq, self.wco, self.bco,
             self.w1, self.b1, self.c1, self.w2, self.b2, self.wout, self.bout, self.cout,
             self_k, self_v, C, cross_k, cross_v, T, logits, new_kv,
-            x, xh, xl, qkv, ob, q2, hb, st, part, cnt, xp, xml, xcnt, bar, self.err, done, self.ts,
+            x, x2, qkv, ob, q2, hb, st, part, cnt, xp, xml, xcnt, bar, self.err, done, self.ts,
             R, S, L, self.V, self.eps,
         )  # fmt: skip
+        nus = (
+            cfg["NU"],
+            cfg["NU2"],
+        )  # after g_lo, g_hi (run-time numbers of statistics parts, see the kernel)
         n_stages = 8 * L + 2
         nw = o["num_warps"]
 
         def run() -> None:
             if interpret:
                 for g in range(n_stages):
-                    _decoder_kernel[(P,)](*args, g, g + 1, SYNC=False, **const, num_warps=nw)
+                    _decoder_kernel[(P,)](*args, g, g + 1, *nus, SYNC=False, **const, num_warps=nw)
             else:
-                _decoder_kernel[(P,)](*args, 0, n_stages, SYNC=True, **const, num_warps=nw)
+                _decoder_kernel[(P,)](*args, 0, n_stages, *nus, SYNC=True, **const, num_warps=nw)
 
         def one(g: int, reps: int) -> None:  # profiling: stage g, reps times (see _decoder_kernel)
-            _decoder_kernel[(P,)](*args, g, g + reps, SYNC=True, ONE=True, **const, num_warps=nw)
+            _decoder_kernel[(P,)](*args, g, g + reps, *nus, SYNC=True, ONE=True, **const, num_warps=nw)
+
+        def upto(g: int) -> None:  # debugging: stages 0 .. g-1 only
+            _decoder_kernel[(P,)](*args, 0, g, *nus, SYNC=True, **const, num_warps=nw)
 
         run.one = one
-        run.buffers = (x, xh, xl, qkv, ob, q2, hb, st, part, cnt, xp, xml, xcnt, bar, done)  # keep them alive
+        run.upto = upto
+        run.buffers = (x, x2, qkv, ob, q2, hb, st, part, cnt, xp, xml, xcnt, bar, done)  # keep them alive
         run.const = const
         run.writes_cache = True
         return run
