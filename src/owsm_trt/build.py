@@ -6,8 +6,9 @@ import json
 import logging
 import shutil
 import time
+import warnings
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 
 import torch
@@ -27,7 +28,7 @@ from .modeling import (
     OWSMModel,
     padding_frame,
 )
-from .runtime import cache_buckets
+from .runtime import cache_buckets, trt_logger
 
 log = logging.getLogger(__name__)
 
@@ -173,7 +174,11 @@ def export_onnx(
     enc_path = out_dir / "encoder.onnx"
     feats = torch.randn(2, example_frames(cfg), cfg.n_mels, device=dev)
     # (the CTC head drafts tokens: its argmax as in the OWSM-CTC export, on a padded vocabulary)
-    with _encoder_export(model, opts, batch) as (feats_dims, translations), _ctc_export(model, opts) as extra:
+    with (
+        _encoder_export(model, opts, batch) as (feats_dims, translations),
+        _ctc_export(model, opts) as extra,
+        _quiet_exporter(),
+    ):
         torch.onnx.export(
             _EncoderGraph(model).eval(),
             (feats,),
@@ -182,6 +187,7 @@ def export_onnx(
             output_names=["cross_k", "cross_v", "ctc_ids"],
             dynamic_shapes={"feats": feats_dims},
             dynamo=True,
+            verbose=False,
             external_data=True,
             custom_translation_table={**(translations or {}), **extra} or None,
         )
@@ -223,17 +229,19 @@ def export_decoder_onnx(
     model.decoder.plugins = frozenset(plugins)
     MultiHeadedAttention.explicit = True  # cross-attention
     try:
-        torch.onnx.export(
-            _DecoderGraph(model).eval(),
-            (tokens, offset, *caches),
-            path,
-            input_names=names,
-            output_names=["logits", "new_kv"],
-            dynamic_shapes=shapes,
-            dynamo=True,
-            external_data=True,
-            custom_translation_table=attn_plugin.onnx_translations() if plugins else None,
-        )
+        with _quiet_exporter():
+            torch.onnx.export(
+                _DecoderGraph(model).eval(),
+                (tokens, offset, *caches),
+                path,
+                input_names=names,
+                output_names=["logits", "new_kv"],
+                dynamic_shapes=shapes,
+                dynamo=True,
+                verbose=False,
+                external_data=True,
+                custom_translation_table=attn_plugin.onnx_translations() if plugins else None,
+            )
     finally:
         model.decoder.split_attention, model.decoder.plugins = split, plug
         MultiHeadedAttention.explicit = False
@@ -249,7 +257,7 @@ def _build(
 ) -> None:
     import tensorrt as trt
 
-    logger = trt.Logger(trt.Logger.WARNING)
+    logger = trt_logger(trt)
     builder = trt.Builder(logger)
     flags = 0
     if hasattr(trt.NetworkDefinitionCreationFlag, "STRONGLY_TYPED"):
@@ -304,7 +312,11 @@ def export_ctc_onnx(model: OWSMCTCModel, out_dir: Path, opts: BuildOptions) -> P
         torch.zeros(2, 3, dtype=torch.long, device=dev),
         torch.zeros(2, 2, dtype=torch.long, device=dev),
     )
-    with _encoder_export(model, opts, batch) as (feats_dims, translations), _ctc_export(model, opts) as extra:
+    with (
+        _encoder_export(model, opts, batch) as (feats_dims, translations),
+        _ctc_export(model, opts) as extra,
+        _quiet_exporter(),
+    ):
         torch.onnx.export(
             _CTCGraph(model).eval(),
             args,
@@ -313,10 +325,26 @@ def export_ctc_onnx(model: OWSMCTCModel, out_dir: Path, opts: BuildOptions) -> P
             output_names=["ctc_ids"],
             dynamic_shapes={"feats": feats_dims, "prompt": {0: batch, 1: plen}, "prefix": {0: batch}},
             dynamo=True,
+            verbose=False,
             external_data=True,
             custom_translation_table={**(translations or {}), **extra} or None,
         )
     return path
+
+
+@contextmanager
+def _quiet_exporter():
+    """The exporter without its expected warnings (no torchvision, unannotated custom-op arguments, dynamic axis
+    names it merges, ...) and progress output; its errors still raise."""
+    logger = logging.getLogger("torch.onnx")
+    level = logger.level
+    logger.setLevel(logging.ERROR)
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            yield
+    finally:
+        logger.setLevel(level)
 
 
 @contextmanager
@@ -460,7 +488,8 @@ def _export_plugin_decoder(model: OWSMModel, path: Path, opts: BuildOptions) -> 
     cfg = model.cfg
     head_dim = cfg.d_model // cfg.dec_heads
     if not attn_plugin.available(head_dim):
-        log.warning("decoder engines without attention plugins (they need Triton and an Ampere+ GPU)")
+        reason = attn_plugin.unavailable() or f"no kernels for head size {head_dim}"
+        log.warning("decoder engines without attention plugins (slower decoding): %s", reason)
         return None
     try:
         attn_plugin.register_plugins(cfg.dec_heads, head_dim)
@@ -532,6 +561,20 @@ def decoder_profiles(max_batch: int) -> list[dict]:
         profiles.append({"kind": "verify", "batch": (2, max(2, max_batch // 2), max_batch)})
     profiles.append({"kind": "prefill", "batch": (1, max_batch, max_batch)})
     return profiles
+
+
+def buildable(opts: BuildOptions, cfg: OWSMConfig) -> BuildOptions:
+    """``opts`` without the plugins this environment cannot build (each logs why). Engines built without them
+    get a directory of their own, so they are rebuilt with the plugins once those can be built."""
+    off = {}
+    if (opts.dwconv_plugin or opts.conv1_plugin or opts.ctc_plugins) and not plugins.available():
+        off.update(dwconv_plugin=False, conv1_plugin=False, ctc_plugins=False)
+    if not cfg.ctc_only and (opts.attn_plugin or opts.attn_plugin_steps) and attn_plugin.unavailable():
+        off.update(attn_plugin=False, attn_plugin_steps=False)
+        log.warning(
+            "decoder engines without attention plugins (slower decoding): %s", attn_plugin.unavailable()
+        )
+    return replace(opts, **off) if off else opts
 
 
 def engine_tag(opts: BuildOptions) -> str:

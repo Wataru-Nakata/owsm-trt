@@ -32,17 +32,23 @@ log = logging.getLogger(__name__)
 
 
 def _check_cuda_versions() -> None:
-    """Warn when torch and TensorRT ship different CUDA major versions (two runtimes in one process)."""
-    trt_major = None
+    """Warn when torch and TensorRT ship different CUDA major versions (two runtimes in one process), or when
+    TensorRT is installed for two (tensorrt-cu12 and tensorrt-cu13 write the same files)."""
+    majors = set()
     for dist in importlib.metadata.distributions():
         m = re.fullmatch(r"tensorrt[-_]cu(\d+)[-_]bindings", (dist.metadata["Name"] or "").lower())
         if m:
-            trt_major = int(m.group(1))
+            majors.add(int(m.group(1)))
+    if len(majors) > 1:
+        log.warning("TensorRT is installed for CUDA %s: their packages overwrite each other's files; keep one",
+                    " and ".join(map(str, sorted(majors))))  # fmt: skip
+    trt_major = max(majors) if len(majors) == 1 else None
     torch_major = int(torch.version.cuda.split(".")[0]) if torch.version.cuda else None
     if trt_major and torch_major and trt_major != torch_major:
         log.warning(
-            "torch is built for CUDA %d but TensorRT for CUDA %d; install `tensorrt-cu%d` to match",
-            torch_major, trt_major, torch_major,
+            "torch is built for CUDA %d but TensorRT for CUDA %d: two CUDA runtimes in one process, which needs a"
+            " driver for CUDA %d (tested: torch 2.10 with CUDA 12 + TensorRT 11.4 with CUDA 13)",
+            torch_major, trt_major, max(torch_major, trt_major),
         )  # fmt: skip
 
 
@@ -109,6 +115,28 @@ class TorchBackend:
         return run
 
 
+# TensorRT warnings that are expected here: multi-profile engines' tensor queries, the int64 token inputs, the
+# Triton plugin kernels' extra arguments
+_EXPECTED = ("The engine contains", "has Int64 binding", "hidden args")
+
+
+def trt_logger(trt):
+    """A TensorRT logger for warnings and errors, without the expected ones (to owsm_trt's logging)."""
+
+    class Logger(trt.ILogger):
+        def __init__(self):
+            trt.ILogger.__init__(self)
+
+        def log(self, severity, msg):
+            if severity == trt.ILogger.Severity.WARNING:
+                if not any(e in msg for e in _EXPECTED):
+                    log.warning("TensorRT: %s", msg)
+            elif severity in (trt.ILogger.Severity.ERROR, trt.ILogger.Severity.INTERNAL_ERROR):
+                log.error("TensorRT: %s", msg)
+
+    return Logger()
+
+
 class _TRTEngines:
     """Loads serialized engines and runs them on torch-owned device buffers."""
 
@@ -120,7 +148,7 @@ class _TRTEngines:
         _check_cuda_versions()
         self.trt = trt
         self.cfg = cfg
-        self.logger = trt.Logger(trt.Logger.WARNING)
+        self.logger = trt_logger(trt)
         self.runtime = trt.Runtime(self.logger)
         self._scratch: dict[tuple, torch.Tensor] = {}
 

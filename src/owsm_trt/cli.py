@@ -58,7 +58,9 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--iters", type=int, default=10)
 
     args = ap.parse_args(argv)
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    # owsm_trt's progress, not the libraries' INFO (the ONNX optimizer's ~1000 lines per build, HTTP requests)
+    logging.basicConfig(level=logging.WARNING, format="%(asctime)s %(levelname)s %(message)s")
+    logging.getLogger("owsm_trt").setLevel(logging.INFO)
 
     if args.cmd == "build":
         if args.backend != "tensorrt":

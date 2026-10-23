@@ -17,7 +17,7 @@ import torch.nn.functional as F
 from . import fp8 as fp8_mod
 from . import hub, megakernel
 from .audio import AudioLike, duration, load_audio
-from .build import DTYPES, BuildOptions, build_engines, check_config, engine_tag
+from .build import DTYPES, BuildOptions, build_engines, buildable, check_config, engine_tag
 from .config import load_espnet_config, parse_config
 from .modeling import (
     Decoder,
@@ -317,6 +317,7 @@ class OWSM:
             raise ValueError(f"unknown backend {backend!r} (use 'tensorrt' or 'torch')")
 
         with torch.cuda.device(dev):
+            opts = buildable(opts, cfg)
             engine_dir = hub.cache_dir() / files.name.replace("/", "--") / engine_tag(opts)
             if rebuild or not check_config(cfg, engine_dir):
                 log.warning("building TensorRT engines for %s into %s", files.name, engine_dir)
@@ -1007,6 +1008,13 @@ def _decoder_kernel(runner, cfg, checkpoint: Path, dev: torch.device, which):
     if not megakernel_gluon.available(dev):
         if which != "auto":
             log.warning("the Gluon decoder megakernels need Triton with Gluon and a Hopper GPU; not used")
+        elif dev.type == "cuda" and torch.cuda.get_device_capability(dev)[0] == 9:  # (auto: Hopper only)
+            log.warning(
+                "decoder megakernel not used: this Triton (%s) has no Gluon for Hopper; the TensorRT decoder"
+                " is ~20%% slower at batch 1 (the megakernels are tested with Triton %s, which comes with torch %s)",
+                megakernel_gluon.triton_version(),
+                *megakernel_gluon.TESTED,
+            )
         return runner
     auto = which == "auto"
     try:
@@ -1059,7 +1067,14 @@ def _decoder_kernel(runner, cfg, checkpoint: Path, dev: torch.device, which):
                     log.warning("Gluon decoder megakernel not used for calls of several rows: %s", e)
                     rows_kernel = (None, *rows_kernel[1:])
     except Exception as e:  # noqa: BLE001 (any failure: TensorRT)
-        log.warning("decoder megakernel not used (%s: %s)", type(e).__name__, e)
+        log.warning(
+            "decoder megakernel not used (%s: %s); the TensorRT decoder is ~20%% slower at batch 1 (the megakernels"
+            " are tested with Triton %s, which comes with torch %s; this is Triton %s)",
+            type(e).__name__,
+            e,
+            *megakernel_gluon.TESTED,
+            megakernel_gluon.triton_version(),
+        )
         torch.cuda.empty_cache()
         return runner
     torch.cuda.empty_cache()  # (the fp32 copies the weights were folded in)

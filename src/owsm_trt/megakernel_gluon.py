@@ -46,6 +46,18 @@ def available(device: torch.device) -> bool:
     return gluon is not None and device.type == "cuda" and torch.cuda.get_device_capability(device)[0] == 9
 
 
+TESTED = ("3.8", "2.14")  # the Triton (and torch) versions the kernels are tested with; older ones lack APIs
+
+
+def triton_version() -> str:
+    try:
+        import triton
+
+        return triton.__version__
+    except ImportError:
+        return "not installed"
+
+
 if gluon is not None:
 
     @constexpr_function
