@@ -437,6 +437,12 @@ class _Session:
         self._enc_capture = torch.cuda.Stream(device) if use_cuda_graph and device.type == "cuda" else None
         self._enc_graphs: dict[tuple, tuple] = {}  # (outputs, input shape) -> (closure, input, graph)
 
+    def _check(self) -> None:
+        """Let the backend raise errors its kernels flagged (the decoder megakernel's barrier timeout)."""
+        check = getattr(self.backend, "check", None)
+        if check is not None:
+            check()
+
     def _capture_all(self) -> None:
         if self.use_cuda_graph:
             for c in self.buckets:
@@ -479,8 +485,9 @@ class _Session:
         k, v = self.caches[c]
         self.offs.copy_(self.pos.expand(self.rows))
         self._steps[c]()
-        k.index_copy_(3, self.pos, self.new_kv[:, 0])
-        v.index_copy_(3, self.pos, self.new_kv[:, 1])
+        if not getattr(self._steps[c], "writes_cache", False):  # the decoder megakernel writes it itself
+            k.index_copy_(3, self.pos, self.new_kv[:, 0])
+            v.index_copy_(3, self.pos, self.new_kv[:, 1])
         self.pos += 1
 
     def _capture(self, c: int) -> torch.cuda.CUDAGraph:
@@ -655,6 +662,7 @@ class GreedySession(_Session):
         out = []
         for row in self.seq[:, p : p + max_new_tokens].tolist():
             out.append(row[: row.index(self.eos)] if self.eos in row else row)
+        self._check()
         return out
 
     def decode_drafted(
@@ -825,6 +833,7 @@ class GreedySession(_Session):
                 rows[r] = row if row is not None else refill(r)
             active = [row for row in rows if row is not None]
             if not active:
+                self._check()
                 return done, calls
             # window: each row's head (primer or last emitted token) + as many drafted tokens as any has left
             want = max(len(x.head) + min(len(x.draft) - x.ptr, max_new_tokens - len(x.out)) for x in active)
@@ -991,14 +1000,17 @@ class _Bound:
         b.tok.copy_(b.inp[:, : b.w])
         b.offs.copy_(b.inp[:, b.w])
         self.step()
+        written = getattr(self.step, "writes_cache", False)  # the decoder megakernel writes the cache itself
         if b.fast:
-            kernels.write_kv(b.new_kv, self.k, self.v, b.offs)
+            if not written:
+                kernels.write_kv(b.new_kv, self.k, self.v, b.offs)
             kernels.choose(b.logits, b.inp, b.notime, b.pred, b.rules)
             return
-        L, _, r, H, w, dk = b.new_kv.shape
-        slots = (b.offs.unsqueeze(1) + b.ar)[None, :, None, :, None].expand(L, r, H, w, dk)
-        self.k.scatter_(3, slots, b.new_kv[:, 0])
-        self.v.scatter_(3, slots, b.new_kv[:, 1])
+        if not written:
+            L, _, r, H, w, dk = b.new_kv.shape
+            slots = (b.offs.unsqueeze(1) + b.ar)[None, :, None, :, None].expand(L, r, H, w, dk)
+            self.k.scatter_(3, slots, b.new_kv[:, 0])
+            self.v.scatter_(3, slots, b.new_kv[:, 1])
         b.pred.copy_(b.predict())
 
     def capture(self) -> None:
@@ -1167,4 +1179,5 @@ class BeamSession(_Session):
         for row, end in zip(self.best_seq.tolist(), self.best_end.tolist()):
             ids = row[p:end]
             out.append(ids[: ids.index(self.eos)] if self.eos in ids else ids)
+        self._check()
         return out

@@ -2,6 +2,7 @@
 
 import logging
 import math
+import os
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -9,11 +10,19 @@ from pathlib import Path
 import torch
 import torch.nn.functional as F
 
-from . import fp8, hub
+from . import fp8, hub, megakernel
 from .audio import AudioLike, duration, load_audio
 from .build import DTYPES, BuildOptions, build_engines, check_config, engine_tag
 from .config import load_espnet_config, parse_config
-from .modeling import Frontend, OWSMCTCModel, OWSMModel, frames_needed, load_model
+from .modeling import (
+    Decoder,
+    Frontend,
+    OWSMCTCModel,
+    OWSMModel,
+    convert_espnet_state_dict,
+    frames_needed,
+    load_model,
+)
 from .runtime import (
     BeamSession,
     CTCSession,
@@ -111,6 +120,7 @@ class OWSM:
         optimization_level: int | None = None,
         ctc_draft: bool = True,
         fp8_calibration: list[AudioLike] | None = None,
+        decoder_kernel: bool | None = None,
     ) -> "OWSM":
         """Load an OWSM model from a Hugging Face repo id or local ESPnet model directory.
 
@@ -123,6 +133,10 @@ class OWSM:
 
         ``fp8_calibration`` (experimental, TensorRT): run the encoder's linear layers and subsampling
         convolutions in FP8, with input ranges measured on these recordings.
+
+        ``decoder_kernel`` (TensorRT, fp16): run decoding steps as one persistent Triton kernel per
+        decoder call instead of the TensorRT decoder engine (needs Triton and an Ampere or newer GPU).
+        None: the ``OWSM_TRT_MEGAKERNEL`` environment variable (1/0), off if unset.
         """
         files = hub.resolve(model)
         raw = load_espnet_config(files.config)
@@ -171,6 +185,12 @@ class OWSM:
             else:
                 frontend = _load_frontend(cfg, files.checkpoint, dev)
             runner = TRTCTCBackend(cfg, engine_dir) if cfg.ctc_only else TRTBackend(cfg, engine_dir)
+            if decoder_kernel is None:
+                decoder_kernel = os.environ.get("OWSM_TRT_MEGAKERNEL", "0") == "1"
+            if decoder_kernel and not cfg.ctc_only and dtype == "float16" and megakernel.available(dev):
+                runner = megakernel.MegaBackend(
+                    runner, megakernel.MegaDecoder(_load_decoder(cfg, files.checkpoint), dev)
+                )
             return cls(cfg, tok, frontend, runner, opts, dev, use_cuda_graph, ctc_draft)
 
     # ------------------------------------------------------------------ helpers
@@ -497,6 +517,14 @@ def _quantize_encoder(
     log.warning(
         "FP8 encoder: %d layers calibrated on %d recordings", fp8.quantize(net.encoder, amax), len(waves)
     )
+
+
+def _load_decoder(cfg, checkpoint: Path) -> Decoder:
+    """The decoder's weights (fp32, on the CPU) for the decoder megakernel."""
+    sd = convert_espnet_state_dict(torch.load(checkpoint, map_location="cpu", weights_only=True))
+    dec = Decoder(cfg)
+    dec.load_state_dict({k[len("decoder.") :]: v for k, v in sd.items() if k.startswith("decoder.")})
+    return dec.eval().requires_grad_(False)
 
 
 def _load_frontend(cfg, checkpoint: Path, device: torch.device) -> Frontend:
