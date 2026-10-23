@@ -6,7 +6,8 @@ python scripts/dump_drafts.py --model .cache/models/owsm_v4_medium_1B \
 
 With ``--long`` the data are long recordings (scripts/make_longform.py), decoded with
 ``transcribe_long``; every 30 s window is dumped (with timestamps in its output) along with its
-offset, the CTC best path (frame-wise) and the decoder calls it took.
+offset, its draft (with the guessed timestamps, see OWSM._long_window), the CTC best path (frame-wise)
+and the decoder calls it took.
 """
 
 import argparse
@@ -25,34 +26,39 @@ class LongRecorder:
     def __init__(self, model: OWSM):
         self.windows: list[dict] = []
         self.recording = ""
-        self.model, self._decode, self._drafted = model, model._decode, GreedySession.decode_drafted
+        self.model, self._window, self._drafted = model, model._long_window, GreedySession.decode_drafted
+        self.insertions, self.punctuation = model.tokenizer.not_drafted, model.tokenizer.punctuation
         rec = self
 
-        def decode(waves, primers, beam=1, draft=False):
-            rec.current = {"id": rec.recording, "offset": waves[0].storage_offset(), "samples": len(waves[0])}
-            return rec._decode(waves, primers, beam, draft)
+        def window(chunk, primer, beam=1, draft=False):
+            rec.current = {"id": rec.recording, "offset": chunk.storage_offset(), "samples": len(chunk)}
+            return rec._window(chunk, primer, beam, draft)
 
         def drafted(sess, primer, drafts, max_new_tokens, insertions=frozenset(), give_up=8):
             ctc = sess.ctc_ids[0].tolist()
             outs, calls = rec._drafted(sess, primer, drafts, max_new_tokens, insertions, give_up)
+            rec.insertions, rec.punctuation = (
+                insertions,
+                sess.punctuation,
+            )  # the rules the drafts were used with
             rec.windows.append({
                 **rec.current, "primer": primer[0].tolist(), "draft": list(drafts[0]), "ctc": ctc,
-                "out": list(outs[0]), "calls": calls, "max_new": max_new_tokens,
+                "out": list(outs[0]), "calls": calls, "max_new": max_new_tokens, "give_up": give_up,
             })  # fmt: skip
             return outs, calls
 
-        model._decode = decode
+        model._long_window = window
         GreedySession.decode_drafted = drafted
 
     def remove(self) -> None:
-        del self.model._decode
+        del self.model._long_window
         GreedySession.decode_drafted = self._drafted
 
     def meta(self) -> dict:
         t = self.model.tokenizer
         return {
             "primer": self.windows[0]["primer"] if self.windows else [], "eos": t.eos,
-            "insertions": sorted(t.not_drafted), "punctuation": sorted(t.punctuation),
+            "insertions": sorted(self.insertions), "punctuation": sorted(self.punctuation),
             "time": [t.first_time, t.last_time], "blank": t.blank, "utterances": self.windows,
         }  # fmt: skip
 

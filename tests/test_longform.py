@@ -136,3 +136,40 @@ def test_batched_long_form(model):
         assert res.text == " ".join(s.text for s in res.segments if s.text)
     with pytest.raises(ValueError):
         m.transcribe_long(waves[0], batch_size=2, condition_on_prev_text=True)
+
+
+def test_drafts_with_guessed_timestamps_are_greedy(model):
+    """Drafts may guess timestamps (insertions without them, timestamps counted as punctuation): right or
+    wrong, the output is the greedy output, and right guesses save calls."""
+    import random
+
+    from owsm_trt.runtime import GreedySession, TimestampRules
+
+    torch.manual_seed(3)
+    times = frozenset(range(FIRST_T, LAST_T + 1))
+    sess = GreedySession(
+        TorchBackend(model), TINY, 1, 64, eos=EOS, dtype=torch.float32, device=torch.device("cpu"),
+        use_cuda_graph=False, buckets=[16, 32, 64], draft_windows=(2, 4, 8),
+        rules=TimestampRules(5, FIRST_T, LAST_T, EOS, TINY.vocab_size, torch.device("cpu")),
+        punctuation=_Tokenizer.punctuation | times,
+    )  # fmt: skip
+    sess.encode(model.frontend(torch.randn(1, TINY.num_samples)))
+    primer = torch.tensor([[2, 3, 4]])
+    greedy = sess.decode(primer, 40)[0]
+    assert sum(t in times for t in greedy) >= 4
+    text = [t for t in greedy if t not in times]
+    shifted = [t + 1 if FIRST_T <= t < LAST_T else t for t in greedy]  # every timestamp wrong
+    rng = random.Random(0)
+    drafts = {
+        "perfect": greedy,
+        "guessed ends": [FIRST_T] + text + [LAST_T],
+        "wrong timestamps": shifted,
+        "random": [rng.choice([rng.randrange(9, 50), FIRST_T]) for _ in range(40)],
+    }
+    calls = {}
+    for name, draft in drafts.items():
+        (out,), calls[name] = sess.decode_drafted(primer, [draft], 40, {5})
+        assert out == greedy, name
+    (out,), plain = sess.decode_drafted(primer, [text], 40, times | {5})  # timestamps never drafted
+    assert out == greedy
+    assert calls["perfect"] < plain, (calls, plain)

@@ -51,11 +51,12 @@ class Counter:
     """Counts the windows that go through the encoder (``OWSM._features`` rows)."""
 
     def __init__(self, model: OWSM):
-        self.windows = 0
+        self.windows = self.samples = 0
         features = model._features
 
         def counted(waves):
             self.windows += len(waves)
+            self.samples += sum(len(w) for w in waves)
             return features(waves)
 
         model._features = counted
@@ -95,7 +96,7 @@ def evaluate(
     if warmup:
         run(model, waves, batch_size, **kw)  # CUDA graphs for every window length
     model.draft_stats = [0, 0]
-    counter.windows = 0
+    counter.windows = counter.samples = 0
     times, results = [], None
     for _ in range(repeat):
         results, dt = run(model, waves, batch_size, **kw)
@@ -107,12 +108,13 @@ def evaluate(
     stats = {
         "label": label, "batch": batch_size, "wer": 100 * errs / words, "errors": errs, "words": words,
         "seconds": dt, "audio_s": audio_s, "rtfx": audio_s / dt, "windows": counter.windows / repeat,
-        "tokens": tokens, "calls": calls,
+        "decoded_s": counter.samples / repeat / model.cfg.sample_rate, "tokens": tokens, "calls": calls,
     }  # fmt: skip
     print(
         f"[{label}] batch={batch_size} {len(items)} recordings ({audio_s / 3600:.2f} h): WER {stats['wer']:.2f}% "
         f"({errs}/{words}), {dt:.2f}s (median of {repeat}) RTFx {stats['rtfx']:.0f}, "
-        f"{stats['windows']:.0f} windows, {calls:.0f} decoder calls ({tokens / max(calls, 1):.2f} tokens/call)"
+        f"{stats['windows']:.0f} windows ({stats['decoded_s'] / audio_s:.2f}x the audio), {calls:.0f} decoder calls "
+        f"({tokens / max(calls, 1):.2f} tokens/call)"
     )
     hyps = {
         it["id"]: {"text": r.text, "segments": [[s.start, s.end, s.text] for s in r.segments]}
@@ -134,7 +136,7 @@ def evaluate(
             f"  vs {path}: identical text {same_text}/{len(keys)}, identical segments {same_segs}/{len(keys)}, "
             f"word differences {e} ({100 * e / max(n, 1):.2f}%)"
         )
-        for k in [k for k in keys if hyps[k]["text"] != ref[k]["text"]][:3]:
+        for k in [k for k in keys if normalize(hyps[k]["text"]) != normalize(ref[k]["text"])][:3]:
             a, b = normalize(ref[k]["text"]), normalize(hyps[k]["text"])
             i = next((i for i, (x, y) in enumerate(zip(a, b)) if x != y), min(len(a), len(b)))
             print(f"    {k} first difference at word {i}:\n      ref : {' '.join(a[max(0, i - 5) : i + 10])}"

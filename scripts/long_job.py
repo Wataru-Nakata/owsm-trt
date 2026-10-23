@@ -6,8 +6,13 @@ job runs the code as it was at submission. ``LONG_PLAN`` (colon-separated) picks
 * ``seq``: sequential transcribe_long (ESPnet's decode_long): warm-up pass, timed pass, saved as
   long_seq.json in the job's output directory; with ``dump`` also in the plan, the warm-up pass
   dumps every window (drafts_long.json) for scripts/draft_sim.py
-* ``b<N>``: the batched mode with batch size N, compared with this job's long_seq.json (or LONG_REF)
+* ``seqold``: the same without guessed timestamps in the drafts (pipeline.TIMESTAMP_GUESSES = False)
 * ``nodraft``: sequential without CTC drafts
+* ``b<N>[s<S>]``: the batched mode with batch size N (cuts searched in the last S seconds of a window),
+  compared with this job's long_seq.json (or LONG_REF)
+* ``prof``: GPU time of one 30 s encoder run and of single decoder calls per window size (batch 1)
+* ``fp32``: PyTorch fp32 on the first LONG_FP32_LIMIT (8) recordings, sequential with guessed
+  timestamps, without, and without drafts: the outputs should be the same
 ``LONG_LIMIT``: only the first N recordings. ``LONG_DATA``: the manifest (default: the test-clean chapters).
 """
 
@@ -27,8 +32,33 @@ from dump_drafts import dump_long  # noqa: E402
 from eval_long import evaluate  # noqa: E402
 
 import owsm_trt  # noqa: E402
-from owsm_trt import OWSM  # noqa: E402
+from owsm_trt import OWSM, pipeline  # noqa: E402
 from owsm_trt.audio import load_audio  # noqa: E402
+
+
+def timed(fn, iters: int = 50) -> float:
+    """Mean milliseconds of ``fn`` on the current stream."""
+    fn()
+    start, end = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+    start.record()
+    for _ in range(iters):
+        fn()
+    end.record()
+    torch.cuda.synchronize()
+    return start.elapsed_time(end) / iters
+
+
+def profile(model: OWSM, wav: torch.Tensor) -> None:
+    sess = model._session(1)
+    chunk = wav[: model.cfg.num_samples].to(model.device)
+    feats = model._features([chunk])
+    print(f"prof: features {timed(lambda: model._features([chunk])):.3f} ms, encoder "
+          f"{timed(lambda: sess.encode(feats)):.3f} ms (30 s window, batch 1)")  # fmt: skip
+    for c in (128, 256):
+        costs = {w: timed(sess._verify[c, w].graph.replay) for w in sess.windows if (c, w) in sess._verify}
+        print(
+            f"prof: decoder call, cache bucket {c}: " + ", ".join(f"w{w} {ms:.3f}" for w, ms in costs.items())
+        )
 
 
 @torch.inference_mode()
@@ -57,18 +87,37 @@ def main() -> None:
                 print(f"dump pass {time.perf_counter() - t0:.1f}s")
                 warm = False
             evaluate(model, items, waves, 1, save=seq, compare=[ref] if ref else [], label="seq", warmup=warm)
+        elif step == "seqold":
+            pipeline.TIMESTAMP_GUESSES = False
+            evaluate(model, items, waves, 1, save=str(out / "long_seqold.json"), compare=[seq], label=step)
+            pipeline.TIMESTAMP_GUESSES = True
         elif step == "nodraft":
             model.ctc_draft = False
             model._sessions.clear()
-            evaluate(
-                model, items, waves, 1, save=str(out / "long_nodraft.json"), compare=[seq], label="nodraft"
-            )
+            evaluate(model, items, waves, 1, save=str(out / "long_nodraft.json"), compare=[seq], label=step)
             model.ctc_draft = True
             model._sessions.clear()
         elif step.startswith("b"):
-            b = int(step[1:])
-            evaluate(model, items, waves, b, repeat=3, save=str(out / f"long_b{b}.json"),
+            b, _, search = step[1:].partition("s")
+            pipeline.PAUSE_SEARCH_SECONDS = float(search or 15)
+            evaluate(model, items, waves, int(b), repeat=3, save=str(out / f"long_{step}.json"),
                      compare=[ref or seq], label=step)  # fmt: skip
+            pipeline.PAUSE_SEARCH_SECONDS = 15.0
+        elif step == "prof":
+            profile(model, waves[0])
+        elif step == "fp32":
+            n = int(os.environ.get("LONG_FP32_LIMIT", 8))
+            ref32 = OWSM.from_pretrained(model_dir, backend="torch", dtype="float32")
+            first = str(out / "long_fp32_guesses.json")
+            for name in ("guesses", "noguess", "nodraft"):
+                pipeline.TIMESTAMP_GUESSES = name != "noguess"
+                ref32.ctc_draft = name != "nodraft"
+                ref32._sessions.clear()
+                evaluate(ref32, items[:n], waves[:n], 1, save=str(out / f"long_fp32_{name}.json"),
+                         label=f"fp32 {name}", compare=[first] if name != "guesses" else [], warmup=False)  # fmt: skip
+            pipeline.TIMESTAMP_GUESSES = True
+            del ref32
+            torch.cuda.empty_cache()
         sys.stdout.flush()
 
 

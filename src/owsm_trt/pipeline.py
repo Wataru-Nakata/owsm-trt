@@ -35,6 +35,10 @@ DRAFT_WINDOWS = (1, 2, 4, 8, 16, 32)
 DRAFT_TOKENS = 256
 # Feature lengths a trimming encoder engine gets (multiples of this, 5 s): one CUDA graph each.
 FEATURE_STEP = 500
+# transcribe_long: drafts with guessed timestamps (see OWSM._long_window)
+TIMESTAMP_GUESSES = True
+# transcribe_long with batch_size > 1: a window is cut at the quietest point of its last this many seconds
+PAUSE_SEARCH_SECONDS = 15.0
 
 
 @dataclass
@@ -240,9 +244,14 @@ class OWSM:
             args = (self.opts.capacity, self.tokenizer.eos, self.dtype, self.device, self.use_cuda_graph)
             if beam == 1:
                 windows = self._draft_windows(batch)
+                t = self.tokenizer
+                # Timestamps count as punctuation for drafts that guess them (transcribe_long): one the
+                # decoder writes where the draft has none was inserted, one in place of a guess replaces
+                # it. (Drafts without timestamps pass them as insertions, so nothing changes there.)
+                times = frozenset(range(t.first_time, t.last_time + 1)) if t.first_time is not None else set()
                 self._sessions[key] = GreedySession(
                     self.backend, self.cfg, batch, *args, draft_windows=windows, rules=self.rules,
-                    punctuation=self.tokenizer.punctuation,
+                    punctuation=t.punctuation | times,
                 )  # fmt: skip
             else:
                 self._sessions[key] = BeamSession(
@@ -511,7 +520,7 @@ class OWSM:
             if len(chunk) / fs < skip_last_chunk_seconds:
                 break
             primer = self._primer(lang, task, True, prev if condition_on_prev_text else None)
-            ids = self._decode([chunk], [primer], beam, task == "asr")[0]
+            ids = self._long_window(chunk, primer, beam, task == "asr")
             kept, next_start = _window_cut(ids, t, end_id)
             if next_start is None:  # no timestamps at all
                 segments.append(Segment(offset / fs, (offset + len(chunk)) / fs, t.decode(ids)))
@@ -525,6 +534,29 @@ class OWSM:
         text = " ".join(s.text.strip() for s in segments if s.text.strip())
         return Result(text=text, tokens=[], segments=segments)
 
+    def _long_window(self, chunk: torch.Tensor, primer: list[int], beam: int, draft: bool) -> list[int]:
+        """One window of :meth:`_long_sequential` (as :meth:`_decode`).
+
+        Its CTC draft gets timestamps guessed: the window opens with the first one (it starts where the
+        previous window's last utterance did, or ended: 96% on LibriSpeech), it ends with the last one
+        (its last utterance runs into the end of the window: 83%), and after an end time the session
+        guesses the next start time to be the same (84%, see runtime._Row.advance). Guesses are drafted
+        tokens like any other: the output is the greedy output, in 27% fewer decoder calls."""
+        t = self.tokenizer
+        sess = self._session(1, beam)
+        if not (draft and TIMESTAMP_GUESSES and isinstance(sess, GreedySession) and sess.windows):
+            return self._decode([chunk], [primer], beam, draft)[0]
+        sess.encode(self._features([chunk]))
+        proposal = [t.first_time] + self._ctc_draft(sess.ctc_ids[0].tolist()) + [t.last_time]
+        insertions = t.not_drafted - set(range(t.first_time, t.last_time + 1))  # timestamps are drafted
+        primers = torch.tensor([primer], device=self.device)
+        # (a draft is given up after 16 calls that accepted fewer tokens than calls, not 8: a window
+        # has 11 calls on average, and timestamps end many of them early)
+        (out,), calls = sess.decode_drafted(primers, [proposal], self._max_new(), insertions, give_up=16)
+        self.draft_stats[0] += len(out) + 1
+        self.draft_stats[1] += calls
+        return out
+
     def _long_batched(
         self, waves: list[torch.Tensor], lang: str, task: str, batch_size: int, beam: int, skip_seconds: float
     ) -> list[Result]:
@@ -532,7 +564,7 @@ class OWSM:
         fs = self.cfg.sample_rate
         windows, owner = [], []  # waveform pieces; (recording, first sample) of each
         for r, wav in enumerate(waves):
-            cuts = pause_cuts(wav, self.cfg.num_samples, fs)
+            cuts = pause_cuts(wav, self.cfg.num_samples, fs, PAUSE_SEARCH_SECONDS)
             for a, b in zip(cuts, cuts[1:]):
                 if (b - a) / fs >= skip_seconds:
                     windows.append(wav[a:b])
