@@ -46,8 +46,10 @@ DRAFT_WINDOWS = (1, 2, 4, 8, 16, 32)
 # At most this many tokens (rows x window) per decoder call: wider calls cost more than they save
 # (batch 16: 3.7 ms with windows of 16, 5.0 ms with 32, on the 1B model).
 DRAFT_TOKENS = 256
-# Feature lengths a trimming encoder engine gets (multiples of this, 5 s): one CUDA graph each.
-FEATURE_STEP = 500
+# Feature lengths a trimming encoder engine gets (multiples of this, 1 s): one CUDA graph each. The
+# subsampling convolutions run on all of them, so a finer step saves work (500 -> 100: batch 16 +2-3%
+# RTFx on the 73 LibriSpeech utterances, OWSM v4 1B and OWSM-CTC v4) for more CUDA graphs.
+FEATURE_STEP = 100
 # transcribe_long: drafts with guessed timestamps (see OWSM._long_window)
 TIMESTAMP_GUESSES = True
 # transcribe_long with batch_size > 1: a window is cut at the quietest point of its last this many seconds

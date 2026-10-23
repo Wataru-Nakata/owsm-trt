@@ -714,3 +714,88 @@ def register_conv1() -> None:
             raise
 
     _conv1_registered = True
+
+
+# --- The subsampling's last ReLU and flattening ----------------------------------------------------------
+
+FLATTEN_SOURCE = r"""
+// z[b, t, c * F + f] = max(y[b, c, t, f], 0) for y [B, C, T, F] fp16 in TensorRT's HWC8 format (memory
+// [B][T][F][C], as the convolution before writes it) -> z [B, T, C * F] fp16 (LINEAR): the ReLU and the
+// (channel, frequency) flattening the subsampling's linear layer reads, in one pass. Block (t, b, channel
+// chunk of CB): its F x CB tile through shared memory, read along channels, written along the output.
+typedef unsigned short u16;
+__device__ __forceinline__ u16 relu_h(u16 h) { return (h & 0x8000) ? 0 : h; }  // (negative zero too)
+
+extern "C" __global__ void __launch_bounds__(NT) relu_flatten(const u16* __restrict__ y, int T, u16* __restrict__ z) {
+  __shared__ u16 tile[F][CB + 2];
+  const int t = blockIdx.x, b = blockIdx.y, c0 = blockIdx.z * CB;
+  const u16* src = y + ((long)b * T + t) * F * C;
+  for (int i = threadIdx.x; i < F * CB; i += NT) {
+    const int f = i / CB, c = i % CB;
+    if (c0 + c < C) tile[f][c] = src[f * C + c0 + c];
+  }
+  __syncthreads();
+  u16* dst = z + ((long)b * T + t) * C * F + (long)c0 * F;
+  const int n = min(CB, C - c0) * F;
+  for (int i = threadIdx.x; i < n; i += NT) dst[i] = relu_h(tile[i % F][i / F]);
+}
+"""
+
+
+@torch.library.custom_op("owsm_trt::relu_flatten", mutates_args=())
+def relu_flatten(y: torch.Tensor) -> torch.Tensor:
+    """relu(y) [B, C, T, F] -> [B, T, C * F] (channel-major flattening)."""
+    b, c, t, f = y.shape
+    return y.relu().transpose(1, 2).reshape(b, t, c * f).contiguous()
+
+
+@relu_flatten.register_fake
+def _(y: torch.Tensor) -> torch.Tensor:
+    b, c, t, f = y.shape
+    return y.new_empty(b, t, c * f)
+
+
+FLATTEN_ONNX_TRANSLATIONS = {torch.ops.owsm_trt.relu_flatten.default: _onnx_op("relu_flatten", ("y",))}
+FLATTEN_CHANNELS = 256  # channels per block
+_flatten_registered = False
+
+
+def register_flatten() -> None:
+    """Register ``owsm::relu_flatten`` with TensorRT (input in HWC8, as the convolution before writes it)."""
+    global _flatten_registered
+    if _flatten_registered:
+        return
+    import tensorrt as trt
+    import tensorrt.plugin as trtp
+
+    @trtp.register(f"{NAMESPACE}::relu_flatten")
+    def _desc(y: trtp.TensorDesc) -> Tuple[trtp.TensorDesc]:
+        s = y.shape_expr
+        return trtp.from_shape_expr((s[0], s[2], s[1] * s[3]), dtype=trt.float16)
+
+    @trtp.autotune(f"{NAMESPACE}::relu_flatten")
+    def _tune(y: trtp.TensorDesc, outputs: Tuple[trtp.TensorDesc]) -> List[trtp.AutoTuneCombination]:
+        return [trtp.AutoTuneCombination("FP16, FP16", "HWC8, LINEAR", [1])]
+
+    @trtp.aot_impl(f"{NAMESPACE}::relu_flatten")
+    def _impl(y: trtp.TensorDesc, outputs: Tuple[trtp.TensorDesc], tactic: int
+              ) -> Tuple[Union[str, bytes], Union[str, bytes], trtp.KernelLaunchParams, trtp.SymExprs]:  # fmt: skip
+        try:
+            c, f = int(y.shape[1]), int(y.shape[3])
+            if c % 8:
+                raise ValueError(f"relu_flatten: {c} channels (a multiple of 8 needed)")
+            cb, nt = min(FLATTEN_CHANNELS, c), 256
+            ptx, _ = nvrtc_ptx(FLATTEN_SOURCE, "flatten.cu", (("C", c), ("F", f), ("CB", cb), ("NT", nt)))
+            launch = trtp.KernelLaunchParams()
+            launch.grid_x = y.shape_expr[2]
+            launch.grid_y = y.shape_expr[0]
+            launch.grid_z = (c + cb - 1) // cb
+            launch.block_x = nt
+            extra = trtp.SymIntExprs(1)
+            extra[0] = trtp.SymInt32(y.shape_expr[2])
+            return "relu_flatten", ptx, launch, extra
+        except Exception:
+            log.error("relu_flatten plugin:\n%s", traceback.format_exc())
+            raise
+
+    _flatten_registered = True

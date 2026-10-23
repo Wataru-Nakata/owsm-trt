@@ -1,7 +1,7 @@
 """A/B speed and output check of two versions of the package on one GPU (gpu_eval.pbs stage ``pyfile``).
 
     PYFILE=scripts/ab_eval.py AB_SRC=outputs/ab/v02/src AB_CONFIGS=b1:b16:long1:long16 [AB_DATA=...]
-    [AB_LONG_DATA=...] [AB_REF=...|none] [AB_ROUNDS=2] [AB_EXTRA="..."]
+    [AB_LONG_DATA=...] [AB_REF=...|none] [AB_ROUNDS=2] [AB_EXTRA="..."] [AB_EXTRA_A=... AB_EXTRA_B=...]
 
 Runs scripts/eval_wer.py (``b<N>``: batch size N) or scripts/eval_long.py (``long<N>``) of the job's
 snapshot with ``owsm_trt`` imported from ``AB_SRC`` ("A", e.g. a ``git archive`` of the previous release)
@@ -38,6 +38,7 @@ def run(src: str, model: str, config: str, ref: str, save: Path, extra: list[str
         ("wer", r"WER ([\d.]+)%"),
         ("rtfx", r"RTFx (\d+)"),
         ("same", r"identical to \S+: (\d+/\d+)"),
+        ("calls", r"tokens, (\d+) calls\)"),  # decoder calls of CTC-drafted decoding (eval_wer.py)
     ):
         m = re.search(pat, text)
         res[key] = m.group(1) if m else None
@@ -65,7 +66,8 @@ def main() -> None:
     for c in configs:
         for r in range(rounds):
             for name, src in (("A", src_a), ("B", src_b)):
-                res = run(src, model, c, ref, out / f"{name}_{c}.json", extra)
+                more = os.environ.get(f"AB_EXTRA_{name}", "").split()  # e.g. two settings of one version
+                res = run(src, model, c, ref, out / f"{name}_{c}.json", extra + more)
                 print(f"{c} round {r} {name}: {res}", flush=True)
                 summary.append((c, name, res))
         try:
@@ -82,6 +84,7 @@ def main() -> None:
             rs = [r for cc, n, r in summary if cc == c and n == name]
             print(
                 f"  {c:7s} {name}: RTFx {[r['rtfx'] for r in rs]} WER {rs[-1]['wer']} same {rs[-1]['same']}"
+                + (f" decoder calls {[r['calls'] for r in rs]}" if rs[-1].get("calls") else "")
             )
 
 

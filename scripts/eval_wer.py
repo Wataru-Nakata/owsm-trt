@@ -45,6 +45,7 @@ def main() -> None:
     ap.add_argument("--no-priority", action="store_true", help="decoder calls without stream priority")
     ap.add_argument("--max-window", type=int, help="largest draft window (default: all built)")
     ap.add_argument("--draft-tokens", type=int, help="most tokens per decoder call (rows x window)")
+    ap.add_argument("--feature-step", type=int, help="feature lengths a trimming encoder gets (multiples of)")
     ap.add_argument("--no-cuda-graph", action="store_true")
     ap.add_argument("--data", default=".cache/testdata/librispeech_dummy/manifest.json")
     ap.add_argument("--repeat", type=int, default=3)
@@ -76,6 +77,8 @@ def main() -> None:
     model.stream_priority = not args.no_priority
     if args.draft_tokens:
         owsm_trt.pipeline.DRAFT_TOKENS = args.draft_tokens
+    if args.feature_step:
+        owsm_trt.pipeline.FEATURE_STEP = args.feature_step
     if args.max_window:
         owsm_trt.pipeline.DRAFT_WINDOWS = tuple(
             w for w in owsm_trt.pipeline.DRAFT_WINDOWS if w <= args.max_window

@@ -261,7 +261,8 @@ def test_conv1_plugin_op_matches_subsampling():
 @pytest.mark.skipif(not plugins.available(), reason="needs CUDA, TensorRT's plugin API and NVRTC")
 @pytest.mark.parametrize("c", [64, 1024])
 def test_conv1_tensorrt_plugin(tmp_path, c):
-    """conv1_relu as a TensorRT plugin (HWC8 output) feeding TensorRT's convolution, against PyTorch."""
+    """conv1_relu as a TensorRT plugin (HWC8 output) feeding TensorRT's convolution, and relu_flatten
+    reading its (HWC8) output, against PyTorch."""
     import tensorrt as trt
 
     from owsm_trt.build import BuildOptions, _build
@@ -273,17 +274,18 @@ def test_conv1_tensorrt_plugin(tmp_path, c):
 
         def forward(self, x):
             w = self.c1.weight.float().reshape(c, 9).t().contiguous()
-            return self.c2(plugins.conv1_relu(x, w, self.c1.bias.float()))
+            return plugins.relu_flatten(self.c2(plugins.conv1_relu(x, w, self.c1.bias.float())))
 
     torch.manual_seed(0)
     net = Net().cuda().half().eval()
     x = torch.randn(3, 301, 80, device="cuda", dtype=torch.float16)
     plugins.register_conv1()
+    plugins.register_flatten()
     batch, time = torch.export.Dim("batch", min=1, max=4), torch.export.Dim("time", min=64, max=512)
     torch.onnx.export(
         net, (x,), tmp_path / "net.onnx", input_names=["x"], output_names=["y"],
         dynamic_shapes={"x": {0: batch, 1: time}}, dynamo=True,
-        custom_translation_table=plugins.CONV1_ONNX_TRANSLATIONS,
+        custom_translation_table={**plugins.CONV1_ONNX_TRANSLATIONS, **plugins.FLATTEN_ONNX_TRANSLATIONS},
     )  # fmt: skip
     _build(
         tmp_path / "net.onnx",
@@ -294,7 +296,7 @@ def test_conv1_tensorrt_plugin(tmp_path, c):
     logger = trt.Logger(trt.Logger.WARNING)
     engine = trt.Runtime(logger).deserialize_cuda_engine((tmp_path / "net.engine").read_bytes())
     layers = engine.create_engine_inspector().get_engine_information(trt.LayerInformationFormat.JSON)
-    assert "conv1_relu" in layers
+    assert "conv1_relu" in layers and "relu_flatten" in layers
     ctx = engine.create_execution_context()
     ctx.set_input_shape("x", tuple(x.shape))
     y = torch.empty(tuple(ctx.get_tensor_shape("y")), device="cuda", dtype=torch.float16)
@@ -304,5 +306,33 @@ def test_conv1_tensorrt_plugin(tmp_path, c):
     assert ctx.execute_async_v3(stream.cuda_stream)
     stream.synchronize()
     with torch.no_grad():
-        ref = net.c2.float()(torch.relu(net.c1.float()(x.float().unsqueeze(1))))
+        ref = torch.relu(net.c2.float()(torch.relu(net.c1.float()(x.float().unsqueeze(1)))))
+        ref = ref.transpose(1, 2).flatten(2)
     torch.testing.assert_close(y.float(), ref, rtol=2e-2, atol=2e-2)
+
+
+def test_encoder_graph_ctc_head_plugin_mode():
+    """The encoder-decoder models' draft head as exported: padded vocabulary, argmax as the plugin op (its
+    PyTorch implementation) on time-major rows -- the same best paths."""
+    from test_model import TINY
+
+    from owsm_trt.build import _EncoderGraph, _padded_vocab
+    from owsm_trt.modeling import CTC, OWSMModel
+
+    torch.manual_seed(1)
+    m = OWSMModel(TINY).eval().requires_grad_(False)
+    m.frontend.melmat.uniform_(0, 1)
+    with torch.no_grad():
+        m.ctc.ctc_lo.weight.mul_(20)
+    feats = m.frontend(torch.randn(3, TINY.num_samples))[:, :70]
+    graph = _EncoderGraph(m)
+    ref = graph(feats)
+    with _padded_vocab(m, 64):
+        assert m.ctc.ctc_lo.weight.shape[0] == 64
+        CTC.plugin = True
+        try:
+            out = graph(feats)
+        finally:
+            CTC.plugin = False
+    assert torch.equal(out[2], ref[2]) and out[2].dtype == torch.int32
+    assert torch.equal(out[0], ref[0]) and torch.equal(out[1], ref[1])
