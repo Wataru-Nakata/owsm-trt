@@ -37,6 +37,7 @@ if gluon is not None:
     from .megakernel_gluon import (
         _cross_attn_g,
         _el,
+        _els,
         _embed_g,
         _garrive,
         _gexit,
@@ -174,7 +175,12 @@ if gluon is not None:
         (mean, sum of squared deviations over PART features each; exact parallel combination; NPART need not be a
         power of 2)."""
         NPP: gl.constexpr = _np2(NPART)
-        ol: gl.constexpr = gl.BlockedLayout([1, 1], [32 // MTP, MTP], [NW, 1], [1, 0])
+        # 32 tokens: 4 parts per thread, over 4 lanes (short reductions; as below, slower for fewer tokens)
+        if MTP >= 32:
+            ol: gl.constexpr = gl.BlockedLayout([_np2(NPP // 4), 1], [_np2(min(4, NPP)), 32 // _np2(min(4, NPP))],
+                                                [1, NW], [0, 1])  # fmt: skip
+        else:
+            ol: gl.constexpr = gl.BlockedLayout([1, 1], [32 // MTP, MTP], [NW, 1], [1, 0])
         p = gl.arange(0, NPP, layout=gl.SliceLayout(1, ol))
         t = gl.arange(0, MTP, layout=gl.SliceLayout(0, ol))
         m = (t < M)[None, :] & (p < NPART)[:, None]
@@ -402,10 +408,15 @@ if gluon is not None:
                 if NOTIME:
                     vv = n0 + rr
                     om = gl.where(((vv >= FT) & (vv <= LT))[:, None] & (nt != 0)[None, :], float("-inf"), om)
-                mx = gl.max(om, axis=0)
-                ix = gl.min(gl.where(om == mx[None, :], rr[:, None], BM), axis=0) + n0
-                gl.store(amax + rb * MTP + tt, mx)
-                gl.store(aidx + rb * MTP + tt, ix)
+                # the reductions over the block's rows with the rows within threads (see _store_res)
+                sl: gl.constexpr = _els(BM, MTP, NW)
+                om2 = gl.convert_layout(om, sl)
+                r2 = gl.arange(0, BM, layout=gl.SliceLayout(1, sl))
+                t2 = gl.arange(0, MTP, layout=gl.SliceLayout(0, sl))
+                mx = gl.max(om2, axis=0)
+                ix = gl.min(gl.where(om2 == mx[None, :], r2[:, None], BM), axis=0) + n0
+                gl.store(amax + rb * MTP + t2, mx)
+                gl.store(aidx + rb * MTP + t2, ix)
         return c
 
     @gluon.jit

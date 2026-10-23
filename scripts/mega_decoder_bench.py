@@ -240,7 +240,10 @@ def main():
                 logits = torch.zeros(R, S, V, device=dev)
                 new_kv = torch.zeros(L, 2, R, H, S, dk, device=dev, dtype=torch.float16)
                 mk.err.zero_()
-                run = mk.step_fn(tokens, offset, k, v, ck, cv, logits, new_kv)
+                kw = {}
+                if os.environ.get("MEGA_ARGMAX") == "1" and getattr(mk, "argmax", False):  # (as in decoding)
+                    kw["pred"] = torch.zeros(R, S, dtype=torch.long, device=dev)
+                run = mk.step_fn(tokens, offset, k, v, ck, cv, logits, new_kv, **kw)
                 run()
                 torch.cuda.synchronize()
                 e_mk = (logits - ref32).abs().max().item()
@@ -258,7 +261,7 @@ def main():
                 k64 = torch.zeros(L, R, H, 64, dk, device=dev, dtype=torch.float16)
                 v64 = torch.zeros_like(k64)
                 off20 = torch.full((R,), 20, dtype=torch.long, device=dev)
-                run64 = mk.step_fn(tokens, off20, k64, v64, ck, cv, logits, new_kv)
+                run64 = mk.step_fn(tokens, off20, k64, v64, ck, cv, logits, new_kv, **kw)
                 ms = bench(run64)
                 if getattr(mk, "opts", {}).get("TS") and f"{R}x{S}" in profile:
                     mk.ts.zero_()
