@@ -86,7 +86,7 @@ each):
 | mode | RTFx | WER |
 |---|---:|---:|
 | ESPnet's `decode_long` (30 s windows, one after another) | 1085 | 2.78% |
-| same windows, 16 recordings at a time (`batch_size=16`) | 3558 | 2.70% |
+| same windows, 16 recordings at a time (`batch_size=16`) | 4487 | 2.81% |
 | windows cut at pauses, 16 at a time (`cut_at_pauses=True`) | 6245 | 2.27% |
 
 The first two decode the same windows; their WER differs by fp16 near-ties (rebuilding the engine alone moves the
@@ -174,7 +174,9 @@ cached afterwards.
   one is `<0.00>` and the last the window's end in most windows, and a start time usually equals the end time
   before it): 26% fewer decoder calls, same output. Two options decode faster: `batch_size` decodes the same
   windows of several recordings together, and `cut_at_pauses=True` cuts every window at the quietest 0.2 s of its
-  last 15 s, so no audio is decoded twice (not ESPnet's segmentation).
+  last 15 s, so no audio is decoded twice (not ESPnet's segmentation). With `batch_size`, all recordings' windows
+  share one stream of decoder calls: a row whose window is done takes the next window of any recording whose
+  previous window has finished (27-33% faster than decoding the recordings' windows round by round).
 * **Beam search is ESPnet's.** `beam_size=k` runs ESPnet's batched beam search (sum of log-probabilities, no length
   normalization, its `end_detect` rule) on a batch × k grid of hypotheses, every step one CUDA graph.
 * **Timestamp rules.** Like ESPnet, every search applies its `ScoreFilter`: no timestamps after `<notimestamps>`;
