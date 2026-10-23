@@ -578,7 +578,7 @@ class OWSM:
         previous window's last utterance did, or ended: 96% on LibriSpeech), it ends with the one at
         its end (its last utterance runs into the end of the window: 83%), and after an end time the
         session guesses the next start time to be the same (84%, see runtime._Row.advance). Guesses are
-        drafted tokens like any other: the output is the greedy output, in 27% fewer decoder calls."""
+        drafted tokens like any other: the output is the greedy output, in 26% fewer decoder calls."""
         t = self.tokenizer
         sess = self._session(1, beam)
         if not (draft and TIMESTAMP_GUESSES and isinstance(sess, GreedySession) and sess.windows):
