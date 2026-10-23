@@ -159,7 +159,7 @@ def main():
         from owsm_trt.megakernel_gluon import GluonDecoder
 
         nws = [int(v) for v in os.environ.get("MEGA_GLUON_WARPS", "4").split(":")]
-        mks = [GluonDecoder(mks[0], num_warps=nw) for nw in nws]
+        mks = [GluonDecoder(mks[0], num_warps=nw, ts=True) for nw in nws]
         opts_list = [{"gluon": 1, "warps": nw} for nw in nws]
     print(f"model {model_dir}: L={L} d={cfg.d_model} H={H} V={V} T={T}; option sets {opts_list}", flush=True)
 

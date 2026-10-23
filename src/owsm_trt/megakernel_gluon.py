@@ -418,12 +418,13 @@ if gluon is not None:
         tok, offs, emb, pe, xscale,
         dqkv, bqkv, cqkv, do_, bo, dcq, bcq, ccq, dco, bco, d1, b1, c1, d2, b2, dout, bout, cout,
         kc, vc, C, ck, cv, T, logits, new_kv,
-        x, x2, qkv, ob, q2, hb, st, xp, xml, xcnt, bar, err, done,
+        x, x2, qkv, ob, q2, hb, st, xp, xml, xcnt, bar, err, done, ts,
         R, S, L, V, eps,
         D: gl.constexpr, H: gl.constexpr, DK: gl.constexpr, F: gl.constexpr,
         MT: gl.constexpr, LMT: gl.constexpr, BNQ: gl.constexpr, LBNQ: gl.constexpr, BNF: gl.constexpr,
         LBNF: gl.constexpr, PART: gl.constexpr, LPART: gl.constexpr, BNV: gl.constexpr, LBNV: gl.constexpr,
         SP: gl.constexpr, BT: gl.constexpr, NS: gl.constexpr, NW: gl.constexpr, MAXS: gl.constexpr,
+        TS: gl.constexpr = False,
     ):  # fmt: skip
         """A decoder call: embedding, L layers (LN1+QKV, self-attention, out-projection, LN2+cross-Q,
         cross-attention, cross-out, LN3+FFN1, FFN2), final LN + output layer, a grid barrier between stages.
@@ -456,10 +457,17 @@ if gluon is not None:
         _issue_w(do_, npt, mb.index(1), w1, PART, D, has_p)
         p0 = 0  # phases of the two slots' barriers
         p1 = 0
+        if TS:
+            gl.store(ts + pid * 6, _now())
         _embed_g(pid, M, S, tok, offs, emb, pe, xscale, V, x, x2, st, D, PART, NPART, MT, NW)
         g = 1
+        if TS:
+            gl.store(ts + pid * 6 + 5, _now())
         _garrive(bar)
         _gwait(bar, err, g * P, MAXS)
+        if TS:
+            gl.store(ts + pid * 6 + 1, _now())
+            gl.store(ts + (g * P + pid) * 6, _now())
         for layer in range(L):
             last = layer + 1 == L
             # LN1 + QKV (slot 0) -> qkv; then LN2+cross-Q's slab
@@ -468,56 +476,88 @@ if gluon is not None:
                               eps, x, nq, 3 * D, D, BNQ, LBNQ, MT, LMT, True, False, D, NPART, PART, NW)  # fmt: skip
                 p0 = p0 ^ 1
                 _store16(out, qkv, 3 * D, nq, M, BNQ, MT, False, NW)
+            if TS:
+                gl.store(ts + (g * P + pid) * 6 + 5, _now())
             g += 1
             _garrive(bar)
             _issue_w(dcq, layer * D + npt, mb.index(0), w0, PART, D, has_p)
             _gwait(bar, err, g * P, MAXS)
+            if TS:
+                gl.store(ts + ((g - 1) * P + pid) * 6 + 1, _now())
+                gl.store(ts + (g * P + pid) * 6, _now())
             # self-attention -> ob
             _self_attn_g(pid, P, R, S, layer, qkv, offs, kc, vc, C, new_kv, ob, D, H, DK, SP, BT, NW)
+            if TS:
+                gl.store(ts + (g * P + pid) * 6 + 5, _now())
             g += 1
             _garrive(bar)
             _gwait(bar, err, g * P, MAXS)
+            if TS:
+                gl.store(ts + ((g - 1) * P + pid) * 6 + 1, _now())
+                gl.store(ts + (g * P + pid) * 6, _now())
             # out-projection + residual (slot 1); then cross-out's slab
             if has_p:
                 out = _gemm_g(ob, M, w1, xbuf, scratch, mb.index(1), p1, bo + layer * D, bo, st, eps, x, npt, D,
                               D, PART, LPART, MT, LMT, False, True, D, NPART, PART, NW)  # fmt: skip
                 p1 = p1 ^ 1
                 _store_res(out, x, x2, st, npt, pid, M, PART, MT, D, NPART, NW)
+            if TS:
+                gl.store(ts + (g * P + pid) * 6 + 5, _now())
             g += 1
             _garrive(bar)
             _issue_w(dco, layer * D + npt, mb.index(1), w1, PART, D, has_p)
             _gwait(bar, err, g * P, MAXS)
+            if TS:
+                gl.store(ts + ((g - 1) * P + pid) * 6 + 1, _now())
+                gl.store(ts + (g * P + pid) * 6, _now())
             # LN2 + cross-Q (slot 0) -> q2; then LN3+FFN1's slab
             if has_p:
                 out = _gemm_g(x2, M, w0, xbuf, scratch, mb.index(0), p0, bcq + layer * D, ccq + layer * D, st, eps, x, npt,
                               D, D, PART, LPART, MT, LMT, True, False, D, NPART, PART, NW)  # fmt: skip
                 p0 = p0 ^ 1
                 _store16(out, q2, D, npt, M, PART, MT, False, NW)
+            if TS:
+                gl.store(ts + (g * P + pid) * 6 + 5, _now())
             g += 1
             _garrive(bar)
             _issue_w(d1, layer * F + nf, mb.index(0), w0, BNF, D, has_f)
             _gwait(bar, err, g * P, MAXS)
+            if TS:
+                gl.store(ts + ((g - 1) * P + pid) * 6 + 1, _now())
+                gl.store(ts + (g * P + pid) * 6, _now())
             # cross-attention -> ob
             _cross_attn_g(pid, P, R, S, layer, q2, ck, cv, T, ob, xp, xml, xcnt, D, H, DK, SP, BT, NS, NW)
+            if TS:
+                gl.store(ts + (g * P + pid) * 6 + 5, _now())
             g += 1
             _garrive(bar)
             _gwait(bar, err, g * P, MAXS)
+            if TS:
+                gl.store(ts + ((g - 1) * P + pid) * 6 + 1, _now())
+                gl.store(ts + (g * P + pid) * 6, _now())
             # cross-out + residual (slot 1); then FFN2's slab
             if has_p:
                 out = _gemm_g(ob, M, w1, xbuf, scratch, mb.index(1), p1, bco + layer * D, bco, st, eps, x, npt, D,
                               D, PART, LPART, MT, LMT, False, True, D, NPART, PART, NW)  # fmt: skip
                 p1 = p1 ^ 1
                 _store_res(out, x, x2, st, npt, pid, M, PART, MT, D, NPART, NW)
+            if TS:
+                gl.store(ts + (g * P + pid) * 6 + 5, _now())
             g += 1
             _garrive(bar)
             _issue_w(d2, layer * D + npt, mb.index(1), w1, PART, F, has_p)
             _gwait(bar, err, g * P, MAXS)
+            if TS:
+                gl.store(ts + ((g - 1) * P + pid) * 6 + 1, _now())
+                gl.store(ts + (g * P + pid) * 6, _now())
             # LN3 + FFN1 + ReLU (slot 0) -> hb; then the next layer's QKV slab (or the first output chunk)
             if has_f:
                 out = _gemm_g(x2, M, w0, xbuf, scratch, mb.index(0), p0, b1 + layer * F, c1 + layer * F, st, eps, x, nf,
                               F, D, BNF, LBNF, MT, LMT, True, False, D, NPART, PART, NW)  # fmt: skip
                 p0 = p0 ^ 1
                 _store16(out, hb, F, nf, M, BNF, MT, True, NW)
+            if TS:
+                gl.store(ts + (g * P + pid) * 6 + 5, _now())
             g += 1
             _garrive(bar)
             if last:
@@ -525,12 +565,17 @@ if gluon is not None:
             else:
                 _issue_w(dqkv, (layer + 1) * 3 * D + nq, mb.index(0), w0, BNQ, D, has_q)
             _gwait(bar, err, g * P, MAXS)
+            if TS:
+                gl.store(ts + ((g - 1) * P + pid) * 6 + 1, _now())
+                gl.store(ts + (g * P + pid) * 6, _now())
             # FFN2 + residual (slot 1); then the next layer's out-projection slab (or the second output chunk)
             if has_p:
                 out = _gemm_g(hb, M, w1, xbuf, scratch, mb.index(1), p1, b2 + layer * D, b2, st, eps, x, npt, D,
                               F, PART, LPART, MT, LMT, False, True, D, NPART, PART, NW)  # fmt: skip
                 p1 = p1 ^ 1
                 _store_res(out, x, x2, st, npt, pid, M, PART, MT, D, NPART, NW)
+            if TS:
+                gl.store(ts + (g * P + pid) * 6 + 5, _now())
             g += 1
             _garrive(bar)
             if last:
@@ -538,6 +583,9 @@ if gluon is not None:
             else:
                 _issue_w(do_, (layer + 1) * D + npt, mb.index(1), w1, PART, D, has_p)
             _gwait(bar, err, g * P, MAXS)
+            if TS:
+                gl.store(ts + ((g - 1) * P + pid) * 6 + 1, _now())
+                gl.store(ts + (g * P + pid) * 6, _now())
         # final LayerNorm + output layer: chunks pid, pid + P, ... through the two slots
         ol: gl.constexpr = gl.BlockedLayout([1, 1], [32 // MT, MT], [NW, 1], [1, 0])
         rr = gl.arange(0, BNV, layout=gl.SliceLayout(1, ol))
@@ -560,6 +608,8 @@ if gluon is not None:
                         _issue_w(dout, (c + 2 * P) * BNV, mb.index(1), w1, BNV, D, c + 2 * P < nv)
                     gl.store(logits + tt[None, :] * V + n0 + rr[:, None], out,
                              mask=(tt < M)[None, :] & (n0 + rr < V)[:, None])  # fmt: skip
+        if TS:
+            gl.store(ts + (g * P + pid) * 6 + 5, _now())
         mbarrier.invalidate(mb.index(0))
         mbarrier.invalidate(mb.index(1))
         _gexit(bar, done, P)
@@ -589,7 +639,9 @@ class GluonDecoder:
 
     name = "megakernel-gluon"
 
-    def __init__(self, mega, programs: int | None = None, num_warps: int = 4, maxs: int = 1 << 24):
+    def __init__(
+        self, mega, programs: int | None = None, num_warps: int = 4, maxs: int = 1 << 24, ts: bool = False
+    ):
         self.m = mega
         d, f = mega.D, mega.F
         dev = mega.device
@@ -605,6 +657,9 @@ class GluonDecoder:
             slab_desc(mega.wout, self.bnv),
         )  # fmt: skip
         self.err = mega.err
+        self.opts = {"TS": ts}
+        self.programs = self.P
+        self.ts = torch.zeros((8 * mega.L + 2) * self.P * 6 if ts else 1, dtype=torch.int64, device=dev)
 
     def check(self) -> None:
         self.m.check()
@@ -638,13 +693,13 @@ class GluonDecoder:
             tokens, offset, m.emb, m.pe, m.xscale,
             dq, m.bqkv, m.cqkv, do_, m.bo, dcq, m.bcq, m.ccq, dco, m.bco, d1, m.b1, m.c1, d2, m.b2, dout, m.bout, m.cout,
             self_k, self_v, C, cross_k, cross_v, T, logits, new_kv,
-            x, x2, qkv, ob, q2, hb, st, xp, xml, xcnt, bar, self.err, done,
+            x, x2, qkv, ob, q2, hb, st, xp, xml, xcnt, bar, self.err, done, self.ts,
             R, S, L, m.V, m.eps,
         )  # fmt: skip
         const = dict(
             D=D, H=H, DK=D // H, F=F, MT=mt, LMT=_log2(mt), BNQ=self.bnq, LBNQ=_log2(self.bnq), BNF=self.bnf,
             LBNF=_log2(self.bnf), PART=self.part, LPART=_log2(self.part), BNV=self.bnv, LBNV=_log2(self.bnv),
-            SP=max(16, _pow2(S)), BT=64, NS=ns, NW=self.nw, MAXS=self.maxs,
+            SP=max(16, _pow2(S)), BT=64, NS=ns, NW=self.nw, MAXS=self.maxs, TS=bool(self.opts["TS"]),
         )  # fmt: skip
 
         def run() -> None:
