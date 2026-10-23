@@ -220,7 +220,7 @@ class OWSM:
         ``fp8_calibration`` (experimental, TensorRT): run the encoder's linear layers and subsampling
         convolutions in FP8, with input ranges measured on these recordings.
 
-        ``decoder_kernel`` (TensorRT, fp16): run decoder calls of up to 8 tokens (rows x drafted window) as one
+        ``decoder_kernel`` (TensorRT, fp16): run decoder calls of up to 16 tokens (rows x drafted window) as one
         persistent Gluon kernel per call instead of the TensorRT decoder engine (Hopper GPUs; larger calls
         and prompt prefill stay on TensorRT). ``"triton"``: every decode/verify call as the (slower) Triton
         megakernel (Ampere or newer). None: the ``OWSM_TRT_MEGAKERNEL`` environment variable (1 / triton / 0),
@@ -765,7 +765,7 @@ def _decoder_kernel(runner, cfg, checkpoint: Path, dev: torch.device, which):
     except ValueError as e:
         log.warning("decoder megakernel not used: %s", e)
         return runner
-    return megakernel.MegaBackend(runner, kernel, megakernel_gluon.MAX_TOKENS)
+    return megakernel.MegaBackend(runner, kernel, megakernel_gluon.ROUTE_TOKENS)
 
 
 def _load_decoder(cfg, checkpoint: Path) -> Decoder:

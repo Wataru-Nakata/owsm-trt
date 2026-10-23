@@ -20,6 +20,7 @@ import torch
 
 try:
     from triton.experimental import gluon
+    from triton.experimental.gluon import constexpr_function
     from triton.experimental.gluon import language as gl
     from triton.experimental.gluon.language.nvidia.ampere import async_copy, mma_v2
     from triton.experimental.gluon.language.nvidia.hopper import (
@@ -33,7 +34,10 @@ try:
 except ImportError:  # no Triton, or a Triton without Gluon
     gluon = None
 
-MAX_TOKENS = 8  # rows x window of a call
+MAX_TOKENS = 32  # rows x window of a call
+# calls of up to this many tokens go to the kernel (MegaBackend): measured faster than TensorRT with attention
+# plugins up to 16 (H200, 1B model: 0.65-0.97 ms vs 0.78-1.10 ms per call), slower at 32 (1.45 vs 1.13 ms)
+ROUTE_TOKENS = 16
 
 
 def available(device: torch.device) -> bool:
@@ -41,6 +45,12 @@ def available(device: torch.device) -> bool:
 
 
 if gluon is not None:
+
+    @constexpr_function
+    def _el(bn, nw):
+        """Layout of [bn features, tokens] epilogue tiles: threads along the features (contiguous in memory)."""
+        tr = min(bn, 32)
+        return gl.BlockedLayout([1, 1], [tr, 32 // tr], [1, nw], [0, 1])
 
     @gluon.jit
     def _now():
@@ -80,50 +90,49 @@ if gluon is not None:
             gl.atomic_xchg(bar, 0, sem="relaxed", scope="gpu")
 
     @gluon.jit
-    def _issue_w(desc, row0, bar, wslot, BN: gl.constexpr, K: gl.constexpr, pred):
-        """One TMA: BN weight rows from row0 as A tiles (K chunk, K block, row); desc = the weights viewed as
-        [K / S / 64, S, rows, 64] with S = 64 / BN (see slab_desc)."""
+    def _issue_w(desc, row0, kc0, bar, wslot, BN: gl.constexpr, K: gl.constexpr, pred):
+        """One TMA: BN weight rows from row0, K columns from chunk kc0 (of 64), as A tiles (K chunk, K block,
+        row); desc = the weights viewed as [all K / S / 64, S, rows, 64] with S = 64 / BN (see slab_desc)."""
         S: gl.constexpr = 64 // BN
         NKC: gl.constexpr = K // S // 64
         l4: gl.constexpr = gl.NVMMASharedLayout(swizzle_byte_width=128, element_bitwidth=16, rank=4)
         dst = wslot._reinterpret(gl.float16, [8, S, BN, 64], l4).slice(0, NKC, dim=0)  # a slot holds 8 chunks
         mbarrier.expect(bar, BN * K * 2, pred=pred)
-        tma.async_load(desc, [0, 0, row0, 0], bar, dst, pred=pred)
+        tma.async_load(desc, [kc0, 0, row0, 0], bar, dst, pred=pred)
 
     @gluon.jit
-    def _x_issue(x, M, xbuf, K: gl.constexpr, BN: gl.constexpr, LBN: gl.constexpr, MT: gl.constexpr,
-                 LMT: gl.constexpr, LN: gl.constexpr, D: gl.constexpr, NW: gl.constexpr):  # fmt: skip
-        """cp.async of the B side: rows (K chunk, K block s, [hi/lo,] token) of K / S / 64 x 64 columns.
-        Without LN, x = [M, K] fp16; with LN, x = the residual stream's hi/lo pair [M, 2, D]. (Shifts and masks
-        only: Triton miscompiles some vector divisions by constants.)"""
+    def _x_issue(x, XS, M, xbuf, K: gl.constexpr, BN: gl.constexpr, LBN: gl.constexpr, MT: gl.constexpr,
+                 LMT: gl.constexpr, HL: gl.constexpr, D: gl.constexpr, NW: gl.constexpr):  # fmt: skip
+        """cp.async of the B side: rows (K chunk, K block s, [hi/lo,] token) of K / S / 64 x 64 columns, from x
+        (token stride XS); HL = 2: hi/lo pairs (lo at x + D). (Shifts and masks only: Triton miscompiles some
+        vector divisions by constants.)"""
         S: gl.constexpr = 64 // BN
         LS: gl.constexpr = 6 - LBN
         KP: gl.constexpr = K // S
         NKC: gl.constexpr = KP // 64
+        ROWS: gl.constexpr = NKC * S * HL * MT
         xl: gl.constexpr = gl.BlockedLayout([1, 8], [4, 8], [NW, 1], [1, 0])
         kk = gl.arange(0, 64, layout=gl.SliceLayout(0, xl))
-        if LN:
-            rho = gl.arange(0, NKC * S * 2 * MT, layout=gl.SliceLayout(1, xl))
-            t = rho & (MT - 1)
+        rho = gl.arange(0, ROWS, layout=gl.SliceLayout(1, xl))
+        t = rho & (MT - 1)
+        if HL == 2:
             h = (rho >> LMT) & 1
             sb = (rho >> (LMT + 1)) & (S - 1)
             kc = rho >> (LMT + 1 + LS)
-            xp = x + t[:, None] * (2 * D) + (h * D + sb * KP + kc * 64)[:, None] + kk[None, :]
-            xm = (t < M)[:, None] & (kk >= 0)[None, :]
-            async_copy.async_load(xbuf.slice(0, NKC * S * 2 * MT), xp, mask=xm, cache_modifier=".cg")
+            off = h * D + sb * KP + kc * 64
         else:
-            rho = gl.arange(0, NKC * S * MT, layout=gl.SliceLayout(1, xl))
-            t = rho & (MT - 1)
             sb = (rho >> LMT) & (S - 1)
             kc = rho >> (LMT + LS)
-            xp = x + t[:, None] * K + (sb * KP + kc * 64)[:, None] + kk[None, :]
-            xm = (t < M)[:, None] & (kk >= 0)[None, :]
-            async_copy.async_load(xbuf.slice(0, NKC * S * MT), xp, mask=xm, cache_modifier=".cg")
+            off = sb * KP + kc * 64
+        xp = x + t[:, None] * XS + off[:, None] + kk[None, :]
+        xm = (t < M)[:, None] & (kk >= 0)[None, :]
+        async_copy.async_load(xbuf.slice(0, ROWS), xp, mask=xm, cache_modifier=".cg")
         async_copy.commit_group()
 
     @gluon.jit
-    def _mma(wslot, xbuf, wbar, phase, K: gl.constexpr, BN: gl.constexpr, NB: gl.constexpr, NW: gl.constexpr):
-        """Wait for the slab and the B side, then the wgmma chain (two accumulators) -> [64, NB] fp32."""
+    def _mma(wslot, xb, wbar, phase, K: gl.constexpr, BN: gl.constexpr, NB: gl.constexpr, NW: gl.constexpr):
+        """Wait for the slab and the B side (xb: B tiles of NB rows per K chunk), then the wgmma chain (two
+        accumulators while they are small) -> [64, NB] fp32."""
         S: gl.constexpr = 64 // BN
         NKC: gl.constexpr = K // S // 64
         mbarrier.wait(wbar, phase)
@@ -134,31 +143,50 @@ if gluon is not None:
             version=[3, 0], warps_per_cta=[NW, 1], instr_shape=[16, NB, 16]
         )
         acc0 = gl.zeros([64, NB], gl.float32, layout=mma)
-        acc1 = gl.zeros([64, NB], gl.float32, layout=mma)
-        for kc in gl.static_range(NKC):
-            a_t = wslot.slice(kc * 64, 64)
-            b_t = xbuf.slice(kc * NB, NB).permute((1, 0))
-            if kc % 2 == 0:
-                acc0 = warpgroup_mma(a_t, b_t, acc0, is_async=True)
-            else:
-                acc1 = warpgroup_mma(a_t, b_t, acc1, is_async=True)
-        acc0, acc1 = warpgroup_mma_wait(0, deps=[acc0, acc1])
-        return acc0 + acc1
+        if NB <= 64:
+            acc1 = gl.zeros([64, NB], gl.float32, layout=mma)
+            for kc in gl.static_range(NKC):
+                a_t = wslot.slice(kc * 64, 64)
+                b_t = xb.slice(kc * NB, NB).permute((1, 0))
+                if kc % 2 == 0:
+                    acc0 = warpgroup_mma(a_t, b_t, acc0, is_async=True)
+                else:
+                    acc1 = warpgroup_mma(a_t, b_t, acc1, is_async=True)
+            acc0, acc1 = warpgroup_mma_wait(0, deps=[acc0, acc1])
+            acc0 = acc0 + acc1
+        else:
+            for kc in gl.static_range(NKC):
+                acc0 = warpgroup_mma(wslot.slice(kc * 64, 64), xb.slice(kc * NB, NB).permute((1, 0)), acc0,
+                                     is_async=True)  # fmt: skip
+            acc0 = warpgroup_mma_wait(0, deps=[acc0])
+        return acc0
 
     @gluon.jit
-    def _extract(acc, scratch, BN: gl.constexpr, MT: gl.constexpr, LN: gl.constexpr, NB: gl.constexpr,
+    def _prefetch_rows(base, n_rows, NT: gl.constexpr, NW: gl.constexpr):
+        """L2 prefetch of n_rows rows of 128 bytes (a head's keys or values) from base (fp16 pointer)."""
+        pl: gl.constexpr = gl.BlockedLayout([1], [32], [NW], [0])
+        i = gl.arange(0, NT, layout=pl)
+        for i0 in range(0, n_rows, NT):
+            r = gl.minimum(i0 + i, n_rows - 1)
+            gl.inline_asm_elementwise(
+                "prefetch.global.L2 [$1]; mov.u32 $0, 0;", "=r,l", [base + r * 64], dtype=gl.int32, is_pure=False,
+                pack=1,
+            )  # fmt: skip
+
+    @gluon.jit
+    def _extract(acc, scratch, BN: gl.constexpr, MT: gl.constexpr, HL: gl.constexpr, NB: gl.constexpr,
                  NW: gl.constexpr):  # fmt: skip
-        """[BN, MT] = sum of the S diagonal blocks of acc [64, NB] (and of the hi/lo halves with LN), through
-        shared memory (scratch [64, 128] fp32)."""
+        """[BN, MT] = sum of the S diagonal blocks of acc [64, NB] (and of the hi/lo halves with HL = 2), through
+        shared memory (scratch [64, >= NB] fp32)."""
         S: gl.constexpr = 64 // BN
         sc = scratch.slice(0, NB, dim=1)
         sc.store(acc)
         gl.barrier()
-        ol: gl.constexpr = gl.BlockedLayout([1, 1], [32 // MT, MT], [NW, 1], [1, 0])
+        ol: gl.constexpr = _el(BN, NW)
         out = gl.zeros([BN, MT], gl.float32, layout=ol)
         for s in gl.static_range(S):
             blk = sc.slice(s * BN, BN, dim=0)
-            if LN:
+            if HL == 2:
                 out += blk.slice(s * 2 * MT, MT, dim=1).load(ol) + blk.slice(s * 2 * MT + MT, MT, dim=1).load(
                     ol
                 )
@@ -191,7 +219,7 @@ if gluon is not None:
                    NPART: gl.constexpr, NW: gl.constexpr):  # fmt: skip
         """Residual-stream values val [BN features from n0, MT tokens]: fp32 into x, hi/lo into x2 [M, 2, D],
         the unit's statistics (mean, sum of squared deviations over its BN features) into st."""
-        ol: gl.constexpr = gl.BlockedLayout([1, 1], [32 // MT, MT], [NW, 1], [1, 0])
+        ol: gl.constexpr = _el(BN, NW)
         rr = gl.arange(0, BN, layout=gl.SliceLayout(1, ol))
         tt = gl.arange(0, MT, layout=gl.SliceLayout(0, ol))
         m = (tt < M)[None, :] & (rr >= 0)[:, None]
@@ -210,7 +238,7 @@ if gluon is not None:
                  NPART: gl.constexpr, MT: gl.constexpr, NW: gl.constexpr):  # fmt: skip
         """x = embedding * sqrt(d) + positional encoding, for the PART features of unit pid."""
         if pid < NPART:
-            ol: gl.constexpr = gl.BlockedLayout([1, 1], [32 // MT, MT], [NW, 1], [1, 0])
+            ol: gl.constexpr = _el(PART, NW)
             rr = gl.arange(0, PART, layout=gl.SliceLayout(1, ol))
             tt = gl.arange(0, MT, layout=gl.SliceLayout(0, ol))
             tm = tt < M
@@ -371,31 +399,33 @@ if gluon is not None:
                     gl.store(out, (num / den[:, None]).to(gl.float16), mask=sm)
 
     @gluon.jit
-    def _gemm_g(x, M, wslot, xbuf, scratch, wbar, phase, bias, cvec, st, eps, res, n0, nlim,
+    def _gemm_g(x, XS, M, wslot, xbuf, scratch, wbar, phase, bias, cvec, st, eps, res, n0,
                 K: gl.constexpr, BN: gl.constexpr, LBN: gl.constexpr, MT: gl.constexpr, LMT: gl.constexpr,
-                LN: gl.constexpr, RES: gl.constexpr, D: gl.constexpr, NPART: gl.constexpr, PART: gl.constexpr,
-                NW: gl.constexpr, XL: gl.constexpr = True):  # fmt: skip
-        """One program's unit of y = act(X @ W^T + b): BN weight rows from n0 (< nlim; slab already requested
-        into wslot), MT tokens. Loads that do not wait for the MMAs (bias, LayerNorm column sums and statistics,
-        residual) are issued first; with XL=False the B side is already in xbuf. Returns [BN, MT] fp32."""
+                LN: gl.constexpr, HL: gl.constexpr, RES: gl.constexpr, D: gl.constexpr, NPART: gl.constexpr,
+                PART: gl.constexpr, NW: gl.constexpr):  # fmt: skip
+        """One program's unit of y = X @ W^T + b: BN weight rows from n0 (slab already requested into wslot),
+        MT tokens; with LN the LayerNorm is folded in (statistics from NPART parts of PART features). Loads
+        that do not wait for the MMAs (bias, column sums, statistics, residual) are issued first. Returns
+        [BN, MT] fp32 (before activation / store)."""
         S: gl.constexpr = 64 // BN
-        NB: gl.constexpr = S * MT * 2 if LN else S * MT
-        ol: gl.constexpr = gl.BlockedLayout([1, 1], [32 // MT, MT], [NW, 1], [1, 0])
+        NB: gl.constexpr = S * HL * MT
+        ol: gl.constexpr = _el(BN, NW)
         rr = gl.arange(0, BN, layout=gl.SliceLayout(1, ol))
         tt = gl.arange(0, MT, layout=gl.SliceLayout(0, ol))
-        b = gl.load(bias + n0 + rr, mask=n0 + rr < nlim, other=0.0)
+        b = gl.load(bias + n0 + rr)
         if LN:
-            cv = gl.load(cvec + n0 + rr, mask=n0 + rr < nlim, other=0.0)
+            cv = gl.load(cvec + n0 + rr)
             mu, m2 = _stats_load(st, M, NPART, MT, NW)
         if RES:
             r = gl.load(res + tt[None, :] * D + n0 + rr[:, None], mask=(tt < M)[None, :] & (rr >= 0)[:, None],
                         other=0.0, cache_modifier=".cg")  # fmt: skip
-        if XL:
-            _x_issue(x, M, xbuf, K, BN, LBN, MT, LMT, LN, D, NW)
+        _x_issue(x, XS, M, xbuf, K, BN, LBN, MT, LMT, HL, D, NW)
         acc = _mma(wslot, xbuf, wbar, phase, K, BN, NB, NW)
-        out = _extract(acc, scratch, BN, MT, LN, NB, NW)
+        out = _extract(acc, scratch, BN, MT, HL, NB, NW)
         if LN:
             mean, rstd = _stats_finish(mu, m2, eps, NPART, PART, D)
+            mean = gl.convert_layout(mean, gl.SliceLayout(0, ol))
+            rstd = gl.convert_layout(rstd, gl.SliceLayout(0, ol))
             out = (out - cv[:, None] * mean[None, :]) * rstd[None, :]
         out += b[:, None]
         if RES:
@@ -405,7 +435,7 @@ if gluon is not None:
     @gluon.jit
     def _store16(out, y, y_stride, n0, M, BN: gl.constexpr, MT: gl.constexpr, RELU: gl.constexpr,
                  NW: gl.constexpr):  # fmt: skip
-        ol: gl.constexpr = gl.BlockedLayout([1, 1], [32 // MT, MT], [NW, 1], [1, 0])
+        ol: gl.constexpr = _el(BN, NW)
         rr = gl.arange(0, BN, layout=gl.SliceLayout(1, ol))
         tt = gl.arange(0, MT, layout=gl.SliceLayout(0, ol))
         if RELU:
@@ -414,52 +444,116 @@ if gluon is not None:
                  mask=(tt < M)[None, :] & (rr >= 0)[:, None])  # fmt: skip
 
     @gluon.jit
+    def _ffn2_g(pid, hb, M, wslot, xbuf, wbar, phase, bias, x, x2, st, part, cnt, D: gl.constexpr,
+                F: gl.constexpr, LKS: gl.constexpr, MT: gl.constexpr, LMT: gl.constexpr, NW: gl.constexpr):  # fmt: skip
+        """FFN2 + residual, split-K: unit pid = (block of 64 features rb, slice ks of 512 columns of K; F / 512 =
+        2^LKS slices). Every slice stores its partial sum and counts itself; the last one of a block adds the
+        partials up in order, adds bias and residual and stores the residual stream (statistics in D / 64 parts
+        of 64)."""
+        KS: gl.constexpr = F // 512
+        ks = pid & (KS - 1)
+        rb = pid >> LKS
+        n0 = rb * 64
+        _x_issue(hb + ks * 512, F, M, xbuf, 512, 64, 6, MT, LMT, 1, D, NW)
+        acc = _mma(wslot, xbuf, wbar, phase, 512, 64, MT, NW)
+        el: gl.constexpr = _el(64, NW)
+        ra = gl.arange(0, 64, layout=gl.SliceLayout(1, el))
+        ta = gl.arange(0, MT, layout=gl.SliceLayout(0, el))
+        po = ta[None, :] * D + n0 + ra[:, None]
+        gl.store(
+            part + ks * M * D + po, gl.convert_layout(acc, el), mask=(ta < M)[None, :] & (ra >= 0)[:, None]
+        )
+        gl.barrier()
+        arrived = gl.atomic_add(cnt + rb, 1, sem="acq_rel", scope="gpu")
+        gl.barrier()
+        if arrived == KS - 1:
+            ol: gl.constexpr = _el(64, NW)
+            rr = gl.arange(0, 64, layout=gl.SliceLayout(1, ol))
+            tt = gl.arange(0, MT, layout=gl.SliceLayout(0, ol))
+            m = (tt < M)[None, :] & (rr >= 0)[:, None]
+            o = tt[None, :] * D + n0 + rr[:, None]
+            tot = gl.load(x + o, mask=m, other=0.0, cache_modifier=".cg") + gl.load(bias + n0 + rr)[:, None]
+            for j in gl.static_range(KS):
+                tot += gl.load(part + j * M * D + o, mask=m, other=0.0, cache_modifier=".cg")
+            gl.atomic_xchg(cnt + rb, 0, sem="relaxed", scope="gpu")
+            _store_res(tot, x, x2, st, n0, rb, M, 64, MT, D, D // 64, NW)
+
+    @gluon.jit
+    def _out_half(wslot, xb, wbar, phase, KH: gl.constexpr, MT: gl.constexpr, NW: gl.constexpr):
+        """One half (KH columns of K) of a block of 64 output rows -> [64, MT] fp32."""
+        return _mma(wslot, xb, wbar, phase, KH, 64, MT, NW)
+
+    @gluon.jit
+    def _out_store(acc, mean, rstd, bout, cout, logits, M, V, n0, MT: gl.constexpr, NW: gl.constexpr):
+        """logits of a block of 64 rows from its K sums (final LayerNorm folded in; mean / rstd in the
+        epilogue layout's token slice)."""
+        el: gl.constexpr = _el(64, NW)
+        ra = gl.arange(0, 64, layout=gl.SliceLayout(1, el))
+        ta = gl.arange(0, MT, layout=gl.SliceLayout(0, el))
+        rm = n0 + ra < V
+        cv = gl.load(cout + n0 + ra, mask=rm, other=0.0)
+        b = gl.load(bout + n0 + ra, mask=rm, other=0.0)
+        out = (gl.convert_layout(acc, el) - cv[:, None] * mean[None, :]) * rstd[None, :] + b[:, None]
+        gl.store(logits + ta[None, :] * V + n0 + ra[:, None], out, mask=(ta < M)[None, :] & rm[:, None])
+
+    @gluon.jit
     def _decoder_kernel_g(
         tok, offs, emb, pe, xscale,
-        dqkv, bqkv, cqkv, do_, bo, dcq, bcq, ccq, dco, bco, d1, b1, c1, d2, b2, dout, bout, cout,
+        dqkv, bqkv, cqkv, do_, bo, dcq, bcq, ccq, dco, bco, d1, b1, c1, d2, d2s, b2, dout, bout, cout,
         kc, vc, C, ck, cv, T, logits, new_kv,
-        x, x2, qkv, ob, q2, hb, st, xp, xml, xcnt, bar, err, done, ts,
+        x, x2, qkv, ob, q2, hb, st, part, cnt2, xp, xml, xcnt, bar, err, done, ts,
         R, S, L, V, eps,
-        D: gl.constexpr, H: gl.constexpr, DK: gl.constexpr, F: gl.constexpr,
-        MT: gl.constexpr, LMT: gl.constexpr, BNQ: gl.constexpr, LBNQ: gl.constexpr, BNF: gl.constexpr,
-        LBNF: gl.constexpr, PART: gl.constexpr, LPART: gl.constexpr, BNV: gl.constexpr, LBNV: gl.constexpr,
-        SP: gl.constexpr, BT: gl.constexpr, NS: gl.constexpr, NW: gl.constexpr, MAXS: gl.constexpr,
-        TS: gl.constexpr = False,
+        D: gl.constexpr, H: gl.constexpr, DK: gl.constexpr, F: gl.constexpr, LF: gl.constexpr,
+        MT: gl.constexpr, LMT: gl.constexpr, HL: gl.constexpr, MTF: gl.constexpr, LMTF: gl.constexpr,
+        BNQ: gl.constexpr, LBNQ: gl.constexpr, BNF: gl.constexpr, LBNF: gl.constexpr, PART: gl.constexpr,
+        LPART: gl.constexpr, SP: gl.constexpr, BT: gl.constexpr, NS: gl.constexpr, NW: gl.constexpr,
+        MAXS: gl.constexpr, PFA: gl.constexpr, F2S: gl.constexpr, TS: gl.constexpr = False,
     ):  # fmt: skip
         """A decoder call: embedding, L layers (LN1+QKV, self-attention, out-projection, LN2+cross-Q,
         cross-attention, cross-out, LN3+FFN1, FFN2), final LN + output layer, a grid barrier between stages.
-        GEMMs: QKV / FFN1 / output units of BNQ / BNF / BNV rows, the others (residual producers) of PART."""
+        QKV / FFN1 units of BNQ / BNF rows, out-projections of PART (statistics in D / PART parts), FFN2 split-K
+        blocks of 64 rows (and the embedding: statistics in D / 64 parts), the output layer blocks of 64 rows in
+        two halves of K. MT tokens (MTF >= 8 for the split-K / output GEMMs); LayerNorm GEMMs read the residual
+        stream as HL = 2 (hi/lo) or 1 (hi only) fp16 rows. With PFA, attention inputs are prefetched into L2
+        while a program waits at the barrier before the attention stage."""
         pid = gl.program_id(0)
         P = gl.num_programs(0)
         M = R * S
-        NPART: gl.constexpr = D // PART
+        NPO: gl.constexpr = D // PART
+        NP64: gl.constexpr = D // 64
+        # FFN2 with F2S: stacked units of PART rows (its statistics, and the embedding's, in D / PART parts),
+        # else split-K blocks of 64 rows (statistics in D / 64 parts): the B side of a stacked unit holds all
+        # of K for MT tokens, which fits up to 8 tokens
+        P2: gl.constexpr = PART if F2S else 64
+        NP2: gl.constexpr = D // P2
         sl: gl.constexpr = gl.NVMMASharedLayout(swizzle_byte_width=128, element_bitwidth=16, rank=2)
         w0 = gl.allocate_shared_memory(gl.float16, [512, 64], sl)
         w1 = gl.allocate_shared_memory(gl.float16, [512, 64], sl)
         xbuf = gl.allocate_shared_memory(gl.float16, [512, 64], sl)
-        # scratch for the diagonal sums: the second half of xbuf (the B side of a GEMM is dead by then, and the
-        # output layer's, kept for all chunks, uses only the first half)
-        scratch = xbuf._reinterpret(gl.float32, [2, 64, 128], gl.SwizzledSharedLayout(1, 1, 1, [1, 0])).index(
-            1
-        )
+        scratch = xbuf._reinterpret(gl.float32, [64, 256], gl.SwizzledSharedLayout(1, 1, 1, [1, 0]))
         mb = gl.allocate_shared_memory(gl.int64, [2, 1], mbarrier.MBarrierLayout())
         mbarrier.init(mb.index(0), count=1)
         mbarrier.init(mb.index(1), count=1)
         fence_async_shared()
         has_q = pid < 3 * D // BNQ
-        has_p = pid < NPART
+        has_p = pid < NPO
         has_f = pid < F // BNF
+        LKS: gl.constexpr = LF - 9  # FFN2: F / 512 slices of K
+        has_2 = pid < (NP64 << LKS)
         nq = pid * BNQ
         npt = pid * PART
         nf = pid * BNF
-        nv = (V + BNV - 1) // BNV  # output chunks: pid, pid + P, ...
-        _issue_w(dqkv, nq, mb.index(0), w0, BNQ, D, has_q)
-        _issue_w(do_, npt, mb.index(1), w1, PART, D, has_p)
+        n2 = (pid >> LKS) * 64
+        k2 = (pid & ((F // 512) - 1)) * 8
+        nrb = (V + 63) // 64  # output blocks: pid, pid + P, ...
+        NKH: gl.constexpr = D // 128  # K chunks of 64 in half of the output layer's K
+        _issue_w(dqkv, nq, 0, mb.index(0), w0, BNQ, D, has_q)
+        _issue_w(do_, npt, 0, mb.index(1), w1, PART, D, has_p)
         p0 = 0  # phases of the two slots' barriers
         p1 = 0
         if TS:
             gl.store(ts + pid * 6, _now())
-        _embed_g(pid, M, S, tok, offs, emb, pe, xscale, V, x, x2, st, D, PART, NPART, MT, NW)
+        _embed_g(pid, M, S, tok, offs, emb, pe, xscale, V, x, x2, st, D, P2, NP2, MTF, NW)
         g = 1
         if TS:
             gl.store(ts + pid * 6 + 5, _now())
@@ -470,17 +564,24 @@ if gluon is not None:
             gl.store(ts + (g * P + pid) * 6, _now())
         for layer in range(L):
             last = layer + 1 == L
-            # LN1 + QKV (slot 0) -> qkv; then LN2+cross-Q's slab
+            # LN1 + QKV (slot 0) -> qkv; then LN2+cross-Q's slab, and the self-attention's cache rows into L2
             if has_q:
-                out = _gemm_g(x2, M, w0, xbuf, scratch, mb.index(0), p0, bqkv + layer * 3 * D, cqkv + layer * 3 * D, st,
-                              eps, x, nq, 3 * D, D, BNQ, LBNQ, MT, LMT, True, False, D, NPART, PART, NW)  # fmt: skip
+                out = _gemm_g(x2, 2 * D, M, w0, xbuf, scratch, mb.index(0), p0, bqkv + layer * 3 * D,
+                              cqkv + layer * 3 * D, st, eps, x, nq, D, BNQ, LBNQ, MT, LMT, True, HL, False, D, NP2,
+                              P2, NW)  # fmt: skip
                 p0 = p0 ^ 1
                 _store16(out, qkv, 3 * D, nq, M, BNQ, MT, False, NW)
             if TS:
                 gl.store(ts + (g * P + pid) * 6 + 5, _now())
             g += 1
             _garrive(bar)
-            _issue_w(dcq, layer * D + npt, mb.index(0), w0, PART, D, has_p)
+            _issue_w(dcq, layer * D + npt, 0, mb.index(0), w0, PART, D, has_p)
+            if PFA:
+                if pid < R * H:
+                    cb = ((layer * R + pid // H) * H + pid % H).to(gl.int64) * C * DK
+                    off = gl.load(offs + pid // H)
+                    _prefetch_rows(kc + cb, off, 128, NW)
+                    _prefetch_rows(vc + cb, off, 128, NW)
             _gwait(bar, err, g * P, MAXS)
             if TS:
                 gl.store(ts + ((g - 1) * P + pid) * 6 + 1, _now())
@@ -497,30 +598,40 @@ if gluon is not None:
                 gl.store(ts + (g * P + pid) * 6, _now())
             # out-projection + residual (slot 1); then cross-out's slab
             if has_p:
-                out = _gemm_g(ob, M, w1, xbuf, scratch, mb.index(1), p1, bo + layer * D, bo, st, eps, x, npt, D,
-                              D, PART, LPART, MT, LMT, False, True, D, NPART, PART, NW)  # fmt: skip
+                out = _gemm_g(ob, D, M, w1, xbuf, scratch, mb.index(1), p1, bo + layer * D, bo, st, eps, x, npt,
+                              D, PART, LPART, MT, LMT, False, 1, True, D, NPO, PART, NW)  # fmt: skip
                 p1 = p1 ^ 1
-                _store_res(out, x, x2, st, npt, pid, M, PART, MT, D, NPART, NW)
+                _store_res(out, x, x2, st, npt, pid, M, PART, MT, D, NPO, NW)
             if TS:
                 gl.store(ts + (g * P + pid) * 6 + 5, _now())
             g += 1
             _garrive(bar)
-            _issue_w(dco, layer * D + npt, mb.index(1), w1, PART, D, has_p)
+            _issue_w(dco, layer * D + npt, 0, mb.index(1), w1, PART, D, has_p)
             _gwait(bar, err, g * P, MAXS)
             if TS:
                 gl.store(ts + ((g - 1) * P + pid) * 6 + 1, _now())
                 gl.store(ts + (g * P + pid) * 6, _now())
-            # LN2 + cross-Q (slot 0) -> q2; then LN3+FFN1's slab
+            # LN2 + cross-Q (slot 0) -> q2; then LN3+FFN1's slab, and the cross-attention's keys/values into L2
             if has_p:
-                out = _gemm_g(x2, M, w0, xbuf, scratch, mb.index(0), p0, bcq + layer * D, ccq + layer * D, st, eps, x, npt,
-                              D, D, PART, LPART, MT, LMT, True, False, D, NPART, PART, NW)  # fmt: skip
+                out = _gemm_g(x2, 2 * D, M, w0, xbuf, scratch, mb.index(0), p0, bcq + layer * D, ccq + layer * D,
+                              st, eps, x, npt, D, PART, LPART, MT, LMT, True, HL, False, D, NPO, PART, NW)  # fmt: skip
                 p0 = p0 ^ 1
                 _store16(out, q2, D, npt, M, PART, MT, False, NW)
             if TS:
                 gl.store(ts + (g * P + pid) * 6 + 5, _now())
             g += 1
             _garrive(bar)
-            _issue_w(d1, layer * F + nf, mb.index(0), w0, BNF, D, has_f)
+            _issue_w(d1, layer * F + nf, 0, mb.index(0), w0, BNF, D, has_f)
+            if PFA:
+                if pid < R * H * NS:
+                    sp = pid % NS
+                    bh = pid // NS
+                    tch = ((T + NS - 1) // NS + 15) // 16 * 16
+                    t_lo = sp * tch
+                    nk = gl.minimum(T, t_lo + tch) - t_lo
+                    cb = ((layer * R + bh // H) * H + bh % H).to(gl.int64) * T * DK + t_lo * DK
+                    _prefetch_rows(ck + cb, nk, 128, NW)
+                    _prefetch_rows(cv + cb, nk, 128, NW)
             _gwait(bar, err, g * P, MAXS)
             if TS:
                 gl.store(ts + ((g - 1) * P + pid) * 6 + 1, _now())
@@ -537,23 +648,26 @@ if gluon is not None:
                 gl.store(ts + (g * P + pid) * 6, _now())
             # cross-out + residual (slot 1); then FFN2's slab
             if has_p:
-                out = _gemm_g(ob, M, w1, xbuf, scratch, mb.index(1), p1, bco + layer * D, bco, st, eps, x, npt, D,
-                              D, PART, LPART, MT, LMT, False, True, D, NPART, PART, NW)  # fmt: skip
+                out = _gemm_g(ob, D, M, w1, xbuf, scratch, mb.index(1), p1, bco + layer * D, bco, st, eps, x, npt,
+                              D, PART, LPART, MT, LMT, False, 1, True, D, NPO, PART, NW)  # fmt: skip
                 p1 = p1 ^ 1
-                _store_res(out, x, x2, st, npt, pid, M, PART, MT, D, NPART, NW)
+                _store_res(out, x, x2, st, npt, pid, M, PART, MT, D, NPO, NW)
             if TS:
                 gl.store(ts + (g * P + pid) * 6 + 5, _now())
             g += 1
             _garrive(bar)
-            _issue_w(d2, layer * D + npt, mb.index(1), w1, PART, F, has_p)
+            if F2S:
+                _issue_w(d2s, layer * D + npt, 0, mb.index(1), w1, PART, F, has_p)
+            else:
+                _issue_w(d2, layer * D + n2, k2, mb.index(1), w1, 64, 512, has_2)
             _gwait(bar, err, g * P, MAXS)
             if TS:
                 gl.store(ts + ((g - 1) * P + pid) * 6 + 1, _now())
                 gl.store(ts + (g * P + pid) * 6, _now())
-            # LN3 + FFN1 + ReLU (slot 0) -> hb; then the next layer's QKV slab (or the first output chunk)
+            # LN3 + FFN1 + ReLU (slot 0) -> hb; then the next layer's QKV slab (or the first output half)
             if has_f:
-                out = _gemm_g(x2, M, w0, xbuf, scratch, mb.index(0), p0, b1 + layer * F, c1 + layer * F, st, eps, x, nf,
-                              F, D, BNF, LBNF, MT, LMT, True, False, D, NPART, PART, NW)  # fmt: skip
+                out = _gemm_g(x2, 2 * D, M, w0, xbuf, scratch, mb.index(0), p0, b1 + layer * F, c1 + layer * F, st,
+                              eps, x, nf, D, BNF, LBNF, MT, LMT, True, HL, False, D, NPO, PART, NW)  # fmt: skip
                 p0 = p0 ^ 1
                 _store16(out, hb, F, nf, M, BNF, MT, True, NW)
             if TS:
@@ -561,53 +675,54 @@ if gluon is not None:
             g += 1
             _garrive(bar)
             if last:
-                _issue_w(dout, pid * BNV, mb.index(0), w0, BNV, D, pid < nv)
+                _issue_w(dout, pid * 64, 0, mb.index(0), w0, 64, D // 2, pid < nrb)
             else:
-                _issue_w(dqkv, (layer + 1) * 3 * D + nq, mb.index(0), w0, BNQ, D, has_q)
+                _issue_w(dqkv, (layer + 1) * 3 * D + nq, 0, mb.index(0), w0, BNQ, D, has_q)
             _gwait(bar, err, g * P, MAXS)
             if TS:
                 gl.store(ts + ((g - 1) * P + pid) * 6 + 1, _now())
                 gl.store(ts + (g * P + pid) * 6, _now())
-            # FFN2 + residual (slot 1); then the next layer's out-projection slab (or the second output chunk)
-            if has_p:
-                out = _gemm_g(hb, M, w1, xbuf, scratch, mb.index(1), p1, b2 + layer * D, b2, st, eps, x, npt, D,
-                              F, PART, LPART, MT, LMT, False, True, D, NPART, PART, NW)  # fmt: skip
+            # FFN2 + residual (slot 1, split-K); then the next layer's out-projection slab (or the second half)
+            if F2S:
+                if has_p:
+                    out = _gemm_g(hb, F, M, w1, xbuf, scratch, mb.index(1), p1, b2 + layer * D, b2, st, eps, x, npt,
+                                  F, PART, LPART, MT, LMT, False, 1, True, D, NPO, PART, NW)  # fmt: skip
+                    p1 = p1 ^ 1
+                    _store_res(out, x, x2, st, npt, pid, M, PART, MT, D, NPO, NW)
+            elif has_2:
+                _ffn2_g(pid, hb, M, w1, xbuf, mb.index(1), p1, b2 + layer * D, x, x2, st, part, cnt2, D, F, LKS,
+                        MTF, LMTF, NW)  # fmt: skip
                 p1 = p1 ^ 1
-                _store_res(out, x, x2, st, npt, pid, M, PART, MT, D, NPART, NW)
             if TS:
                 gl.store(ts + (g * P + pid) * 6 + 5, _now())
             g += 1
             _garrive(bar)
             if last:
-                _issue_w(dout, (pid + P) * BNV, mb.index(1), w1, BNV, D, pid + P < nv)
+                _issue_w(dout, pid * 64, NKH, mb.index(1), w1, 64, D // 2, pid < nrb)
             else:
-                _issue_w(do_, (layer + 1) * D + npt, mb.index(1), w1, PART, D, has_p)
+                _issue_w(do_, (layer + 1) * D + npt, 0, mb.index(1), w1, PART, D, has_p)
             _gwait(bar, err, g * P, MAXS)
             if TS:
                 gl.store(ts + ((g - 1) * P + pid) * 6 + 1, _now())
                 gl.store(ts + (g * P + pid) * 6, _now())
-        # final LayerNorm + output layer: chunks pid, pid + P, ... through the two slots
-        ol: gl.constexpr = gl.BlockedLayout([1, 1], [32 // MT, MT], [NW, 1], [1, 0])
-        rr = gl.arange(0, BNV, layout=gl.SliceLayout(1, ol))
-        tt = gl.arange(0, MT, layout=gl.SliceLayout(0, ol))
-        _x_issue(x2, M, xbuf, D, BNV, LBNV, MT, LMT, True, D, NW)  # the B side once, for all chunks
-        for c0 in range(pid, nv, 2 * P):
-            for k in gl.static_range(2):
-                c = c0 + k * P
-                if c < nv:
-                    n0 = c * BNV
-                    if k == 0:
-                        out = _gemm_g(x2, M, w0, xbuf, scratch, mb.index(0), p0, bout, cout, st, eps, x, n0, V, D,
-                                      BNV, LBNV, MT, LMT, True, False, D, NPART, PART, NW, False)  # fmt: skip
-                        p0 = p0 ^ 1
-                        _issue_w(dout, (c + 2 * P) * BNV, mb.index(0), w0, BNV, D, c + 2 * P < nv)
-                    else:
-                        out = _gemm_g(x2, M, w1, xbuf, scratch, mb.index(1), p1, bout, cout, st, eps, x, n0, V, D,
-                                      BNV, LBNV, MT, LMT, True, False, D, NPART, PART, NW, False)  # fmt: skip
-                        p1 = p1 ^ 1
-                        _issue_w(dout, (c + 2 * P) * BNV, mb.index(1), w1, BNV, D, c + 2 * P < nv)
-                    gl.store(logits + tt[None, :] * V + n0 + rr[:, None], out,
-                             mask=(tt < M)[None, :] & (n0 + rr < V)[:, None])  # fmt: skip
+        # final LayerNorm + output layer: blocks of 64 rows pid, pid + P, ..., each in two halves of K (slots 0, 1)
+        _x_issue(
+            x2, 2 * D, M, xbuf, D, 64, 6, MTF, LMTF, 1, D, NW
+        )  # the B side once (hi only), for all blocks
+        mu, m2 = _stats_load(st, M, NP2, MTF, NW)
+        mean, rstd = _stats_finish(mu, m2, eps, NP2, P2, D)
+        el: gl.constexpr = _el(64, NW)
+        mean = gl.convert_layout(mean, gl.SliceLayout(0, el))
+        rstd = gl.convert_layout(rstd, gl.SliceLayout(0, el))
+        for rb in range(pid, nrb, P):
+            nxt = rb + P < nrb
+            acc = _out_half(w0, xbuf.slice(0, NKH * MTF), mb.index(0), p0, D // 2, MTF, NW)
+            p0 = p0 ^ 1
+            _issue_w(dout, (rb + P) * 64, 0, mb.index(0), w0, 64, D // 2, nxt)
+            acc += _out_half(w1, xbuf.slice(NKH * MTF, NKH * MTF), mb.index(1), p1, D // 2, MTF, NW)
+            p1 = p1 ^ 1
+            _issue_w(dout, (rb + P) * 64, NKH, mb.index(1), w1, 64, D // 2, nxt)
+            _out_store(acc, mean, rstd, bout, cout, logits, M, V, rb * 64, MTF, NW)
         if TS:
             gl.store(ts + (g * P + pid) * 6 + 5, _now())
         mbarrier.invalidate(mb.index(0))
@@ -623,14 +738,15 @@ def _pow2(n: int) -> int:
     return 1 << max(0, (int(n) - 1).bit_length())
 
 
-def slab_desc(w: torch.Tensor, bn: int):
+def slab_desc(w: torch.Tensor, bn: int, kslice: int | None = None):
     """TMA descriptor of weights [rows, K] viewed as [K / S / 64, S, rows, 64] (S = 64 / bn): one box = one
-    program's slab of bn rows, landing as stacked A tiles (see _issue_w)."""
+    program's slab of bn rows and ``kslice`` columns (all of K by default), landing as stacked A tiles (see
+    _issue_w)."""
     rows, k = w.reshape(-1, w.shape[-1]).shape
     s = 64 // bn
     v = w.reshape(rows, s, k // s // 64, 64).permute(2, 1, 0, 3)
     lay = gl.NVMMASharedLayout(swizzle_byte_width=128, element_bitwidth=16, rank=4)
-    return TensorDescriptor.from_tensor(v, [k // s // 64, s, bn, 64], lay)
+    return TensorDescriptor.from_tensor(v, [(kslice or k) // s // 64, s, bn, 64], lay)
 
 
 class GluonDecoder:
@@ -639,22 +755,24 @@ class GluonDecoder:
 
     name = "megakernel-gluon"
 
-    def __init__(
-        self, mega, programs: int | None = None, num_warps: int = 4, maxs: int = 1 << 24, ts: bool = False
-    ):
+    def __init__(self, mega, programs: int | None = None, num_warps: int = 4, maxs: int = 1 << 24, ts: bool = False,
+                 prefetch_attention: bool = True):  # fmt: skip
         self.m = mega
         d, f = mega.D, mega.F
         dev = mega.device
         self.P = programs or torch.cuda.get_device_properties(dev).multi_processor_count
-        self.part = max(8, 4096 // min(d, f))  # rows of a residual-producing unit: K / (64 / part) >= 64
-        self.bnq = self.bnf = self.bnv = 32
-        if 3 * d // self.bnq > self.P or d // self.part > self.P or f // self.bnf > self.P:
-            raise ValueError("the model has more GEMM units than the GPU has SMs")
-        self.nw, self.maxs = num_warps, maxs
+        self.part = max(8, 4096 // d)  # rows of an out-projection unit: K / (64 / part) >= 64
+        self.bnq = self.bnf = 32
+        units = (3 * d // self.bnq, d // self.part, f // self.bnf, d // 64 * (f // 512))
+        pow2 = (d & (d - 1)) == 0 and (f & (f - 1)) == 0
+        if max(units) > self.P or not pow2 or not 256 <= d <= 1024 or f < 512:
+            raise ValueError("the model's GEMMs do not fit this GPU's SMs (or the kernel's tiling)")
+        self.nw, self.maxs, self.pfa = num_warps, maxs, prefetch_attention
         self.descs = (
             slab_desc(mega.wqkv, self.bnq), slab_desc(mega.wo, self.part), slab_desc(mega.wcq, self.part),
-            slab_desc(mega.wco, self.part), slab_desc(mega.w1, self.bnf), slab_desc(mega.w2, self.part),
-            slab_desc(mega.wout, self.bnv),
+            slab_desc(mega.wco, self.part), slab_desc(mega.w1, self.bnf), slab_desc(mega.w2, 64, 512),
+            slab_desc(mega.w2, self.part),
+            slab_desc(mega.wout, 64, d // 2),
         )  # fmt: skip
         self.err = mega.err
         self.opts = {"TS": ts}
@@ -673,8 +791,9 @@ class GluonDecoder:
         D, F, L, H, P = m.D, m.F, m.L, m.H, self.P
         dev = m.device
         mt = max(2, _pow2(M))
+        mtf = max(8, mt)
+        hl = 2 if mt <= 16 else 1  # LayerNorm GEMMs: the residual stream as a hi/lo pair while it fits
         ns = max(1, min(8, P // (R * H)))
-        npart = D // self.part
         f16 = {"device": dev, "dtype": torch.float16}
         i32 = {"device": dev, "dtype": torch.int32}
         x = torch.zeros(M, D, device=dev)
@@ -682,30 +801,34 @@ class GluonDecoder:
         qkv = torch.zeros(M, 3 * D, **f16)
         ob, q2 = torch.zeros(M, D, **f16), torch.zeros(M, D, **f16)
         hb = torch.zeros(M, F, **f16)
-        st = torch.zeros(2, npart, M, device=dev)
+        st = torch.zeros(2, D // min(self.part, 64), M, device=dev)
+        part = torch.zeros(F // 512, M, D, device=dev)
+        cnt2 = torch.zeros(D // 64, **i32)
         xp = torch.zeros(ns, M, D, device=dev)
         xml = torch.zeros(ns, M, H, 2, device=dev)
         xcnt = torch.zeros(R * H, **i32)
         bar, done = torch.zeros(1, **i32), torch.zeros(1, **i32)
-        dq, do_, dcq, dco, d1, d2, dout = self.descs
+        dq, do_, dcq, dco, d1, d2, d2s, dout = self.descs
         C, T = self_k.shape[3], cross_k.shape[3]
         args = (
             tokens, offset, m.emb, m.pe, m.xscale,
-            dq, m.bqkv, m.cqkv, do_, m.bo, dcq, m.bcq, m.ccq, dco, m.bco, d1, m.b1, m.c1, d2, m.b2, dout, m.bout, m.cout,
+            dq, m.bqkv, m.cqkv, do_, m.bo, dcq, m.bcq, m.ccq, dco, m.bco, d1, m.b1, m.c1, d2, d2s, m.b2, dout, m.bout,
+            m.cout,
             self_k, self_v, C, cross_k, cross_v, T, logits, new_kv,
-            x, x2, qkv, ob, q2, hb, st, xp, xml, xcnt, bar, self.err, done, self.ts,
+            x, x2, qkv, ob, q2, hb, st, part, cnt2, xp, xml, xcnt, bar, self.err, done, self.ts,
             R, S, L, m.V, m.eps,
         )  # fmt: skip
         const = dict(
-            D=D, H=H, DK=D // H, F=F, MT=mt, LMT=_log2(mt), BNQ=self.bnq, LBNQ=_log2(self.bnq), BNF=self.bnf,
-            LBNF=_log2(self.bnf), PART=self.part, LPART=_log2(self.part), BNV=self.bnv, LBNV=_log2(self.bnv),
-            SP=max(16, _pow2(S)), BT=64, NS=ns, NW=self.nw, MAXS=self.maxs, TS=bool(self.opts["TS"]),
+            D=D, H=H, DK=D // H, F=F, LF=_log2(F), MT=mt, LMT=_log2(mt), HL=hl, MTF=mtf, LMTF=_log2(mtf), BNQ=self.bnq,
+            LBNQ=_log2(self.bnq), BNF=self.bnf, LBNF=_log2(self.bnf), PART=self.part, LPART=_log2(self.part),
+            SP=max(16, _pow2(S)), BT=64, NS=ns, NW=self.nw, MAXS=self.maxs, PFA=self.pfa, F2S=mt <= 8,
+            TS=bool(self.opts["TS"]),
         )  # fmt: skip
 
         def run() -> None:
             _decoder_kernel_g[(P,)](*args, **const, num_warps=self.nw)
 
-        run.buffers = (x, x2, qkv, ob, q2, hb, st, xp, xml, xcnt, bar, done)
+        run.buffers = (x, x2, qkv, ob, q2, hb, st, part, cnt2, xp, xml, xcnt, bar, done)
         run.const = const
         run.writes_cache = True
         return run
