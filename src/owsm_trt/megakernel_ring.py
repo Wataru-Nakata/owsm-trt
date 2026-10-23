@@ -322,6 +322,23 @@ if gluon is not None:
         return c
 
     @gluon.jit
+    def _ffn2_sum(x, x2, st, bias, part, cnt, rb, M, D: gl.constexpr, KS: gl.constexpr, MTP: gl.constexpr,
+                  NPART: gl.constexpr, NW: gl.constexpr, BM: gl.constexpr):  # fmt: skip
+        """The residual stream of block rb: x + bias + its KS partials, in slice order."""
+        el: gl.constexpr = _el(BM, NW)
+        rr = gl.arange(0, BM, layout=gl.SliceLayout(1, el))
+        tt = gl.arange(0, MTP, layout=gl.SliceLayout(0, el))
+        po = tt[None, :] * BM + rr[:, None]
+        tm = (tt < M)[None, :] & (rr >= 0)[:, None]
+        n0 = rb * BM
+        tot = gl.load(x + tt[None, :] * D + n0 + rr[:, None], mask=tm, other=0.0, cache_modifier=".cg")
+        tot += gl.load(bias + n0 + rr)[:, None]
+        for j in gl.static_range(KS):
+            tot += gl.load(part + ((rb * KS + j) * BM) * MTP + po, cache_modifier=".cg")
+        gl.atomic_xchg(cnt + rb, 0, sem="relaxed", scope="gpu")
+        _store_res(tot, x, x2, st, n0, rb, M, BM, MTP, D, NPART, NW)
+
+    @gluon.jit
     def _ffn2_r(hb, M, ring, full, empty, c, xbuf, scratch, bias, x, x2, st, part, cnt, pid, P, tsp,
                 D: gl.constexpr, F: gl.constexpr, LKS: gl.constexpr, N: gl.constexpr, LN_: gl.constexpr,
                 MTP: gl.constexpr, LMTP: gl.constexpr, NPART: gl.constexpr, NW: gl.constexpr,
@@ -329,7 +346,7 @@ if gluon is not None:
                 BM: gl.constexpr):  # fmt: skip
         """FFN2 + residual, split-K: unit u = (block of BM features u >> LKS, K slice u & (KS - 1) of D
         columns). Every slice stores its partial [tokens, BM] (fp32) into part and counts itself; the last one
-        of a block adds the others, bias and residual and stores the residual stream."""
+        of a block adds them (in slice order), bias and residual and stores the residual stream."""
         KS: gl.constexpr = F // D
         NKC: gl.constexpr = D // 64
         el: gl.constexpr = _el(BM, NW)
@@ -337,7 +354,50 @@ if gluon is not None:
         tt = gl.arange(0, MTP, layout=gl.SliceLayout(0, el))
         po = tt[None, :] * BM + rr[:, None]  # token-major partials: coalesced
         tm = (tt < M)[None, :] & (rr >= 0)[:, None]
-        for u in range(pid, F // BM, P):
+        NU: gl.constexpr = F // BM
+        # programs with two units (fewer than 32 tokens: their sums are short): both partials first, then both
+        # counts at once (one atomic round trip, not two); else unit after unit (a block's sum overlaps the
+        # other programs' second units)
+        two = False
+        if MTP < 32:
+            two = (2 * P >= NU) & (P < NU)
+        if two:
+            ll: gl.constexpr = gl.BlockedLayout([1], [32], [NW], [0])
+            i = gl.arange(0, 32 * NW, layout=ll)
+            ones = gl.full([32 * NW], 1, gl.int32, layout=ll)
+            u1 = pid + P
+            has1 = u1 < NU
+            rb0 = pid >> LKS
+            rb1 = u1 >> LKS
+            _x_load(hb + (pid & (KS - 1)) * D, F, 0, M, xbuf, NKC, N, MTP, LMTP, 1, NW)
+            _x_wait()
+            if TS:
+                gl.store(tsp + 2, _now())
+                gl.store(tsp + 3, _now())
+            acc, c = _consume(ring, full, empty, c, xbuf, N, NKC, NSLOT, LNS, NW, CK, BM)
+            gl.store(part + (pid * BM) * MTP + po, _sum_hl(acc, scratch, N, MTP, 1, NW, BM))
+            if has1:
+                if (P & (KS - 1)) != 0:
+                    _x_load(hb + (u1 & (KS - 1)) * D, F, 0, M, xbuf, NKC, N, MTP, LMTP, 1, NW)
+                    _x_wait()
+                acc, c = _consume(ring, full, empty, c, xbuf, N, NKC, NSLOT, LNS, NW, CK, BM)
+                gl.store(part + (u1 * BM) * MTP + po, _sum_hl(acc, scratch, N, MTP, 1, NW, BM))
+            if TS:
+                gl.store(tsp + 4, _now())
+            gl.barrier()
+            a0 = gl.atomic_add(cnt + rb0 + i * 0, ones, mask=i == 0, sem="acq_rel", scope="gpu")
+            a1 = gl.atomic_add(cnt + rb1 + i * 0, ones, mask=(i == 0) & has1, sem="acq_rel", scope="gpu")
+            arrived0 = gl.sum(gl.where(i == 0, a0, 0), axis=0)
+            arrived1 = gl.sum(gl.where((i == 0) & has1, a1, 0), axis=0)
+            if TS:
+                gl.store(tsp + 6, _now())
+            if arrived0 == KS - 1:
+                _ffn2_sum(x, x2, st, bias, part, cnt, rb0, M, D, KS, MTP, NPART, NW, BM)
+            if has1 & (arrived1 == KS - 1):
+                _ffn2_sum(x, x2, st, bias, part, cnt, rb1, M, D, KS, MTP, NPART, NW, BM)
+            if TS:
+                gl.store(tsp + 7, _now())
+        for u in range(pid, NU if not two else 0, P):
             rb = u >> LKS
             ks = u & (KS - 1)
             n0 = rb * BM
