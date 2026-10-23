@@ -11,6 +11,8 @@ Building blocks (this module grows into the whole decoder step):
   blocks.
 """
 
+import logging
+
 import torch
 
 try:
@@ -18,6 +20,8 @@ try:
     import triton.language as tl
 except ImportError:  # e.g. torch without Triton (Windows)
     triton = None
+
+log = logging.getLogger(__name__)
 
 
 def available(device: torch.device) -> bool:
@@ -685,28 +689,40 @@ class MegaBackend:
     """A backend whose decoder calls (decode, verify) of up to ``max_tokens`` tokens (rows x window) and
     ``max_rows`` rows run as a megakernel (``kernel.step_fn``); everything else (encoder, prompt prefill, larger
     calls) is the wrapped backend's (TensorRT). ``rows_kernel`` = (kernel, max_tokens, max_rows): another
-    megakernel (and its limits) for the calls of several rows."""
+    megakernel (and its limits) for the calls of several rows (kernel None: the wrapped backend's).
+
+    With ``trial``, every call on a kernel runs once when it is made: if that raises (a compile error, out of
+    memory, ...), leaves non-finite logits or times out at a grid barrier, the call is the wrapped backend's
+    instead (logged), and so is every later one on that kernel."""
 
     def __init__(self, inner, kernel, max_tokens: int | None = None, max_rows: int | None = None,
-                 rows_kernel: tuple | None = None):  # fmt: skip
+                 rows_kernel: tuple | None = None, trial: bool = False):  # fmt: skip
         self.inner, self.kernel = inner, kernel
         self.max_tokens, self.max_rows = max_tokens, max_rows
         self.rows_kernel = rows_kernel
+        self.trial = trial
+        self.failed: set[int] = set()  # id() of kernels whose trial failed
 
     def __getattr__(self, name):  # encode, encode_fn, trimmed, cfg, name, ...
         return getattr(self.inner, name)
+
+    def _kernels(self):
+        return [k for k in (self.kernel, (self.rows_kernel or (None,))[0]) if k is not None]
 
     @property
     def argmax(self) -> bool:
         """Whether step_fn takes ``pred``: calls on a kernel that can then write the logits' argmax there too
         (see writes_pred on the returned function; other calls ignore it)."""
-        return getattr(self.kernel, "argmax", False) or getattr(
-            (self.rows_kernel or (None,))[0], "argmax", False
-        )
+        return any(getattr(k, "argmax", False) for k in self._kernels())
 
-    def step_fn(
-        self, tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv, kind="decode", pred=None
-    ):
+    @property
+    def solo_differs(self) -> bool:
+        """Whether a single-row call is a different call when no encoder runs alongside (step_fn's ``solo``)."""
+        return getattr(self.kernel, "solo_differs", False) and id(self.kernel) not in self.failed
+
+    def step_fn(self, tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv, kind="decode", pred=None,
+                solo=False):  # fmt: skip
+        """``pred``: see argmax; ``solo``: nothing runs alongside the call (see solo_differs)."""
         args = (tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv)
         kernel, max_tokens, max_rows = self.kernel, self.max_tokens, self.max_rows
         if tokens.shape[0] > 1 and self.rows_kernel is not None:
@@ -714,11 +730,27 @@ class MegaBackend:
         big = (max_tokens is not None and tokens.numel() > max_tokens) or (
             max_rows is not None and tokens.shape[0] > max_rows
         )
-        if kind == "prefill" or big:
+        if kind == "prefill" or big or kernel is None or id(kernel) in self.failed:
             return self.inner.step_fn(*args, kind=kind)
-        if pred is not None and getattr(kernel, "argmax", False):
-            return kernel.step_fn(*args, kind=kind, pred=pred)
-        return kernel.step_fn(*args, kind=kind)
+        kw = {"pred": pred} if pred is not None and getattr(kernel, "argmax", False) else {}
+        if solo and getattr(kernel, "solo_differs", False):
+            kw["solo"] = True
+        if not self.trial:
+            return kernel.step_fn(*args, kind=kind, **kw)
+        try:
+            run = kernel.step_fn(*args, kind=kind, **kw)
+            run()
+            torch.cuda.synchronize(logits.device)
+            kernel.check()
+            if not bool(torch.isfinite(logits).all()):
+                raise RuntimeError("non-finite logits")
+            return run
+        except Exception as e:  # noqa: BLE001 (any failure: TensorRT instead)
+            self.failed.add(id(kernel))
+            log.warning(
+                "decoder megakernel %s failed (%s: %s); TensorRT instead", kernel.name, type(e).__name__, e
+            )
+            return self.inner.step_fn(*args, kind=kind)
 
     def check(self) -> None:
         self.kernel.check()

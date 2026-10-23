@@ -672,6 +672,9 @@ class GreedySession(_Session):
         self._stage_part: dict[tuple[int, int], tuple[torch.Tensor, ...]] = {}  # ... of smaller batches
         self._stage_ids: list[torch.Tensor] = []  # ... their CTC best paths, on the host
         self._verify: dict[tuple[int, int], _Bound] = {}
+        # single-row calls with nothing alongside (no encoder in decode_stream): a megakernel may take more SMs
+        self._verify_solo: dict[tuple[int, int], _Bound] = {}
+        solo = batch == 1 and getattr(backend, "solo_differs", False)
         for w in self.windows:
             bufs = _Verify(cfg, batch, w, self.kw, rules, self.t_notime, eos)
             for c, (k, v) in self.caches.items():
@@ -691,8 +694,14 @@ class GreedySession(_Session):
                     **extra,
                 )
                 self._verify[c, w] = bufs.bind(step, k, v)
+                if solo and getattr(backend, "solo_differs", False):
+                    step = backend.step_fn(
+                        bufs.tok, bufs.offs, k, v, self.cross_k, self.cross_v, bufs.logits, bufs.new_kv, kind=kind,
+                        solo=True, **extra,
+                    )  # fmt: skip
+                    self._verify_solo[c, w] = bufs.bind(step, k, v)
         if use_cuda_graph:
-            for ver in self._verify.values():
+            for ver in (*self._verify.values(), *self._verify_solo.values()):
                 ver.capture()
 
     @property
@@ -838,6 +847,7 @@ class GreedySession(_Session):
         left, drafts, count = [0, 0], [None, None], 0  # per slot: utterances not taken yet, their drafts
         held: list[tuple] = [(), ()]  # per slot: the cross-attention K/V of its batch
         paths: list = [None, None]  # per slot: its CTC best paths, copied to the host after the encoder
+        ended = [False]  # batches has no more
 
         def launch(s: int) -> bool:  # encode the next batch into staging slot s; False: none yet
             nonlocal count
@@ -846,6 +856,7 @@ class GreedySession(_Session):
                 if feats is None:
                     return False
                 if feats is _END:
+                    ended[0] = True
                     return True  # no more: the slot stays empty
                 e = feats.shape[0]
                 # a smaller batch (the last one) gets buffers of its size rather than padding rows
@@ -892,12 +903,17 @@ class GreedySession(_Session):
         if cuda:
             dec.wait_stream(main)
             side.wait_stream(main)
+
+        def concurrent() -> bool:  # whether the encoder may run alongside the next decoder call
+            return not ended[0] or not (ready[0].query() and ready[1].query())
+
         pending += [0, 1]
         flush()
         with torch.cuda.stream(dec) if cuda else nullcontext():
             out, calls = self._drafted(
-                [None] * self.rows, refill, None, max_new_tokens, insertions, give_up, flush, finished
-            )
+                [None] * self.rows, refill, None, max_new_tokens, insertions, give_up, flush, finished,
+                concurrent if cuda else None,
+            )  # fmt: skip
         if cuda:
             main.wait_stream(dec)
             main.wait_stream(side)
@@ -930,11 +946,13 @@ class GreedySession(_Session):
         give_up: int,
         meanwhile: Callable[[], None] | None = None,
         finished: Callable[[int, list[int]], None] | None = None,
+        concurrent: Callable[[], bool] | None = None,
     ) -> tuple[dict[int, list[int]], int]:
         """The loop of drafted decoding, on cache bucket ``c`` (None: not chosen yet). An empty row, or
         one whose utterance is done, takes ``refill(row)``. ``meanwhile()`` runs while each call runs on
         the GPU (the host would only wait); ``finished(index, tokens)`` when an utterance is done, before
-        its row is refilled. Returns (tokens per utterance, calls).
+        its row is refilled; ``concurrent()``: whether other GPU work (an encoder) runs alongside the next
+        call (None: nothing does). Returns (tokens per utterance, calls).
 
         The host waits for every call's result, and the GPU for the next call: this loop is kept lean."""
         eos, done, calls = self.eos, {}, 0
@@ -989,7 +1007,8 @@ class GreedySession(_Session):
             if not live:
                 raise ValueError("no row fits a draft window")
             c = self._move(c, last_pos + w) if c is not None else self._bucket(last_pos + w)
-            accepted = self._verify[c, w](flat, meanwhile)
+            solo = self._verify_solo and not (concurrent is not None and concurrent())
+            accepted = (self._verify_solo if solo else self._verify)[c, w](flat, meanwhile)
             calls += 1
             for r, x in live:
                 n, last = accepted[r]

@@ -22,10 +22,13 @@ CFG = dataclasses.replace(
 )
 
 
-@pytest.fixture(scope="module")
-def model() -> OWSMModel:
+# a width that is not a power of 2 (as owsm_v4_base / small: 384 / 768)
+CFG384 = dataclasses.replace(CFG, d_model=384, n_heads=6, dec_heads=6, dec_ffn=768, dec_layers=2)
+
+
+def _model(cfg) -> OWSMModel:
     torch.manual_seed(0)
-    m = OWSMModel(CFG).eval().requires_grad_(False)
+    m = OWSMModel(cfg).eval().requires_grad_(False)
     m.frontend.melmat.uniform_(0, 1)
     for name, p in m.decoder.named_parameters():  # non-trivial LayerNorms and biases
         if "norm" in name:
@@ -35,6 +38,16 @@ def model() -> OWSMModel:
     m.decoder.output_layer.weight.mul_(8.0)  # clear argmax margins
     m.fuse_projections()
     return m.cuda()
+
+
+@pytest.fixture(scope="module")
+def model() -> OWSMModel:
+    return _model(CFG)
+
+
+@pytest.fixture(scope="module")
+def model384() -> OWSMModel:
+    return _model(CFG384)
 
 
 @pytest.mark.parametrize("rows,window", [(1, 1), (2, 5), (1, 32), (4, 16), (16, 16), (16, 1)])
@@ -112,12 +125,13 @@ gluon_only = pytest.mark.skipif(
 
 @gluon_only
 @pytest.mark.parametrize("rows,window", [(1, 1), (1, 8), (2, 3), (8, 1), (1, 16), (1, 32), (4, 8), (2, 16)])
-def test_gluon_step_matches_decoder(model, rows, window, kind="gluon", programs=None, chunk=2, warps=4):
+def test_gluon_step_matches_decoder(model, rows, window, kind="gluon", programs=None, chunk=2, warps=4, cfg=CFG,
+                                    solo=False):  # fmt: skip
     dec = model.decoder
-    L, H, dk, C, T = CFG.dec_layers, CFG.dec_heads, CFG.d_model // CFG.dec_heads, 128, CFG.enc_frames
+    L, H, dk, C, T = cfg.dec_layers, cfg.dec_heads, cfg.d_model // cfg.dec_heads, 128, cfg.enc_frames
     torch.manual_seed(rows * 100 + window)
     dev = torch.device("cuda")
-    tokens = torch.randint(0, CFG.vocab_size, (rows, window), device=dev)
+    tokens = torch.randint(0, cfg.vocab_size, (rows, window), device=dev)
     offset = torch.randint(0, C - window, (rows,), device=dev)
     offset[0] = 0  # an empty cache
     f16 = {"device": dev, "dtype": torch.float16}
@@ -126,7 +140,7 @@ def test_gluon_step_matches_decoder(model, rows, window, kind="gluon", programs=
     ref, ref_kv = dec.step(
         tokens, offset, list(k.float()), list(v.float()), list(ck.float()), list(cv.float())
     )
-    logits = torch.zeros(rows, window, CFG.vocab_size, device=dev)
+    logits = torch.zeros(rows, window, cfg.vocab_size, device=dev)
     new_kv = torch.zeros(L, 2, rows, H, window, dk, **f16)
     k2, v2 = k.clone(), v.clone()
     mega = megakernel.MegaDecoder(dec, dev)
@@ -138,8 +152,9 @@ def test_gluon_step_matches_decoder(model, rows, window, kind="gluon", programs=
         gk = megakernel_gluon.GluonDecoder(mega)
     pred = torch.full((rows, window), -1, dtype=torch.long, device=dev)
     if kind == "ring":  # with the argmax
-        run = gk.step_fn(tokens, offset, k2, v2, ck, cv, logits, new_kv, pred=pred)
+        run = gk.step_fn(tokens, offset, k2, v2, ck, cv, logits, new_kv, pred=pred, solo=solo)
         assert run.writes_pred
+        assert run.programs == (gk.P_rows if rows > 1 else gk.P_solo if solo else gk.P)
     else:
         run = gk.step_fn(tokens, offset, k2, v2, ck, cv, logits, new_kv)
     run()
@@ -166,6 +181,97 @@ def test_ring_step_matches_decoder(model, rows, window, programs, chunk, warps):
     """The ring kernel, with as many programs as the largest stage has units or with fewer (several units per
     program and stage), ring slots of 1 or 2 weight tiles, units of 64 or 128 rows (4 or 8 warps)."""
     test_gluon_step_matches_decoder(model, rows, window, "ring", programs, chunk, warps)
+
+
+@gluon_only
+@pytest.mark.parametrize("rows,window", [(1, 1), (1, 8), (1, 32), (2, 3)])
+@pytest.mark.parametrize("solo", [False, True])
+def test_ring_step_other_widths(model384, rows, window, solo):
+    """A model width that is not a power of 2 (statistics in 6 parts, 6 K tiles per unit) and the solo calls
+    (more programs)."""
+    test_gluon_step_matches_decoder(model384, rows, window, "ring", cfg=CFG384, solo=solo)
+
+
+@gluon_only
+@pytest.mark.parametrize("window", [1, 8, 32])
+def test_ring_solo_is_bitwise_the_same(model, window):
+    """A single-row call gives the same logits with or without the encoder alongside (more programs then): the
+    outputs do not depend on timing."""
+    dec, dev = model.decoder, torch.device("cuda")
+    L, H, dk, C, T = CFG.dec_layers, CFG.dec_heads, CFG.d_model // CFG.dec_heads, 128, CFG.enc_frames
+    torch.manual_seed(window)
+    f16 = {"device": dev, "dtype": torch.float16}
+    tokens = torch.randint(0, CFG.vocab_size, (1, window), device=dev)
+    offset = torch.tensor([7], device=dev)
+    ck, cv = torch.randn(L, 1, H, T, dk, **f16), torch.randn(L, 1, H, T, dk, **f16)
+    ring = megakernel_ring.RingDecoder(megakernel.MegaDecoder(dec, dev))
+    outs = []
+    for solo in (False, True):
+        k, v = torch.zeros(L, 1, H, C, dk, **f16), torch.zeros(L, 1, H, C, dk, **f16)
+        logits = torch.zeros(1, window, CFG.vocab_size, device=dev)
+        new_kv = torch.zeros(L, 2, 1, H, window, dk, **f16)
+        run = ring.step_fn(tokens, offset, k, v, ck, cv, logits, new_kv, solo=solo)
+        run()
+        outs.append(logits)
+    assert ring.P != ring.P_solo
+    assert torch.equal(outs[0], outs[1])
+
+
+@gluon_only
+def test_backend_trial_falls_back(model):
+    """A kernel whose call fails (here: raises when run) leaves the wrapped backend's call, for that call and the
+    later ones; a kernel that does not fit the model is refused when made."""
+
+    class Broken:
+        name, argmax = "broken", False
+
+        def step_fn(self, *args, **kw):
+            def run():
+                raise RuntimeError("compile error")
+
+            return run
+
+        def check(self):
+            pass
+
+    m16 = copy.deepcopy(model).half()
+    m16.frontend.float()
+    inner = TorchBackend(m16)
+    be = megakernel.MegaBackend(inner, Broken(), 32, 8, trial=True)
+    sess = _session(be, 1, (2, 4))
+    sess.encode(m16.frontend(torch.randn(1, CFG.num_samples, device="cuda")))
+    out, _ = sess.decode_drafted(torch.tensor([[2, 3, 4]], device="cuda"), [[5, 6]], 8)
+    assert be.failed and len(out) == 1
+    with pytest.raises(ValueError):
+        megakernel_gluon.GluonDecoder(megakernel.MegaDecoder(_model(CFG384).decoder, torch.device("cuda")))
+
+
+@gluon_only
+def test_ring_stream_matches_torch(model):
+    """b1 decode_stream on the ring / Gluon backend (single-row calls with the encoder alongside, then without)
+    gives the PyTorch backend's tokens."""
+    m16 = copy.deepcopy(model).half()
+    m16.frontend.float()
+    mega = megakernel.MegaDecoder(model.decoder, torch.device("cuda"))
+    ring = megakernel_ring.RingDecoder(mega)
+    assert ring.solo_differs
+    be = megakernel.MegaBackend(TorchBackend(m16), ring, 32, 8, rows_kernel=(megakernel_gluon.GluonDecoder(mega), 16, 8),
+                                trial=True)  # fmt: skip
+    torch.manual_seed(3)
+    n = 4
+    feats = m16.frontend(torch.randn(n, CFG.num_samples, device="cuda"))
+    drafts = [[5, 6, 7, 8, 9, 10], [11, 12], [], [13, 14, 15]]
+    outs = []
+    for b in (TorchBackend(m16), be):
+        sess = _session(b, 1, (2, 4, 8))
+        if b is be:
+            assert sess._verify_solo
+        given = iter(drafts)
+        batches = (feats[i : i + 1] for i in range(n))
+        out, _ = sess.decode_stream([2, 3, 4], batches, lambda paths: [next(given) for _ in paths], 20)
+        outs.append(out)
+    assert not be.failed
+    assert outs[0] == outs[1]
 
 
 @gluon_only

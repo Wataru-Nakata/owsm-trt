@@ -234,11 +234,14 @@ class OWSM:
         ``fp8_calibration`` (experimental, TensorRT): run the encoder's linear layers and subsampling
         convolutions in FP8, with input ranges measured on these recordings.
 
-        ``decoder_kernel`` (TensorRT, fp16): run decoder calls of up to 16 tokens (rows x drafted window, at
-        most 8 rows) as one persistent Gluon kernel per call instead of the TensorRT decoder engine (Hopper
-        GPUs; larger calls and prompt prefill stay on TensorRT). ``"triton"``: every decode/verify call as the (slower) Triton
-        megakernel (Ampere or newer). None: the ``OWSM_TRT_MEGAKERNEL`` environment variable (1 / triton / 0),
-        off if unset.
+        ``decoder_kernel`` (TensorRT, fp16): run small decoder calls as one persistent Gluon kernel per call
+        instead of the TensorRT decoder engine (Hopper GPUs; larger calls and prompt prefill stay on TensorRT).
+        ``"ring"``: single-row calls of up to 32 tokens on the ring kernel (32 SMs while decode_stream's encoder
+        runs alongside, 64 otherwise), calls of up to 16 tokens and 8 rows on the Gluon kernel; ``"auto"``: as
+        ``"ring"`` on a Hopper GPU when the kernels build and match the decoder on a test call, TensorRT
+        otherwise; True / ``"1"``: the Gluon kernel only; ``"triton"``: every decode/verify call as the
+        (slower) Triton megakernel (Ampere or newer). Kernels that fail leave TensorRT (logged). None: the
+        ``OWSM_TRT_MEGAKERNEL`` environment variable (auto / ring / 1 / triton / 0), off if unset.
         """
         files = hub.resolve(model)
         raw = load_espnet_config(files.config)
@@ -891,7 +894,9 @@ def _quantize_encoder(
 
 
 def _decoder_kernel(runner, cfg, checkpoint: Path, dev: torch.device, which):
-    """``runner`` with its small decoder calls on a megakernel (see from_pretrained's ``decoder_kernel``)."""
+    """``runner`` with its small decoder calls on a megakernel (see from_pretrained's ``decoder_kernel``).
+    Anything that fails while the kernels are made (unsupported shapes, out of memory, ...) leaves ``runner``
+    (logged); so does any call whose first run fails (MegaBackend's trial)."""
     from . import megakernel_gluon
 
     if which == "triton":
@@ -900,17 +905,26 @@ def _decoder_kernel(runner, cfg, checkpoint: Path, dev: torch.device, which):
             return runner
         return megakernel.MegaBackend(runner, megakernel.MegaDecoder(_load_decoder(cfg, checkpoint), dev))
     if not megakernel_gluon.available(dev):
-        log.warning("the Gluon decoder megakernel needs Triton with Gluon and a Hopper GPU; not used")
+        if which != "auto":
+            log.warning("the Gluon decoder megakernels need Triton with Gluon and a Hopper GPU; not used")
         return runner
-    mega = megakernel.MegaDecoder(_load_decoder(cfg, checkpoint), dev)
+    auto = which == "auto"
     try:
-        gk = megakernel_gluon.GluonDecoder(mega)
+        decoder = _load_decoder(cfg, checkpoint)
+        mega = megakernel.MegaDecoder(decoder, dev)
+        try:
+            gk = megakernel_gluon.GluonDecoder(mega)
+        except ValueError as e:  # (e.g. a model width that is not a power of 2)
+            if not (auto or (isinstance(which, str) and which.startswith("ring"))):
+                raise
+            log.info("Gluon decoder megakernel not used for calls of several rows: %s", e)
+            gk = None
         route = megakernel_gluon.ROUTE_TOKENS, megakernel_gluon.ROUTE_ROWS
         rows_kernel = None
-        if isinstance(which, str) and which.startswith("ring"):
-            # ring[:<programs>][:r<P>][:c<n>][:a<n>][:w<warps>][:x][:rr]: single-row calls on the ring kernel
-            # (few SMs: decode_stream's encoder runs beside it), calls of several rows on the Gluon kernel (all
-            # SMs), with rr on the ring kernel too
+        if auto or (isinstance(which, str) and which.startswith("ring")):
+            # ring[:<programs>][:r<P>][:s<P>][:c<n>][:a<n>][:w<warps>][:x][:rr]: single-row calls on the ring
+            # kernel (few SMs while decode_stream's encoder runs beside it), calls of several rows on the Gluon
+            # kernel (all SMs), with rr on the ring kernel too
             from . import megakernel_ring
 
             kw, opts = {}, which.split(":")[1:]
@@ -919,18 +933,62 @@ def _decoder_kernel(runner, cfg, checkpoint: Path, dev: torch.device, which):
                     kw["programs"] = int(o)
                 elif o == "x":
                     kw["exclusive"] = True
-                elif o[:1] in ("r", "c", "a", "w") and o[1:].isdigit():
-                    kw[{"r": "row_programs", "c": "chunk", "a": "ahead", "w": "num_warps"}[o[0]]] = int(o[1:])
+                elif o[:1] in ("r", "s", "c", "a", "w") and o[1:].isdigit():
+                    key = {
+                        "r": "row_programs",
+                        "s": "solo_programs",
+                        "c": "chunk",
+                        "a": "ahead",
+                        "w": "num_warps",
+                    }
+                    kw[key[o[0]]] = int(o[1:])
             kernel = megakernel_ring.RingDecoder(mega, **kw)
             if "rr" not in opts:
                 rows_kernel = (gk, *route)
             route = megakernel_ring.ROUTE_TOKENS, megakernel_ring.ROUTE_ROWS
-        else:
+        elif gk is not None:
             kernel = gk
-    except ValueError as e:
-        log.warning("decoder megakernel not used: %s", e)
+        if auto:
+            _check_kernel(kernel, decoder, dev, 1, 2)
+            if gk is not None:
+                try:
+                    _check_kernel(gk, decoder, dev, 2, 1)
+                except Exception as e:  # noqa: BLE001
+                    log.warning("Gluon decoder megakernel not used for calls of several rows: %s", e)
+                    rows_kernel = (None, *rows_kernel[1:])
+    except Exception as e:  # noqa: BLE001 (any failure: TensorRT)
+        log.warning("decoder megakernel not used (%s: %s)", type(e).__name__, e)
+        torch.cuda.empty_cache()
         return runner
-    return megakernel.MegaBackend(runner, kernel, *route, rows_kernel=rows_kernel)
+    torch.cuda.empty_cache()  # (the fp32 copies the weights were folded in)
+    return megakernel.MegaBackend(runner, kernel, *route, rows_kernel=rows_kernel, trial=True)
+
+
+@torch.no_grad()
+def _check_kernel(kernel, decoder: Decoder, dev: torch.device, rows: int, window: int) -> None:
+    """Raise unless ``kernel``'s logits for a small random call match ``decoder``'s (fp32, CPU)."""
+    m = kernel.m
+    L, H, dk, C, T = m.L, m.H, m.D // m.H, 64, 64
+    g = torch.Generator().manual_seed(0)
+    tokens = torch.randint(0, m.V, (rows, window), generator=g)
+    offset = torch.full((rows,), 5, dtype=torch.long)
+    k, v, ck, cv = (torch.randn(L, rows, H, n, dk, generator=g).half() for n in (C, C, T, T))
+    ref, _ = decoder.step(
+        tokens, offset, list(k.float()), list(v.float()), list(ck.float()), list(cv.float())
+    )
+    logits = torch.zeros(rows, window, m.V, device=dev)
+    new_kv = torch.zeros(L, 2, rows, H, window, dk, device=dev, dtype=torch.float16)
+    cuda = [t.to(dev) for t in (tokens, offset, k, v, ck, cv)]
+    kernel.step_fn(*cuda, logits, new_kv)()
+    torch.cuda.synchronize(dev)
+    kernel.check()
+    out = logits.cpu()
+    err = (out - ref).abs().max().item() / ref.abs().max().item()
+    agree = (out.argmax(-1) == ref.argmax(-1)).float().mean().item()
+    if not err < 0.02 or agree < 0.5:
+        raise RuntimeError(
+            f"{kernel.name}: logits off ({err:.3g} of their range, argmax agreement {agree:.2f})"
+        )
 
 
 def _load_decoder(cfg, checkpoint: Path) -> Decoder:
