@@ -5,6 +5,7 @@ import logging
 import math
 import os
 from collections import OrderedDict
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -33,6 +34,7 @@ from .runtime import (
     TorchCTCBackend,
     TRTBackend,
     TRTCTCBackend,
+    ctc_buffers,
 )
 from .tokenizer import Tokenizer
 
@@ -151,6 +153,12 @@ class _Recording:
     segments: list[Segment] = field(default_factory=list)
 
 
+def _wait(host: torch.Tensor, done: torch.cuda.Event | None) -> torch.Tensor:
+    if done is not None:
+        done.synchronize()
+    return host
+
+
 def _joined(segments: list[Segment]) -> Result:
     return Result(
         text=" ".join(s.text.strip() for s in segments if s.text.strip()), tokens=[], segments=segments
@@ -190,6 +198,7 @@ class OWSM:
             else None
         )
         self._sessions: OrderedDict[tuple, GreedySession | BeamSession | CTCSession] = OrderedDict()
+        self._ctc_buffers: tuple[torch.Tensor, torch.Tensor] | None = None  # shared by the CTC sessions
 
     @classmethod
     def from_pretrained(
@@ -393,12 +402,15 @@ class OWSM:
         if self.cfg.ctc_only:
             if timestamps or beam_size != 1:
                 raise ValueError("CTC-only models have no timestamps or beam search; use the defaults")
-            results = []
             bs = min(batch_size or self.opts.max_batch, self.opts.max_batch)
-            for i in range(0, len(items), bs):
-                waves = [self._wave(a, sr) for a in items[i : i + bs]]
-                for row in self._ctc_paths(waves, lang, task, prompt).tolist():
-                    results.append(self._result(ctc_collapse(row, self.tokenizer.blank), offset=0.0))
+            # batches of similar durations: a batch's features stop after its longest recording
+            order = sorted(range(len(items)), key=lambda i: duration(items[i], sr or self.cfg.sample_rate))
+            chunks = [order[i : i + bs] for i in range(0, len(order), bs)]
+            batches = ([self._wave(items[j], sr) for j in chunk] for chunk in chunks)
+            results: list[Result | None] = [None] * len(items)
+            for chunk, paths in zip(chunks, self._ctc_stream(batches, lang, task, prompt)):
+                for j, ids in zip(chunk, ctc_collapse_rows(paths, self.tokenizer.blank)):
+                    results[j] = self._result(ids, offset=0.0)
             return results[0] if single else results
         bs = self._batch_size(batch_size, beam_size)
         primer = self._primer(lang, task, timestamps, prompt)
@@ -455,7 +467,7 @@ class OWSM:
     def _ctc_paths(self, waves: list[torch.Tensor], lang: str, task: str, prompt: str | None) -> torch.Tensor:
         """OWSM-CTC best paths [B, 2 + T'] (frame-wise argmax, the first two frames are the prefix).
 
-        The tensor is a session buffer, overwritten by the next call."""
+        The tensor is a buffer shared by the CTC sessions, overwritten by the next call."""
         t = self.tokenizer
         prev = t.encode(prompt) if prompt else [t.na]
         if t.na in prev:
@@ -463,17 +475,47 @@ class OWSM:
         b = len(waves)
         key = ("ctc", b, len(prev))
         if key not in self._sessions:
-            if len(self._sessions) >= 2:
+            # CTC sessions are light (their buffers are shared): one per batch size and prompt length
+            if len(self._sessions) >= 2 * self.opts.max_batch:
                 self._sessions.popitem(last=False)
+            if self._ctc_buffers is None:
+                self._ctc_buffers = ctc_buffers(self.cfg, self.opts.max_batch, self.device)
             self._sessions[key] = CTCSession(
-                self.backend, self.cfg, b, len(prev), self.device, self.use_cuda_graph
+                self.backend, self.cfg, b, len(prev), self.device, self.use_cuda_graph, self._ctc_buffers
             )
         self._sessions.move_to_end(key)
-        return self._sessions[key](
+        sess = self._sessions[key]
+        conditioning = (tuple(prev), lang, task)
+        if sess.conditioning == conditioning:  # already in the session's buffers
+            return sess(self._features(waves))
+        sess.conditioning = conditioning
+        return sess(
             self._features(waves),
             torch.tensor([prev] * b, device=self.device),
             torch.tensor([[t.lang_id(lang), t.task_id(task)]] * b, device=self.device),
         )
+
+    def _ctc_stream(
+        self, batches: Iterable[list[torch.Tensor]], lang: str, task: str, prompt: str | None
+    ) -> Iterator[torch.Tensor]:
+        """:meth:`_ctc_paths` of each batch of waveforms, as tensors on the host, in order. Each batch is
+        queued on the device before the host waits for the best paths of the one before (and makes their
+        transcripts, while the device works)."""
+        pending = None
+        for waves in batches:
+            paths = self._ctc_paths(waves, lang, task, prompt)
+            if self.device.type == "cuda":
+                host = torch.empty(paths.shape, dtype=paths.dtype, pin_memory=True)
+                host.copy_(paths, non_blocking=True)
+                done = torch.cuda.Event()
+                done.record()
+            else:
+                host, done = paths.clone(), None
+            if pending is not None:
+                yield _wait(*pending)
+            pending = host, done
+        if pending is not None:
+            yield _wait(*pending)
 
     def _result(self, ids: list[int], offset: float) -> Result:
         t = self.tokenizer
@@ -539,7 +581,7 @@ class OWSM:
         single = not isinstance(audio, list)
         waves = [self._wave(a, sr) for a in ([audio] if single else audio)]
         if self.cfg.ctc_only:
-            results = [self._transcribe_long_ctc(w, lang, task) for w in waves]
+            results = self._long_ctc(waves, lang, task)
         elif cut_at_pauses:
             if condition_on_prev_text:
                 raise ValueError("condition_on_prev_text needs ESPnet's windows (cut_at_pauses=False)")
@@ -697,31 +739,41 @@ class OWSM:
             results[j] = self._result(ids, offset=0.0)
         return results
 
-    def _transcribe_long_ctc(
-        self, wav: torch.Tensor, lang: str, task: str, context_seconds: float = 2.0
-    ) -> Result:
-        """OWSM-CTC over a recording: windows of the training length overlapping by ``context_seconds``
-        on each side, keeping each window's middle frames (as ESPnet's ``ctc_log_probs``)."""
+    def _long_ctc(
+        self, waves: list[torch.Tensor], lang: str, task: str, context_seconds: float = 2.0
+    ) -> list[Result]:
+        """OWSM-CTC over recordings: windows of the training length overlapping by ``context_seconds``
+        on each side, keeping each window's middle frames (as ESPnet's ``ctc_log_probs``). The windows of
+        all recordings go through the encoder ``max_batch_size`` at a time."""
         cfg, fs = self.cfg, self.cfg.sample_rate
         context = int(fs * context_seconds)
         chunk = cfg.num_samples - 2 * context
-        padded = F.pad(wav, (context, context))
-        windows = []
-        for start in range(0, len(padded), chunk):
-            windows.append(padded[start : start + cfg.num_samples])
-            if len(windows[-1]) < cfg.num_samples:
-                break
+        windows, owner = [], []
+        for r, wav in enumerate(waves):
+            padded = F.pad(wav, (context, context))
+            for start in range(0, len(padded), chunk):
+                windows.append(padded[start : start + cfg.num_samples])
+                owner.append(r)
+                if len(windows[-1]) < cfg.num_samples:
+                    break
         fps = fs / cfg.hop_length / math.prod(cfg.strides)
         # ESPnet cuts the window's frames before dropping the two prefix frames, so it keeps these:
         keep = slice(int(fps * context_seconds), int(fps * cfg.speech_seconds) - int(fps * context_seconds))
-        frames = []
-        for i in range(0, len(windows), self.opts.max_batch):
-            paths = self._ctc_paths(windows[i : i + self.opts.max_batch], lang, task, None)
-            frames.append(paths[:, keep].reshape(-1).clone())  # paths is reused by the next call
-        wanted = int(round(len(wav) / fs * fps))
-        ids = ctc_collapse(torch.cat(frames)[:wanted].tolist(), self.tokenizer.blank)
-        text = self.tokenizer.decode(ids)
-        return Result(text=text, tokens=ids, segments=[Segment(0.0, round(len(wav) / fs, 2), text)])
+        bs = self.opts.max_batch
+        batches = (windows[i : i + bs] for i in range(0, len(windows), bs))
+        frames: list[list[torch.Tensor]] = [[] for _ in waves]
+        for i, paths in enumerate(self._ctc_stream(batches, lang, task, None)):
+            for r, row in zip(owner[i * bs : (i + 1) * bs], paths[:, keep]):
+                frames[r].append(row)
+        results = []
+        for wav, rows in zip(waves, frames):
+            wanted = int(round(len(wav) / fs * fps))
+            ids = ctc_collapse(torch.cat(rows)[:wanted].tolist(), self.tokenizer.blank)
+            text = self.tokenizer.decode(ids)
+            results.append(
+                Result(text=text, tokens=ids, segments=[Segment(0.0, round(len(wav) / fs, 2), text)])
+            )
+        return results
 
 
 @torch.inference_mode()
