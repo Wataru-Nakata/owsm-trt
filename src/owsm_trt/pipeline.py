@@ -1,6 +1,7 @@
 """High-level API: ``OWSM.from_pretrained(...).transcribe(...)``."""
 
 import hashlib
+import itertools
 import logging
 import math
 import os
@@ -50,6 +51,11 @@ DRAFT_TOKENS = 256
 # subsampling convolutions run on all of them, so a finer step saves work (500 -> 100: batch 16 +2-3%
 # RTFx on the 73 LibriSpeech utterances, OWSM v4 1B and OWSM-CTC v4) for more CUDA graphs.
 FEATURE_STEP = 100
+# OWSM-CTC in batches of at most CTC_LANE_BATCH: this many encoder calls on the device at a time (on
+# streams of their own; the same kernels, so the same outputs). A batch-1 call leaves most of the GPU idle:
+# two in flight, +20% throughput (73 LibriSpeech utterances, H200).
+CTC_LANES = 2
+CTC_LANE_BATCH = 1
 # transcribe_long: drafts with guessed timestamps (see OWSM._long_window)
 TIMESTAMP_GUESSES = True
 # transcribe_long with batch_size > 1: a window is cut at the quietest point of its last this many seconds
@@ -159,6 +165,13 @@ class _Recording:
     segments: list[Segment] = field(default_factory=list)
 
 
+def _chain(first: deque, rest: Iterator):
+    """The items of ``first`` (taken from the front as they are reached), then those of ``rest``."""
+    while first:
+        yield first.popleft()
+    yield from rest
+
+
 def _wait(host: torch.Tensor, done: torch.cuda.Event | None) -> torch.Tensor:
     if done is not None:
         done.synchronize()
@@ -204,7 +217,8 @@ class OWSM:
             else None
         )
         self._sessions: OrderedDict[tuple, GreedySession | BeamSession | CTCSession] = OrderedDict()
-        self._ctc_buffers: tuple[torch.Tensor, torch.Tensor] | None = None  # shared by the CTC sessions
+        self._lane_streams: list = []  # streams of the CTC lanes (_ctc_stream)
+        self._ctc_buffers: dict[int, tuple] = {}  # per lane: buffers its CTC sessions share
 
     @classmethod
     def from_pretrained(
@@ -355,17 +369,21 @@ class OWSM:
                     w.shape[0] / self.cfg.sample_rate,
                     self.cfg.speech_seconds,
                 )
-        batch = torch.zeros(len(waves), n, device=self.device)  # pad on the device: copy only the audio
+        frames = self.cfg.num_frames
+        if getattr(self.backend, "trimmed", False):  # the encoder fills in the frames of padding only
+            t = max(frames_needed(self.cfg, min(w.shape[0], n)) for w in waves)
+            frames = min(frames, -(-t // FEATURE_STEP) * FEATURE_STEP)
+        # The STFT (center=True) of frames 0 .. frames-1 reads samples up to (frames-1)·hop + n_fft/2 - 1:
+        # the padding after them is not transformed (the same frames: the reflection at the end of the
+        # shorter input is past them).
+        length = min(n, (frames - 1) * self.cfg.hop_length + self.cfg.n_fft // 2 + 1)
+        batch = torch.zeros(len(waves), length, device=self.device)  # pad on the device: copy only the audio
         for row, w in zip(batch, waves):
-            w = w[:n]
+            w = w[:length]
             if batch.is_cuda and w.device.type == "cpu":
                 w = w.pin_memory()  # a copy from pageable memory would first wait for the stream's work
             row[: w.shape[0]].copy_(w, non_blocking=True)
-        feats = self.frontend(batch)  # [B, T, n_mels]
-        if getattr(self.backend, "trimmed", False):  # the encoder fills in the frames of padding only
-            t = max(frames_needed(self.cfg, w.shape[0]) for w in waves)
-            feats = feats[:, : min(self.cfg.num_frames, -(-t // FEATURE_STEP) * FEATURE_STEP)]
-        return feats
+        return self.frontend(batch)[:, :frames]  # [B, frames, n_mels]
 
     def _primer(self, lang: str, task: str, timestamps: bool, prompt: str | None) -> list[int]:
         t = self.tokenizer
@@ -478,25 +496,29 @@ class OWSM:
         """Drafts from CTC best paths [B, t] (GreedySession.encode)."""
         return ctc_collapse_rows(best_paths, self.tokenizer.blank)
 
-    def _ctc_paths(self, waves: list[torch.Tensor], lang: str, task: str, prompt: str | None) -> torch.Tensor:
+    def _ctc_paths(
+        self, waves: list[torch.Tensor], lang: str, task: str, prompt: str | None, lane: int = 0
+    ) -> torch.Tensor:
         """OWSM-CTC best paths [B, 2 + T'] (frame-wise argmax, the first two frames are the prefix).
 
-        The tensor is a buffer shared by the CTC sessions, overwritten by the next call."""
+        The tensor is a buffer shared by the CTC sessions of ``lane``, overwritten by their next call."""
         t = self.tokenizer
         prev = t.encode(prompt) if prompt else [t.na]
         if t.na in prev:
             prev = [t.na]
         b = len(waves)
-        key = ("ctc", b, len(prev))
+        key = ("ctc", b, len(prev), lane)
         if key not in self._sessions:
             # CTC sessions are light (their buffers are shared): one per batch size and prompt length
             if len(self._sessions) >= 2 * self.opts.max_batch:
                 self._sessions.popitem(last=False)
-            if self._ctc_buffers is None:
-                self._ctc_buffers = ctc_buffers(self.cfg, self.opts.max_batch, self.device)
+            if lane not in self._ctc_buffers:
+                rows = self.opts.max_batch if lane == 0 else CTC_LANE_BATCH
+                self._ctc_buffers[lane] = ctc_buffers(self.cfg, rows, self.device)
             self._sessions[key] = CTCSession(
-                self.backend, self.cfg, b, len(prev), self.device, self.use_cuda_graph, self._ctc_buffers
-            )
+                self.backend, self.cfg, b, len(prev), self.device, self.use_cuda_graph, self._ctc_buffers[lane],
+                lane=lane,
+            )  # fmt: skip
         self._sessions.move_to_end(key)
         sess = self._sessions[key]
         conditioning = (tuple(prev), lang, task)
@@ -515,21 +537,37 @@ class OWSM:
         """:meth:`_ctc_paths` of each batch of waveforms, as tensors on the host, in order. Each batch is
         queued on the device before the host waits for the best paths of the one before (and makes their
         transcripts, while the device works)."""
-        pending = None
-        for waves in batches:
-            paths = self._ctc_paths(waves, lang, task, prompt)
-            if self.device.type == "cuda":
+        pending: deque = deque()
+        streams: list | None = None
+        batches = iter(batches)
+        ahead = deque(itertools.islice(batches, 2))
+        for i, waves in enumerate(_chain(ahead, batches)):
+            if self.device.type != "cuda":
+                yield self._ctc_paths(waves, lang, task, prompt).clone()
+                continue
+            if streams is None:  # batches of one, more than one: CTC_LANES of them on the device at a time
+                lanes = CTC_LANES if len(waves) <= CTC_LANE_BATCH and ahead else 1
+                main = torch.cuda.current_stream()
+                if lanes > 1 and len(self._lane_streams) < lanes:
+                    self._lane_streams = [torch.cuda.Stream() for _ in range(lanes)]
+                streams = [main] if lanes == 1 else self._lane_streams[:lanes]
+            lane = i % len(streams) if len(waves) <= CTC_LANE_BATCH else 0
+            stream = streams[lane]
+            if stream is not main:
+                stream.wait_stream(main)  # (whatever the caller queued before)
+            with torch.cuda.stream(stream):  # features, encoder and the copy on the lane's stream
+                paths = self._ctc_paths(waves, lang, task, prompt, lane if len(streams) > 1 else 0)
                 host = torch.empty(paths.shape, dtype=paths.dtype, pin_memory=True)
                 host.copy_(paths, non_blocking=True)
                 done = torch.cuda.Event()
                 done.record()
-            else:
-                host, done = paths.clone(), None
-            if pending is not None:
-                yield _wait(*pending)
-            pending = host, done
-        if pending is not None:
-            yield _wait(*pending)
+            pending.append((host, done))
+            if len(pending) > len(streams):
+                yield _wait(*pending.popleft())
+        while pending:
+            yield _wait(*pending.popleft())
+        for stream in streams or []:
+            torch.cuda.current_stream().wait_stream(stream)
 
     def _result(self, ids: list[int], offset: float) -> Result:
         t = self.tokenizer

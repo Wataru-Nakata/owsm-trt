@@ -22,7 +22,10 @@ SCRIPTS = Path(os.environ["PYTHONPATH"]).parent / "scripts"  # gpu_eval.pbs sets
 
 def run(src: str, model: str, config: str, ref: str, save: Path, extra: list[str]) -> dict:
     env = dict(os.environ, PYTHONPATH=str(Path(src).resolve()))
-    if config.startswith("long"):
+    if config.startswith("lat"):  # single-utterance latency (scripts/latency.py), of a lat<N> s utterance
+        data = os.environ.get("AB_DATA", ".cache/testdata/librispeech_dummy/manifest.json")
+        cmd = [sys.executable, str(SCRIPTS / "latency.py"), "--seconds", config[3:]]
+    elif config.startswith("long"):
         data = os.environ.get("AB_LONG_DATA", ".cache/longform/test_clean/manifest.json")
         cmd = [sys.executable, str(SCRIPTS / "eval_long.py"), "--batch-size", config[4:]]
     else:
@@ -39,10 +42,11 @@ def run(src: str, model: str, config: str, ref: str, save: Path, extra: list[str
         ("rtfx", r"RTFx (\d+)"),
         ("same", r"identical to \S+: (\d+/\d+)"),
         ("calls", r"tokens, (\d+) calls\)"),  # decoder calls of CTC-drafted decoding (eval_wer.py)
+        ("latency", r"latency median ([\d.]+) ms"),  # scripts/latency.py
     ):
         m = re.search(pat, text)
         res[key] = m.group(1) if m else None
-    if not res["ok"] or res["rtfx"] is None:
+    if not res["ok"] or (res["rtfx"] is None and res["latency"] is None):
         print(text[-4000:])
     return res
 
@@ -85,6 +89,7 @@ def main() -> None:
             print(
                 f"  {c:7s} {name}: RTFx {[r['rtfx'] for r in rs]} WER {rs[-1]['wer']} same {rs[-1]['same']}"
                 + (f" decoder calls {[r['calls'] for r in rs]}" if rs[-1].get("calls") else "")
+                + (f" latency ms {[r['latency'] for r in rs]}" if rs[-1].get("latency") else "")
             )
 
 
