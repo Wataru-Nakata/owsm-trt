@@ -3,6 +3,8 @@
 * :func:`choose` -- the argmax after every window position under ESPnet's timestamp rules, in one pass
   over the logits. The allowed tokens are a few ranges of ids, so no [rows, vocab] mask is built.
 * :func:`write_kv` -- each row's new keys/values into the KV cache at its own offset.
+* :func:`accept` -- per row, how many drafted tokens the decoder accepted, and the token after them: all
+  the host needs back from a call.
 """
 
 import torch
@@ -79,6 +81,21 @@ if triton is not None:
         else:
             tl.store(v + dst, x, mask=m)
 
+    @triton.jit
+    def _accept(pred, inp, res, eos, W: tl.constexpr, BW: tl.constexpr):
+        """One row: inp = [W tokens | offset | #timestamps | last timestamp | first position]."""
+        r = tl.program_id(0)
+        row = inp + r * (W + 4)
+        s = tl.maximum(tl.load(row + W + 3), 0)  # where the head (primer or last token) ends
+        i = tl.arange(0, BW)
+        inside = i < W - 1
+        p = tl.load(pred + r * W + i, mask=inside, other=0)  # the decoder's choice after position i ...
+        nxt = tl.load(row + 1 + i, mask=inside, other=0)  # ... for the token at i + 1
+        ok = (inside & (p == nxt) & (nxt != eos)) | (i < s)
+        end = tl.min(tl.where(ok, BW, i), 0)  # s + n: the first position whose choice is not accepted
+        tl.store(res + r * 2, end - s)
+        tl.store(res + r * 2 + 1, tl.load(pred + r * W + end))
+
 
 def choose(logits: torch.Tensor, inp: torch.Tensor, notime: torch.Tensor, pred: torch.Tensor, rules) -> None:
     """``pred`` [R, W] = argmax of ``logits`` [R, W, V] under ``rules`` (None: plain argmax); ``inp``
@@ -94,3 +111,9 @@ def write_kv(new_kv: torch.Tensor, k: torch.Tensor, v: torch.Tensor, offs: torch
     C = k.shape[3]
     BS = max(16, triton.next_power_of_2(S))
     _write_kv[(L * R * H, 2)](new_kv, k, v, offs, R, S, C, H=H, D=D, BS=BS, num_warps=4)
+
+
+def accept(pred: torch.Tensor, inp: torch.Tensor, res: torch.Tensor, eos: int) -> None:
+    """``res`` [R, 2] = runtime._Verify.accept() for the argmax ``pred`` [R, W] of a call on ``inp``."""
+    R, W = pred.shape
+    _accept[(R,)](pred, inp, res, eos, W=W, BW=triton.next_power_of_2(max(W, 2)), num_warps=1)

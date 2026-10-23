@@ -386,6 +386,8 @@ def test_drafted_decoding_recovers_from_draft_errors(model):
     a few CTC-like errors costs about one extra call per error, a useless draft is abandoned."""
     import random
 
+    from owsm_trt.runtime import _accepted
+
     rng = random.Random(0)
     target = [rng.randrange(6, 50) for _ in range(60)]
     p = 3
@@ -400,9 +402,12 @@ def test_drafted_decoding_recovers_from_draft_errors(model):
         return logits, torch.zeros(TINY.dec_layers, 2, 1, TINY.dec_heads, p, 8), 128
 
     def oracle(w):
-        def verify(inp):
-            base = inp[0][w] - p  # index of the window's first token in target (negative: in the primer)
-            return [[target[base + i + 1] if 0 <= base + i + 1 < len(target) else 1 for i in range(w)]]
+        def verify(
+            inp, meanwhile=None
+        ):  # one row: [w tokens | offset | #timestamps | last one | first position]
+            base = inp[w] - p  # index of the window's first token in target (negative: in the primer)
+            pred = [target[base + i + 1] if 0 <= base + i + 1 < len(target) else 1 for i in range(w)]
+            return [list(_accepted(pred, inp[:w], max(inp[w + 3], 0), eos=1))]
 
         return verify
 
@@ -455,6 +460,113 @@ def test_resync_rules():
     assert _resync(with_commas, 3, [10, comma, 11, comma], set(), punct) == 3
     # ...but a comma after an anchored word is
     assert _resync(with_commas, 4, [11, 12, 13, comma], set(), punct) == 6
+
+
+def _resync_scan(draft, j, out, insertions, punctuation, reach=8):
+    """_resync's rules, as a plain scan of every anchor (the reference for its shortcuts)."""
+    if out[-1] in insertions:
+        return j
+    for k in (3, 2, 1):
+        tail = out[-k:]
+        if len(tail) < k or any(t in insertions for t in tail) or (k == 1 and tail[0] in punctuation):
+            continue
+        hits = [
+            i
+            for i in range(max(0, j - reach), min(len(draft) - k, j + reach) + 1)
+            if draft[i : i + k] == tail
+        ]
+        if hits:
+            return min(hits, key=lambda i: abs(i + k - 1 - j)) + k
+    if j < len(draft) and not (out[-1] in punctuation and draft[j] not in punctuation):
+        return j + 1
+    return j
+
+
+def test_resync_matches_scan():
+    import random
+
+    from owsm_trt.runtime import _resync
+
+    rng = random.Random(0)
+    insertions, punct = {9}, frozenset({7, 8})
+    for _ in range(20000):
+        vocab = rng.choice([4, 6, 12])  # small vocabularies: many repeats, ties and anchors far from j
+        draft = [rng.randrange(vocab) for _ in range(rng.randrange(0, 30))]
+        out = [rng.randrange(vocab) for _ in range(rng.randrange(1, 6))]
+        if draft and rng.random() < 0.5:  # the decoder followed the draft up to j
+            j = rng.randrange(len(draft) + 1)
+            out = (out + draft[max(0, j - 3) : j])[-rng.randrange(1, 5) :]
+            out += [draft[j] if j < len(draft) and rng.random() < 0.7 else rng.randrange(vocab)]
+        j = rng.randrange(len(draft) + 3)
+        want = _resync_scan(draft, j, out, insertions, punct)
+        assert _resync(draft, j, out, insertions, punct) == want, (draft, j, out)
+        assert _resync(draft, j, out[-3:], insertions, punct) == want  # all it reads of the output
+
+
+def test_accept_matches_reference():
+    """_Verify.accept (what a call returns) == the per-row rule, wherever the head ends."""
+    import random
+
+    from owsm_trt.runtime import _accepted, _Verify
+
+    rng = random.Random(1)
+    eos, R = 3, 40
+    for w in (1, 2, 4, 8):
+        bufs = _Verify(TINY, R, w, {"device": torch.device("cpu"), "dtype": torch.float32}, None, None, eos)
+        rows, preds = [], []
+        for _ in range(R):
+            tok = [rng.randrange(6) for _ in range(w)]
+            pred = [tok[i + 1] if i + 1 < w and rng.random() < 0.8 else rng.randrange(6) for i in range(w)]
+            rows.append(tok + [0, 0, -1, rng.randrange(-1, w)])
+            preds.append(pred)
+        bufs.inp.copy_(torch.tensor(rows))
+        bufs.pred.copy_(torch.tensor(preds))
+        want = [list(_accepted(p, r[:w], max(r[w + 3], 0), eos)) for p, r in zip(preds, rows)]
+        assert bufs.accept().tolist() == want
+
+
+def test_ctc_collapse_rows():
+    import random
+
+    from owsm_trt.pipeline import ctc_collapse, ctc_collapse_rows
+
+    rng = random.Random(2)
+    paths = torch.tensor(
+        [[rng.choice([0, 0, 0, 1, 2, 3]) for _ in range(50)] for _ in range(8)], dtype=torch.int32
+    )
+    paths[0] = 0
+    assert ctc_collapse_rows(paths, 0) == [ctc_collapse(p, 0) for p in paths.tolist()]
+
+
+@pytest.mark.parametrize("seconds", [0.3, 1.0, 2.0])
+def test_encoder_graph_ctc_on_computed_frames(seconds):
+    """The exported encoder's CTC ids: the full input's best path on the subsampled frames computed from
+    trimmed features, a blank, and the window's last frame (blank too when every frame is computed)."""
+    import dataclasses
+
+    from owsm_trt.build import _EncoderGraph
+    from owsm_trt.modeling import frames_needed, padding_frame
+
+    cfg = dataclasses.replace(TINY, normalize="global_mvn")
+    torch.manual_seed(8)
+    m = OWSMModel(cfg).eval().requires_grad_(False)
+    m.frontend.melmat.uniform_(0, 1)
+    m.frontend.mean.normal_()
+    n = int(seconds * cfg.sample_rate)
+    speech = torch.zeros(2, cfg.num_samples)
+    speech[:, :n] = torch.randn(2, n)
+    feats = m.frontend(speech)
+    full = m.ctc(m.encoder(feats))
+    t = frames_needed(cfg, n)
+    m.encoder.fill = padding_frame(m)
+    try:
+        k, v, ids = _EncoderGraph(m)(feats[:, :t])
+    finally:
+        m.encoder.fill = None
+    t = m.encoder.embed(feats[:, :t]).shape[1]  # subsampled frames computed
+    assert ids.shape[1] == t + 2 and (t < cfg.enc_frames) == (seconds < 1.9)
+    assert torch.equal(ids[:, :t], full[:, :t]) and not ids[:, t].any()
+    assert torch.equal(ids[:, t + 1], full[:, -1] if t < cfg.enc_frames else torch.zeros_like(full[:, -1]))
 
 
 @pytest.mark.parametrize("split", [True, False])
@@ -535,10 +647,11 @@ class _DistinctBackend(TorchBackend):
     listens to its input), so that a row decoding with another row's encoder output shows."""
 
     def encode(self, feats, cross_k, cross_v, ctc_ids):
-        super().encode(feats, cross_k, cross_v, ctc_ids)
+        paths = super().encode(feats, cross_k, cross_v, ctc_ids)
         for b, f in enumerate(feats):
             g = torch.Generator().manual_seed(int(f.abs().sum() * 100))
             cross_v[:, b] += 10 * torch.randn(cross_v[:, b].shape, generator=g)
+        return paths
 
 
 @pytest.mark.parametrize("primer", [[2, 3, 4], [2, 3, 4, NOTIME]], ids=["timestamps", "notimestamps"])
@@ -580,7 +693,8 @@ def test_streamed_drafted_decoding_is_greedy(model, primer, rules):
         random.Random(seed).shuffle(order)
         given = iter([drafts[j] for j in order])
         batches = (feats[order[i : i + rows]] for i in range(0, n, rows))
-        out, calls = sess.decode_stream(primer, batches, lambda path: next(given), 20, insertions)
+        drafts_of = lambda paths: [next(given) for _ in paths]  # noqa: E731
+        out, calls = sess.decode_stream(primer, batches, drafts_of, 20, insertions)
         assert out == [ref[j] for j in order], seed
         fixed = 0
         for i in range(0, n, rows):
@@ -631,3 +745,90 @@ def test_fp8_encoder_quantization():
     assert any(isinstance(mod, fp8.QConv2d) for mod in q.encoder.modules())
     out = q.encoder(feats)
     assert float((out - ref).norm() / ref.norm()) < 0.1
+
+
+@pytest.mark.parametrize("plugins", [{"self", "cross"}, {"self"}, {"cross"}])
+@pytest.mark.parametrize("fused", [False, True], ids=["qkv", "fused_qkv"])
+def test_decoder_step_with_attention_ops(model, plugins, fused):
+    """The decoder's export path with attn_plugin ops (their PyTorch implementations) == the plain step."""
+    import copy
+
+    m = copy.deepcopy(model)
+    if fused:
+        m.fuse_projections()
+    torch.manual_seed(5)
+    L, H, dk, T = TINY.dec_layers, TINY.dec_heads, 8, TINY.enc_frames
+    sk, sv = torch.randn(L, 3, H, 16, dk), torch.randn(L, 3, H, 16, dk)  # garbage past the offsets
+    ck, cv = torch.randn(L, 3, H, T, dk), torch.randn(L, 3, H, T, dk)
+    tokens, offset = torch.randint(2, 50, (3, 4)), torch.tensor([0, 5, 12])
+    ref = m.decoder.step(tokens, offset, list(sk), list(sv), list(ck), list(cv))
+    m.decoder.plugins = frozenset(plugins)
+    logits, new_kv = m.decoder.step(tokens, offset, list(sk), list(sv), list(ck), list(cv))
+    torch.testing.assert_close(logits, ref[0], rtol=1e-4, atol=1e-4)
+    torch.testing.assert_close(new_kv, ref[1], rtol=1e-5, atol=1e-5)
+
+
+def test_decoder_export_with_attention_plugins(model, tmp_path):
+    """Each layer's attention becomes one node the TensorRT ONNX parser maps to an attn_plugin plugin."""
+    onnx = pytest.importorskip("onnx")
+    from owsm_trt.build import BuildOptions, export_decoder_onnx
+
+    opts = BuildOptions(dtype="float32", max_batch=4, capacity=32, max_prefill=8, max_verify=4)
+    path = export_decoder_onnx(model, tmp_path / "decoder.onnx", opts, plugins=frozenset({"self", "cross"}))
+    assert model.decoder.plugins == frozenset()
+    graph = onnx.load(str(path), load_external_data=False).graph
+    nodes = [n for n in graph.node if n.domain == "owsm"]
+    L = TINY.dec_layers
+    assert sorted(n.op_type for n in nodes) == ["cross_attn"] * L + ["self_attn"] * L
+    for n in nodes:
+        assert {a.name: a.s for a in n.attribute} == {"plugin_namespace": b"owsm", "plugin_version": b"1"}
+    self_nodes = [n for n in nodes if n.op_type == "self_attn"]
+    assert [list(n.input[1:]) for n in self_nodes] == [
+        [f"self_k_{i}", f"self_v_{i}", "offset"] for i in range(L)
+    ]
+    cross = [n for n in nodes if n.op_type == "cross_attn"]
+    assert [list(n.input[1:]) for n in cross] == [[f"cross_k_{i}", f"cross_v_{i}"] for i in range(L)]
+
+
+@pytest.mark.parametrize("kind", ["aed", "ctc"])
+def test_export_without_trimming_runs_at_num_frames(tmp_path, kind):
+    """Utterance-MVN models (e.g. OWSM-CTC v3.2) get whole windows: their encoder export has a static
+    time dimension, which must be num_frames (the engine profiles' length), and computes the model."""
+    import dataclasses
+
+    pytest.importorskip("onnx")
+    from onnx.reference import ReferenceEvaluator
+
+    from owsm_trt.build import BuildOptions, export_ctc_onnx, export_onnx, trims_features
+    from owsm_trt.modeling import OWSMCTCModel
+
+    cfg = dataclasses.replace(TINY, normalize="utterance_mvn")
+    if kind == "ctc":
+        cfg = dataclasses.replace(
+            cfg, dec_layers=0, dec_ffn=0, dec_heads=0, ctc_only=True, prompt_d=16, prompt_heads=2,
+            prompt_ffn=32, prompt_layers=2, interctc_layers=(1,), cross_attn_layers=(1,),
+        )  # fmt: skip
+    assert not trims_features(cfg)
+    torch.manual_seed(9)
+    m = (OWSMCTCModel if kind == "ctc" else OWSMModel)(cfg).eval().requires_grad_(False)
+    m.frontend.melmat.uniform_(0, 1)
+    opts = BuildOptions(
+        dtype="float32", max_batch=4, attn_plugin=False, attn_plugin_steps=False, dwconv_plugin=False
+    )
+    feats = m.frontend(torch.randn(2, cfg.num_samples))
+    assert feats.shape[1] == cfg.num_frames
+    if kind == "ctc":
+        path = export_ctc_onnx(m, tmp_path, opts)
+        prompt, prefix = torch.tensor([[2, 9, 10]] * 2), torch.tensor([[4, 5]] * 2)
+        (ids,) = ReferenceEvaluator(str(path)).run(
+            None, {"feats": feats.numpy(), "prompt": prompt.numpy(), "prefix": prefix.numpy()}
+        )
+        assert torch.equal(torch.from_numpy(ids), m(feats, prompt, prefix))
+        return
+    path, _ = export_onnx(m, tmp_path, opts)
+    k, v, ids = ReferenceEvaluator(str(path)).run(None, {"feats": feats.numpy()})
+    enc = m.encoder(feats)
+    kv = m.decoder.cross_kv(enc)
+    torch.testing.assert_close(torch.from_numpy(k), kv[:, 0], rtol=1e-4, atol=1e-4)
+    full = m.ctc(enc)  # every frame computed: then two blanks (see build._EncoderGraph)
+    assert torch.equal(torch.from_numpy(ids), torch.cat([full, torch.zeros_like(full[:, :2])], 1))

@@ -3,7 +3,8 @@
 Both backends expose the same two operations on caller-owned buffers:
 
 * ``encode(feats, cross_k, cross_v, ctc_ids)`` -- encoder, per-layer cross-attention K/V projection and
-  the CTC head's best-path ids
+  the CTC head's best-path ids; returns the ids as a view [B, t] of ``ctc_ids`` [B, T' + 2] (the
+  TensorRT encoder reads only some of the frames, see build._EncoderGraph)
 * ``step_fn(...)`` -- returns a closure that runs one decoder call writing logits and new K/V into
   fixed buffers, so that the whole decode step can be captured in a CUDA graph.
 """
@@ -12,11 +13,14 @@ import importlib.metadata
 import json
 import logging
 import re
+from array import array
+from bisect import bisect_left
 from collections import deque
 from collections.abc import Callable, Iterator
 from contextlib import nullcontext
 from pathlib import Path
 
+import numpy as np
 import torch
 
 from . import kernels
@@ -51,18 +55,28 @@ class TorchBackend:
 
     def encode(
         self, feats: torch.Tensor, cross_k: torch.Tensor, cross_v: torch.Tensor, ctc_ids: torch.Tensor
-    ) -> None:
+    ) -> torch.Tensor:
         # feats: [B, T, n_mels] fp32; cross_k/v: [L, B, H, T', d_k]; ctc_ids: [B, T'] int32
         enc = self.model.encoder(feats)
         kv = self.model.decoder.cross_kv(enc)  # [L, 2, B, H, T', d_k]
         cross_k.copy_(kv[:, 0])
         cross_v.copy_(kv[:, 1])
-        ctc_ids.copy_(self.model.ctc(enc))
+        ids = self.model.ctc(enc)
+        out = ctc_ids.view(-1)[: ids.numel()].view(ids.shape)
+        out.copy_(ids)
+        return out
 
     def encode_fn(
         self, feats: torch.Tensor, cross_k: torch.Tensor, cross_v: torch.Tensor, ctc_ids: torch.Tensor
     ) -> Callable[[], None]:
-        return lambda: self.encode(feats, cross_k, cross_v, ctc_ids)
+        """``encode`` on fixed buffers; ``run.ctc_ids`` is what it returns."""
+
+        def run() -> None:
+            self.encode(feats, cross_k, cross_v, ctc_ids)
+
+        b, t = feats.shape[0], self.cfg.enc_frames
+        run.ctc_ids = ctc_ids.view(-1)[: b * t].view(b, t)
+        return run
 
     def step_fn(
         self,
@@ -171,29 +185,38 @@ class TRTBackend(_TRTEngines):
 
     def encode(
         self, feats: torch.Tensor, cross_k: torch.Tensor, cross_v: torch.Tensor, ctc_ids: torch.Tensor
-    ) -> None:
+    ) -> torch.Tensor:
         ctx = self.enc_ctx(feats.shape[0])
-        self._bind(ctx, "feats", feats.contiguous(), True)
-        self._bind(ctx, "cross_k", cross_k, False)
-        self._bind(ctx, "cross_v", cross_v, False)
-        self._bind(ctx, "ctc_ids", ctc_ids, False)
+        ids = self._bind_encoder(ctx, feats.contiguous(), cross_k, cross_v, ctc_ids)
         self._execute(ctx, "encoder")
+        return ids
 
     def encode_fn(
         self, feats: torch.Tensor, cross_k: torch.Tensor, cross_v: torch.Tensor, ctc_ids: torch.Tensor
     ) -> Callable[[], None]:
-        """``encode`` on fixed buffers with a context of its own, for CUDA-graph capture."""
+        """``encode`` on fixed buffers with a context of its own, for CUDA-graph capture;
+        ``run.ctc_ids`` is what it returns."""
         ctx = self._context(self.encoder, _batch_profile(self.profiles.get("encoder"), feats.shape[0]))
-        self._bind(ctx, "feats", feats, True)
-        self._bind(ctx, "cross_k", cross_k, False)
-        self._bind(ctx, "cross_v", cross_v, False)
-        self._bind(ctx, "ctc_ids", ctc_ids, False)
+        ids = self._bind_encoder(ctx, feats, cross_k, cross_v, ctc_ids)
 
         def run() -> None:
             self._execute(ctx, "encoder")
 
-        run.ctx = ctx
+        run.ctx, run.ctc_ids = ctx, ids
         return run
+
+    def _bind_encoder(self, ctx, feats, cross_k, cross_v, ctc_ids: torch.Tensor) -> torch.Tensor:
+        """Bind the encoder's inputs and outputs; returns the view of ``ctc_ids`` [B, T'] it writes: the
+        CTC ids of the frames computed from ``feats`` only [B, t], packed (t < T' on trimmed features)."""
+        self._bind(ctx, "feats", feats, True)
+        self._bind(ctx, "cross_k", cross_k, False)
+        self._bind(ctx, "cross_v", cross_v, False)
+        self._bind(ctx, "ctc_ids", ctc_ids, False)
+        ctx.infer_shapes()
+        b, t = ctx.get_tensor_shape("ctc_ids")
+        if not 0 <= b * t <= ctc_ids.numel():
+            raise ValueError(f"ctc_ids holds {ctc_ids.numel()} ids, the encoder writes {b} x {t}")
+        return ctc_ids.view(-1)[: b * t].view(b, t)
 
     def step_fn(
         self,
@@ -318,6 +341,11 @@ def capture_graph(body: Callable[[], None], stream: torch.cuda.Stream | None = N
     with torch.cuda.graph(graph, stream=stream):
         body()
     return graph
+
+
+def ctc_columns(cfg: OWSMConfig) -> int:
+    """Columns of a buffer for the encoder's CTC best paths: up to T' + 2 (see build._EncoderGraph)."""
+    return cfg.enc_frames + 2
 
 
 def cache_buckets(capacity: int, smallest: int = 64) -> list[int]:
@@ -494,13 +522,14 @@ class _Session:
         self.pos.zero_()
         return capture_graph(lambda: self._body(c))
 
-    def _encoder(self, feats: torch.Tensor, cross_k, cross_v, ctc_ids, after=None) -> None:
-        """Run the encoder into the given buffers, replaying a CUDA graph captured on their first use."""
+    def _encoder(self, feats: torch.Tensor, cross_k, cross_v, ctc_ids, after=None) -> torch.Tensor:
+        """Run the encoder into the given buffers, replaying a CUDA graph captured on their first use.
+        Returns the CTC best paths it wrote: a view of ``ctc_ids`` (see the backends' ``encode``)."""
         if not self.use_cuda_graph:
-            self.backend.encode(feats, cross_k, cross_v, ctc_ids)
+            paths = self.backend.encode(feats, cross_k, cross_v, ctc_ids)
             if after is not None:
                 after()
-            return
+            return paths
         b, _, f = feats.shape
         if self._feats is None:
             self._feats = torch.zeros(b * self.cfg.num_frames * f, device=feats.device)
@@ -516,9 +545,10 @@ class _Session:
 
             graph = capture_graph(body, self._enc_capture)
             self._enc_graphs[key] = (run, buf, graph)  # `run` keeps the TensorRT context alive
-        _, buf, graph = self._enc_graphs[key]
+        run, buf, graph = self._enc_graphs[key]
         buf.copy_(feats)
         graph.replay()
+        return run.ctc_ids
 
     def _move(self, c: int, slots: int) -> int:
         """Move the cache from bucket ``c`` to the smallest one with ``slots`` slots (up or down)."""
@@ -601,16 +631,17 @@ class GreedySession(_Session):
         self.batch = batch
         self.seq = torch.zeros(batch, capacity + 1, dtype=torch.long, device=device)
         self.done = torch.zeros(batch, dtype=torch.bool, device=device)
-        self.ctc_ids = torch.zeros(batch, cfg.enc_frames, dtype=torch.int32, device=device)
+        self.ctc_ids = torch.zeros(batch, ctc_columns(cfg), dtype=torch.int32, device=device)
         self._eos = torch.full((batch,), eos, dtype=torch.long, device=device)
         self._capture_all()
 
         self.windows = sorted(set(draft_windows) | {1}) if draft_windows else []
         self._stage: list[tuple[torch.Tensor, ...]] = []  # decode_stream's encoder outputs, two batches
         self._stage_part: dict[tuple[int, int], tuple[torch.Tensor, ...]] = {}  # ... of smaller batches
+        self._stage_ids: list[torch.Tensor] = []  # ... their CTC best paths, on the host
         self._verify: dict[tuple[int, int], _Bound] = {}
         for w in self.windows:
-            bufs = _Verify(cfg, batch, w, self.kw, rules, self.t_notime)
+            bufs = _Verify(cfg, batch, w, self.kw, rules, self.t_notime, eos)
             for c, (k, v) in self.caches.items():
                 kind = "verify" if w > 1 else "decode"
                 step = backend.step_fn(
@@ -636,8 +667,10 @@ class GreedySession(_Session):
         self._rules_advance(nxt)
         self.tok.copy_(nxt.unsqueeze(1))
 
-    def encode(self, feats: torch.Tensor) -> None:
-        self._encoder(feats, self.cross_k, self.cross_v, self.ctc_ids)
+    def encode(self, feats: torch.Tensor) -> torch.Tensor:
+        """Run the encoder on ``feats`` [B, T, n_mels]; returns the CTC best paths [B, t] (a view of
+        ``ctc_ids``, overwritten by the next call)."""
+        return self._encoder(feats, self.cross_k, self.cross_v, self.ctc_ids)
 
     def decode(self, primer: torch.Tensor, max_new_tokens: int) -> list[list[int]]:
         """Greedy decode after ``primer`` [B, P]; returns generated ids per row (without <eos>)."""
@@ -667,7 +700,7 @@ class GreedySession(_Session):
 
     def decode_drafted(
         self,
-        primer: torch.Tensor,
+        primer: torch.Tensor | list[list[int]],
         drafts: list[list[int]],
         max_new_tokens: int,
         insertions: set[int] = frozenset(),
@@ -678,7 +711,8 @@ class GreedySession(_Session):
         Each call feeds every row's last emitted token plus its next drafted ones, and keeps the drafted
         tokens that equal the decoder's own argmax, plus the argmax after the last kept one, so the
         output is the greedy output. Rows advance by different amounts, each at its own cache offset.
-        The first call feeds the primer itself (no separate prefill) unless it is too long for a window.
+        The first call feeds the primer [B, P] itself (no separate prefill) unless it is too long for a
+        window. (Given as lists, the primer needs no device round trip before that call.)
 
         ``insertions`` are tokens drafts never contain (timestamps, ...): when the decoder emits one, the
         draft is not advanced. Once ``give_up`` calls with drafted tokens have accepted fewer of them
@@ -688,22 +722,27 @@ class GreedySession(_Session):
         """
         if not self.windows:
             raise RuntimeError("the session was created without draft_windows")
-        b, p = primer.shape
+        primers = primer.tolist() if isinstance(primer, torch.Tensor) else [list(x) for x in primer]
+        b, p = len(primers), len(primers[0])
         assert b == self.batch and len(drafts) == b
         max_new_tokens = min(max_new_tokens, self.capacity - p)
         if max_new_tokens <= 0:
             raise ValueError(f"prompt of {p} tokens does not fit the cache capacity {self.capacity}")
-        self.tok.fill_(-1)
-        self._rules_start(primer)
-        rows: list[_Row | None] = [_Row(r, pr, d) for r, (pr, d) in enumerate(zip(primer.tolist(), drafts))]
+        prefill = p >= self.windows[-1]  # the primer does not fit a window: prefill it on its own
+        if prefill or self.rules is not None:
+            if not isinstance(primer, torch.Tensor):
+                primer = torch.tensor(primers, device=self.device)
+            self.tok.fill_(-1)
+            self._rules_start(primer)
+        rows: list[_Row | None] = [_Row(r, pr, d) for r, (pr, d) in enumerate(zip(primers, drafts))]
         c, calls = None, 0
-        if p >= self.windows[-1]:  # the primer does not fit a window: prefill it on its own
+        if prefill:
             logits, new_kv, c = self._prefill(primer, self.cross_k, self.cross_v)
             k, v = self.caches[c]
             k[:, :, :, :p] = new_kv[:, 0]
             v[:, :, :, :p] = new_kv[:, 1]
             for row, t in zip(rows, self._rules_mask(logits).argmax(-1).tolist()):
-                row.advance([], t, p, insertions, self.punctuation, self._is_time)
+                row.advance([], t, p, insertions, self.punctuation, self._time_check())
             calls = 1
         out, n = self._drafted(rows, lambda r: None, c, max_new_tokens, insertions, give_up)
         return [out[r] for r in range(b)], calls + n
@@ -712,7 +751,7 @@ class GreedySession(_Session):
         self,
         primer: list[int],
         batches: Iterator[torch.Tensor],
-        draft: Callable[[list[int]], list[int]],
+        drafts_of: Callable[[torch.Tensor], list[list[int]]],
         max_new_tokens: int,
         insertions: set[int] = frozenset(),
         give_up: int = 8,
@@ -720,11 +759,11 @@ class GreedySession(_Session):
     ) -> tuple[list[list[int]], int]:
         """:meth:`decode_drafted` of any number of utterances, keeping every row busy.
 
-        ``batches`` yields encoder inputs [E, T, n_mels] (E <= rows) and ``draft`` makes a draft from a
-        CTC best path. A row whose utterance is done takes the next one for the following call, so that
-        the rows do not wait for the slowest one. The encoder runs ahead on a second CUDA stream into
-        two staging buffers in turn; with ``priority``, the decoder calls go first on the GPU. Returns
-        (tokens per utterance, in order; decoder calls).
+        ``batches`` yields encoder inputs [E, T, n_mels] (E <= rows) and ``drafts_of`` makes the drafts
+        of a batch from its CTC best paths [E, t] (on the host). A row whose utterance is done takes the
+        next one for the following call, so that the rows do not wait for the slowest one. The encoder
+        runs ahead on a second CUDA stream into two staging buffers in turn; with ``priority``, the
+        decoder calls go first on the GPU. Returns (tokens per utterance, in order; decoder calls).
         """
         if not self.windows:
             raise RuntimeError("the session was created without draft_windows")
@@ -732,12 +771,15 @@ class GreedySession(_Session):
         if p >= self.windows[-1]:
             raise ValueError(f"a primer of {p} tokens does not fit a draft window")
         max_new_tokens = min(max_new_tokens, self.capacity - p)
-        self.tok.fill_(-1)
-        self._rules_start(torch.tensor([primer] * self.rows, device=self.device))
+        if self.rules is not None:
+            self.tok.fill_(-1)
+            self._rules_start(torch.tensor([primer] * self.rows, device=self.device))
+        cuda = self.device.type == "cuda"
         if not self._stage:
             bufs = (self.cross_k, self.cross_v, self.ctc_ids)
             self._stage = [tuple(torch.zeros_like(t) for t in bufs) for _ in range(2)]
-        cuda = self.device.type == "cuda"
+            ids = self.ctc_ids
+            self._stage_ids = [torch.zeros(ids.shape, dtype=ids.dtype, pin_memory=cuda) for _ in range(2)]
         main = torch.cuda.current_stream() if cuda else None
         side = torch.cuda.Stream() if cuda else None
         dec = torch.cuda.Stream(priority=-1) if cuda and priority else main
@@ -745,7 +787,8 @@ class GreedySession(_Session):
         copied = [torch.cuda.Event() for _ in range(2)] if cuda else []
         queue: deque[tuple[int, int, int]] = deque()  # (staging slot, row in it, utterance) waiting
         left, drafts, count = [0, 0], [None, None], 0  # per slot: utterances not taken yet, their drafts
-        held: list[tuple] = [(), ()]  # per slot: the buffers of its batch
+        held: list[tuple] = [(), ()]  # per slot: the cross-attention K/V of its batch
+        paths: list = [None, None]  # per slot: its CTC best paths, copied to the host after the encoder
 
         def launch(s: int) -> None:  # encode the next batch into staging slot s
             nonlocal count
@@ -755,25 +798,37 @@ class GreedySession(_Session):
                     return
                 e = feats.shape[0]
                 # a smaller batch (the last one) gets buffers of its size rather than padding rows
-                held[s] = self._stage[s] if e == self.rows else self._staging(s, e)
+                bufs = self._stage[s] if e == self.rows else self._staging(s, e)
                 if cuda:
                     side.wait_event(copied[s])
-                self._encoder(feats, *held[s])
+                ids = self._encoder(feats, *bufs)
+                held[s] = bufs[:2]
+                paths[s] = self._stage_ids[s].view(-1)[: ids.numel()].view(ids.shape)
+                paths[s].copy_(ids, non_blocking=True)  # read on the host once `ready`
                 if cuda:
                     ready[s].record(side)
             queue.extend((s, i, count + i) for i in range(e))
             left[s], drafts[s], count = e, None, count + e
 
+        pending: list[int] = []  # free slots not refilled yet: launched while a decoder call runs
+
+        def flush() -> None:
+            for s in pending:
+                launch(s)
+            pending.clear()
+
         def refill(r: int) -> _Row | None:
             if not queue:
-                return None
+                flush()  # (the queue holds what pending launches add, in the same order, when it is needed)
+                if not queue:
+                    return None
             s, i, index = queue.popleft()
-            k, v, ids = held[s]
+            k, v = held[s]
             if drafts[s] is None:
                 if cuda:
                     ready[s].synchronize()
                     dec.wait_event(ready[s])
-                drafts[s] = [draft(x) for x in ids[: left[s]].tolist()]
+                drafts[s] = drafts_of(paths[s])
             self.cross_k[:, r].copy_(k[:, i])
             self.cross_v[:, r].copy_(v[:, i])
             row = _Row(index, primer, drafts[s][i])
@@ -781,7 +836,7 @@ class GreedySession(_Session):
             if left[s] == 0:  # buffer s is free once these copies are done
                 if cuda:
                     copied[s].record(dec)
-                launch(s)
+                pending.append(s)
             return row
 
         if cuda:
@@ -790,7 +845,9 @@ class GreedySession(_Session):
         launch(0)
         launch(1)
         with torch.cuda.stream(dec) if cuda else nullcontext():
-            out, calls = self._drafted([None] * self.rows, refill, None, max_new_tokens, insertions, give_up)
+            out, calls = self._drafted(
+                [None] * self.rows, refill, None, max_new_tokens, insertions, give_up, meanwhile=flush
+            )
         if cuda:
             main.wait_stream(dec)
             main.wait_stream(side)
@@ -809,6 +866,10 @@ class GreedySession(_Session):
     def _is_time(self, t: int) -> bool:
         return self.rules is not None and self.rules.first_time <= t <= self.rules.last_time
 
+    def _time_check(self) -> Callable[[int], bool] | None:
+        """:meth:`_is_time` for :meth:`_Row.advance`; None without timestamp rules (no timestamps)."""
+        return self._is_time if self.rules is not None else None
+
     def _drafted(
         self,
         rows: list["_Row | None"],
@@ -817,59 +878,80 @@ class GreedySession(_Session):
         max_new_tokens: int,
         insertions: set[int],
         give_up: int,
+        meanwhile: Callable[[], None] | None = None,
     ) -> tuple[dict[int, list[int]], int]:
         """The loop of drafted decoding, on cache bucket ``c`` (None: not chosen yet). An empty row, or
-        one whose utterance is done, takes ``refill(row)``. Returns (tokens per utterance, calls)."""
+        one whose utterance is done, takes ``refill(row)``. ``meanwhile()`` runs while each call runs on
+        the GPU (the host would only wait). Returns (tokens per utterance, calls).
+
+        The host waits for every call's result, and the GPU for the next call: this loop is kept lean."""
         eos, done, calls = self.eos, {}, 0
+        windows, capacity, punctuation = self.windows, self.capacity, self.punctuation
+        is_time = self._time_check()
+        filler = {w: [eos] * w + [0, 0, -1, -1] for w in windows}  # rows left out: harmless at offset 0
+        none = -(1 << 62)
         while True:
-            for r, row in enumerate(rows):
-                if row is not None and not row.fresh:
-                    if row.last == eos or len(row.out) >= max_new_tokens:
-                        done[row.index] = row.out[:max_new_tokens]
-                        row = None
+            want = top = none
+            for r, x in enumerate(rows):
+                if x is not None and not x.fresh:
+                    if x.last == eos or len(x.out) >= max_new_tokens:
+                        done[x.index] = x.out[:max_new_tokens]
+                        x = None
                     else:
-                        row.out.append(row.last)
-                        row.head = [row.last]
-                rows[r] = row if row is not None else refill(r)
-            active = [row for row in rows if row is not None]
-            if not active:
+                        x.out.append(x.last)
+                        x.head = [x.last]
+                if x is None:
+                    x = rows[r] = refill(r)
+                    if x is None:
+                        continue
+                # window: each row's head (primer or last emitted token) + as many drafted tokens as any has
+                n = len(x.head) + min(len(x.draft) - x.ptr, max_new_tokens - len(x.out))
+                if n > want:
+                    want = n
+                if x.pos > top:
+                    top = x.pos
+            if want == none:
                 self._check()
                 return done, calls
-            # window: each row's head (primer or last emitted token) + as many drafted tokens as any has left
-            want = max(len(x.head) + min(len(x.draft) - x.ptr, max_new_tokens - len(x.out)) for x in active)
-            top = max(x.pos for x in active)
-            w = min(self._window(want), max(x for x in self.windows if top + x <= self.capacity))
-            live = [r for r, x in enumerate(rows) if x is not None and len(x.head) <= w]  # a primer waits
-            slots = max(rows[r].pos for r in live) + w
-            c = self._move(c, slots) if c is not None else self._bucket(slots)
-            inp = [[eos] * w + [0, 0, -1, -1] for _ in rows]  # other rows: harmless filler at offset 0
-            for r in live:
-                x = rows[r]
-                window = x.head + x.draft[x.ptr : x.ptr + w - len(x.head)]
-                first = len(x.head) - 1 if x.fresh else -1  # where the primer ends, for the rules
-                inp[r] = window + [eos] * (w - len(window)) + [x.pos, *x.times, first]
-            pred = self._verify[c, w](inp)
+            w = windows[min(bisect_left(windows, want), len(windows) - 1)]  # the smallest with `want`
+            if top + w > capacity:
+                w = min(w, max(x for x in windows if top + x <= capacity))
+            # one host copy per call: per row [w tokens | offset | #timestamps, last one | primer end]
+            flat, live, last_pos = [], [], none
+            for r, x in enumerate(rows):
+                h = len(x.head) if x is not None else w + 1
+                if h > w:  # no row, or a primer waiting for a wider window
+                    flat += filler[w]
+                    continue
+                drafted = x.draft[x.ptr : x.ptr + w - h]
+                flat += x.head
+                flat += drafted
+                if h + len(drafted) < w:
+                    flat += filler[w][: w - h - len(drafted)]
+                flat += (x.pos, x.times[0], x.times[1], h - 1 if x.fresh else -1)
+                live.append((r, x))
+                if x.pos > last_pos:
+                    last_pos = x.pos
+            if not live:
+                raise ValueError("no row fits a draft window")
+            c = self._move(c, last_pos + w) if c is not None else self._bucket(last_pos + w)
+            accepted = self._verify[c, w](flat, meanwhile)
             calls += 1
-            for r in live:
-                x, window = rows[r], inp[r]
-                s, n = len(x.head) - 1, 0  # pred[s + i] is the decoder's choice for window[s + i + 1]
-                while s + n + 1 < w and pred[r][s + n] == window[s + n + 1] and window[s + n + 1] != eos:
-                    n += 1
-                checked = w > len(x.head) and x.draft
-                got = window[s + 1 : s + 1 + n]
-                x.advance(got, pred[r][s + n], x.pos + s + 1 + n, insertions, self.punctuation, self._is_time)
+            for r, x in live:
+                n, last = accepted[r]
+                h = len(x.head)
+                checked = w > h and x.draft
+                x.advance(x.draft[x.ptr : x.ptr + n], last, x.pos + h + n, insertions, punctuation, is_time)
                 if checked:
                     x.tried, x.accepted = x.tried + 1, x.accepted + n
                     if x.tried >= give_up and x.accepted < x.tried:
                         x.draft = []
 
-    def _window(self, want: int) -> int:
-        """Smallest window with at least ``want`` tokens (the largest one if none)."""
-        return next((w for w in self.windows if w >= want), self.windows[-1])
-
 
 class _Row:
     """An utterance in :meth:`GreedySession._drafted`: its tokens so far and its place in the draft."""
+
+    __slots__ = ("index", "head", "fresh", "draft", "out", "last", "pos", "ptr", "times", "tried", "accepted")
 
     def __init__(self, index: int, primer: list[int], draft: list[int]):
         self.index = index
@@ -884,15 +966,30 @@ class _Row:
         self.tried = self.accepted = 0  # calls that checked drafted tokens, drafted tokens accepted
 
     def advance(
-        self, got: list[int], last: int, pos: int, insertions: set[int], punctuation: frozenset[int], is_time
+        self,
+        got: list[int],
+        last: int,
+        pos: int,
+        insertions: set[int],
+        punctuation: frozenset[int],
+        is_time: Callable[[int], bool] | None = None,
     ) -> None:
-        """The decoder accepted the drafted tokens ``got``, then emitted ``last``; next call at ``pos``."""
-        self.out += got
-        for t in got + [last]:
-            if is_time(t):
-                self.times = [self.times[0] + 1, t]
+        """The decoder accepted the drafted tokens ``got``, then emitted ``last``; next call at ``pos``.
+        ``is_time``: None if no token is a timestamp."""
+        out = self.out
+        out += got
+        if is_time is not None:
+            for t in got + [last]:
+                if is_time(t):
+                    self.times = [self.times[0] + 1, t]
         self.last, self.pos, self.fresh = last, pos, False
-        self.ptr = _resync(self.draft, self.ptr + len(got), self.out + [last], insertions, punctuation)
+        tail = out[-2:]  # all that _resync reads of the output
+        tail.append(last)
+        self.ptr = _resync(self.draft, self.ptr + len(got), tail, insertions, punctuation)
+        if is_time is not None and is_time(last) and last not in insertions and self.times[0] % 2 == 0:
+            # Drafts with timestamps (transcribe_long): after an end time, guess the next start time is
+            # the same (84% of LibriSpeech long-form utterance boundaries).
+            self.draft.insert(self.ptr, last)
 
 
 def _resync(
@@ -914,34 +1011,48 @@ def _resync(
     test-clean these rules make 18% fewer decoder calls than taking every unknown token as an
     insertion and anchoring on anything.)
     """
-    if out[-1] in insertions:
+    last = out[-1]
+    if last in insertions:
         return j
-    for k in (3, 2, 1):
-        tail = out[-k:]
-        if len(tail) < k or any(t in insertions for t in tail) or (k == 1 and tail[0] in punctuation):
-            continue
-        hits = [
-            i
-            for i in range(max(0, j - reach), min(len(draft) - k, j + reach) + 1)
-            if draft[i : i + k] == tail
-        ]
-        if hits:
-            return min(hits, key=lambda i: abs(i + k - 1 - j)) + k
-    if j < len(draft) and not (out[-1] in punctuation and draft[j] not in punctuation):
+    n, lo = len(draft), max(0, j - reach)
+    near = draft[lo : j + reach + 3]  # where the anchors, which all end in `last`, can end
+    if last in near:
+        ends = None
+        for k in (3, 2, 1):
+            if len(out) < k:
+                continue
+            tail = out[-k:]
+            if k == 1:
+                if last in punctuation:
+                    continue
+            elif tail[0] in insertions or tail[k - 2] in insertions:
+                continue
+            hi = min(n - k, j + reach)  # anchors draft[i : i + k], lo <= i <= hi
+            i = j - k + 1  # the nearest ends at draft[j]: the decoder followed the draft (the usual case)
+            if lo <= i <= hi and draft[i : i + k] == tail:
+                return j + 1
+            if ends is None:
+                ends = [lo + e for e, t in enumerate(near) if t == last]
+            best = -1  # the nearest other one (where it ends), the first of equally near ones
+            for e in ends:
+                if lo <= e - k + 1 <= hi and (best < 0 or abs(e - j) < abs(best - j)):
+                    if draft[e - k + 1 : e + 1] == tail:
+                        best = e
+            if best >= 0:
+                return best + 1
+    if j < n and not (last in punctuation and draft[j] not in punctuation):
         return j + 1
     return j
-    for k in (3, 2, 1):
-        tail = out[-k:]
-        if len(tail) < k or any(t in insertions for t in tail):
-            continue
-        hits = [
-            i
-            for i in range(max(0, j - reach), min(len(draft) - k, j + reach) + 1)
-            if draft[i : i + k] == tail
-        ]
-        if hits:
-            return min(hits, key=lambda i: abs(i + k - 1 - j)) + k
-    return j
+
+
+def _accepted(pred: list[int], window: list[int], s: int, eos: int) -> tuple[int, int]:
+    """What :meth:`_Verify.accept` computes for one row, in plain Python (for oracles in tests and
+    scripts/draft_sim.py): the number n of drafted tokens ``window[s + 1 :]`` that equal the decoder's
+    choice ``pred`` before them, and its choice after the last of those."""
+    n = 0  # pred[s + i] is the decoder's choice for window[s + i + 1]
+    while s + n + 1 < len(window) and pred[s + n] == window[s + n + 1] and window[s + n + 1] != eos:
+        n += 1
+    return n, pred[s + n]
 
 
 class _Verify:
@@ -949,20 +1060,34 @@ class _Verify:
     argmax after each of them comes back (under the timestamp rules, if any)."""
 
     def __init__(
-        self, cfg: OWSMConfig, rows: int, w: int, kw: dict, rules: TimestampRules | None, notime: torch.Tensor
+        self,
+        cfg: OWSMConfig,
+        rows: int,
+        w: int,
+        kw: dict,
+        rules: TimestampRules | None,
+        notime: torch.Tensor,
+        eos: int,
     ):
         L, H, dk = cfg.dec_layers, cfg.dec_heads, cfg.d_model // cfg.dec_heads
         dev = {"device": kw["device"]}
-        self.rows, self.w, self.rules, self.notime = rows, w, rules, notime
+        self.rows, self.w, self.rules, self.notime, self.eos = rows, w, rules, notime, eos
         # per call, one host copy: [w tokens | offset | timestamps so far (count, last) | first-token position]
         self.inp = torch.zeros(rows, w + 4, dtype=torch.long, **dev)
-        pinned = kw["device"].type == "cuda"  # filled on the host, copied without a sync
+        # Pinned host buffers, copied from and to inside the call's CUDA graph: a call is one graph
+        # launch, and its result is read when an event says it is there.
+        pinned = kw["device"].type == "cuda"
         self.host = torch.zeros(rows, w + 4, dtype=torch.long, pin_memory=pinned)
+        self.host_flat = self.host.numpy().reshape(-1)
+        self.res_host = torch.zeros(rows, 2, dtype=torch.long, pin_memory=pinned)
+        self.res_np = self.res_host.numpy()
+        self.ready = torch.cuda.Event() if pinned else None
         self.tok = torch.zeros(rows, w, dtype=torch.long, **dev)
         self.offs = torch.zeros(rows, dtype=torch.long, **dev)
         self.logits = torch.zeros(rows, w, cfg.vocab_size, **dev)
         self.new_kv = torch.zeros(L, 2, rows, H, w, dk, **kw)
         self.pred = torch.zeros(rows, w, dtype=torch.long, **dev)
+        self.res = torch.zeros(rows, 2, dtype=torch.long, **dev)  # what comes back: see accept()
         self.ar = torch.arange(w, **dev)
         self.fast = kernels.available(kw["device"])  # Triton kernels for the work around the decoder call
 
@@ -984,12 +1109,24 @@ class _Verify:
         )
         return self.logits.masked_fill(bad.view(r, w, -1), float("-inf")).argmax(-1)
 
+    def accept(self) -> torch.Tensor:
+        """[rows, 2]: per row, the number n of drafted tokens accepted -- those after the head (the
+        primer or the last emitted token, which ends at position s) that equal the decoder's argmax
+        before them, up to the first that does not or <eos> -- and the argmax after the last of them."""
+        w = self.w
+        s = self.inp[:, w + 3].clamp(min=0)
+        nxt = self.inp[:, 1:w]
+        ok = ((self.pred[:, :-1] == nxt) & (nxt != self.eos)) | (self.ar[:-1] < s.unsqueeze(1))
+        end = ok.long().cumprod(1).sum(1)  # s + n
+        return torch.stack([end - s, self.pred.gather(1, end.unsqueeze(1)).squeeze(1)], 1)
+
     def bind(self, step: Callable[[], None], k: torch.Tensor, v: torch.Tensor) -> "_Bound":
         return _Bound(self, step, k, v)
 
 
 class _Bound:
-    """One window size on one cache bucket: the decoder call, the per-row K/V scatter, the argmax."""
+    """One window size on one cache bucket: the decoder call, the per-row K/V scatter, the argmax and
+    the drafted tokens accepted."""
 
     def __init__(self, bufs: _Verify, step, k, v):
         self.bufs, self.step, self.k, self.v = bufs, step, k, v
@@ -997,6 +1134,7 @@ class _Bound:
 
     def body(self) -> None:
         b = self.bufs
+        b.inp.copy_(b.host, non_blocking=True)
         b.tok.copy_(b.inp[:, : b.w])
         b.offs.copy_(b.inp[:, b.w])
         self.step()
@@ -1005,23 +1143,33 @@ class _Bound:
             if not written:
                 kernels.write_kv(b.new_kv, self.k, self.v, b.offs)
             kernels.choose(b.logits, b.inp, b.notime, b.pred, b.rules)
-            return
-        if not written:
-            L, _, r, H, w, dk = b.new_kv.shape
-            slots = (b.offs.unsqueeze(1) + b.ar)[None, :, None, :, None].expand(L, r, H, w, dk)
-            self.k.scatter_(3, slots, b.new_kv[:, 0])
-            self.v.scatter_(3, slots, b.new_kv[:, 1])
-        b.pred.copy_(b.predict())
+            kernels.accept(b.pred, b.inp, b.res, b.eos)
+        else:
+            if not written:
+                L, _, r, H, w, dk = b.new_kv.shape
+                slots = (b.offs.unsqueeze(1) + b.ar)[None, :, None, :, None].expand(L, r, H, w, dk)
+                self.k.scatter_(3, slots, b.new_kv[:, 0])
+                self.v.scatter_(3, slots, b.new_kv[:, 1])
+            b.pred.copy_(b.predict())
+            b.res.copy_(b.accept())
+        b.res_host.copy_(b.res, non_blocking=True)
 
     def capture(self) -> None:
         self.graph = capture_graph(self.body)
 
-    def __call__(self, inp: list[list[int]]) -> list[list[int]]:
-        """``inp``: per row, the window's tokens + [offset, #timestamps, last timestamp, first position]."""
-        self.bufs.host.numpy()[:] = inp
-        self.bufs.inp.copy_(self.bufs.host, non_blocking=True)  # the host buffer is reused after .tolist()
+    def __call__(self, flat: list[int], meanwhile: Callable[[], None] | None = None) -> list[list[int]]:
+        """``flat``: per row, the window's tokens + [offset, #timestamps, last timestamp, first position],
+        concatenated. Returns per row [drafted tokens accepted, the token emitted after them], after
+        running ``meanwhile()`` while the GPU works."""
+        b = self.bufs
+        b.host_flat[:] = np.frombuffer(array("q", flat), dtype=np.int64)  # read by the call, reused after it
         self.graph.replay() if self.graph is not None else self.body()
-        return self.bufs.pred.tolist()
+        if meanwhile is not None:
+            meanwhile()
+        if b.ready is not None:
+            b.ready.record()
+            b.ready.synchronize()
+        return b.res_np.tolist()
 
 
 LOG_ZERO = -1.0e10  # ESPnet's score for slots that must not be expanded
@@ -1068,7 +1216,7 @@ class BeamSession(_Session):
         # one row per utterance for the encoder and the primer; copied to every beam slot afterwards
         self.cross_kb = torch.zeros(L, batch, H, cfg.enc_frames, dk, **self.kw)
         self.cross_vb = torch.zeros(L, batch, H, cfg.enc_frames, dk, **self.kw)
-        self.ctc_ids = torch.zeros(batch, cfg.enc_frames, dtype=torch.int32, **dev)
+        self.ctc_ids = torch.zeros(batch, ctc_columns(cfg), dtype=torch.int32, **dev)
         self.score = torch.zeros(n, **dev)
         self.active = torch.zeros(n, dtype=torch.bool, **dev)
         self.done = torch.zeros(batch, dtype=torch.bool, **dev)
@@ -1136,12 +1284,12 @@ class BeamSession(_Session):
 
         self.tok.copy_(token.unsqueeze(1))
 
-    def encode(self, feats: torch.Tensor) -> None:
+    def encode(self, feats: torch.Tensor) -> torch.Tensor:
         def expand() -> None:  # every beam slot attends to its utterance's encoder output
             self.cross_k.copy_(self.cross_kb.repeat_interleave(self.beam, dim=1))
             self.cross_v.copy_(self.cross_vb.repeat_interleave(self.beam, dim=1))
 
-        self._encoder(feats, self.cross_kb, self.cross_vb, self.ctc_ids, after=expand)
+        return self._encoder(feats, self.cross_kb, self.cross_vb, self.ctc_ids, after=expand)
 
     def decode(self, primer: torch.Tensor, max_new_tokens: int) -> list[list[int]]:
         """Beam search after ``primer`` [B, P]; returns the best hypothesis per utterance (no <eos>).
