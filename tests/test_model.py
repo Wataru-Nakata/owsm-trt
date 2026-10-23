@@ -386,6 +386,8 @@ def test_drafted_decoding_recovers_from_draft_errors(model):
     a few CTC-like errors costs about one extra call per error, a useless draft is abandoned."""
     import random
 
+    from owsm_trt.runtime import _accepted
+
     rng = random.Random(0)
     target = [rng.randrange(6, 50) for _ in range(60)]
     p = 3
@@ -400,9 +402,12 @@ def test_drafted_decoding_recovers_from_draft_errors(model):
         return logits, torch.zeros(TINY.dec_layers, 2, 1, TINY.dec_heads, p, 8), 128
 
     def oracle(w):
-        def verify(inp):
-            base = inp[0][w] - p  # index of the window's first token in target (negative: in the primer)
-            return [[target[base + i + 1] if 0 <= base + i + 1 < len(target) else 1 for i in range(w)]]
+        def verify(
+            inp, meanwhile=None
+        ):  # one row: [w tokens | offset | #timestamps | last one | first position]
+            base = inp[w] - p  # index of the window's first token in target (negative: in the primer)
+            pred = [target[base + i + 1] if 0 <= base + i + 1 < len(target) else 1 for i in range(w)]
+            return [list(_accepted(pred, inp[:w], max(inp[w + 3], 0), eos=1))]
 
         return verify
 
@@ -455,6 +460,112 @@ def test_resync_rules():
     assert _resync(with_commas, 3, [10, comma, 11, comma], set(), punct) == 3
     # ...but a comma after an anchored word is
     assert _resync(with_commas, 4, [11, 12, 13, comma], set(), punct) == 6
+
+
+def _resync_scan(draft, j, out, insertions, punctuation, reach=8):
+    """_resync's rules, as a plain scan of every anchor (the reference for its shortcuts)."""
+    if out[-1] in insertions:
+        return j
+    for k in (3, 2, 1):
+        tail = out[-k:]
+        if len(tail) < k or any(t in insertions for t in tail) or (k == 1 and tail[0] in punctuation):
+            continue
+        hits = [
+            i
+            for i in range(max(0, j - reach), min(len(draft) - k, j + reach) + 1)
+            if draft[i : i + k] == tail
+        ]
+        if hits:
+            return min(hits, key=lambda i: abs(i + k - 1 - j)) + k
+    if j < len(draft) and not (out[-1] in punctuation and draft[j] not in punctuation):
+        return j + 1
+    return j
+
+
+def test_resync_matches_scan():
+    import random
+
+    from owsm_trt.runtime import _resync
+
+    rng = random.Random(0)
+    insertions, punct = {9}, frozenset({7, 8})
+    for _ in range(20000):
+        vocab = rng.choice([4, 6, 12])  # small vocabularies: many repeats, ties and anchors far from j
+        draft = [rng.randrange(vocab) for _ in range(rng.randrange(0, 30))]
+        out = [rng.randrange(vocab) for _ in range(rng.randrange(1, 6))]
+        if draft and rng.random() < 0.5:  # the decoder followed the draft up to j
+            j = rng.randrange(len(draft) + 1)
+            out = (out + draft[max(0, j - 3) : j])[-rng.randrange(1, 5) :]
+            out += [draft[j] if j < len(draft) and rng.random() < 0.7 else rng.randrange(vocab)]
+        j = rng.randrange(len(draft) + 3)
+        want = _resync_scan(draft, j, out, insertions, punct)
+        assert _resync(draft, j, out, insertions, punct) == want, (draft, j, out)
+        assert _resync(draft, j, out[-3:], insertions, punct) == want  # all it reads of the output
+
+
+def test_accept_matches_reference():
+    """_Verify.accept (what a call returns) == the per-row rule, wherever the head ends."""
+    import random
+
+    from owsm_trt.runtime import _accepted, _Verify
+
+    rng = random.Random(1)
+    eos, R = 3, 40
+    for w in (1, 2, 4, 8):
+        bufs = _Verify(TINY, R, w, {"device": torch.device("cpu"), "dtype": torch.float32}, None, None, eos)
+        rows, preds = [], []
+        for _ in range(R):
+            tok = [rng.randrange(6) for _ in range(w)]
+            pred = [tok[i + 1] if i + 1 < w and rng.random() < 0.8 else rng.randrange(6) for i in range(w)]
+            rows.append(tok + [0, 0, -1, rng.randrange(-1, w)])
+            preds.append(pred)
+        bufs.inp.copy_(torch.tensor(rows))
+        bufs.pred.copy_(torch.tensor(preds))
+        want = [list(_accepted(p, r[:w], max(r[w + 3], 0), eos)) for p, r in zip(preds, rows)]
+        assert bufs.accept().tolist() == want
+
+
+def test_ctc_collapse_rows():
+    import random
+
+    from owsm_trt.pipeline import ctc_collapse, ctc_collapse_rows
+
+    rng = random.Random(2)
+    paths = torch.tensor(
+        [[rng.choice([0, 0, 0, 1, 2, 3]) for _ in range(50)] for _ in range(8)], dtype=torch.int32
+    )
+    paths[0] = 0
+    assert ctc_collapse_rows(paths, 0) == [ctc_collapse(p, 0) for p in paths.tolist()]
+
+
+@pytest.mark.parametrize("seconds", [0.3, 1.0, 2.0])
+def test_encoder_graph_ctc_on_computed_frames(seconds):
+    """The exported encoder's CTC ids cover the subsampled frames computed from trimmed features: the
+    full input's, up to there."""
+    import dataclasses
+
+    from owsm_trt.build import _EncoderGraph
+    from owsm_trt.modeling import frames_needed, padding_frame
+
+    cfg = dataclasses.replace(TINY, normalize="global_mvn")
+    torch.manual_seed(8)
+    m = OWSMModel(cfg).eval().requires_grad_(False)
+    m.frontend.melmat.uniform_(0, 1)
+    m.frontend.mean.normal_()
+    n = int(seconds * cfg.sample_rate)
+    speech = torch.zeros(2, cfg.num_samples)
+    speech[:, :n] = torch.randn(2, n)
+    feats = m.frontend(speech)
+    full = m.ctc(m.encoder(feats))
+    t = frames_needed(cfg, n)
+    m.encoder.fill = padding_frame(m)
+    try:
+        k, v, ids = _EncoderGraph(m)(feats[:, :t])
+    finally:
+        m.encoder.fill = None
+    assert ids.shape[1] == m.encoder.embed(feats[:, :t]).shape[1] <= cfg.enc_frames
+    assert (ids.shape[1] < cfg.enc_frames) == (seconds < 1.9)
+    assert torch.equal(ids, full[:, : ids.shape[1]])
 
 
 @pytest.mark.parametrize("split", [True, False])
@@ -535,10 +646,11 @@ class _DistinctBackend(TorchBackend):
     listens to its input), so that a row decoding with another row's encoder output shows."""
 
     def encode(self, feats, cross_k, cross_v, ctc_ids):
-        super().encode(feats, cross_k, cross_v, ctc_ids)
+        paths = super().encode(feats, cross_k, cross_v, ctc_ids)
         for b, f in enumerate(feats):
             g = torch.Generator().manual_seed(int(f.abs().sum() * 100))
             cross_v[:, b] += 10 * torch.randn(cross_v[:, b].shape, generator=g)
+        return paths
 
 
 @pytest.mark.parametrize("primer", [[2, 3, 4], [2, 3, 4, NOTIME]], ids=["timestamps", "notimestamps"])
@@ -580,7 +692,8 @@ def test_streamed_drafted_decoding_is_greedy(model, primer, rules):
         random.Random(seed).shuffle(order)
         given = iter([drafts[j] for j in order])
         batches = (feats[order[i : i + rows]] for i in range(0, n, rows))
-        out, calls = sess.decode_stream(primer, batches, lambda path: next(given), 20, insertions)
+        drafts_of = lambda paths: [next(given) for _ in paths]  # noqa: E731
+        out, calls = sess.decode_stream(primer, batches, drafts_of, 20, insertions)
         assert out == [ref[j] for j in order], seed
         fixed = 0
         for i in range(0, n, rows):

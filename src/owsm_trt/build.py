@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 DTYPES = {"float16": torch.float16, "bfloat16": torch.bfloat16, "float32": torch.float32}
 
 # Bump whenever the exported graphs change, so cached engines from older exports are not reused.
-EXPORT_VERSION = 13
+EXPORT_VERSION = 402
 MIN_FEATURE_FRAMES = 64  # shortest feature input of a trimming encoder engine
 
 
@@ -45,11 +45,19 @@ class _EncoderGraph(nn.Module):
     def __init__(self, model: OWSMModel):
         super().__init__()
         self.encoder, self.decoder, self.ctc = model.encoder, model.decoder, model.ctc
+        self.strides = model.cfg.strides
 
     def forward(self, feats: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         enc = self.encoder(feats)
         kv = self.decoder.cross_kv(enc)  # [L, 2, B, H, T, d_k]
-        return kv[:, 0], kv[:, 1], self.ctc(enc)
+        # The CTC head (drafts only) reads just the subsampled frames computed from `feats`: when the
+        # features stop after the audio, the frames filled in after them see padding only.
+        t = feats.shape[1]
+        for s in self.strides:  # as OWSMConfig.enc_frames
+            t = (t - 3) // s + 1
+        # (Not enc[:, :t]: the exporter would specialise that view on whether it is contiguous, t == T'.)
+        frames = enc.index_select(1, torch.arange(t, device=enc.device))
+        return kv[:, 0], kv[:, 1], self.ctc(frames)  # ctc_ids [B, t]
 
 
 class _DecoderGraph(nn.Module):

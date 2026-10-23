@@ -14,7 +14,7 @@ from collections import Counter
 import torch
 
 from owsm_trt.config import OWSMConfig
-from owsm_trt.runtime import GreedySession, TorchBackend, _Row
+from owsm_trt.runtime import GreedySession, TorchBackend, _accepted, _Row
 
 # Buffers only: the oracle replaces every decoder call.
 TINY = OWSMConfig(
@@ -35,17 +35,20 @@ class _NoDecoder(TorchBackend):
 class Oracle:
     """One (cache bucket, window) decoder call; row r holds utterance ``held[r]``."""
 
-    def __init__(self, w: int, seqs: list[list[int]], held: dict[int, int]):
-        self.w, self.seqs, self.held = w, seqs, held
+    def __init__(self, w: int, seqs: list[list[int]], held: dict[int, int], eos: int):
+        self.w, self.seqs, self.held, self.eos = w, seqs, held, eos
 
-    def __call__(self, inp: list[list[int]]) -> list[list[int]]:
-        out = []
-        for r, row in enumerate(inp):
-            seq, o, pred, ok = self.seqs[self.held.get(r, 0)], row[self.w], [], True
-            for i in range(self.w):
+    def __call__(self, flat: list[int], meanwhile=None) -> list[list[int]]:
+        if meanwhile is not None:
+            meanwhile()
+        out, w = [], self.w
+        for r in range(len(flat) // (w + 4)):
+            row = flat[r * (w + 4) : (r + 1) * (w + 4)]
+            seq, o, pred, ok = self.seqs[self.held.get(r, 0)], row[w], [], True
+            for i in range(w):
                 ok = ok and o + i < len(seq) and row[i] == seq[o + i]
                 pred.append(seq[o + i + 1] if ok and o + i + 1 < len(seq) else -2)
-            out.append(pred)
+            out.append(list(_accepted(pred, row[:w], max(row[w + 3], 0), self.eos)))  # as the GPU does
         return out
 
 
@@ -66,7 +69,7 @@ def simulate(
     )  # fmt: skip
     seqs = [primer + u["out"] + [eos] for u in utts]
     held: dict[int, int] = {}
-    sess._verify = {key: Oracle(key[1], seqs, held) for key in sess._verify}
+    sess._verify = {key: Oracle(key[1], seqs, held, eos) for key in sess._verify}
     queue = list(range(len(utts)))
 
     def refill(r: int) -> _Row | None:

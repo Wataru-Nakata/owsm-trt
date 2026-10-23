@@ -29,9 +29,10 @@ def main() -> None:
     ops, calls_hist, total = Counter(), Counter(), [0, 0, 0]  # tokens, calls, drafted tokens
     for n, it in enumerate(items):
         before = list(model.draft_stats)
-        res = model.transcribe(load_audio(it["path"]))
+        wave = load_audio(it["path"])
+        res = model.transcribe(wave)
         calls = model.draft_stats[1] - before[1]
-        draft = model._ctc_draft(model._session(1).ctc_ids[0].tolist())
+        draft = model._ctc_drafts(model._session(1).encode(model._features([wave])))[0]
         out = res.tokens
         total[0] += len(out)
         total[1] += calls

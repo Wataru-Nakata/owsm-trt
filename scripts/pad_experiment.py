@@ -41,8 +41,8 @@ def transcribe(model: OWSM, cfg, waves: list[torch.Tensor], batch: int) -> list[
             model.backend, cfg, len(chunk), model.opts.capacity, t.eos, model.dtype, model.device,
             use_cuda_graph=False, draft_windows=(1, 2, 4, 8, 16, 32), rules=model.rules,
         )  # fmt: skip
-        sess.encode(feats)
-        drafts = [ctc_collapse(row, t.blank) for row in sess.ctc_ids.tolist()]
+        paths = sess.encode(feats)
+        drafts = [ctc_collapse(row, t.blank) for row in paths.tolist()]
         primer = torch.tensor([model._primer("eng", "asr", False, None)] * len(chunk), device=model.device)
         ids, _ = sess.decode_drafted(primer, drafts, cfg.enc_frames, t.not_drafted)
         out += [t.decode(x) for x in ids]

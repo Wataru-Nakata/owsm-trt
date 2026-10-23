@@ -61,6 +61,15 @@ def ctc_collapse(best_path: list[int], blank: int) -> list[int]:
     return out
 
 
+def ctc_collapse_rows(best_paths: torch.Tensor, blank: int) -> list[list[int]]:
+    """:func:`ctc_collapse` of every row of ``best_paths`` [B, T] (vectorized: drafts are made while the
+    decoder waits)."""
+    a = best_paths.cpu().numpy()
+    keep = a != blank
+    keep[:, 1:] &= a[:, 1:] != a[:, :-1]
+    return [row[k].tolist() for row, k in zip(a, keep)]
+
+
 class OWSM:
     """OWSM speech recognition / translation with a TensorRT (or PyTorch) backend.
 
@@ -295,7 +304,7 @@ class OWSM:
             chunks = (order[i : i + bs] for i in range(0, len(order), bs))
             batches = (self._features([self._wave(items[j], sr) for j in chunk]) for chunk in chunks)
             outs, calls = sess.decode_stream(
-                primer, batches, self._ctc_draft, self._max_new(), self.tokenizer.not_drafted,
+                primer, batches, self._ctc_drafts, self._max_new(), self.tokenizer.not_drafted,
                 priority=self.stream_priority,
             )  # fmt: skip
             self.draft_stats[0] += sum(len(o) + 1 for o in outs)
@@ -319,18 +328,21 @@ class OWSM:
         self, waves: list[torch.Tensor], primers: list[list[int]], beam: int = 1, draft: bool = False
     ) -> list[list[int]]:
         sess = self._session(len(waves), beam)
-        sess.encode(self._features(waves))
-        primer = torch.tensor(primers, device=self.device)
+        paths = sess.encode(self._features(waves))
         if draft and isinstance(sess, GreedySession) and sess.windows:
-            proposals = [self._ctc_draft(row) for row in sess.ctc_ids.tolist()]
-            outs, calls = sess.decode_drafted(primer, proposals, self._max_new(), self.tokenizer.not_drafted)
+            proposals = self._ctc_drafts(paths)
+            outs, calls = sess.decode_drafted(primers, proposals, self._max_new(), self.tokenizer.not_drafted)
             self.draft_stats[0] += sum(len(o) + 1 for o in outs)
             self.draft_stats[1] += calls
             return outs
-        return sess.decode(primer, self._max_new())
+        return sess.decode(torch.tensor(primers, device=self.device), self._max_new())
 
     def _ctc_draft(self, best_path: list[int]) -> list[int]:
         return ctc_collapse(best_path, self.tokenizer.blank)
+
+    def _ctc_drafts(self, best_paths: torch.Tensor) -> list[list[int]]:
+        """Drafts from CTC best paths [B, t] (GreedySession.encode)."""
+        return ctc_collapse_rows(best_paths, self.tokenizer.blank)
 
     def _ctc_paths(self, waves: list[torch.Tensor], lang: str, task: str, prompt: str | None) -> torch.Tensor:
         """OWSM-CTC best paths [B, 2 + T'] (frame-wise argmax, the first two frames are the prefix).

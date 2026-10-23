@@ -32,8 +32,8 @@ def main() -> None:
     for i in range(0, len(items), args.batch):
         chunk = items[i : i + args.batch]
         sess = model._session(len(chunk))
-        sess.encode(model._features([load_audio(it["path"]) for it in chunk]))
-        drafts = [model._ctc_draft(r) for r in sess.ctc_ids.tolist()]
+        paths = sess.encode(model._features([load_audio(it["path"]) for it in chunk]))
+        drafts = model._ctc_drafts(paths)
         outs, _ = sess.decode_drafted(
             torch.tensor([primer] * len(chunk), device=model.device), drafts, model._max_new(), t.not_drafted
         )

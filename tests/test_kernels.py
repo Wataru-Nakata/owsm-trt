@@ -24,7 +24,7 @@ def test_choose_matches_torch(rules_on):
     rules = (
         TimestampRules(notime_tok, first_time, last_time, eos, V, torch.device("cuda")) if rules_on else None
     )
-    bufs = _Verify(cfg, R, W, {"device": torch.device("cuda"), "dtype": torch.float16}, rules, notime)
+    bufs = _Verify(cfg, R, W, {"device": torch.device("cuda"), "dtype": torch.float16}, rules, notime, eos)
     # windows of text and timestamps, and every rule state: before the first token, inside / after a pair
     tok = torch.randint(300, V, (R, W), device="cuda")
     tok = torch.where(
@@ -57,3 +57,21 @@ def test_write_kv_matches_scatter():
     rv.scatter_(3, slots, new_kv[:, 1])
     kernels.write_kv(new_kv, k, v, offs)
     assert torch.equal(k, rk) and torch.equal(v, rv)
+
+
+@pytest.mark.parametrize("W", [1, 2, 5, 16, 32])
+def test_accept_matches_torch(W):
+    torch.manual_seed(W)
+    R, eos = 33, 3
+    bufs = _Verify(TINY, R, W, {"device": torch.device("cuda"), "dtype": torch.float16}, None, None, eos)
+    tok = torch.randint(0, 6, (R, W), device="cuda")  # few tokens: long accepted runs, <eos> among them
+    pred = torch.where(torch.rand(R, W, device="cuda") < 0.8, tok.roll(-1, 1), torch.randint_like(tok, 0, 6))
+    first = torch.randint(-1, W, (R, 1), device="cuda")  # a primer ending anywhere, or none
+    bufs.inp.copy_(
+        torch.cat([tok, torch.zeros_like(first), torch.zeros_like(first), -torch.ones_like(first), first], 1)
+    )
+    bufs.pred.copy_(pred)
+    ref = bufs.accept()
+    kernels.accept(bufs.pred, bufs.inp, bufs.res, eos)
+    assert torch.equal(bufs.res, ref)
+    assert ref[:, 0].max() > 1
