@@ -116,7 +116,7 @@ class _TRTEngines:
         self.cfg = cfg
         self.logger = trt.Logger(trt.Logger.WARNING)
         self.runtime = trt.Runtime(self.logger)
-        self._scratch: dict[int, torch.Tensor] = {}
+        self._scratch: dict[tuple, torch.Tensor] = {}
 
     def _load(self, path: Path):
         engine = self.runtime.deserialize_cuda_engine(path.read_bytes())
@@ -124,14 +124,19 @@ class _TRTEngines:
             raise RuntimeError(f"failed to deserialize {path}; rebuild it with `owsm-trt build`")
         return engine
 
-    def _context(self, engine, profile: int):
+    def _context(self, engine, profile: int, lane: int = 0):
         # Every context of an engine shares one scratch buffer: they all run on the same stream, one at a
-        # time, and a session creates one context per (cache bucket, window size).
+        # time, and a session creates one context per (cache bucket, window size). Contexts of another
+        # ``lane`` run at the same time as those of lane 0 (on a stream of their own): a scratch buffer
+        # of their own, per optimization profile (the size it needs).
         ctx = engine.create_execution_context(self.trt.ExecutionContextAllocationStrategy.USER_MANAGED)
-        if id(engine) not in self._scratch:
-            size = max(engine.device_memory_size_v2, 1)
-            self._scratch[id(engine)] = torch.empty(size, dtype=torch.uint8, device="cuda")
-        scratch = self._scratch[id(engine)]
+        key = (id(engine),) if lane == 0 else (id(engine), lane, profile)
+        if key not in self._scratch:
+            size = engine.device_memory_size_v2
+            if lane and hasattr(engine, "get_device_memory_size_for_profile_v2"):
+                size = engine.get_device_memory_size_for_profile_v2(profile)
+            self._scratch[key] = torch.empty(max(size, 1), dtype=torch.uint8, device="cuda")
+        scratch = self._scratch[key]
         ctx.set_device_memory(scratch.data_ptr(), scratch.numel())
         stream = torch.cuda.current_stream()
         ctx.set_optimization_profile_async(profile, stream.cuda_stream)
@@ -261,7 +266,12 @@ class TorchCTCBackend:
         self.cfg = model.cfg
 
     def run_fn(
-        self, feats: torch.Tensor, prompt: torch.Tensor, prefix: torch.Tensor, ctc_ids: torch.Tensor
+        self,
+        feats: torch.Tensor,
+        prompt: torch.Tensor,
+        prefix: torch.Tensor,
+        ctc_ids: torch.Tensor,
+        lane: int = 0,
     ) -> Callable[[], None]:
         # feats [B, T, n_mels] fp32, prompt [B, P], prefix [B, 2] -> ctc_ids [B, 2 + T'] int32
         return lambda: ctc_ids.copy_(self.model(feats, prompt, prefix))
@@ -278,9 +288,14 @@ class TRTCTCBackend(_TRTEngines):
         self.trimmed = meta.get("trimmed_features", False)  # as TRTBackend.trimmed
 
     def run_fn(
-        self, feats: torch.Tensor, prompt: torch.Tensor, prefix: torch.Tensor, ctc_ids: torch.Tensor
+        self,
+        feats: torch.Tensor,
+        prompt: torch.Tensor,
+        prefix: torch.Tensor,
+        ctc_ids: torch.Tensor,
+        lane: int = 0,
     ) -> Callable[[], None]:
-        ctx = self._context(self.engine, _batch_profile(self.profiles, feats.shape[0]))
+        ctx = self._context(self.engine, _batch_profile(self.profiles, feats.shape[0]), lane)
         self._bind(ctx, "feats", feats, True)
         self._bind(ctx, "prompt", prompt, True)
         self._bind(ctx, "prefix", prefix, True)
@@ -307,7 +322,9 @@ class CTCSession:
 
     ``shared``: (features, best paths) buffers of at least this session's size, to share with the
     sessions of other batch sizes (calls on one stream run one at a time, and a caller reads the best
-    paths of a call before it makes the next one, or copies them in stream order)."""
+    paths of a call before it makes the next one, or copies them in stream order). ``lane``: sessions of
+    lanes > 0 run at the same time as those of lane 0, on other streams (TensorRT contexts with scratch
+    memory of their own; buffers of their own)."""
 
     def __init__(
         self,
@@ -318,8 +335,9 @@ class CTCSession:
         device,
         use_cuda_graph: bool,
         shared: tuple[torch.Tensor, torch.Tensor] | None = None,
+        lane: int = 0,
     ):
-        self.backend, self.use_cuda_graph = backend, use_cuda_graph
+        self.backend, self.use_cuda_graph, self.lane = backend, use_cuda_graph, lane
         cols = cfg.n_prefix + cfg.enc_frames
         if shared is None:
             shared = ctc_buffers(cfg, batch, device)
@@ -338,7 +356,10 @@ class CTCSession:
         key = tuple(feats.shape)
         if key not in self._runs:
             view = self.feats[: feats.numel()].view(feats.shape)
-            run = self.backend.run_fn(view, self.prompt, self.prefix, self.ids)
+            if self.lane:
+                run = self.backend.run_fn(view, self.prompt, self.prefix, self.ids, lane=self.lane)
+            else:
+                run = self.backend.run_fn(view, self.prompt, self.prefix, self.ids)
             self._runs[key] = (view, run, capture_graph(run) if self.use_cuda_graph else None)
         view, run, graph = self._runs[key]
         view.copy_(feats)
@@ -554,9 +575,12 @@ class _Session:
         self.pos.zero_()
         return capture_graph(lambda: self._body(c))
 
-    def _encoder(self, feats: torch.Tensor, cross_k, cross_v, ctc_ids, after=None) -> torch.Tensor:
+    def _encoder(
+        self, feats: torch.Tensor, cross_k, cross_v, ctc_ids, after=None, lane: int = 0
+    ) -> torch.Tensor:
         """Run the encoder into the given buffers, replaying a CUDA graph captured on their first use.
-        Returns the CTC best paths it wrote: a view of ``ctc_ids`` (see the backends' ``encode``)."""
+        Returns the CTC best paths it wrote: a view of ``ctc_ids`` (see the backends' ``encode``).
+        Calls of another ``lane`` may run at the same time as those of lane 0 (on another stream)."""
         if not self.use_cuda_graph:
             paths = self.backend.encode(feats, cross_k, cross_v, ctc_ids)
             if after is not None:

@@ -300,3 +300,52 @@ def test_ctc_long_form_across_recordings(ctc_model):
     assert [r.text for r in both] == [r.text for r in one]
     assert [r.segments for r in both] == [r.segments for r in one]
     assert max(m.backend.calls) == 4 and len(m.backend.calls) < len(waves)
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="needs CUDA (streams)")
+def test_ctc_lanes_same_output(ctc_model, monkeypatch):
+    """OWSM-CTC batch-1 lists: two encoder calls in flight on two streams give the outputs of one at a time."""
+    import copy
+
+    import owsm_trt.pipeline as pipeline
+    from owsm_trt.runtime import TorchCTCBackend
+
+    torch.manual_seed(8)
+    m = copy.deepcopy(ctc_model).cuda()
+    with torch.no_grad():
+        m.ctc.ctc_lo.weight.mul_(30)  # outputs that depend on the input
+    opts = BuildOptions(dtype="float32", max_batch=4)
+    owsm = OWSM(CTC_TINY, _Tokenizer(), m.frontend, TorchCTCBackend(m), opts, torch.device("cuda"))
+    sr = CTC_TINY.sample_rate
+    waves = [torch.randn(int(sr * s)) for s in (1.9, 0.4, 1.2, 0.7, 1.6, 0.2, 1.0, 1.3, 0.9)]
+    monkeypatch.setattr(pipeline, "CTC_LANES", 1)
+    one = [r.tokens for r in owsm.transcribe(waves, batch_size=1)]
+    assert len({tuple(t) for t in one}) > 3
+    monkeypatch.setattr(pipeline, "CTC_LANES", 2)
+    for _ in range(2):
+        assert [r.tokens for r in owsm.transcribe(waves, batch_size=1)] == one
+
+
+def test_features_of_trimmed_input(model, monkeypatch):
+    """A trimming encoder's features: the STFT of only the samples the kept frames read, the same frames as
+    of the whole padded window."""
+    import types
+
+    import owsm_trt.pipeline as pipeline
+
+    FEATURE_STEP = 10
+    monkeypatch.setattr(pipeline, "FEATURE_STEP", FEATURE_STEP)
+    torch.manual_seed(9)
+    m = _owsm(model)
+    m.backend = types.SimpleNamespace(trimmed=True)
+    sr = TINY.sample_rate
+    for seconds in ((0.3,), (0.7, 1.1), (1.95,), (2.4, 0.5)):
+        waves = [torch.randn(int(sr * s)) for s in seconds]
+        feats = m._features(waves)
+        full = torch.zeros(len(waves), TINY.num_samples)
+        for row, w in zip(full, waves):
+            row[: min(len(w), len(row))] = w[: len(row)]
+        ref = m.frontend(full)
+        assert feats.shape[1] == ref.shape[1] or feats.shape[1] % FEATURE_STEP == 0
+        assert feats.shape[1] < ref.shape[1] or max(seconds) > 1.5
+        torch.testing.assert_close(feats, ref[:, : feats.shape[1]], rtol=1e-5, atol=1e-5)
