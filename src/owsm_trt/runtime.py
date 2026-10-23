@@ -19,6 +19,7 @@ from pathlib import Path
 
 import torch
 
+from . import kernels
 from .config import OWSMConfig
 from .modeling import OWSMCTCModel, OWSMModel
 
@@ -599,6 +600,7 @@ class GreedySession(_Session):
 
         self.windows = sorted(set(draft_windows) | {1}) if draft_windows else []
         self._stage: list[tuple[torch.Tensor, ...]] = []  # decode_stream's encoder outputs, two batches
+        self._stage_part: dict[tuple[int, int], tuple[torch.Tensor, ...]] = {}  # ... of smaller batches
         self._verify: dict[tuple[int, int], _Bound] = {}
         for w in self.windows:
             bufs = _Verify(cfg, batch, w, self.kw, rules, self.t_notime)
@@ -733,21 +735,22 @@ class GreedySession(_Session):
         dec = torch.cuda.Stream(priority=-1) if cuda and priority else main
         ready = [torch.cuda.Event() for _ in range(2)] if cuda else []
         copied = [torch.cuda.Event() for _ in range(2)] if cuda else []
-        queue: deque[tuple[int, int, int]] = deque()  # (staging buffer, row in it, utterance) waiting
-        left, drafts, count = [0, 0], [None, None], 0  # per buffer: utterances not taken yet, their drafts
+        queue: deque[tuple[int, int, int]] = deque()  # (staging slot, row in it, utterance) waiting
+        left, drafts, count = [0, 0], [None, None], 0  # per slot: utterances not taken yet, their drafts
+        held: list[tuple] = [(), ()]  # per slot: the buffers of its batch
 
-        def launch(s: int) -> None:  # encode the next batch into staging buffer s
+        def launch(s: int) -> None:  # encode the next batch into staging slot s
             nonlocal count
             with torch.cuda.stream(side) if cuda else nullcontext():
                 feats = next(batches, None)
                 if feats is None:
                     return
                 e = feats.shape[0]
-                if e < self.rows:
-                    feats = torch.cat([feats, feats.new_zeros(self.rows - e, *feats.shape[1:])])
+                # a smaller batch (the last one) gets buffers of its size rather than padding rows
+                held[s] = self._stage[s] if e == self.rows else self._staging(s, e)
                 if cuda:
                     side.wait_event(copied[s])
-                self._encoder(feats, *self._stage[s])
+                self._encoder(feats, *held[s])
                 if cuda:
                     ready[s].record(side)
             queue.extend((s, i, count + i) for i in range(e))
@@ -757,7 +760,7 @@ class GreedySession(_Session):
             if not queue:
                 return None
             s, i, index = queue.popleft()
-            k, v, ids = self._stage[s]
+            k, v, ids = held[s]
             if drafts[s] is None:
                 if cuda:
                     ready[s].synchronize()
@@ -784,6 +787,16 @@ class GreedySession(_Session):
             main.wait_stream(dec)
             main.wait_stream(side)
         return [out[i] for i in range(count)], calls
+
+    def _staging(self, slot: int, rows: int) -> tuple[torch.Tensor, ...]:
+        """decode_stream's encoder outputs for a batch of ``rows`` (< self.rows) in staging ``slot``."""
+        key = (slot, rows)
+        if key not in self._stage_part:
+            self._stage_part[key] = tuple(
+                torch.zeros(t.shape[:i] + (rows,) + t.shape[i + 1 :], dtype=t.dtype, device=t.device)
+                for t, i in ((self.cross_k, 1), (self.cross_v, 1), (self.ctc_ids, 0))
+            )
+        return self._stage_part[key]
 
     def _is_time(self, t: int) -> bool:
         return self.rules is not None and self.rules.first_time <= t <= self.rules.last_time
@@ -934,12 +947,15 @@ class _Verify:
         self.rows, self.w, self.rules, self.notime = rows, w, rules, notime
         # per call, one host copy: [w tokens | offset | timestamps so far (count, last) | first-token position]
         self.inp = torch.zeros(rows, w + 4, dtype=torch.long, **dev)
+        pinned = kw["device"].type == "cuda"  # filled on the host, copied without a sync
+        self.host = torch.zeros(rows, w + 4, dtype=torch.long, pin_memory=pinned)
         self.tok = torch.zeros(rows, w, dtype=torch.long, **dev)
         self.offs = torch.zeros(rows, dtype=torch.long, **dev)
         self.logits = torch.zeros(rows, w, cfg.vocab_size, **dev)
         self.new_kv = torch.zeros(L, 2, rows, H, w, dk, **kw)
         self.pred = torch.zeros(rows, w, dtype=torch.long, **dev)
         self.ar = torch.arange(w, **dev)
+        self.fast = kernels.available(kw["device"])  # Triton kernels for the work around the decoder call
 
     def predict(self) -> torch.Tensor:
         """Argmax after each window position [rows, w], with the rules applied position by position."""
@@ -975,6 +991,10 @@ class _Bound:
         b.tok.copy_(b.inp[:, : b.w])
         b.offs.copy_(b.inp[:, b.w])
         self.step()
+        if b.fast:
+            kernels.write_kv(b.new_kv, self.k, self.v, b.offs)
+            kernels.choose(b.logits, b.inp, b.notime, b.pred, b.rules)
+            return
         L, _, r, H, w, dk = b.new_kv.shape
         slots = (b.offs.unsqueeze(1) + b.ar)[None, :, None, :, None].expand(L, r, H, w, dk)
         self.k.scatter_(3, slots, b.new_kv[:, 0])
@@ -986,7 +1006,8 @@ class _Bound:
 
     def __call__(self, inp: list[list[int]]) -> list[list[int]]:
         """``inp``: per row, the window's tokens + [offset, #timestamps, last timestamp, first position]."""
-        self.bufs.inp.copy_(torch.tensor(inp))
+        self.bufs.host.numpy()[:] = inp
+        self.bufs.inp.copy_(self.bufs.host, non_blocking=True)  # the host buffer is reused after .tolist()
         self.graph.replay() if self.graph is not None else self.body()
         return self.bufs.pred.tolist()
 

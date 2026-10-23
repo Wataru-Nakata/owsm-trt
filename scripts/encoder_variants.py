@@ -18,7 +18,7 @@ from owsm_trt import hub
 from owsm_trt.audio import load_audio
 from owsm_trt.build import BuildOptions, _build
 from owsm_trt.config import load_espnet_config, parse_config
-from owsm_trt.modeling import frames_needed, load_model, padding_frame
+from owsm_trt.modeling import MultiHeadedAttention, frames_needed, load_model, padding_frame
 
 DTYPES = {
     trt.float16: torch.float16,
@@ -27,14 +27,16 @@ DTYPES = {
     trt.int64: torch.int64,
 }
 B = 16
-VARIANTS = {  # name: (CTC output, profile (min, opt, max) batch, trimmed features)
-    "base": ("argmax", (1, B, B), False),
-    "b1": ("argmax", (1, 1, 1), False),
-    "b8": ("argmax", (1, 8, B), False),
-    "logits": ("logits", (1, B, B), False),
-    "noctc": ("none", (1, B, B), False),
-    "trim": ("argmax", (1, B, B), True),
-    "trim_b1": ("argmax", (1, 1, 1), True),
+VARIANTS = {  # name: (CTC output, profile (min, opt, max) batch, trimmed features, explicit attention)
+    "base": ("argmax", (1, B, B), False, False),
+    "b1": ("argmax", (1, 1, 1), False, False),
+    "b8": ("argmax", (1, 8, B), False, False),
+    "logits": ("logits", (1, B, B), False, False),
+    "noctc": ("none", (1, B, B), False, False),
+    "trim": ("argmax", (1, B, B), True, False),
+    "trim_b1": ("argmax", (1, 1, 1), True, False),
+    "trim_explicit": ("argmax", (1, B, B), True, True),
+    "trim_b1_explicit": ("argmax", (1, 1, 1), True, True),
 }
 
 
@@ -126,8 +128,9 @@ def main() -> None:
     tmp = Path(tempfile.mkdtemp())
     ref = None
     for name in args.variants.split(","):
-        ctc, prof, trim = VARIANTS[name]
+        ctc, prof, trim, explicit = VARIANTS[name]
         model.encoder.fill = fill if trim else None
+        MultiHeadedAttention.explicit = explicit
         onnx_path = tmp / name / "encoder.onnx"
         onnx_path.parent.mkdir()
         names = {"argmax": ["cross_k", "cross_v", "ctc_ids"], "logits": ["cross_k", "cross_v", "ctc_logits"]}
@@ -147,6 +150,7 @@ def main() -> None:
             )
         finally:
             model.encoder.fill = None
+            MultiHeadedAttention.explicit = False
         engine_path = tmp / name / "encoder.engine"
         lengths = (64, 1024, cfg.num_frames) if trim else (cfg.num_frames,) * 3
         profile = {"feats": tuple((n, t, cfg.n_mels) for n, t in zip(prof, lengths))}

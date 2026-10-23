@@ -13,7 +13,7 @@ from torch import nn
 
 from . import fp8
 from .config import OWSMConfig
-from .modeling import OWSMCTCModel, OWSMModel, padding_frame
+from .modeling import MultiHeadedAttention, OWSMCTCModel, OWSMModel, padding_frame
 from .runtime import cache_buckets
 
 log = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 DTYPES = {"float16": torch.float16, "bfloat16": torch.bfloat16, "float32": torch.float32}
 
 # Bump whenever the exported graphs change, so cached engines from older exports are not reused.
-EXPORT_VERSION = 12
+EXPORT_VERSION = 13
 MIN_FEATURE_FRAMES = 64  # shortest feature input of a trimming encoder engine
 
 
@@ -71,7 +71,11 @@ def decoder_input_names(n_layers: int) -> list[str]:
     return names
 
 
-def export_onnx(model: OWSMModel, out_dir: Path, opts: BuildOptions) -> tuple[Path, Path]:
+def export_onnx(
+    model: OWSMModel, out_dir: Path, opts: BuildOptions, split_self_attention: bool = False
+) -> tuple[Path, Path]:
+    """Encoder and decoder ONNX graphs. ``split_self_attention``: the decoder attends to the cache and
+    to the new tokens separately (see modeling.cached_attention) instead of to their concatenation."""
     cfg = model.cfg
     out_dir.mkdir(parents=True, exist_ok=True)
     dev = next(model.decoder.parameters()).device
@@ -87,6 +91,7 @@ def export_onnx(model: OWSMModel, out_dir: Path, opts: BuildOptions) -> tuple[Pa
         feats_dims[1] = torch.export.Dim("time", min=MIN_FEATURE_FRAMES, max=cfg.num_frames)
         model.encoder.fill = padding_frame(model)
     feats = torch.randn(2, cfg.num_frames - 8, cfg.n_mels, device=dev)  # < max: not specialised
+    MultiHeadedAttention.explicit = True  # 3-4% faster encoder at batch 8-16 than the exporter's SDPA
     try:
         torch.onnx.export(
             _EncoderGraph(model).eval(),
@@ -101,6 +106,7 @@ def export_onnx(model: OWSMModel, out_dir: Path, opts: BuildOptions) -> tuple[Pa
         )
     finally:
         model.encoder.fill = None
+        MultiHeadedAttention.explicit = False
 
     dec_path = out_dir / "decoder.onnx"
     b, s = 2, 3  # sizes > 1 so the exporter does not specialise them
@@ -115,7 +121,8 @@ def export_onnx(model: OWSMModel, out_dir: Path, opts: BuildOptions) -> tuple[Pa
     cache_shapes = tuple({0: batch, 2: cache} if i < n_self else {0: batch} for i in range(len(caches)))
     shapes = {"tokens": {0: batch, 1: seq}, "offset": {0: batch}, "caches": cache_shapes}
     split = model.decoder.split_attention
-    model.decoder.split_attention = False  # TensorRT fuses concat + SDPA into a single MHA kernel
+    model.decoder.split_attention = split_self_attention  # concatenated: TensorRT fuses it for one token
+    MultiHeadedAttention.explicit = True  # cross-attention
     try:
         torch.onnx.export(
             _DecoderGraph(model).eval(),
@@ -129,6 +136,7 @@ def export_onnx(model: OWSMModel, out_dir: Path, opts: BuildOptions) -> tuple[Pa
         )
     finally:
         model.decoder.split_attention = split
+        MultiHeadedAttention.explicit = False
     return enc_path, dec_path
 
 
@@ -194,6 +202,7 @@ def export_ctc_onnx(model: OWSMCTCModel, out_dir: Path, opts: BuildOptions) -> P
         torch.zeros(2, 3, dtype=torch.long, device=dev),
         torch.zeros(2, 2, dtype=torch.long, device=dev),
     )
+    MultiHeadedAttention.explicit = True
     try:
         torch.onnx.export(
             _CTCGraph(model).eval(),
@@ -208,6 +217,7 @@ def export_ctc_onnx(model: OWSMCTCModel, out_dir: Path, opts: BuildOptions) -> P
         )
     finally:
         model.encoder.fill = None
+        MultiHeadedAttention.explicit = False
     return path
 
 

@@ -109,6 +109,8 @@ class Conv2dSubsampling(nn.Module):
 
 
 class MultiHeadedAttention(nn.Module):
+    explicit = False  # export option: attention written out (see explicit_attention)
+
     def __init__(self, d: int, n_heads: int):
         super().__init__()
         self.h, self.d_k = n_heads, d // n_heads
@@ -144,7 +146,10 @@ class MultiHeadedAttention(nn.Module):
         return self.linear_out(x.transpose(1, 2).reshape(x.shape[0], x.shape[2], self.h * self.d_k))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.merge(F.scaled_dot_product_attention(*self.qkv(x)))
+        return self.merge(self.attend(*self.qkv(x)))
+
+    def attend(self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
+        return explicit_attention(q, k, v) if self.explicit else F.scaled_dot_product_attention(q, k, v)
 
     def cross(self, x: torch.Tensor, memory: torch.Tensor) -> torch.Tensor:
         """Attention from ``x`` [B, T, d] to ``memory`` [B, M, d]."""
@@ -153,7 +158,7 @@ class MultiHeadedAttention(nn.Module):
             self.heads(self.linear_k(memory)),
             self.heads(self.linear_v(memory)),
         )
-        return self.merge(F.scaled_dot_product_attention(q, k, v))
+        return self.merge(self.attend(q, k, v))
 
 
 def cached_attention(
@@ -392,8 +397,8 @@ class Decoder(nn.Module):
         self.output_layer = nn.Linear(d, cfg.vocab_size)
         self.xscale = math.sqrt(d)
         self.register_buffer("pe", sinusoidal_positions(max_positions, d), persistent=False)
-        # Eager PyTorch is faster with split attention and SDPA; TensorRT fuses the concat + explicit
-        # attention form into MHA kernels, so the export switches this off.
+        # Self-attention over [cache | new] without concatenating them (faster in eager PyTorch). For a
+        # single new token TensorRT fuses the concatenated form into one MHA kernel instead.
         self.split_attention = True
 
     def cross_kv(self, enc: torch.Tensor) -> torch.Tensor:
@@ -454,11 +459,7 @@ class Decoder(nn.Module):
 
             src = layer.src_attn
             q = src.heads(src.linear_q(layer.norm2(x)))
-            if self.split_attention:
-                y = F.scaled_dot_product_attention(q, cross_k[i], cross_v[i])
-            else:
-                y = explicit_attention(q, cross_k[i], cross_v[i])
-            x = x + src.merge(y)
+            x = x + src.merge(src.attend(q, cross_k[i], cross_v[i]))
 
             x = x + layer.feed_forward(layer.norm3(x))
 

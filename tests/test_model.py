@@ -424,6 +424,22 @@ def test_drafted_decoding_recovers_from_draft_errors(model):
         assert calls <= most, (name, calls)
 
 
+def test_explicit_attention_matches_sdpa():
+    """The export's written-out attention (scale on q) == scaled_dot_product_attention."""
+    from owsm_trt.modeling import MultiHeadedAttention
+
+    torch.manual_seed(0)
+    att = MultiHeadedAttention(32, 4)
+    x, memory = torch.randn(2, 7, 32), torch.randn(2, 5, 32)
+    ref = att(x), att.cross(x, memory)
+    MultiHeadedAttention.explicit = True
+    try:
+        torch.testing.assert_close(att(x), ref[0], rtol=1e-5, atol=1e-5)
+        torch.testing.assert_close(att.cross(x, memory), ref[1], rtol=1e-5, atol=1e-5)
+    finally:
+        MultiHeadedAttention.explicit = False
+
+
 def test_resync_rules():
     """Where the draft continues after the decoder emitted something else than draft[j]."""
     from owsm_trt.runtime import _resync

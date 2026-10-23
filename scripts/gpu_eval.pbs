@@ -34,7 +34,7 @@ t0=$SECONDS
 echo "unpacked $(basename "$ENV_TAR") in $((SECONDS - t0))s"
 # Snapshot the code so edits made while the job is queued/running cannot leak into later stages.
 SNAP="$PBS_LOCALDIR/snap"
-mkdir -p "$SNAP" && cp -r src scripts "$SNAP/"
+mkdir -p "$SNAP" && cp -r src scripts tests "$SNAP/"
 PY=(env -u CONDA_PREFIX PYTHONPATH="$SNAP/src" "$PBS_LOCALDIR/owsm-env/bin/python3")
 
 nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv -l 5 > "$OUT/nvidia-smi.csv" &
@@ -89,8 +89,14 @@ for stage in $STAGES; do
     dump_drafts)  # CTC drafts + greedy outputs for scripts/draft_sim.py; DATA=manifest.json
       run dump_drafts 1800 "${PY[@]}" "$SNAP/scripts/dump_drafts.py" --model "$MODEL" ${DATA:+--data "$DATA"} \
         --out "$OUT/drafts.json" ;;
+    pytest)  # the unit tests, on the GPU (CUDA-only tests run too)
+      run pytest 1200 env -u CONDA_PREFIX PYTHONPATH="$SNAP/src" OMP_NUM_THREADS=8 "$PBS_LOCALDIR/owsm-env/bin/python3" \
+        -m pytest -q -p no:cacheprovider "$SNAP/tests" ;;
     pyfile)  # PYFILE=path/to/script.py (e.g. a one-off debug script under outputs/), run with MODEL as argument
       run pyfile 1200 "${PY[@]}" "$PYFILE" "$MODEL" ;;
+    engine_variants)  # TensorRT builder settings on encoder/decoder (VARIANTS=base:tile_fast:..., PARTS=decoder:encoder)
+      run engine_variants 3300 "${PY[@]}" "$SNAP/scripts/engine_variants.py" --model "$MODEL" \
+        ${VARIANTS:+--variants "${VARIANTS//:/,}"} ${PARTS:+--parts "${PARTS//:/,}"} ;;
     fp8_toy)  # does TensorRT build FP8 kernels from our quantize/dequantize pairs?
       run fp8_toy 900 "${PY[@]}" "$SNAP/scripts/fp8_toy.py" ;;
     draft_report)
