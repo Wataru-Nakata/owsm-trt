@@ -1,7 +1,7 @@
 #!/bin/bash
 # In a git worktree of this repo: share the main checkout's environments, models and test data, and keep
 # TensorRT engines (whose cache key does not see uncommitted export changes) separate.
-#   scripts/setup_worktree.sh /path/to/owsm_trt
+#   scripts/setup_worktree.sh /path/to/the/main/checkout
 set -euo pipefail
 main="${1:?path of the main checkout}"
 mkdir -p .cache/engines

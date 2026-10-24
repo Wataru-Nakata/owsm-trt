@@ -8,4 +8,4 @@ tag=$1
 dir="outputs/jobs/$tag"
 rm -rf "$dir" && mkdir -p "$dir"
 cp -r src scripts "$dir/"
-/path/to/owsm_trt/scripts/qsub_pool.sh "MODEL=.cache/models/owsm_v4_medium_1B,STAGES=${STAGES:-pyfile},PYFILE=$dir/scripts/long_job.py,$2" "${3:-01:00:00}"
+"$(dirname "$0")/qsub_pool.sh" "MODEL=.cache/models/owsm_v4_medium_1B,STAGES=${STAGES:-pyfile},PYFILE=$dir/scripts/long_job.py,$2" "${3:-01:00:00}"

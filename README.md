@@ -4,7 +4,7 @@ Fast inference for the [OWSM](https://www.wavlab.org/activities/2024/owsm/) fami
 ESPnet) with TensorRT. You can `pip install` it, and it does not depend on ESPnet.
 
 ```bash
-pip install owsm-trt
+pip install git+https://github.com/Wataru-Nakata/owsm-trt
 ```
 
 ```python
@@ -303,7 +303,7 @@ Notes:
 ## Requirements
 
 You need an NVIDIA GPU (Ampere or newer for the custom kernels), Python ≥ 3.10, torch ≥ 2.10 and TensorRT ≥ 10.16;
-`pip install owsm-trt` brings everything else (on Linux, torch brings Triton and NVRTC's `cuda-bindings`). The
+Installing owsm-trt brings everything else (on Linux, torch brings Triton and NVRTC's `cuda-bindings`). The
 PyPI defaults (`torch`, `tensorrt`) are both CUDA 13; a CUDA 12 torch with them works too (torch 2.10 cu12 +
 TensorRT 11.4 was tested). Don't install `tensorrt-cu12` next to `tensorrt`: the two overwrite each other's files
 (owsm-trt warns when it finds both).
@@ -346,7 +346,8 @@ Scripts in `scripts/`:
 * `pad_experiment.py`: WER with inputs padded to less than 30 s.
 * `make_longform.py` + `eval_long.py`: long recordings from LibriSpeech chapters, and long-form WER / speed.
 * `dwconv_bench.py`, `dwconv_encoder.py`: the depthwise-convolution plugin alone and inside the encoder.
-* `qsub_pool.sh`: GPU jobs on a cluster, at most N at a time (`gpu_eval.pbs` runs the stages listed in `STAGES`).
+* `qsub_pool.sh`: GPU jobs on a PBS cluster, at most N at a time (`gpu_eval.pbs` runs the stages listed in `STAGES`;
+  the account comes from `OWSM_QSUB_GROUP` / `OWSM_QSUB_QUEUE` / `OWSM_QSUB_RTYPE` or `.cache/qsub.env`).
 * `trt_layers.py`: per-layer TensorRT profile plus an engine-inspector dump.
 * `encoder_variants.py`: encoder engines built several ways (optimization profile, trimmed features, CTC argmax),
   timed per batch size.

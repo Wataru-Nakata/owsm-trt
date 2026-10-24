@@ -1,7 +1,8 @@
 #!/bin/bash
 # GPU smoke test + WER/speed comparison of backends on one H200.
-#   qsub -P <group> -q <queue> -v RTYPE=rt_HG,MODEL=.cache/models/owsm_v4_base_102M \
+#   qsub -P <group> -q <queue> -v RTYPE=<resource type>,MODEL=.cache/models/owsm_v4_base_102M \
 #        -l select=1 -l walltime=01:00:00 scripts/gpu_eval.pbs
+# (or through scripts/qsub_pool.sh)
 #PBS -l walltime=01:00:00
 #PBS -j oe
 set -euo pipefail
