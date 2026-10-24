@@ -5,11 +5,19 @@
 #   scripts/qsub_pool.sh "MODEL=...,STAGES=a:b,REF=..." [walltime, default 01:00:00]
 # Prints the job id. Wait for it with: until ! qstat <id> >/dev/null 2>&1; do sleep 30; done
 # Two jobs from one checkout that build the same engines must not run at once: let the first one build.
-# The cluster account comes from the environment, or from .cache/qsub.env (not in git):
+# The cluster account comes from the environment, or else from the main checkout's .cache/qsub.env (not in git):
 #   OWSM_QSUB_GROUP (qsub -P), OWSM_QSUB_QUEUE (qsub -q), OWSM_QSUB_RTYPE (the job's RTYPE resource type)
+# The lanes and qsub.env are the main checkout's, so every git worktree of it shares one pool.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
-[ -f "${OWSM_QSUB_ENV:-$root/.cache/qsub.env}" ] && . "${OWSM_QSUB_ENV:-$root/.cache/qsub.env}"
+common="$(git -C "$root" rev-parse --git-common-dir 2>/dev/null || true)"  # worktrees: the main checkout's .git
+[ -n "$common" ] && root="$(cd "$root" && cd "$common/.." && pwd)"
+env_file="${OWSM_QSUB_ENV:-$root/.cache/qsub.env}"
+if [ -f "$env_file" ]; then  # only for what the environment leaves unset
+  for v in OWSM_QSUB_GROUP OWSM_QSUB_QUEUE OWSM_QSUB_RTYPE; do
+    [ -n "${!v:-}" ] || printf -v "$v" '%s' "$(. "$env_file" && echo "${!v:-}")"
+  done
+fi
 : "${OWSM_QSUB_GROUP:?set OWSM_QSUB_GROUP (qsub -P), e.g. in .cache/qsub.env}"
 : "${OWSM_QSUB_QUEUE:?set OWSM_QSUB_QUEUE (qsub -q)}"
 : "${OWSM_QSUB_RTYPE:?set OWSM_QSUB_RTYPE (resource type)}"
