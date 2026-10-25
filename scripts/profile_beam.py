@@ -442,8 +442,9 @@ def main():
             versions[name] = None
     prop = torch.cuda.get_device_properties(model.device)
     env = {"args": {k: str(v) if isinstance(v, Path) else v for k, v in vars(args).items()},
-           "git_commit": command(["git", "rev-parse", "HEAD"]),
-           "git_diff": command(["git", "diff", "--stat"]), "python": platform.python_version(),
+           "git_commit": os.environ.get("OWSM_PROFILE_COMMIT") or command(["git", "rev-parse", "HEAD"]),
+           "git_diff": None if os.environ.get("OWSM_PROFILE_COMMIT") else command(["git", "diff", "--stat"]),
+           "python": platform.python_version(),
            "versions": versions, "cuda": torch.version.cuda, "gpu": prop.name,
            "sm_count": prop.multi_processor_count, "gpu_memory": prop.total_memory,
            "nvidia_smi": command(["nvidia-smi", "--query-gpu=name,uuid,driver_version", "--format=csv"]),

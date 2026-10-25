@@ -31,6 +31,7 @@ trap publish EXIT
 ZSTD="$(command -v zstd || echo "$HOME/miniconda3/bin/zstd")"
 "$ZSTD" -dc -T4 "$REPO/.cache/envs/owsm-env.tar.zst" | tar -xf - -C "$PBS_LOCALDIR"
 tar -xf "$SNAPSHOT" -C "$LOCAL"
+export OWSM_PROFILE_COMMIT="$(cat "$LOCAL/commit.txt")"
 cp -a "$REPO/.cache/models/owsm_v4_medium_1B" "$LOCAL/model"
 # Preserve the model directory name used by the engine cache.
 mv "$LOCAL/model" "$LOCAL/owsm_v4_medium_1B"
