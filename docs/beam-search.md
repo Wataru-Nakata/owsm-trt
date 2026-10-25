@@ -5,6 +5,8 @@ Work branch: `beam-timestamp-profile`. The original `v0.2` branch is preserved.
 The [candidate ledger](beam-candidates.tsv) tracks all 60 supplied proposals. No unmeasured speed estimate
 is presented as a result. The first experiment is PBS job `2765885.pbs1` (one H200 allocation,
 `gai51740`, `R9920261300`, `rt_HG`, one node/GPU, maximum one hour).
+The subsequent [beam kernel fusion evaluation](beam-fusion.md) measures additional improvements
+against this optimized stopping path and documents the default `beam_kernels` switch.
 
 ## Behavior
 
@@ -243,8 +245,9 @@ with a median paired per-input speed improvement of 6.56%. Median within-input C
 interval 4 and 0.37% for interval 1; the effect is larger than repeat variability. Every-step checks
 remove the measured B=1 overshoot. B=3 retains interval 4: interval 1 regresses, and interval 2 gives
 only 1.05% aggregate RTFx gain with worse p50 and mixed per-group effects. No universal interval
-improvement is claimed. **Japanese interval 1 was not measured**; its table reports interval 4,
+improvement is claimed. **Japanese interval 1 was not measured in that job**; its table reports interval 4,
 not the new B=1 default's latency. Other beam widths, model sizes and GPUs remain unverified.
+The [fusion follow-up](beam-fusion.md) subsequently measures Japanese B=1 at interval 1.
 
 The strict bound is now enabled by default after this compatibility pass. The follow-up benchmark
 used explicit flags on snapshot `938b2db`; the subsequent default-selection change (`0fede93`) passes **26 CPU
