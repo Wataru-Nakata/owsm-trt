@@ -18,6 +18,7 @@ import shutil
 import statistics
 import subprocess
 import time
+from bisect import bisect_right
 from collections import defaultdict
 from dataclasses import asdict
 from pathlib import Path
@@ -130,6 +131,28 @@ class Events:
                 for name, values in gpu.items()}
 
 
+def kernel_totals(path):
+    """Sum eager trace kernel durations by the enclosing host phase of their launch correlation."""
+    trace = json.loads(Path(path).read_text())["traceEvents"]
+    ranges = sorted((e for e in trace if e.get("cat") == "user_annotation" and e.get("ph") == "X"),
+                    key=lambda e: e["ts"])
+    starts = [e["ts"] for e in ranges]
+    launches = {e["args"]["correlation"]: e for e in trace
+                if e.get("cat") in ("cuda_runtime", "cuda_driver") and "correlation" in e.get("args", {})}
+    totals = defaultdict(float)
+    for event in trace:
+        if event.get("cat") != "kernel":
+            continue
+        host = launches.get(event.get("args", {}).get("correlation"))
+        name = "unattributed"
+        if host:
+            i = bisect_right(starts, host["ts"]) - 1
+            if i >= 0 and host["ts"] <= ranges[i]["ts"] + ranges[i]["dur"] and host["tid"] == ranges[i]["tid"]:
+                name = ranges[i]["name"]
+        totals[name] += event["dur"] / 1000  # trace microseconds -> milliseconds
+    return dict(totals)
+
+
 def result_record(model, result, item, duration):
     times = [t for t in result.tokens if model.tokenizer.is_time(t)]
     segments = [asdict(s) for s in result.segments]
@@ -194,12 +217,15 @@ def profile_eager(model, args, waves, primer, out):
             tokens = s.decode(primer, model._max_new())
     finally:
         model.backend.encode = original_encode
+    kernels = kernel_totals(out / "eager_trace.json") if args.trace else None
     return {"mode": "eager, diagnostics enabled; not CUDA graph timing", "phases": events.collect(),
             "warmup_tokens_equal": expected == tokens,
             "graph_internal_phases": None,
             "graph_internal_missing_reason": "CUDA events in eager execution do not attribute graph nodes",
-            "kernel_only_ms": None,
-            "kernel_only_missing_reason": "event spans include launch gaps; inspect profiler/Nsight trace",
+            "kernel_only_ms": sum(kernels.values()) if kernels is not None else None,
+            "kernel_only_ms_by_phase": kernels,
+            "kernel_only_scope": "eager decode trace only; excludes encoder, copies and host launch gaps",
+            "kernel_only_missing_reason": None if kernels is not None else "enable --trace for attribution",
             "diagnostics": s.get_diagnostics()}
 
 
@@ -399,7 +425,7 @@ def main():
     ap.add_argument("--lang", default="eng")
     ap.add_argument("--task", default="asr")
     ap.add_argument("--backend", choices=["tensorrt", "torch"], default="tensorrt")
-    ap.add_argument("--decoder-kernel", default="auto")
+    ap.add_argument("--decoder-kernel", default="auto", help="auto, 0 to disable, or a pipeline kernel name")
     ap.add_argument("--repeat", type=int, default=5)
     ap.add_argument("--limit", type=int)
     ap.add_argument("--chunk", type=int, default=4)
@@ -449,7 +475,8 @@ def main():
     if any(len(w) > model.cfg.num_samples for w in waves):
         ap.error("manifest contains audio longer than a model window; use a separate long-form evaluation")
     files = hub.resolve(args.model)
-    engine_dir = hub.cache_dir() / files.name.replace("/", "--") / engine_tag(model.opts)
+    engine_dir = (hub.cache_dir() / files.name.replace("/", "--") / engine_tag(model.opts)
+                  if args.backend == "tensorrt" else None)
     versions = {}
     for name in ("torch", "triton", "tensorrt", "numpy", "sentencepiece"):
         try:
@@ -468,10 +495,11 @@ def main():
            "environment": {k: v for k, v in os.environ.items() if k.startswith(("OWSM_", "TORCH", "CUDA"))
                            or k in ("PBS_JOBID", "OMP_NUM_THREADS", "MKL_NUM_THREADS")},
            "checkpoint_sha256": sha256(files.checkpoint), "manifest_sha256": sha256(args.manifest),
-           "engine_dir": str(engine_dir),
-           "engine_sha256": {p.name: sha256(p) for p in engine_dir.glob("*.engine")},
+           "engine_dir": str(engine_dir) if engine_dir is not None else None,
+           "engine_sha256": {p.name: sha256(p) for p in engine_dir.glob("*.engine")}
+                            if engine_dir is not None else {},
            "build_metadata": json.loads((engine_dir / "build.json").read_text())
-                             if (engine_dir / "build.json").exists() else None,
+                             if engine_dir is not None and (engine_dir / "build.json").exists() else None,
            "cold": {"disk_load_ms": disk_load_ms, "from_pretrained_ms": load_ms,
                     "components_ms": dict(cold), "jit_separate": None,
                     "jit_note": "included in backend/session setup; not independently attributed"},
