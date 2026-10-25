@@ -210,6 +210,7 @@ def run_batch(model, args, items, waves, batch, legacy):
     sizes = sorted({len(c) for c in chunks})
     modes = (["baseline"] if legacy else []) + (["off", "on"] if args.upper_bound == "both"
                                                else [args.upper_bound])
+    modes += [f"on_chunk{n}" for n in args.compare_chunks if n != args.chunk]
     sessions, cold = {}, {}
     for kind, cls in (("fixed", BeamSession), ("baseline", legacy)):
         if cls is None:
@@ -228,13 +229,19 @@ def run_batch(model, args, items, waves, batch, legacy):
         for b in sizes:
             s = sessions[kind, b]
             if kind == "fixed":
-                s.set_upper_bound(mode == "on")
+                s.set_upper_bound(mode != "off")
+                s.chunk = int(mode.removeprefix("on_chunk")) if mode.startswith("on_chunk") else args.chunk
             model._sessions[b, args.beam] = s
 
     # All feature lengths and batch shapes, including the partial final batch, are warmed up.
     for mode in modes:
         select(mode)
-        _, ms = wall(lambda: model.transcribe(waves, **kw))
+        def warm():
+            # transcribe sorts only within each call. Warming the whole manifest would create
+            # different B>1 feature shapes from the actual per-chunk latency measurements.
+            for indices in chunks:
+                model.transcribe([waves[i] for i in indices], **kw)
+        _, ms = wall(warm)
         cold[mode] = {"warmup_ms": ms}
     for (kind, b), s in sessions.items():
         cold[f"{kind}/b{b}"]["capture_shapes"] = capture_shapes(s)
@@ -245,9 +252,13 @@ def run_batch(model, args, items, waves, batch, legacy):
             select(mode)
             for indices in chunks:
                 group = [waves[i] for i in indices]
+                s = model._session(len(group), args.beam)
+                captures_before = len(s._enc_graphs)
                 torch.cuda.reset_peak_memory_stats()
                 results, full_ms = wall(lambda: model.transcribe(group, **kw))
                 s = model._session(len(group), args.beam)
+                if len(s._enc_graphs) != captures_before:
+                    raise RuntimeError("new encoder capture in steady-state timing; warm-up incomplete")
                 # A separate decode-only call, using encoder outputs computed outside its timing.
                 s.encode(model._features(group))
                 primer = torch.tensor([model._primer(args.lang, args.task, args.timestamps, args.prompt)]
@@ -303,7 +314,8 @@ def run_batch(model, args, items, waves, batch, legacy):
     for b in sizes:
         s = make_session(model, BeamSession, b, args.beam, args.chunk, diagnostics=True)
         for mode in [m for m in modes if m != "baseline"]:
-            s.set_upper_bound(mode == "on")
+            s.set_upper_bound(mode != "off")
+            s.chunk = int(mode.removeprefix("on_chunk")) if mode.startswith("on_chunk") else args.chunk
             for indices in [c for c in chunks if len(c) == b]:
                 group = [waves[i] for i in indices]
                 s.encode(model._features(group))
@@ -391,6 +403,8 @@ def main():
     ap.add_argument("--repeat", type=int, default=5)
     ap.add_argument("--limit", type=int)
     ap.add_argument("--chunk", type=int, default=4)
+    ap.add_argument("--compare-chunks", type=int, nargs="*", default=[],
+                    help="additional upper-bound ON host-check frequencies, on the same graphs")
     ap.add_argument("--upper-bound", choices=["off", "on", "both"], default="both")
     ap.add_argument("--baseline-runtime", type=Path)
     ap.add_argument("--out", type=Path, required=True)
@@ -404,6 +418,8 @@ def main():
         ap.error("require beam >= 2 and 1 <= batch * beam <= 16 for the default engines")
     if args.repeat < 1 or args.chunk < 1 or (args.limit is not None and args.limit < 1):
         ap.error("repeat, chunk and limit must be positive")
+    if any(n < 1 for n in args.compare_chunks) or len(set(args.compare_chunks)) != len(args.compare_chunks):
+        ap.error("compare-chunks must be distinct positive integers")
     if not os.environ.get("PBS_JOBID") and os.uname().nodename.startswith("login"):
         ap.error("audio and inference must run in an allocated compute job")
     args.out.mkdir(parents=True, exist_ok=True)
