@@ -1382,6 +1382,7 @@ class BeamSession(_Session):
         self.active = torch.zeros(n, dtype=torch.bool, **dev)
         self.done = torch.zeros(batch, dtype=torch.bool, **dev)
         self.seq = torch.zeros(n, capacity + 2, dtype=torch.long, **dev)
+        self.numerical_error = torch.zeros(batch, dtype=torch.bool, **dev)
         self.best_score = torch.zeros(batch, **dev)
         self.best_seq = torch.zeros(batch, capacity + 2, dtype=torch.long, **dev)
         self.best_end = torch.zeros(batch, dtype=torch.long, **dev)  # seq index after its last token
@@ -1401,11 +1402,20 @@ class BeamSession(_Session):
         V = self.logits.shape[-1]
 
         # 1. the K best extensions per utterance (scores accumulate fp32 log-probabilities)
-        logp = self._rules_mask(torch.log_softmax(self.logits[:, -1], dim=-1))  # [N, V]
-        cand = (self.score.unsqueeze(1) + logp).masked_fill(~self.active.unsqueeze(1), LOG_ZERO)
+        logits = self.logits[:, -1]  # [N, V]
+        bad = (torch.isnan(logits) | torch.isposinf(logits)).any(dim=-1)
+        live_parent = self.active & ~self.done.repeat_interleave(K)
+        self.numerical_error |= (bad & live_parent).view(B, K).any(dim=-1)
+        # An all -inf row is exhausted, not a numerical failure. Avoid softmax(-inf, ..., -inf),
+        # and never allow dead parents or masked/non-finite extensions into the global top-K.
+        usable = live_parent & ~bad & torch.isfinite(logits).any(dim=-1)
+        safe = torch.where(usable.unsqueeze(1), logits, 0.0)
+        logp = self._rules_mask(torch.log_softmax(safe, dim=-1))  # [N, V]
+        cand = (self.score.unsqueeze(1) + logp).masked_fill(~usable.unsqueeze(1), float("-inf"))
         top, idx = cand.view(B, K * V).topk(K, dim=-1)  # [B, K]
         parent = (idx // V + self.row_base.unsqueeze(1)).view(-1)  # [N] row each extension comes from
         token = (idx % V).view(-1)
+        valid = live_parent.index_select(0, parent) & torch.isfinite(top.view(-1))
         self.score.copy_(top.view(-1))
         self.seq.copy_(self.seq.index_select(0, parent))
         self.seq.index_copy_(1, self.pos, token.unsqueeze(1))
@@ -1415,7 +1425,7 @@ class BeamSession(_Session):
 
         # 2. finished hypotheses. All that finish in one step have the same length (ESPnet's yseq
         # length, which counts the primer): pos + 1, or pos + 2 at the limit where <eos> is appended.
-        live = ~self.done.repeat_interleave(K)
+        live = valid & ~self.done.repeat_interleave(K)
         at_limit = self.step == self.last_step  # [1]
         is_eos = token == self.eos
         ended = (is_eos | at_limit) & live
@@ -1438,12 +1448,23 @@ class BeamSession(_Session):
             n = self.step - m
             s = self.ended_by_len.index_select(1, n.clamp(min=0)).squeeze(1)
             count += ((n >= 0) & (s > float("-inf")) & (s - self.best_score < END_DETECT_D)).long()
-        live_after = (~is_eos & live).view(B, K)
+        live_after = (~is_eos & live & ~at_limit).view(B, K)
         done = self.done | at_limit | ~live_after.any(dim=-1) | (count == END_DETECT_M)
         self.done.copy_(done)
         self.active.copy_((live_after & ~done.unsqueeze(1)).view(-1))
 
         self.tok.copy_(token.unsqueeze(1))
+
+    def _check(self) -> None:
+        super()._check()
+        # Called after decoding's existing host synchronization, never during graph capture/replay.
+        if bool(self.numerical_error.any()):
+            rows = self.numerical_error.nonzero().flatten().tolist()
+            raise RuntimeError(f"beam search: NaN or positive infinity in live logits for utterances {rows}")
+        missing = ~torch.isfinite(self.best_score)
+        if bool(missing.any()):
+            rows = missing.nonzero().flatten().tolist()
+            raise RuntimeError(f"beam search: no valid finished hypothesis for utterances {rows}")
 
     def encode(self, feats: torch.Tensor) -> torch.Tensor:
         def expand() -> None:  # every beam slot attends to its utterance's encoder output
@@ -1475,6 +1496,7 @@ class BeamSession(_Session):
         self.active.zero_()
         self.active[::K] = True  # the beams of an utterance start identical: expand only the first
         self.done.zero_()
+        self.numerical_error.zero_()
         self.best_score.fill_(float("-inf"))
         self.best_end.fill_(p)
         self.ended_by_len.fill_(float("-inf"))
