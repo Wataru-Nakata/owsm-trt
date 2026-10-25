@@ -1534,9 +1534,13 @@ class BeamSession(_Session):
         utterances = []
         for b in range(self.batch):
             rows = [dict(zip(fields, row[b])) for row in state]
-            for row, score in zip(rows, scores):
-                row.update(best_score=score[b][0], max_live_score=score[b][1])
+            for i, (row, score) in enumerate(zip(rows, scores)):
+                row.update(search_step=i, decoder_calls_so_far=i,
+                           best_score=score[b][0], max_live_score=score[b][1])
             end = next((i for i, row in enumerate(rows) if row["done"]), None)
+            last_update = next((i for i in range(len(rows) - 1, -1, -1) if rows[i]["best_updated"]), None)
+            finished_length = (rows[last_update]["best_end"] + bool(rows[last_update]["stop_mask"] & 1)
+                               if last_update is not None else None)
             first_check = next((i for i in self._host_checks if end is not None and i >= end), None)
             detected = self._host_checks[-1] if self._host_checks and end is not None else None
             if not self._host_checks and end is not None:
@@ -1545,13 +1549,13 @@ class BeamSession(_Session):
                 "history": rows,
                 "first_eos_step": next((i for i, row in enumerate(rows) if row["eos"]), None),
                 "first_bound_step": next((i for i, row in enumerate(rows) if row["bound"]), None),
-                "last_best_update_step": next((i for i in range(len(rows) - 1, -1, -1)
-                                               if rows[i]["best_updated"]), None),
+                "last_best_update_step": last_update,
                 "logical_end_step": end, "host_observed_done_step": detected,
                 "extra_decoder_calls": steps - 1 - end if end is not None else None,
                 "chunk_overshoot": first_check - end if first_check is not None else 0,
                 "stop_mask": rows[end]["stop_mask"] if end is not None else 0,
                 "best_end_with_primer": rows[-1]["best_end"],
+                "best_finished_length_with_primer": finished_length,
             })
         return {
             "prefill_calls": 1, "prefill_selections": 1, "decoder_calls": steps - 1,

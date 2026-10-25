@@ -157,9 +157,12 @@ def test_partial_batch_completion_is_sticky():
 @pytest.mark.parametrize("prompt_len, limit", [(3, 1), (7, 9), (15, 1)])
 def test_forced_eos_and_capacity(prompt_len, limit):
     s = session(backend=ScriptedBackend([-torch.inf, 0., -torch.inf, -torch.inf,
-                                        -torch.inf, -torch.inf, -torch.inf, -torch.inf]))
+                                        -torch.inf, -torch.inf, -torch.inf, -torch.inf]), diagnostics=True)
     assert s.decode(torch.tensor([[2] * prompt_len]), limit) == [[1] * limit]
     assert s.best_end.item() == prompt_len + limit
+    d = s.get_diagnostics()["utterances"][0]
+    assert d["best_end_with_primer"] == prompt_len + limit
+    assert d["best_finished_length_with_primer"] == prompt_len + limit + 1
     with pytest.raises(ValueError, match="does not fit"):
         s.decode(torch.tensor([[2] * 16]), 1)
 
