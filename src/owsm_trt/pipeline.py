@@ -206,11 +206,13 @@ class OWSM:
         use_cuda_graph: bool = True,
         ctc_draft: bool = True,
         beam_upper_bound: bool = True,
+        beam_kernels: bool = True,
     ):
         self.cfg, self.tokenizer, self.frontend, self.backend = cfg, tokenizer, frontend, backend
         self.opts, self.device, self.use_cuda_graph = opts, device, use_cuda_graph
         self.ctc_draft = ctc_draft
         self.beam_upper_bound = beam_upper_bound
+        self.beam_kernels = beam_kernels
         self.draft_stats = [0, 0]  # tokens emitted, decoder calls made by drafted decoding
         self.stream_priority = True  # decoder calls go first while the encoder works ahead
         self.dtype = DTYPES[opts.dtype]
@@ -242,6 +244,7 @@ class OWSM:
         fp8_calibration: list[AudioLike] | None = None,
         decoder_kernel: bool | str | None = None,
         beam_upper_bound: bool = True,
+        beam_kernels: bool = True,
         fp8: bool | str = False,
         fp8_margin: float = 1.0,
         fp8_skip: str = "",
@@ -259,6 +262,11 @@ class OWSM:
         live score (default True). Existing stopping rules still apply; greedy decoding is unaffected.
         False disables this bound. Bound-enabled batch 1 checks completion every step, other beam
         batches every four steps; see ``BeamSession`` for an explicit interval override.
+
+        ``beam_kernels``: fuse beam candidate masking/scoring and finished-state updates with Triton
+        (default True on CUDA when Triton is available). Full-vocabulary log-softmax and global top-K
+        stay in PyTorch. False selects the reference operations; CPU and missing-Triton paths also
+        use them. These kernels do not affect greedy decoding.
 
         ``fp8_calibration`` (experimental, TensorRT): run the encoder's linear layers and subsampling
         convolutions in FP8, with input ranges measured on these recordings.
@@ -320,7 +328,8 @@ class OWSM:
             net = load_model(cfg, str(files.checkpoint), dev, DTYPES[dtype])
             graphs = use_cuda_graph and dev.type == "cuda"
             runner = TorchCTCBackend(net) if cfg.ctc_only else TorchBackend(net)
-            return cls(cfg, tok, net.frontend, runner, opts, dev, graphs, ctc_draft, beam_upper_bound)
+            return cls(cfg, tok, net.frontend, runner, opts, dev, graphs, ctc_draft,
+                       beam_upper_bound, beam_kernels)
         if backend != "tensorrt":
             raise ValueError(f"unknown backend {backend!r} (use 'tensorrt' or 'torch')")
 
@@ -358,7 +367,8 @@ class OWSM:
                 decoder_kernel = os.environ.get("OWSM_TRT_MEGAKERNEL", "auto")
             if decoder_kernel and decoder_kernel != "0" and not cfg.ctc_only and dtype == "float16":
                 runner = _decoder_kernel(runner, cfg, files.checkpoint, dev, decoder_kernel)
-            return cls(cfg, tok, frontend, runner, opts, dev, use_cuda_graph, ctc_draft, beam_upper_bound)
+            return cls(cfg, tok, frontend, runner, opts, dev, use_cuda_graph, ctc_draft,
+                       beam_upper_bound, beam_kernels)
 
     # ------------------------------------------------------------------ helpers
 
@@ -383,6 +393,7 @@ class OWSM:
                 self._sessions[key] = BeamSession(
                     self.backend, self.cfg, batch, beam, *args, rules=self.rules,
                     upper_bound=self.beam_upper_bound,
+                    fused_rank=self.beam_kernels, fused_finish=self.beam_kernels,
                 )
         self._sessions.move_to_end(key)
         return self._sessions[key]

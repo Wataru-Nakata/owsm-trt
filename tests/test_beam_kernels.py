@@ -25,7 +25,8 @@ def device():
 @pytest.mark.parametrize("diagnostics", [False, True])
 @pytest.mark.parametrize("ending", ["mixed", "no_eos", "all_eos", "invalid"])
 def test_finish_exact_state(device, step, force, bound, diagnostics, ending):
-    s = session(batch=3, beam=5, device=device, diagnostics=diagnostics, upper_bound=bound)
+    s = session(batch=3, beam=5, device=device, diagnostics=diagnostics, upper_bound=bound,
+                fused_rank=False, fused_finish=False)
     ready(s)
     s.step.fill_(step)
     s.pos.fill_(step + 3)
@@ -58,7 +59,7 @@ def test_finish_exact_state(device, step, force, bound, diagnostics, ending):
 @pytest.mark.parametrize("rules_enabled", [False, True])
 @pytest.mark.parametrize("vocab", [8, 2053])
 def test_candidates_exact_masks_errors_and_ties(device, rules_enabled, vocab):
-    s = session(batch=3, beam=5, device=device)
+    s = session(batch=3, beam=5, device=device, fused_rank=False, fused_finish=False)
     ready(s)
     s.logits = torch.zeros(s.rows, 1, vocab, device=device)
     if rules_enabled:
@@ -105,7 +106,7 @@ def test_fused_graph_bucket_crossing(device, fused_rank, fused_finish):
     rules = TimestampRules(7, 5, 6, 0, 8, device)
     args = dict(batch=3, beam=3, device=device, rules=rules, diagnostics=True,
                 use_cuda_graph=True, upper_bound=False)
-    reference = session(**args)
+    reference = session(**args, fused_rank=False, fused_finish=False)
     fused = session(**args, fused_rank=fused_rank, fused_finish=fused_finish)
     primer = torch.tensor([[2, 3, 7]] * 3, device=device)
     for limit in (13, 7, 1):

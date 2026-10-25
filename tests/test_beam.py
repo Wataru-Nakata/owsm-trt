@@ -1,5 +1,7 @@
 """Small synthetic beam states; no audio processing or model inference."""
 
+from types import SimpleNamespace
+
 import pytest
 import torch
 
@@ -237,3 +239,24 @@ def test_default_bound_and_host_check_interval(batch, chunk, calls):
 def test_invalid_host_check_interval(chunk):
     with pytest.raises(ValueError, match="must be positive"):
         session(chunk=chunk)
+
+
+@pytest.mark.parametrize("enabled", [False, True])
+def test_pipeline_forwards_beam_kernel_choice(monkeypatch, enabled):
+    from owsm_trt import pipeline
+
+    captured = {}
+
+    def create(*args, **kwargs):
+        captured.update(kwargs)
+        return SimpleNamespace()
+
+    monkeypatch.setattr(pipeline, "BeamSession", create)
+    model = pipeline.OWSM(
+        CFG, SimpleNamespace(first_time=None, notime=None, eos=0), None, None,
+        SimpleNamespace(dtype="float32", capacity=16), torch.device("cpu"),
+        use_cuda_graph=False, beam_kernels=enabled,
+    )
+    s = model._session(1, 3)
+    assert captured["fused_rank"] is enabled and captured["fused_finish"] is enabled
+    assert model._session(1, 3) is s
