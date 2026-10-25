@@ -212,6 +212,12 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   previous window has finished (27-33% faster than decoding the recordings' windows round by round).
 * **Beam search is ESPnet's.** `beam_size=k` runs ESPnet's batched beam search (sum of log-probabilities, no length
   normalization, its `end_detect` rule) on a batch × k grid of hypotheses, every step one CUDA graph.
+  `OWSM.from_pretrained(..., beam_upper_bound=True)` additionally stops an utterance when its finite best
+  finished score strictly exceeds every valid live score. This is opt-in (default `False`); ties continue,
+  and the existing stopping rules remain active. Invalid slots cannot become live/finished hypotheses;
+  invalid live logits (NaN/+Inf) or exhaustion without a finished hypothesis raise `RuntimeError` after
+  decoding. See [beam profiling and validation](docs/beam-search.md) and the
+  [60-candidate ledger](docs/beam-candidates.tsv) for tested scope and remaining work.
 * **Timestamp rules.** Like ESPnet, every search applies its `ScoreFilter`: no timestamps after `<notimestamps>`;
   otherwise the output starts with a timestamp, timestamps come in increasing pairs, and `<eos>` only after a
   complete pair.
@@ -338,6 +344,8 @@ Scripts in `scripts/`:
 * `parity_espnet.py`: fp32 parity against official ESPnet (any family; `--timestamps`, `--task`). It runs in
   `tools/espnet_ref`, which is only used for reference and is never a dependency.
 * `eval_wer.py`: WER, speed, and transcript agreement for one configuration (`--beam`, `--timestamps`, `--no-draft`).
+* `profile_beam.py`: same-engine baseline/score-bound ablations, separate wall/diagnostic/eager-phase runs,
+  token and segment comparisons, capture/dispatch/environment metadata. Run it on an allocated GPU node.
 * `check_models.py`: TensorRT fp16 against PyTorch fp32 for several models.
 * `profile_phases.py`: CUDA-event timing of the frontend, encoder, prefill, decode steps, and verify windows.
 * `draft_report.py`: where CTC drafts and the decoder disagree.

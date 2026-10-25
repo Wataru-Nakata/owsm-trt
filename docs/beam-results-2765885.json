@@ -1,0 +1,248 @@
+{
+  "date": "2026-10-26",
+  "job": "2765885.pbs1",
+  "snapshot": "daa9f6dafdbee3a5daa2af2ed548f428013e82bf",
+  "baseline": "892c29fb9b01b22c3e56e6848af818c5470c9288",
+  "model": "owsm_v4_medium_1B",
+  "beam": 5,
+  "timestamps": true,
+  "dataset": "first 12 LibriSpeech dummy utterances",
+  "repeats": 5,
+  "gpu": "NVIDIA H200",
+  "sm_count": 132,
+  "versions": {
+    "torch": "2.14.1",
+    "triton": "3.8.0",
+    "tensorrt": "11.4.0.106",
+    "numpy": "2.5.4",
+    "sentencepiece": "0.2.2"
+  },
+  "cuda": "13.0",
+  "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+  "engine_sha256": {
+    "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+    "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+    "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+  },
+  "results": {
+    "1": {
+      "eager_profile_kernel_ms": {
+        "prefill": 1.1160300000000007,
+        "unattributed": 0.10576400000000008,
+        "selection": 4.250350000000005,
+        "reorder": 1.770904000000001,
+        "finish_and_history": 2.9809940000000426,
+        "decoder": 19.551805000000005
+      },
+      "eager_profile_kernel_counts": {
+        "prefill": 239,
+        "unattributed": 100,
+        "selection": 1850,
+        "reorder": 325,
+        "finish_and_history": 2625,
+        "decoder": 24
+      },
+      "steady_subset": {
+        "baseline": {
+          "transcribe_ms": {
+            "n": 60,
+            "p50": 106.69343800691422,
+            "p95": 553.7641946255462,
+            "stdev": 244.38751709292583
+          },
+          "decoder_calls": {
+            "n": 60,
+            "p50": 82.5,
+            "p95": 373.0,
+            "stdev": 163.02291931572756
+          },
+          "decode_ms": {
+            "n": 60,
+            "p50": 102.61637197982054,
+            "p95": 550.1140364038292,
+            "stdev": 244.30927726319757
+          },
+          "within_input_cv_median": 0.000571958154384192,
+          "within_input_cv_max": 0.004468097569863512,
+          "rtfx": 40.844876281741946
+        },
+        "off": {
+          "transcribe_ms": {
+            "n": 60,
+            "p50": 113.33979450864717,
+            "p95": 582.9080206967774,
+            "stdev": 256.89328312641084
+          },
+          "decoder_calls": {
+            "n": 60,
+            "p50": 82.5,
+            "p95": 373.0,
+            "stdev": 163.02291931572756
+          },
+          "decode_ms": {
+            "n": 60,
+            "p50": 109.29088851844426,
+            "p95": 579.1853075381368,
+            "stdev": 256.8492056816058
+          },
+          "within_input_cv_median": 0.0006495843548680617,
+          "within_input_cv_max": 0.0026012060981489156,
+          "rtfx": 38.7430988724127
+        },
+        "on": {
+          "transcribe_ms": {
+            "n": 60,
+            "p50": 41.81433349731378,
+            "p95": 148.69810029340442,
+            "stdev": 31.841618086082956
+          },
+          "decoder_calls": {
+            "n": 60,
+            "p50": 28.0,
+            "p95": 109.0,
+            "stdev": 24.31434761617099
+          },
+          "decode_ms": {
+            "n": 60,
+            "p50": 38.24217800865881,
+            "p95": 144.42537540744524,
+            "stdev": 31.62450026732244
+          },
+          "within_input_cv_median": 0.0005116697389273092,
+          "within_input_cv_max": 0.002416002408209604,
+          "rtfx": 194.67542582287743
+        }
+      },
+      "excluded_repeats": []
+    },
+    "3": {
+      "eager_profile_kernel_ms": {
+        "decoder": 48.31651800000023,
+        "unattributed": 0.5397119999999996,
+        "selection": 8.90900300000007,
+        "reorder": 8.141920999999996,
+        "finish_and_history": 5.7985310000002155,
+        "host_sync": 0.024479000000000004,
+        "prefill": 1.0966270000000011
+      },
+      "eager_profile_kernel_counts": {
+        "decoder": 11220,
+        "unattributed": 250,
+        "selection": 3330,
+        "reorder": 585,
+        "finish_and_history": 4905,
+        "host_sync": 11,
+        "prefill": 239
+      },
+      "steady_subset": {
+        "baseline": {
+          "transcribe_ms": {
+            "n": 16,
+            "p50": 897.6218664902262,
+            "p95": 908.4244742625742,
+            "stdev": 10.36015179641469
+          },
+          "decoder_calls": {
+            "n": 16,
+            "p50": 373.0,
+            "p95": 373.0,
+            "stdev": 0.0
+          },
+          "decode_ms": {
+            "n": 16,
+            "p50": 893.9784100075485,
+            "p95": 899.5948122610571,
+            "stdev": 5.426972737393184
+          },
+          "within_input_cv_median": 0.0003224268125891337,
+          "within_input_cv_max": 0.00045861214455087177,
+          "rtfx": 36.36149291356029
+        },
+        "off": {
+          "transcribe_ms": {
+            "n": 16,
+            "p50": 921.7942529940046,
+            "p95": 941.151267492387,
+            "stdev": 24.70422382060972
+          },
+          "decoder_calls": {
+            "n": 16,
+            "p50": 373.0,
+            "p95": 373.0,
+            "stdev": 0.0
+          },
+          "decode_ms": {
+            "n": 16,
+            "p50": 922.5269319867948,
+            "p95": 932.688948509167,
+            "stdev": 25.348084367322055
+          },
+          "within_input_cv_median": 0.024381806967968708,
+          "within_input_cv_max": 0.028373267915186098,
+          "rtfx": 35.46703034336066
+        },
+        "on": {
+          "transcribe_ms": {
+            "n": 16,
+            "p50": 108.95245951542165,
+            "p95": 223.90744748554425,
+            "stdev": 58.80412038873411
+          },
+          "decoder_calls": {
+            "n": 16,
+            "p50": 52.0,
+            "p95": 109.0,
+            "stdev": 30.334592464709328
+          },
+          "decode_ms": {
+            "n": 16,
+            "p50": 100.29295149433892,
+            "p95": 213.66684751410503,
+            "stdev": 57.81370950183715
+          },
+          "within_input_cv_median": 0.018666628196418462,
+          "within_input_cv_max": 0.033836850655195594,
+          "rtfx": 261.2069936478604
+        }
+      },
+      "excluded_repeats": [
+        0
+      ]
+    },
+    "kernel_attribution": "Sum of kernel durations from eager diagnostic trace, matched by launch correlation to host phase. Does not measure graph phase or overlapping wall time."
+  },
+  "extra_agreement": {
+    "baseline": {
+      "no_timestamps": true,
+      "translation": true,
+      "prompt": true,
+      "silence_noise": true,
+      "30s_repeated_speech": true,
+      "long_audio": true
+    },
+    "off": {
+      "no_timestamps": true,
+      "translation": true,
+      "prompt": true,
+      "silence_noise": true,
+      "30s_repeated_speech": true,
+      "long_audio": true
+    },
+    "on": {
+      "no_timestamps": true,
+      "translation": true,
+      "prompt": true,
+      "silence_noise": true,
+      "30s_repeated_speech": true,
+      "long_audio": true
+    }
+  },
+  "tests": "100 passed in 23.73s",
+  "caveats": [
+    "B=3 initial warm-up sorted the full manifest, unlike latency batches. Exclude the entire first repeat for all modes. Raw samples preserved. Fixed from 35f3989.",
+    "Eager diagnostic trace kernel totals do not attribute CUDA graph execution.",
+    "No reference time annotations evaluated; no Japanese in this job.",
+    "Resident comparison sessions inflate peak VRAM; peak is not isolated mode memory."
+  ],
+  "artifacts": "outputs/beam-2765885/"
+}
