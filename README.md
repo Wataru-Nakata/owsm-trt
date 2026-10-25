@@ -210,11 +210,14 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   last 15 s, so no audio is decoded twice (not ESPnet's segmentation). With `batch_size`, all recordings' windows
   share one stream of decoder calls: a row whose window is done takes the next window of any recording whose
   previous window has finished (27-33% faster than decoding the recordings' windows round by round).
-* **Beam search is ESPnet's.** `beam_size=k` runs ESPnet's batched beam search (sum of log-probabilities, no length
-  normalization, its `end_detect` rule) on a batch × k grid of hypotheses, every step one CUDA graph.
-  `OWSM.from_pretrained(..., beam_upper_bound=True)` additionally stops an utterance when its finite best
-  finished score strictly exceeds every valid live score. This is opt-in (default `False`); ties continue,
-  and the existing stopping rules remain active. Invalid slots cannot become live/finished hypotheses;
+* **Beam search follows ESPnet's selection.** `beam_size=k` runs batched beam search (sum of log-probabilities,
+  no length normalization, ESPnet's `end_detect` rule) on a batch × k grid, every step one CUDA graph.
+  By default, it additionally stops when the finite best finished score strictly exceeds every valid live
+  score; ties continue and the existing stopping rules remain active. Set
+  `OWSM.from_pretrained(..., beam_upper_bound=False)` to disable the bound. Host completion is checked every
+  step for bound-enabled batch 1, every four steps otherwise. On H200/1B/beam 5 with timestamps, all tokens,
+  timestamps and segments matched the original implementation on 73 English and 12 Japanese inputs at
+  B=1/3; the host-check sweep used English only. Invalid slots cannot become live/finished hypotheses;
   invalid live logits (NaN/+Inf) or exhaustion without a finished hypothesis raise `RuntimeError` after
   decoding. See [beam profiling and validation](docs/beam-search.md) and the
   [60-candidate ledger](docs/beam-candidates.tsv) for tested scope and remaining work.

@@ -16,10 +16,16 @@ An exhausted search returns the previous best finished hypothesis, or raises if 
 in live logits sets a device error flag and raises at the end of decoding, after existing synchronization.
 All-negative-infinity rows count as exhausted, not numerical errors. Errors from inactive rows are ignored.
 
-`OWSM.from_pretrained(..., beam_upper_bound=True)` or `BeamSession(..., upper_bound=True)` enables the
-strict bound. `BeamSession.set_upper_bound(bool)` changes a device flag without rebuilding engines or
-recapturing graphs. The default remains **OFF**. It is applied after best-finished updates, and ORed
-with existing `end_detect`, exhaustion and length-limit rules. Equality does not stop the search.
+The strict bound is **ON by default**, following the expanded compatibility evaluation below.
+`OWSM.from_pretrained(..., beam_upper_bound=False)` or `BeamSession(..., upper_bound=False)` disables it.
+It is applied after best-finished updates, and ORed with existing `end_detect`, exhaustion and
+length-limit rules. Equality does not stop the search.
+
+`BeamSession(..., chunk=None)` chooses host completion checks every step for bound-enabled B=1, and
+every four steps otherwise. An explicit positive `chunk` overrides this choice.
+`BeamSession.set_upper_bound(bool)` changes a device flag without rebuilding engines or recapturing
+graphs; it retains the interval chosen at construction. The profiler explicitly uses `--chunk 4` by
+default to isolate stopping from host-check frequency; use `--compare-chunks 2 1` for the ablation.
 
 The bound applies to the current retained beam's top-1 result: sums of log-probabilities cannot increase
 under extension. It does not establish global search optimality or preserve an n-best list. Positive
@@ -112,8 +118,8 @@ Peak VRAM includes resident comparison sessions; it is not the incremental memor
 Extra compatibility case timings include cold capture and are not steady-state speed measurements.
 
 Text WER/CER is computed only when textual references exist. Timestamp-token and segment agreement
-with baseline is not reference-time accuracy. Reference timestamp errors remain unavailable. Japanese,
-music, fast-speech and multilingual timestamp quality require additional data/evaluation.
+with baseline is not reference-time accuracy. Reference timestamp errors remain unavailable. Music,
+fast-speech and languages beyond English/Japanese require additional data/evaluation.
 
 ## Validation status
 
@@ -124,7 +130,7 @@ establish supported-runtime/GPU compatibility). Ruff, shell syntax and diff-whit
 The allocated job runs the synthetic CUDA graph test, existing naive-beam/greedy/timestamp comparisons
 (bound ON and OFF), model tests and long-form tests using the packaged GPU environment.
 
-The allocated GPU job passed **100 tests** in 23.73 s, including the CUDA graph diagnostics/toggle test
+The first allocated GPU job passed **100 tests** in 23.73 s, including the CUDA graph diagnostics/toggle test
 and both ON/OFF naive-beam comparisons. GPU environment: H200 (132 SM), CUDA 13.0, driver 595.71.05,
 torch 2.14.1, Triton 3.8.0, TensorRT 11.4.0.106. Engines were loaded, not rebuilt.
 
@@ -147,7 +153,8 @@ engines and decoder backend. Each input was repeated five times.
 groups. Some first-repeat calls captured new feature shapes. The B=3 table excludes the entire first
 repeat for **all** modes (16 calls/mode); raw data including those captures remains unchanged. B=1 uses
 all 60 calls/mode. Commit `35f3989` warms the exact measured groups and raises if any timed call captures
-a new encoder shape. This correction needs its own GPU rerun; the table is an explicitly filtered first result.
+a new encoder shape. The follow-up below verifies this correction without excluding any repeat;
+this table remains an explicitly filtered historical result.
 
 For B=1, within-input transcribe coefficient of variation has median 0.057% / 0.065% / 0.051%
 (original/OFF/ON); the large across-input standard deviation reflects different input/decode lengths.
@@ -164,8 +171,8 @@ also match original results; their cold-inclusive timings are not performance cl
 
 Original/OFF reaches 374 selections on 5/12 B=1 inputs; ON logically finishes at search steps 17–109,
 always through the strict bound. B=1 has 0–3 extra decoder calls (mean 1.58). B=3 still waits up to 84
-calls for another batch member after an utterance logically finishes. Candidate 29 is a small next
-ablation; candidate 33 requires a larger state-management change.
+calls for another batch member after an utterance logically finishes. Candidate 29 was selected for
+the follow-up ablation; candidate 33 requires a larger state-management change.
 
 Peak allocated memory, with comparison sessions resident: 6.29 GiB at B=1; B=3 original/OFF 8.41 GiB,
 ON 8.27 GiB. These are not isolated per-mode memory measurements. GPU utilization sampled every 5 s
@@ -180,6 +187,100 @@ distort other phase costs; no graph-phase fraction or projected optimization spe
 Nsight tools were unavailable. B=1 dispatches Gluon, B=3 falls back to TensorRT because 15 rows exceed
 the 8-row route limit. No decoder, KV or approximate-search redesign is adopted from this evidence.
 
-A follow-up of English 73 inputs, Japanese 12 inputs and chunk 4/2/1 was approved with the same one-GPU,
-one-hour settings. At the pre-submission check the account already held **192 GPUs**; the follow-up is
-prepared but has not been submitted, respecting the user's account-wide 192-GPU cap.
+## Expanded evaluation and host-check ablation
+
+Job `2766218.pbs1`, snapshot `938b2db`, completed successfully in 26 min 6 s and passed **100 GPU tests**
+in 26.85 s. It reused the same checkpoint/engine hashes as the first job. Raw results, tokens, traces
+and logs are in `outputs/beam-2766218/`; the committed [result record](beam-results-2766218.json)
+includes timing distributions, within-group variance, diagnostics, dispatch and resource observations.
+The exact timed groups were warmed and the profiler's capture guard passed. No repeats are excluded.
+
+The English set contains all 73 LibriSpeech dummy inputs (481.03 s), repeated five times. B=1 has
+365 calls per mode; B=3 has 125 calls, including a one-input tail after 24 full groups per repeat.
+The Japanese set contains the first 12 FLEURS validation inputs (157.50 s), repeated three times:
+36 B=1 and 12 B=3 calls per mode. The table uses the same **four-step** host checks for every mode.
+
+| Dataset | Batch | Mode | Call p50 / p95 (ms) | Decode p50 (ms) | Decoder calls p50 | RTFx |
+|---|---|---|---:|---:|---:|---:|
+| English | 1 | Original | 68.83 / 554.12 | 64.62 | 52 | 23.33 |
+| English | 1 | Fixed, bound OFF | 73.25 / 583.26 | 69.05 | 52 | 22.12 |
+| English | 1 | Fixed, bound ON | 36.69 / 72.15 | 33.17 | 24 | 167.98 |
+| English | 3 | Original | 896.78 / 913.74 | 889.79 | 373 | 24.38 |
+| English | 3 | Fixed, bound OFF | 930.72 / 947.99 | 924.02 | 373 | 23.48 |
+| English | 3 | Fixed, bound ON | 65.05 / 135.01 | 56.66 | 28 | 239.85 |
+| Japanese | 1 | Original | 551.42 / 554.13 | 547.95 | 373 | 33.20 |
+| Japanese | 1 | Fixed, bound OFF | 579.77 / 582.97 | 575.97 | 373 | 31.71 |
+| Japanese | 1 | Fixed, bound ON | 47.35 / 110.94 | 43.48 | 32 | 240.78 |
+| Japanese | 3 | Original | 882.66 / 896.35 | 879.59 | 373 | 44.60 |
+| Japanese | 3 | Fixed, bound OFF | 913.92 / 927.86 | 910.97 | 373 | 43.07 |
+| Japanese | 3 | Fixed, bound ON | 95.72 / 163.47 | 86.83 | 46 | 370.67 |
+
+All tested modes match original token IDs, timestamp IDs, text and segment boundaries for **73/73
+English and 12/12 Japanese** inputs at both batch sizes. English WER is 45/1150 = 3.91%; Japanese CER
+is 26/592 = 4.39%, unchanged across modes. English has 74 segments/148 timestamp tokens; Japanese has
+12 segments/24 timestamp tokens. Neither set has empty/invalid segments, unpaired timestamps or
+nonmonotonic times under the profiler's checks. The six **English** extra cases (no timestamps,
+English-to-English translation, long prompt, silence/noise, repeated speech near 30 s, 110 s recording)
+also match for baseline/OFF/ON. These do not establish Japanese translation or reference-time accuracy.
+
+With bound ON/chunk 4, English logically stops through the bound on 67 inputs and exhaustion on six;
+Japanese stops through the bound on 11 and exhaustion on one. B=1 excess calls average 1.82 for English
+and 1.50 for Japanese. B=3 waits for other rows too: excess calls average 12.34/15.33, maximum 84/62.
+
+The additional frequency sweep uses the same English inputs, engines and captured graphs:
+
+| Batch | Check interval | Call p50 / p95 (ms) | Decoder calls p50 | RTFx | Faster groups vs interval 4 |
+|---|---:|---:|---:|---:|---:|
+| 1 | 4 | 36.69 / 72.15 | 24 | 167.98 | — |
+| 1 | 2 | 34.31 / 72.46 | 22 | 174.41 | 50/73 |
+| 1 | 1 | 33.33 / 71.58 | 21 | 176.75 | 60/73 |
+| 3 | 4 | 65.05 / 135.01 | 28 | 239.85 | — |
+| 3 | 2 | 65.88 / 133.68 | 28 | 242.36 | 16/25 |
+| 3 | 1 | 68.35 / 137.37 | 28 | 235.32 | 10/25 |
+
+Candidate **29 is adopted for B=1**: interval 1 improves total RTFx by 5.22% over interval 4,
+with a median paired per-input speed improvement of 6.56%. Median within-input CV is 0.15% for
+interval 4 and 0.37% for interval 1; the effect is larger than repeat variability. Every-step checks
+remove the measured B=1 overshoot. B=3 retains interval 4: interval 1 regresses, and interval 2 gives
+only 1.05% aggregate RTFx gain with worse p50 and mixed per-group effects. No universal interval
+improvement is claimed. **Japanese interval 1 was not measured**; its table reports interval 4,
+not the new B=1 default's latency. Other beam widths, model sizes and GPUs remain unverified.
+
+The strict bound is now enabled by default after this compatibility pass. The follow-up benchmark
+used explicit flags on snapshot `938b2db`; the subsequent default-selection change (`0fede93`) passes **26 CPU
+tests, one CUDA test skipped**, in the lightweight sanity environment described above. The 100-test
+GPU result belongs to the benchmark snapshot, not a rerun after changing constructor defaults.
+
+The follow-up eager trace again attributes about 65% of kernel time to the decoder. B=1 decoder /
+selection / reorder / finish-history totals are 19.51 / 4.25 / 1.78 / 2.99 ms; B=3 totals are
+48.22 / 8.85 / 8.13 / 5.82 ms. Gluon serves five-row batches; TensorRT serves fifteen-row batches.
+This evidence supports investigating candidate 23 next, but does not justify an unverified routing
+limit increase or a large decoder/cache rewrite within this evaluation budget.
+
+Peak allocated VRAM includes all resident comparison sessions: English B=1 6.29 GiB, B=3 9.25 GiB;
+Japanese B=1 6.29 GiB, B=3 8.27 GiB. Whole-job GPU utilization sampled every five seconds averages
+85.73% (0–100%); per-mode utilization is unavailable. English model/backend loading took 12.73 s and
+initial fixed B=1 construction/JIT/capture took 2.86 s. The baseline constructed afterwards benefits
+from compiled kernels; these cold times are not a fair baseline/ON ablation.
+
+To reproduce the expanded runs inside an approved allocation, use the command above with
+`--limit 73 --compare-chunks 2 1` for English. For Japanese use
+`--manifest .cache/multilingual/fleurs_ja_jp_validation.json --lang jpn --limit 12 --repeat 3`,
+omitting `--compare-chunks`, `--phases`, `--trace`, `--disk`, `--extra-checks` and `--long-audio`.
+Use separate output directories. The provided PBS script accepts `PROFILE_LIMIT=73`,
+`COMPARE_CHUNKS=2:1`, `EXTRA_MANIFEST`, `EXTRA_LANG=jpn`, `EXTRA_LIMIT=12` to stage these two runs.
+
+## Account-capacity monitoring
+
+The user approved exactly one additional job with the same group/queue/resource and one-hour limit.
+Continuous monitoring initially found the account at **192 GPUs**. One admission attempt was skipped
+when another 8-GPU request entered the queue. Job `2766218.pbs1` was submitted on 2026-10-25 at
+17:56:56 UTC after a fresh check found 160 allocated + 24 eligible queued + this job's 1 = **185 GPUs**.
+The checks also required a valid queue, no duplicate beam job and a successful scheduler query.
+
+The account total subsequently reached **201 allocated plus queued GPUs** at 18:14:38 UTC because
+other jobs changed; the next observation at 18:15:47 was 185. Admission checks and polling cannot
+enforce an account-wide limit against concurrent job submissions/releases. No additional job was
+submitted in response. At verified completion the account had 184 allocated and zero queued GPUs.
+The capacity monitor stopped after completion and the approved additional-job allowance is consumed.
+The audit is preserved in `outputs/beam-implementation/monitor-status.json` and the compact result record.
