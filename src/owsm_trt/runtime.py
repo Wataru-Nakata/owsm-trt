@@ -698,8 +698,11 @@ class _Session:
                 self.graphs[c].replay() if self.graphs else self._body(c)
             steps -= n
             pos += n
-            if bool(done.all()):
+            if self._all_done(done):
                 break
+
+    def _all_done(self, done: torch.Tensor) -> bool:
+        return bool(done.all())
 
 
 class GreedySession(_Session):
@@ -1410,6 +1413,11 @@ class BeamSession(_Session):
         self._select(c)
 
     def _select(self, c: int) -> None:
+        top, parent, token, valid = self._rank()
+        self._reorder(c, top, parent, token)
+        self._finish(token, valid)
+
+    def _rank(self) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         B, K = self.batch, self.beam
         V = self.logits.shape[-1]
 
@@ -1428,6 +1436,9 @@ class BeamSession(_Session):
         parent = (idx // V + self.row_base.unsqueeze(1)).view(-1)  # [N] row each extension comes from
         token = (idx % V).view(-1)
         valid = live_parent.index_select(0, parent) & torch.isfinite(top.view(-1))
+        return top, parent, token, valid
+
+    def _reorder(self, c: int, top: torch.Tensor, parent: torch.Tensor, token: torch.Tensor) -> None:
         self.score.copy_(top.view(-1))
         self.seq.copy_(self.seq.index_select(0, parent))
         self.seq.index_copy_(1, self.pos, token.unsqueeze(1))
@@ -1435,6 +1446,8 @@ class BeamSession(_Session):
             buf.copy_(buf.index_select(1, parent))
         self._rules_advance(token, parent)
 
+    def _finish(self, token: torch.Tensor, valid: torch.Tensor) -> None:
+        B, K = self.batch, self.beam
         # 2. finished hypotheses. All that finish in one step have the same length (ESPnet's yseq
         # length, which counts the primer): pos + 1, or pos + 2 at the limit where <eos> is appended.
         live = valid & ~self.done.repeat_interleave(K)
@@ -1499,7 +1512,7 @@ class BeamSession(_Session):
             steps -= n
             pos += n
             executed += n
-            all_done = bool(done.all())  # same host synchronization as the uninstrumented loop
+            all_done = self._all_done(done)
             self._host_checks.append(executed)
             if all_done:
                 break
@@ -1557,12 +1570,12 @@ class BeamSession(_Session):
             rows = missing.nonzero().flatten().tolist()
             raise RuntimeError(f"beam search: no valid finished hypothesis for utterances {rows}")
 
-    def encode(self, feats: torch.Tensor) -> torch.Tensor:
-        def expand() -> None:  # every beam slot attends to its utterance's encoder output
-            self.cross_k.copy_(self.cross_kb.repeat_interleave(self.beam, dim=1))
-            self.cross_v.copy_(self.cross_vb.repeat_interleave(self.beam, dim=1))
+    def _expand_cross(self) -> None:
+        self.cross_k.copy_(self.cross_kb.repeat_interleave(self.beam, dim=1))
+        self.cross_v.copy_(self.cross_vb.repeat_interleave(self.beam, dim=1))
 
-        return self._encoder(feats, self.cross_kb, self.cross_vb, self.ctc_ids, after=expand)
+    def encode(self, feats: torch.Tensor) -> torch.Tensor:
+        return self._encoder(feats, self.cross_kb, self.cross_vb, self.ctc_ids, after=self._expand_cross)
 
     def decode(self, primer: torch.Tensor, max_new_tokens: int) -> list[list[int]]:
         """Beam search after ``primer`` [B, P]; returns the best hypothesis per utterance (no <eos>).

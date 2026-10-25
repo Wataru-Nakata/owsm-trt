@@ -735,7 +735,11 @@ class MegaBackend:
             max_rows is not None and tokens.shape[0] > max_rows
         )
         if kind == "prefill" or big or kernel is None or id(kernel) in self.failed:
-            return self.inner.step_fn(*args, kind=kind)
+            run = self.inner.step_fn(*args, kind=kind)
+            run.dispatch = self.inner.name
+            run.fallback_reason = ("prefill" if kind == "prefill" else "shape limit" if big
+                                   else "no kernel for rows" if kernel is None else "kernel trial failed")
+            return run
         kw = {"pred": pred, "notime": notime} if pred is not None and getattr(kernel, "argmax", False) else {}
         if solo and getattr(kernel, "solo_differs", False):
             kw["solo"] = True
@@ -746,6 +750,7 @@ class MegaBackend:
         if not self.trial:
             run = kernel.step_fn(*kargs, kind=kind, **kw)
             run.reads_inp = inp is not None
+            run.dispatch, run.fallback_reason = kernel.name, None
             return run
         try:
             run = kernel.step_fn(*kargs, kind=kind, **kw)
@@ -755,13 +760,17 @@ class MegaBackend:
             kernel.check()
             if not bool(torch.isfinite(logits).all()):
                 raise RuntimeError("non-finite logits")
+            run.dispatch, run.fallback_reason = kernel.name, None
             return run
         except Exception as e:  # noqa: BLE001 (any failure: TensorRT instead)
             self.failed.add(id(kernel))
             log.warning(
                 "decoder megakernel %s failed (%s: %s); TensorRT instead", kernel.name, type(e).__name__, e
             )
-            return self.inner.step_fn(*args, kind=kind)
+            run = self.inner.step_fn(*args, kind=kind)
+            run.dispatch = self.inner.name
+            run.fallback_reason = f"{kernel.name} trial: {type(e).__name__}: {e}"
+            return run
 
     def check(self) -> None:
         self.kernel.check()

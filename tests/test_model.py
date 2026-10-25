@@ -237,7 +237,8 @@ def _naive_beam(model, cross_k, cross_v, primer, beam, eos, maxlen, rules=False)
 
 # (eos id, eos logit boost): hits the length limit / end_detect early / end_detect late / plain <eos>
 @pytest.mark.parametrize("eos, eos_boost", [(1, 0.3), (1, 2.0), (11, 0.2), (7, 0.3), (30, 0.0)])
-def test_beam_session_matches_naive_espnet(model, eos, eos_boost):
+@pytest.mark.parametrize("upper_bound", [False, True])
+def test_beam_session_matches_naive_espnet(model, eos, eos_boost, upper_bound):
     """Vectorised beam search over a batch == ESPnet's per-utterance search (incl. end_detect)."""
     import copy
 
@@ -248,7 +249,7 @@ def test_beam_session_matches_naive_espnet(model, eos, eos_boost):
     primer = torch.tensor([[2, 3, 4]] * 3)
     sess = BeamSession(
         TorchBackend(m), TINY, 3, 4, 32, eos=eos, dtype=torch.float32, device=torch.device("cpu"),
-        use_cuda_graph=False, buckets=[4, 8, 16, 32],
+        use_cuda_graph=False, buckets=[4, 8, 16, 32], upper_bound=upper_bound,
     )  # fmt: skip
     sess.encode(m.frontend(speech))
     out = sess.decode(primer, max_new_tokens=24)
@@ -307,7 +308,8 @@ def _rules(eos: int = 1) -> TimestampRules:
 
 
 @pytest.mark.parametrize("primer", [[2, 3, 4], [2, 3, 4, NOTIME]], ids=["timestamps", "notimestamps"])
-def test_timestamp_rules_greedy_and_beam(model, primer):
+@pytest.mark.parametrize("upper_bound", [False, True])
+def test_timestamp_rules_greedy_and_beam(model, primer, upper_bound):
     """Greedy and beam search under the rules == ESPnet's searches with its ScoreFilter."""
     torch.manual_seed(2)
     feats = model.frontend(torch.randn(2, TINY.num_samples))
@@ -319,7 +321,7 @@ def test_timestamp_rules_greedy_and_beam(model, primer):
     out = greedy.decode(torch.tensor([primer] * 2), 24)
     beam = BeamSession(
         TorchBackend(model), TINY, 2, 3, 32, eos=1, dtype=torch.float32, device=torch.device("cpu"),
-        use_cuda_graph=False, buckets=[8, 16, 32], rules=_rules(),
+        use_cuda_graph=False, buckets=[8, 16, 32], rules=_rules(), upper_bound=upper_bound,
     )  # fmt: skip
     beam.encode(feats)
     out_beam = beam.decode(torch.tensor([primer] * 2), 24)
