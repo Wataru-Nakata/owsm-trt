@@ -1348,7 +1348,8 @@ class BeamSession(_Session):
     hypotheses of each utterance; an extension ending in <eos> is set aside as finished and its slot
     stops being expanded. An utterance is done when ``end_detect`` fires, when none of its
     hypotheses are live, or at the length limit, where every live hypothesis is finished with an
-    appended <eos>. The result is the finished hypothesis with the highest total log-probability.
+    appended <eos>. By default it also stops when a finite best finished score strictly exceeds
+    every live score. The result is the finished hypothesis with the highest total log-probability.
 
     Rows are utterance-major (row = utterance * beam + k). Buffers besides :class:`_Session`'s:
       score [N] / active [N]      running log-probability and whether the slot may be expanded
@@ -1368,12 +1369,18 @@ class BeamSession(_Session):
         dtype: torch.dtype,
         device: torch.device,
         use_cuda_graph: bool = True,
-        chunk: int = 4,
+        chunk: int | None = None,
         buckets: list[int] | None = None,
         rules: TimestampRules | None = None,
-        upper_bound: bool = False,
+        upper_bound: bool = True,
         diagnostics: bool = False,
     ):
+        # H200/1B, beam 5 with bound stopping: every-step checks help batch 1, but hurt batch 3.
+        # Explicit intervals stay fixed when set_upper_bound toggles the device flag for ablations.
+        if chunk is None:
+            chunk = 1 if upper_bound and batch == 1 else 4
+        if chunk < 1:
+            raise ValueError("beam completion-check interval must be positive")
         n = batch * beam
         super().__init__(backend, cfg, n, capacity, eos, dtype, device, use_cuda_graph, chunk, buckets, rules)
         self.batch, self.beam = batch, beam
@@ -1496,7 +1503,7 @@ class BeamSession(_Session):
         self.tok.copy_(token.unsqueeze(1))
 
     def set_upper_bound(self, enabled: bool) -> None:
-        """Enable strict score-bound stopping without recapturing graphs (default: disabled)."""
+        """Change strict-bound stopping without recapture; keep the chosen host-check interval."""
         self.upper_bound.fill_(enabled)
 
     def _run(self, c: int, pos: int, steps: int, done: torch.Tensor) -> None:

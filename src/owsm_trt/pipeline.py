@@ -205,7 +205,7 @@ class OWSM:
         device: torch.device,
         use_cuda_graph: bool = True,
         ctc_draft: bool = True,
-        beam_upper_bound: bool = False,
+        beam_upper_bound: bool = True,
     ):
         self.cfg, self.tokenizer, self.frontend, self.backend = cfg, tokenizer, frontend, backend
         self.opts, self.device, self.use_cuda_graph = opts, device, use_cuda_graph
@@ -241,7 +241,7 @@ class OWSM:
         ctc_draft: bool = True,
         fp8_calibration: list[AudioLike] | None = None,
         decoder_kernel: bool | str | None = None,
-        beam_upper_bound: bool = False,
+        beam_upper_bound: bool = True,
         fp8: bool | str = False,
         fp8_margin: float = 1.0,
         fp8_skip: str = "",
@@ -254,6 +254,11 @@ class OWSM:
         ``ctc_draft``: for greedy ASR, let the encoder's CTC head propose the transcript and check up
         to 31 proposed tokens per utterance and decoder call. The output is the greedy output; only the
         number of decoder calls changes.
+
+        ``beam_upper_bound``: stop beam search when the best finished score strictly exceeds every
+        live score (default True). Existing stopping rules still apply; greedy decoding is unaffected.
+        False disables this bound. Bound-enabled batch 1 checks completion every step, other beam
+        batches every four steps; see ``BeamSession`` for an explicit interval override.
 
         ``fp8_calibration`` (experimental, TensorRT): run the encoder's linear layers and subsampling
         convolutions in FP8, with input ranges measured on these recordings.

@@ -188,7 +188,7 @@ def test_no_finished_never_satisfies_bound():
 @pytest.mark.parametrize("diagnostics", [False, True])
 def test_bound_toggle_preserves_tokens_and_reduces_steps(diagnostics):
     s = session(backend=ScriptedBackend([4., 1., 0., -1., -2., -3., -4., -5.]),
-                diagnostics=diagnostics)
+                diagnostics=diagnostics, upper_bound=False)
     primer = torch.tensor([[2, 3, 4]])
     off = s.decode(primer, 13)
     off_steps = int(s.step)
@@ -213,7 +213,7 @@ def test_bound_toggle_preserves_tokens_and_reduces_steps(diagnostics):
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA required")
 def test_cuda_graph_diagnostics_and_bound_toggle():
     s = session(backend=ScriptedBackend([4., 1., 0., -1., -2., -3., -4., -5.]),
-                diagnostics=True, device=torch.device("cuda"), use_cuda_graph=True)
+                diagnostics=True, device=torch.device("cuda"), use_cuda_graph=True, upper_bound=False)
     primer = torch.tensor([[2, 3, 4]], device="cuda")
     off = s.decode(primer, 13)
     graph_ids = [id(g) for g in s.graphs.values()]
@@ -221,3 +221,19 @@ def test_cuda_graph_diagnostics_and_bound_toggle():
     assert s.decode(primer, 13) == off
     assert s.get_diagnostics()["utterances"][0]["logical_end_step"] == 0
     assert graph_ids == [id(g) for g in s.graphs.values()]
+
+
+@pytest.mark.parametrize("batch, chunk, calls", [(1, None, 1), (3, None, 4), (1, 2, 2)])
+def test_default_bound_and_host_check_interval(batch, chunk, calls):
+    s = session(batch=batch, chunk=chunk, diagnostics=True,
+                backend=ScriptedBackend([4., 1., 0., -1., -2., -3., -4., -5.]))
+    assert s.decode(torch.tensor([[2, 3, 4, 5]] * batch), 12) == [[]] * batch
+    d = s.get_diagnostics()
+    assert d["decoder_calls"] == calls
+    assert all(u["logical_end_step"] == 0 and u["stop_mask"] == 8 for u in d["utterances"])
+
+
+@pytest.mark.parametrize("chunk", [0, -1])
+def test_invalid_host_check_interval(chunk):
+    with pytest.raises(ValueError, match="must be positive"):
+        session(chunk=chunk)
