@@ -205,10 +205,12 @@ class OWSM:
         device: torch.device,
         use_cuda_graph: bool = True,
         ctc_draft: bool = True,
+        beam_upper_bound: bool = False,
     ):
         self.cfg, self.tokenizer, self.frontend, self.backend = cfg, tokenizer, frontend, backend
         self.opts, self.device, self.use_cuda_graph = opts, device, use_cuda_graph
         self.ctc_draft = ctc_draft
+        self.beam_upper_bound = beam_upper_bound
         self.draft_stats = [0, 0]  # tokens emitted, decoder calls made by drafted decoding
         self.stream_priority = True  # decoder calls go first while the encoder works ahead
         self.dtype = DTYPES[opts.dtype]
@@ -239,6 +241,7 @@ class OWSM:
         ctc_draft: bool = True,
         fp8_calibration: list[AudioLike] | None = None,
         decoder_kernel: bool | str | None = None,
+        beam_upper_bound: bool = False,
         fp8: bool | str = False,
         fp8_margin: float = 1.0,
         fp8_skip: str = "",
@@ -312,7 +315,7 @@ class OWSM:
             net = load_model(cfg, str(files.checkpoint), dev, DTYPES[dtype])
             graphs = use_cuda_graph and dev.type == "cuda"
             runner = TorchCTCBackend(net) if cfg.ctc_only else TorchBackend(net)
-            return cls(cfg, tok, net.frontend, runner, opts, dev, graphs, ctc_draft)
+            return cls(cfg, tok, net.frontend, runner, opts, dev, graphs, ctc_draft, beam_upper_bound)
         if backend != "tensorrt":
             raise ValueError(f"unknown backend {backend!r} (use 'tensorrt' or 'torch')")
 
@@ -350,7 +353,7 @@ class OWSM:
                 decoder_kernel = os.environ.get("OWSM_TRT_MEGAKERNEL", "auto")
             if decoder_kernel and decoder_kernel != "0" and not cfg.ctc_only and dtype == "float16":
                 runner = _decoder_kernel(runner, cfg, files.checkpoint, dev, decoder_kernel)
-            return cls(cfg, tok, frontend, runner, opts, dev, use_cuda_graph, ctc_draft)
+            return cls(cfg, tok, frontend, runner, opts, dev, use_cuda_graph, ctc_draft, beam_upper_bound)
 
     # ------------------------------------------------------------------ helpers
 
@@ -373,7 +376,8 @@ class OWSM:
                 )  # fmt: skip
             else:
                 self._sessions[key] = BeamSession(
-                    self.backend, self.cfg, batch, beam, *args, rules=self.rules
+                    self.backend, self.cfg, batch, beam, *args, rules=self.rules,
+                    upper_bound=self.beam_upper_bound,
                 )
         self._sessions.move_to_end(key)
         return self._sessions[key]

@@ -1368,6 +1368,8 @@ class BeamSession(_Session):
         chunk: int = 4,
         buckets: list[int] | None = None,
         rules: TimestampRules | None = None,
+        upper_bound: bool = False,
+        diagnostics: bool = False,
     ):
         n = batch * beam
         super().__init__(backend, cfg, n, capacity, eos, dtype, device, use_cuda_graph, chunk, buckets, rules)
@@ -1390,6 +1392,16 @@ class BeamSession(_Session):
         self.step = torch.zeros(1, dtype=torch.long, **dev)  # index i of ESPnet's search loop
         self.last_step = torch.zeros(1, dtype=torch.long, **dev)  # maxlen - 1
         self.row_base = torch.arange(batch, **dev) * beam  # first row of each utterance
+        # A device flag lets ON/OFF ablations replay the very same captured graphs.
+        self.upper_bound = torch.tensor(upper_bound, dtype=torch.bool, **dev)
+        self.diagnostics = diagnostics
+        self._beam_history = None
+        if diagnostics:
+            self._beam_history = {
+                "scores": torch.zeros(capacity, batch, 2, **dev),
+                "state": torch.zeros(capacity, batch, 9, dtype=torch.long, **dev),
+            }
+        self._host_checks: list[int] = []
         self._capture_all()
 
     def _body(self, c: int) -> None:
@@ -1449,11 +1461,90 @@ class BeamSession(_Session):
             s = self.ended_by_len.index_select(1, n.clamp(min=0)).squeeze(1)
             count += ((n >= 0) & (s > float("-inf")) & (s - self.best_score < END_DETECT_D)).long()
         live_after = (~is_eos & live & ~at_limit).view(B, K)
-        done = self.done | at_limit | ~live_after.any(dim=-1) | (count == END_DETECT_M)
+        max_live = self.score.view(B, K).masked_fill(~live_after, float("-inf")).max(dim=-1).values
+        bound = torch.isfinite(self.best_score) & (self.best_score > max_live) & live_after.any(dim=-1)
+        end_detect = count == END_DETECT_M
+        exhausted = ~live_after.any(dim=-1)
+        done = self.done | at_limit | exhausted | end_detect | (bound & self.upper_bound)
+        if self._beam_history is not None:
+            # [B, fields] -> [capacity, B, fields], indexed on-device for CUDA graph replay.
+            reason = at_limit.long() | (exhausted.long() * 2) | (end_detect.long() * 4)
+            reason |= (bound & self.upper_bound).long() * 8
+            state = torch.stack((
+                self.pos.expand(B), live_after.sum(dim=-1), (is_eos & live).view(B, K).any(dim=-1),
+                better, bound, done, reason, self.numerical_error, self.best_end,
+            ), dim=-1)
+            self._beam_history["state"].index_copy_(0, self.step, state.unsqueeze(0))
+            scores = torch.stack((self.best_score, max_live), dim=-1)
+            self._beam_history["scores"].index_copy_(0, self.step, scores.unsqueeze(0))
         self.done.copy_(done)
         self.active.copy_((live_after & ~done.unsqueeze(1)).view(-1))
 
         self.tok.copy_(token.unsqueeze(1))
+
+    def set_upper_bound(self, enabled: bool) -> None:
+        """Enable strict score-bound stopping without recapturing graphs (default: disabled)."""
+        self.upper_bound.fill_(enabled)
+
+    def _run(self, c: int, pos: int, steps: int, done: torch.Tensor) -> None:
+        if not self.diagnostics:
+            return super()._run(c, pos, steps, done)
+        executed = 0
+        while steps > 0:
+            if pos >= c:
+                c = self._grow(c, pos + 1)
+            n = min(self.chunk, steps, c - pos)
+            for _ in range(n):
+                self.graphs[c].replay() if self.graphs else self._body(c)
+            steps -= n
+            pos += n
+            executed += n
+            all_done = bool(done.all())  # same host synchronization as the uninstrumented loop
+            self._host_checks.append(executed)
+            if all_done:
+                break
+
+    def get_diagnostics(self) -> dict | None:
+        """Collect the last decode's fixed device history in bulk; no change to decode's return value.
+
+        Selection 0 follows prefill, without a single-token decoder call. A logical end step is a
+        zero-based search index; best_end includes the primer, excludes the appended forced EOS.
+        Extra decoder calls include both chunk overshoot and waiting for other batch members.
+        """
+        if self._beam_history is None:
+            return None
+        steps = int(self.step) + 1
+        state = self._beam_history["state"][:steps].cpu().tolist()
+        scores = self._beam_history["scores"][:steps].cpu().tolist()
+        fields = ("position", "live_count", "eos", "best_updated", "bound", "done", "stop_mask",
+                  "numerical_error", "best_end")
+        utterances = []
+        for b in range(self.batch):
+            rows = [dict(zip(fields, row[b])) for row in state]
+            for row, score in zip(rows, scores):
+                row.update(best_score=score[b][0], max_live_score=score[b][1])
+            end = next((i for i, row in enumerate(rows) if row["done"]), None)
+            first_check = next((i for i in self._host_checks if end is not None and i >= end), None)
+            detected = self._host_checks[-1] if self._host_checks and end is not None else None
+            if not self._host_checks and end is not None:
+                detected = 0  # max_new_tokens=1: collected at the final output transfer
+            utterances.append({
+                "history": rows,
+                "first_eos_step": next((i for i, row in enumerate(rows) if row["eos"]), None),
+                "first_bound_step": next((i for i, row in enumerate(rows) if row["bound"]), None),
+                "last_best_update_step": next((i for i in range(len(rows) - 1, -1, -1)
+                                               if rows[i]["best_updated"]), None),
+                "logical_end_step": end, "host_observed_done_step": detected,
+                "extra_decoder_calls": steps - 1 - end if end is not None else None,
+                "chunk_overshoot": first_check - end if first_check is not None else 0,
+                "stop_mask": rows[end]["stop_mask"] if end is not None else 0,
+                "best_end_with_primer": rows[-1]["best_end"],
+            })
+        return {
+            "prefill_calls": 1, "prefill_selections": 1, "decoder_calls": steps - 1,
+            "selection_calls": steps, "host_check_steps": self._host_checks.copy(),
+            "utterances": utterances,
+        }
 
     def _check(self) -> None:
         super()._check()
@@ -1503,6 +1594,8 @@ class BeamSession(_Session):
         self.step.zero_()
         self.last_step.fill_(max_new_tokens - 1)
         self.pos.fill_(p)
+        if self.diagnostics:
+            self._host_checks.clear()
         self._select(c)
         self._run(c, p, max_new_tokens - 1, self.done)
 

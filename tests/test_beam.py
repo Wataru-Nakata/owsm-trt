@@ -19,8 +19,10 @@ class ScriptedBackend:
         self.values = values if values is not None else [0., 2., 1., -1., -2., -3., -4., -5.]
 
     def step_fn(self, tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv, **kw):
+        values = torch.tensor(self.values, device=logits.device)
+
         def run():
-            logits.copy_(torch.tensor(self.values, device=logits.device))
+            logits.copy_(values)
             new_kv.zero_()
         return run
 
@@ -160,3 +162,59 @@ def test_forced_eos_and_capacity(prompt_len, limit):
     assert s.best_end.item() == prompt_len + limit
     with pytest.raises(ValueError, match="does not fit"):
         s.decode(torch.tensor([[2] * 16]), 1)
+
+
+@pytest.mark.parametrize("eos_logit, expected", [(0., False), (1e-6, True), (-1e-6, False)])
+def test_strict_bound_ties_and_near_ties(eos_logit, expected):
+    s = session(beam=2, upper_bound=True, diagnostics=True)
+    ready(s)
+    s.logits[0, 0, 0] = eos_logit
+    s._select(4)
+    assert s.done.item() == expected
+    assert bool(s.get_diagnostics()["utterances"][0]["history"][0]["bound"]) == expected
+
+
+def test_no_finished_never_satisfies_bound():
+    s = session(upper_bound=True, diagnostics=True)
+    ready(s)
+    s._select(4)
+    assert not s.done.any()
+    assert s.get_diagnostics()["utterances"][0]["first_bound_step"] is None
+
+
+@pytest.mark.parametrize("diagnostics", [False, True])
+def test_bound_toggle_preserves_tokens_and_reduces_steps(diagnostics):
+    s = session(backend=ScriptedBackend([4., 1., 0., -1., -2., -3., -4., -5.]),
+                diagnostics=diagnostics)
+    primer = torch.tensor([[2, 3, 4]])
+    off = s.decode(primer, 13)
+    off_steps = int(s.step)
+    s.set_upper_bound(True)
+    assert s.decode(primer, 13) == off == [[]]
+    assert int(s.step) < off_steps
+    if diagnostics:
+        d = s.get_diagnostics()
+        row = d["utterances"][0]
+        assert d["decoder_calls"] == 1  # first bucket boundary forces a check
+        assert d["prefill_selections"] == 1 and d["selection_calls"] == 2
+        assert row["logical_end_step"] == 0 and row["host_observed_done_step"] == 1
+        assert row["first_eos_step"] == row["last_best_update_step"] == 0
+        assert row["extra_decoder_calls"] == 1 and row["stop_mask"] == 8
+        assert row["best_end_with_primer"] == 4
+        assert s.decode(primer, 1) == [[]]
+        assert s.get_diagnostics()["selection_calls"] == 1  # stale history not returned
+    else:
+        assert s.get_diagnostics() is None and s._beam_history is None
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA required")
+def test_cuda_graph_diagnostics_and_bound_toggle():
+    s = session(backend=ScriptedBackend([4., 1., 0., -1., -2., -3., -4., -5.]),
+                diagnostics=True, device=torch.device("cuda"), use_cuda_graph=True)
+    primer = torch.tensor([[2, 3, 4]], device="cuda")
+    off = s.decode(primer, 13)
+    graph_ids = [id(g) for g in s.graphs.values()]
+    s.set_upper_bound(True)
+    assert s.decode(primer, 13) == off
+    assert s.get_diagnostics()["utterances"][0]["logical_end_step"] == 0
+    assert graph_ids == [id(g) for g in s.graphs.values()]
