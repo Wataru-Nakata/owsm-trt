@@ -24,7 +24,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from . import kernels
+from . import beam_kernels, kernels
 from .config import OWSMConfig
 from .modeling import OWSMCTCModel, OWSMModel
 
@@ -1374,6 +1374,8 @@ class BeamSession(_Session):
         rules: TimestampRules | None = None,
         upper_bound: bool = True,
         diagnostics: bool = False,
+        fused_rank: bool = False,
+        fused_finish: bool = False,
     ):
         # H200/1B, beam 5 with bound stopping: every-step checks help batch 1, but hurt batch 3.
         # Explicit intervals stay fixed when set_upper_bound toggles the device flag for ablations.
@@ -1404,6 +1406,12 @@ class BeamSession(_Session):
         self.row_base = torch.arange(batch, **dev) * beam  # first row of each utterance
         # A device flag lets ON/OFF ablations replay the very same captured graphs.
         self.upper_bound = torch.tensor(upper_bound, dtype=torch.bool, **dev)
+        self.fused_rank = fused_rank and kernels.available(device)
+        self.fused_finish = fused_finish and kernels.available(device)
+        self._candidates = self._bad_blocks = None
+        if self.fused_rank:
+            self._candidates = torch.empty(n, cfg.vocab_size, **dev)
+            self._bad_blocks = torch.empty(n, (cfg.vocab_size + 1023) // 1024, dtype=torch.bool, **dev)
         self.diagnostics = diagnostics
         self._beam_history = None
         if diagnostics:
@@ -1430,6 +1438,15 @@ class BeamSession(_Session):
 
         # 1. the K best extensions per utterance (scores accumulate fp32 log-probabilities)
         logits = self.logits[:, -1]  # [N, V]
+        if self.fused_rank:
+            # Full-vocabulary normalization is unchanged. Invalid rows produce only non-finite
+            # logp, which the kernel discards while flagging active NaN/+Inf inputs separately.
+            cand = beam_kernels.candidates(self, torch.log_softmax(logits, dim=-1))
+            top, idx = cand.view(B, K * V).topk(K, dim=-1)
+            parent = (idx // V + self.row_base.unsqueeze(1)).view(-1)
+            token = (idx % V).view(-1)
+            valid = self.active.index_select(0, parent) & torch.isfinite(top.view(-1))
+            return top, parent, token, valid
         bad = (torch.isnan(logits) | torch.isposinf(logits)).any(dim=-1)
         live_parent = self.active & ~self.done.repeat_interleave(K)
         self.numerical_error |= (bad & live_parent).view(B, K).any(dim=-1)
@@ -1454,6 +1471,8 @@ class BeamSession(_Session):
         self._rules_advance(token, parent)
 
     def _finish(self, token: torch.Tensor, valid: torch.Tensor) -> None:
+        if self.fused_finish:
+            return beam_kernels.finish(self, token, valid, END_DETECT_M, END_DETECT_D)
         B, K = self.batch, self.beam
         # 2. finished hypotheses. All that finish in one step have the same length (ESPnet's yseq
         # length, which counts the primer): pos + 1, or pos + 2 at the limit where <eos> is appended.
