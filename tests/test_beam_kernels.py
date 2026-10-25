@@ -13,6 +13,8 @@ from owsm_trt.runtime import END_DETECT_D, END_DETECT_M, TimestampRules
 
 @pytest.fixture
 def device():
+    if beam_kernels.triton is None:
+        pytest.skip("Triton required for direct kernel checks")
     if os.environ.get("TRITON_INTERPRET") == "1":
         return torch.device("cpu")
     if torch.cuda.is_available():
