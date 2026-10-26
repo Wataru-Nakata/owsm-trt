@@ -166,6 +166,13 @@ def export_onnx(
 ) -> tuple[Path, Path]:
     """Encoder and decoder ONNX graphs. ``split_self_attention``: the decoder attends to the cache and
     to the new tokens separately (see modeling.cached_attention) instead of to their concatenation."""
+    enc_path = export_encoder_onnx(model, out_dir, opts)
+    dec_path = export_decoder_onnx(model, out_dir / "decoder.onnx", opts, split_self_attention)
+    return enc_path, dec_path
+
+
+def export_encoder_onnx(model: OWSMModel, out_dir: Path, opts: BuildOptions) -> Path:
+    """Encoder/cross-KV/CTC graph, without exporting decoder engines that may be reused."""
     cfg = model.cfg
     out_dir.mkdir(parents=True, exist_ok=True)
     dev = next(model.decoder.parameters()).device
@@ -192,8 +199,7 @@ def export_onnx(
             custom_translation_table={**(translations or {}), **extra} or None,
         )
 
-    dec_path = export_decoder_onnx(model, out_dir / "decoder.onnx", opts, split_self_attention)
-    return enc_path, dec_path
+    return enc_path
 
 
 def export_decoder_onnx(
@@ -405,10 +411,12 @@ def build_engines(
     opts: BuildOptions,
     keep_onnx: bool = False,
     decoders_from: Path | None = None,
+    skip_decoder_export: bool = False,
 ) -> None:
     """Export ``model`` (already on GPU in the target dtype) and build its engines into ``engine_dir``.
     ``decoders_from``: an engine directory of the same model and options but for the encoder's (an FP8
-    encoder's fp16 counterpart), whose decoder engines are copied instead of built."""
+    encoder's fp16 counterpart), whose decoder engines are copied instead of built.
+    ``skip_decoder_export`` also omits their unused ONNX export (experimental; default False)."""
     cfg = model.cfg
     engine_dir.mkdir(parents=True, exist_ok=True)
     onnx_dir = engine_dir / "onnx"
@@ -432,7 +440,10 @@ def build_engines(
         _build(path, engine_dir / "ctc.engine", shapes, opts)
         _finish(engine_dir, onnx_dir, opts, cfg, {"ctc": batches}, keep_onnx)
         return
-    enc_onnx, dec_onnx = export_onnx(model, onnx_dir, opts)
+    if decoders_from is not None and skip_decoder_export:
+        enc_onnx, dec_onnx = export_encoder_onnx(model, onnx_dir, opts), None
+    else:
+        enc_onnx, dec_onnx = export_onnx(model, onnx_dir, opts)
 
     shapes = [{"feats": tuple((n, t, cfg.n_mels) for n, t in zip(p["batch"], frames))} for p in batches]
     log.info("building encoder engine (this can take a few minutes)")

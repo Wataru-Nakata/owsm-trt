@@ -816,7 +816,7 @@ def test_decoder_export_with_attention_plugins(model, tmp_path):
     assert [list(n.input[1:]) for n in cross] == [[f"cross_k_{i}", f"cross_v_{i}"] for i in range(L)]
 
 
-@pytest.mark.parametrize("kind", ["aed", "ctc"])
+@pytest.mark.parametrize("kind", ["aed", "encoder_only", "ctc"])
 def test_export_without_trimming_runs_at_num_frames(tmp_path, kind):
     """Utterance-MVN models (e.g. OWSM-CTC v3.2) get whole windows: their encoder export has a static
     time dimension, which must be num_frames (the engine profiles' length), and computes the model."""
@@ -825,7 +825,7 @@ def test_export_without_trimming_runs_at_num_frames(tmp_path, kind):
     pytest.importorskip("onnx")
     from onnx.reference import ReferenceEvaluator
 
-    from owsm_trt.build import BuildOptions, export_ctc_onnx, export_onnx, trims_features
+    from owsm_trt.build import BuildOptions, export_ctc_onnx, export_encoder_onnx, export_onnx, trims_features
     from owsm_trt.modeling import OWSMCTCModel
 
     cfg = dataclasses.replace(TINY, normalize="utterance_mvn")
@@ -851,7 +851,11 @@ def test_export_without_trimming_runs_at_num_frames(tmp_path, kind):
         )
         assert torch.equal(torch.from_numpy(ids), m(feats, prompt, prefix))
         return
-    path, _ = export_onnx(m, tmp_path, opts)
+    if kind == "encoder_only":
+        path = export_encoder_onnx(m, tmp_path, opts)
+        assert not (tmp_path / "decoder.onnx").exists()
+    else:
+        path, _ = export_onnx(m, tmp_path, opts)
     k, v, ids = ReferenceEvaluator(str(path)).run(None, {"feats": feats.numpy()})
     enc = m.encoder(feats)
     kv = m.decoder.cross_kv(enc)
