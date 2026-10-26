@@ -232,7 +232,8 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
 * **Fixed-batch encoder lookahead (opt-in).** `encoder_lookahead=True` overlaps the next encoder batch
   with beam/plain decoding for multiple-batch requests. On H200/1B English73, an independent warm
   comparison measures about6% more RTFx for beam B1/B3 and3.6–8.3% for translation B8/B1, with exact
-  full outputs. The tested102M cases improve4.7–8.3%; short Japanese B8 translation is neutral.
+  full outputs. The tested102M median gains are4.7–8.3%, but the independent102M beam B1 repeat
+  has worse p95 (968→1003ms) and3/11 slower pairs. Short Japanese B8 translation is neutral.
   Existing drafted greedy streaming and single-batch calls retain their paths. Extra buffers/captures
   increase memory/cold cost, so the default remains False. [Measurements and limits](docs/runtime-encoder-lookahead.md).
 * **Unused draft setup is deferred.** `lazy_drafts=True` (default) creates verification buffers on first
