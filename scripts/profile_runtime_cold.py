@@ -29,6 +29,8 @@ def main():
     )
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
+    if args.repeat < 1 or args.limit < 1:
+        ap.error("repeat and limit must be positive")
     if not os.environ.get("PBS_JOBID") and os.uname().nodename.startswith("login"):
         ap.error("model/audio work requires a compute allocation")
     model, load_ms = wall(lambda: OWSM.from_pretrained(args.model, frontend_graph=False))
