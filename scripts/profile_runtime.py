@@ -54,6 +54,13 @@ def captures(model):
             "ctc": len(getattr(s, "_runs", {})),
             "decode": len(getattr(s, "graphs", {})),
             "verify": len(getattr(s, "_verify", {})) + len(getattr(s, "_verify_solo", {})),
+            "selection_split_windows": len(
+                {
+                    id(v.bufs)
+                    for v in getattr(s, "_verify", {}).values()
+                    if getattr(v.bufs, "choose_workspace", None) is not None
+                }
+            ),
         }
         for key, s in model._sessions.items()
     }
@@ -161,6 +168,11 @@ def run_case(model, args, name, items, waves):
             "wall_ms": stats([r["wall_ms"] for r in rows]),
             "rtfx": sum(r["audio_seconds"] for r in rows) * 1000 / sum(r["wall_ms"] for r in rows),
             "peak_allocated_bytes": max(r["peak_allocated_bytes"] for r in rows),
+            "memory_scope": (
+                "both selection session pools resident; not standalone deployment peak"
+                if "graph_split" in args.variants
+                else "shared sessions and all frontend variants resident"
+            ),
             "draft_decoder_calls": sum(r["draft_decoder_calls"] for r in rows),
             "agreement": comparison(records["reference"], records[v]),
             "quality": quality(items, records[v], args.lang) if task == "asr" else None,
