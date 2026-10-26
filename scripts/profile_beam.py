@@ -186,16 +186,16 @@ def quality(items, records, lang):
 
 
 def make_session(model, cls, batch, beam, chunk, diagnostics=False, graph=True,
-                 fused_rank=False, fused_finish=False):
+                 fused_rank=False, fused_finish=False, kv_reorder="torch"):
     extra = {"diagnostics": diagnostics, "fused_rank": fused_rank,
-             "fused_finish": fused_finish} if cls is BeamSession else {}
+             "fused_finish": fused_finish, "kv_reorder": kv_reorder} if cls is BeamSession else {}
     return cls(model.backend, model.cfg, batch, beam, model.opts.capacity, model.tokenizer.eos,
                model.dtype, model.device, use_cuda_graph=graph, chunk=chunk, rules=model.rules, **extra)
 
 
 def profile_eager(model, args, waves, primer, out):
     s = make_session(model, BeamSession, len(waves), args.beam, args.chunk, diagnostics=True, graph=False,
-                     fused_rank=args.fused_rank, fused_finish=args.fused_finish)
+                     fused_rank=args.fused_rank, fused_finish=args.fused_finish, kv_reorder=args.kv_reorder)
     s.set_upper_bound(args.upper_bound != "off")
     s.encode(model._features(waves))
     expected = s.decode(primer, model._max_new())  # warm up this shape before attaching events
@@ -246,12 +246,13 @@ def run_batch(model, args, items, waves, batch, legacy):
             continue
         for b in sizes:
             s, ms = wall(lambda: make_session(model, cls, b, args.beam, args.chunk,
-                        fused_rank=args.fused_rank, fused_finish=args.fused_finish))
+                        fused_rank=args.fused_rank, fused_finish=args.fused_finish, kv_reorder=args.kv_reorder))
             sessions[kind, b] = s
             cold[f"{kind}/b{b}"] = {"session_create_jit_capture_ms": ms,
                                     "dispatch": dispatch(s),
                                     "search_kernels": {"rank": getattr(s, "fused_rank", False),
-                                                       "finish": getattr(s, "fused_finish", False)}}
+                                                       "finish": getattr(s, "fused_finish", False),
+                                                       "kv_reorder": getattr(s, "kv_reorder", "torch")}}
     kw = dict(lang=args.lang, task=args.task, timestamps=args.timestamps, prompt=args.prompt,
               batch_size=batch, beam_size=args.beam)
 
@@ -345,7 +346,7 @@ def run_batch(model, args, items, waves, batch, legacy):
     diag = {}
     for b in sizes:
         s = make_session(model, BeamSession, b, args.beam, args.chunk, diagnostics=True,
-                         fused_rank=args.fused_rank, fused_finish=args.fused_finish)
+                         fused_rank=args.fused_rank, fused_finish=args.fused_finish, kv_reorder=args.kv_reorder)
         for mode in [m for m in modes if m != "baseline"]:
             s.set_upper_bound(mode != "off")
             s.chunk = int(mode.removeprefix("on_chunk")) if mode.startswith("on_chunk") else args.chunk
@@ -391,7 +392,8 @@ def extra_checks(model, args, waves, legacy):
             if key not in cache:
                 cls = legacy if mode == "baseline" else BeamSession
                 cache[key] = make_session(model, cls, batch, beam, args.chunk,
-                                         fused_rank=args.fused_rank, fused_finish=args.fused_finish)
+                                         fused_rank=args.fused_rank, fused_finish=args.fused_finish,
+                                         kv_reorder=args.kv_reorder)
                 if mode != "baseline":
                     cache[key].set_upper_bound(mode == "on")
             return cache[key]
@@ -442,6 +444,7 @@ def main():
     ap.add_argument("--upper-bound", choices=["off", "on", "both"], default="both")
     ap.add_argument("--fused-rank", action="store_true", help="opt-in exact candidate-mask kernel")
     ap.add_argument("--fused-finish", action="store_true", help="opt-in exact beam-state kernel")
+    ap.add_argument("--kv-reorder", choices=["torch", "full", "prefix"], default="torch")
     ap.add_argument("--baseline-runtime", type=Path)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--phases", action="store_true")
