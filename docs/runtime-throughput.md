@@ -60,3 +60,18 @@ default is False until GPU validation; standalone `GreedySession` has the same `
 `scripts/profile_runtime_cold.py` compares session construction with resident engines/JIT, records
 first observations separately, and checks mode switches on the same session. This optimization
 targets cold latency and unused memory, not a steady-state decoder speedup.
+
+## Throughput follow-up (not yet measured)
+
+The whole-runtime trace shows decoder verification dominates B8; actual session routing includes
+Gluon and TensorRT shape fallbacks. `scripts/profile_draft_windows.py` independently compares the
+existing total verification-token budgets256/128/64/32 for B3/B8, with/without timestamps. This is
+N-class: changing verification windows and dispatch can change fp16 outputs. All differences and
+WER/CER are retained; no approximate acceptance or constraint change is made. Budget32/B8 without
+timestamps also falls back to fixed batches because the four-token primer does not meet the current
+stream condition; this scheduling change is explicitly recorded. Actual window/dispatch counts are
+collected in a separate instrumented pass, outside wall timing.
+
+CTC-only v4 1B is also added to the frontend-graph comparison using a locally cached checkpoint and
+engine. Those results are pending. Multi-GPU, engine rebuilds, lower precision and altered audio
+padding are outside these experiments.

@@ -47,8 +47,9 @@ def variant(model, name):
 def captures(model):
     return {
         str(key): {
-            "encode": len(s._enc_graphs),
-            "decode": len(s.graphs),
+            "encode": len(getattr(s, "_enc_graphs", {})),
+            "ctc": len(getattr(s, "_runs", {})),
+            "decode": len(getattr(s, "graphs", {})),
             "verify": len(getattr(s, "_verify", {})) + len(getattr(s, "_verify_solo", {})),
         }
         for key, s in model._sessions.items()
@@ -58,7 +59,8 @@ def captures(model):
 def dispatch(model):
     result = {}
     for key, s in model._sessions.items():
-        calls = list(s._steps.values())
+        calls = list(getattr(s, "_steps", {}).values())
+        calls += [v[1] for v in getattr(s, "_runs", {}).values()]
         calls += [v.step for v in getattr(s, "_verify", {}).values()]
         counts = {}
         for fn in calls:
