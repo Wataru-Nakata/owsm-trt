@@ -117,6 +117,11 @@ def captures(model):
             "ctc": len(getattr(s, "_runs", {})),
             "decode": len(getattr(s, "graphs", {})),
             "verify": len(getattr(s, "_verify", {})) + len(getattr(s, "_verify_solo", {})),
+            "ready_verify_steps": sum(
+                v.step is not None
+                for label in ("_verify", "_verify_solo")
+                for v in getattr(s, label, {}).values()
+            ),
             "normal_verify_graphs": sum(
                 v.graph is not None
                 for label in ("_verify", "_verify_solo")

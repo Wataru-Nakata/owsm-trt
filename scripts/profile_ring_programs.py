@@ -77,10 +77,16 @@ def main():
             )
         )
         _, ms = wall(lambda dec=decoder: _check_kernel(checked, dec, model.device, 1, 8))
+        if args.sweep == "prefetch":
+            solo_check = SimpleNamespace(
+                m=kernel.m, name=kernel.name, check=kernel.check, step_fn=partial(kernel.step_fn, solo=True)
+            )
+            _, solo_ms = wall(lambda dec=decoder: _check_kernel(solo_check, dec, model.device, 1, 32))
         checks[name] = dict(
             passed=True,
             solo=name == "s96",
             check_ms=ms,
+            solo_window32_check_ms=solo_ms if args.sweep == "prefetch" else None,
             rows=1,
             window=8,
             criterion="existing fp32 check: max relative error<0.02, argmax>=0.5",

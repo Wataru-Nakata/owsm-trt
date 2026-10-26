@@ -8,11 +8,12 @@ from dataclasses import asdict
 from pathlib import Path
 
 import torch
-from profile_beam import save, stats, wall
+from profile_beam import save, sha256, stats, wall
 from profile_runtime import captures
 
-from owsm_trt import OWSM
+from owsm_trt import OWSM, hub
 from owsm_trt.audio import load_audio
+from owsm_trt.build import engine_tag
 
 
 @torch.inference_mode()
@@ -28,6 +29,8 @@ def main():
     if not os.environ.get("PBS_JOBID") and os.uname().nodename.startswith("login"):
         ap.error("model/audio work requires a compute allocation")
     model, load_ms = wall(lambda: OWSM.from_pretrained(args.model, frontend_graph=False))
+    files = hub.resolve(args.model)
+    engines = hub.cache_dir() / files.name.replace("/", "--") / engine_tag(model.opts)
     items = json.loads(Path(args.manifest).read_text())[:3]
     waves = [load_audio(it["path"]) for it in items]
 
@@ -94,6 +97,10 @@ def main():
         dict(
             model_load_ms=load_ms,
             mode=args.mode,
+            checkpoint_sha256=sha256(files.checkpoint),
+            engine_sha256={p.name: sha256(p) for p in engines.glob("*.engine")},
+            gpu=torch.cuda.get_device_name(),
+            commit=os.environ.get("OWSM_PROFILE_COMMIT"),
             option=option,
             first_cold=first,
             samples=records,
