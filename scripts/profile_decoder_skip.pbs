@@ -69,16 +69,16 @@ cp "$LOCAL/baseline_runtime.py" "$LOCAL/results/"
 nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv -l 5 \
     > "$LOCAL/results/gpu_utilization.csv" &
 SMI=$!
-timeout 300 "$PY" -m pytest -vv -x --tb=short -p no:cacheprovider \
+timeout 180 "$PY" -m pytest -vv -x --tb=short -p no:cacheprovider \
     "$LOCAL/tests/test_checkpoint_loading.py" "$LOCAL/tests/test_decoder_loading.py" \
     > "$LOCAL/results/tests.log" 2>&1
 printf '%s\n' 'Checkpoint storage and empty decoder initialization tests complete' >> "$OUT/progress.log"
-timeout 300 "$PY" -m pytest -vv -x --tb=short -p no:cacheprovider "$LOCAL/tests/test_model.py" \
+timeout 180 "$PY" -m pytest -vv -x --tb=short -p no:cacheprovider "$LOCAL/tests/test_model.py" \
     -k 'prefill_matches_incremental or greedy_session_matches_naive or beam_session_matches_naive_espnet or beam_of_one_is_greedy or timestamp_rules_greedy_and_beam' \
     > "$LOCAL/results/regressions.log" 2>&1
 printf '%s\n' 'Decoder construction naive beam/greedy/timestamp regressions complete' >> "$OUT/progress.log"
 
-timeout 1400 "$PY" "$LOCAL/scripts/profile_model_load.py" \
+timeout 900 "$PY" "$LOCAL/scripts/profile_model_load.py" \
     --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/manifest.json" \
     --extra-manifest "$LOCAL/extra_manifest.json" --experiment decoder_skip --repeat 5 --out "$LOCAL/results/load1b" \
     > "$LOCAL/results/load1b.log" 2>&1
@@ -87,9 +87,34 @@ cp -a "$REPO/.cache/models/owsm_v4_base_102M" "$LOCAL/owsm_v4_base_102M"
 mkdir -p "$OWSM_TRT_CACHE/owsm_v4_base_102M"
 cp -a "$REPO/.cache/engines/owsm_v4_base_102M/v621-NVIDIA_H200-sm90-trt11.4.0.106-float16-3d0cbdc9" \
     "$OWSM_TRT_CACHE/owsm_v4_base_102M/"
-timeout 1200 "$PY" "$LOCAL/scripts/profile_model_load.py" \
+timeout 600 "$PY" "$LOCAL/scripts/profile_model_load.py" \
     --model "$LOCAL/owsm_v4_base_102M" --manifest "$LOCAL/manifest.json" \
     --extra-manifest "$LOCAL/extra_manifest.json" --experiment decoder_skip --repeat 5 --out "$LOCAL/results/load102m" \
     > "$LOCAL/results/load102m.log" 2>&1
 printf '%s\n' '102M model loading comparison complete' >> "$OUT/progress.log"
 
+
+# Independent throughput replication and interaction check; startup timings above are already complete.
+timeout 600 "$PY" "$LOCAL/scripts/profile_encoder_lookahead.py" \
+    --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/manifest.json" \
+    --lang eng --limit 73 --repeat 9 --out "$LOCAL/results/lookahead_repeat" \
+    > "$LOCAL/results/lookahead_repeat.log" 2>&1
+printf '%s\n' 'Lookahead full English replication complete' >> "$OUT/progress.log"
+timeout 180 "$PY" "$LOCAL/scripts/profile_encoder_lookahead.py" \
+    --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/manifest.json" \
+    --lang eng --limit 2 --repeat 11 --cases beam_b1 translation_b1 --out "$LOCAL/results/lookahead_two" \
+    > "$LOCAL/results/lookahead_two.log" 2>&1
+printf '%s\n' 'Lookahead two-input requests complete' >> "$OUT/progress.log"
+timeout 600 "$PY" "$LOCAL/scripts/profile_encoder_lookahead.py" \
+    --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/manifest.json" \
+    --lang eng --limit 73 --repeat 9 --cases beam_b3 --beam-grouped-cross --beam-compact-tail \
+    --out "$LOCAL/results/lookahead_wide" > "$LOCAL/results/lookahead_wide.log" 2>&1
+printf '%s\n' 'Lookahead with wide grouped/tail beam complete' >> "$OUT/progress.log"
+if [ -n "${ENCODER_TRACE:-}" ] && [ -f "$ENCODER_TRACE" ]; then
+    cp "$ENCODER_TRACE" "$LOCAL/tmp/encoder_trace.json"
+    timeout 90 "$PY" "$LOCAL/scripts/analyze_encoder_trace.py" "$LOCAL/tmp/encoder_trace.json" \
+        --out "$LOCAL/results/lookahead_overlap.json"
+    printf '%s\n' 'Prior lookahead kernel overlap trace analyzed' >> "$OUT/progress.log"
+else
+    printf '%s\n' 'Prior encoder trace unavailable; overlap unmeasured' > "$LOCAL/results/overlap_unavailable.txt"
+fi

@@ -33,6 +33,8 @@ def main():
     ap.add_argument("--repeat", type=int, default=7)
     ap.add_argument("--cases", nargs="+", choices=CASES, default=list(CASES))
     ap.add_argument("--trace", action="store_true")
+    ap.add_argument("--beam-grouped-cross", action="store_true")
+    ap.add_argument("--beam-compact-tail", action="store_true")
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
     if not os.environ.get("PBS_JOBID"):
@@ -44,7 +46,8 @@ def main():
     if len({x["id"] for x in items}) != len(items):
         ap.error("manifest IDs must be unique")
     waves, disk_ms = wall(lambda: [load_audio(x["path"]) for x in items])
-    model, load_ms = wall(lambda: OWSM.from_pretrained(args.model, ctc_draft=False))
+    model, load_ms = wall(lambda: OWSM.from_pretrained(args.model, ctc_draft=False,
+                          beam_grouped_cross=args.beam_grouped_cross, beam_compact_tail=args.beam_compact_tail))
     files = hub.resolve(args.model)
     engines = hub.cache_dir() / files.name.replace("/", "--") / engine_tag(model.opts)
     save(args.out / "environment.json", dict(
@@ -57,7 +60,8 @@ def main():
         checkpoint_sha256=sha256(files.checkpoint), engine_sha256={p.name: sha256(p) for p in engines.glob("*.engine")},
         disk_ms=disk_ms, load_ms=load_ms,
         note="Whole-list throughput, identical sorted fixed batches. CUDA synchronization around wall samples; "
-             "cold warmup/capture separate. Shared process allocator peak is not isolated variant VRAM.",
+             "cold warmup/capture separate. Reference warms first, so cold observations have unequal JIT/frontend "
+             "cache state and are not a fair startup speed comparison. Shared process allocator peak is not isolated variant VRAM.",
     ))
     all_summaries = {}
     for name in args.cases:
