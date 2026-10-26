@@ -80,14 +80,15 @@ if triton is not None:
     def _candidates(logits, logp, scores, active, done, notime, first, count, last, prev,
                     candidates, bad_blocks, V: tl.constexpr, K: tl.constexpr, BLOCKS: tl.constexpr,
                     RULES: tl.constexpr, FIRST: tl.constexpr, LAST: tl.constexpr, EOS: tl.constexpr,
-                    BV: tl.constexpr):
+                    BV: tl.constexpr, SHARED_PREFILL: tl.constexpr, LOGITS_STRIDE: tl.constexpr):
         row, block = tl.program_id(0), tl.program_id(1)
         ids = block * BV + tl.arange(0, BV)
         live = tl.load(active + row) & ~tl.load(done + row // K)
-        raw = tl.load(logits + row * V + ids, ids < V, other=0)
+        source = row // K if SHARED_PREFILL else row
+        raw = tl.load(logits + source * LOGITS_STRIDE + ids, ids < V, other=0)
         bad = (raw != raw) | (raw == float("inf"))
         tl.store(bad_blocks + row * BLOCKS + block, live & (tl.sum(bad.to(tl.int32), 0) > 0))
-        lp = tl.load(logp + row * V + ids, ids < V, other=float("-inf"))
+        lp = tl.load(logp + source * V + ids, ids < V, other=float("-inf"))
         allowed = live & (lp == lp) & (tl.abs(lp) != float("inf"))
         if RULES:
             t = (ids >= FIRST) & (ids <= LAST)
@@ -175,16 +176,17 @@ if triton is not None:
             tl.store(history_scores + (step * B + b) * 2 + 1, max_live)
 
 
-def candidates(session, logp: torch.Tensor) -> torch.Tensor:
-    """[B*K, V] normalized log-probabilities -> masked cumulative scores, without a vocabulary mask."""
+def candidates(session, logp: torch.Tensor, prefill_logits: torch.Tensor | None = None) -> torch.Tensor:
+    """[B*K, V] log probabilities -> candidate scores; optional prefill reads shared [B, V] rows."""
     s = session
     v = logp.shape[-1]
     rules = s.rules
     first, last, eos = (rules.first_time, rules.last_time, rules.eos) if rules else (0, -1, s.eos)
+    raw = s.logits if prefill_logits is None else prefill_logits
     _candidates[(s.rows, s._bad_blocks.shape[1])](
-        s.logits, logp, s.score, s.active, s.done, s.t_notime, s.t_first, s.t_count, s.t_last, s.tok,
+        raw, logp, s.score, s.active, s.done, s.t_notime, s.t_first, s.t_count, s.t_last, s.tok,
         s._candidates, s._bad_blocks, v, s.beam, s._bad_blocks.shape[1], rules is not None,
-        first, last, eos, BV=1024, num_warps=4,
+        first, last, eos, BV=1024, SHARED_PREFILL=prefill_logits is not None, LOGITS_STRIDE=raw.stride(0), num_warps=4,
     )
     s.numerical_error |= s._bad_blocks.view(s.batch, -1).any(dim=-1)
     return s._candidates

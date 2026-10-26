@@ -1555,6 +1555,7 @@ class BeamSession(_Session):
         fused_state: bool = True,
         compact_tail: bool = False,
         local_topk: bool = False,
+        prefill_shared: bool = False,
     ):
         # H200/1B, beam 5 with bound stopping: every-step checks help batch 1, but hurt batch 3.
         # Explicit intervals stay fixed when set_upper_bound toggles the device flag for ablations.
@@ -1594,6 +1595,7 @@ class BeamSession(_Session):
         # A device flag lets ON/OFF ablations replay the very same captured graphs.
         self.upper_bound = torch.tensor(upper_bound, dtype=torch.bool, **dev)
         self.fused_rank = fused_rank and kernels.available(device)
+        self.prefill_shared = prefill_shared and self.fused_rank
         self.fused_finish = fused_finish and kernels.available(device)
         self.fused_state = fused_state and kernels.available(device) and beam <= 8 and capacity <= 512
         self._selection_state = None
@@ -1646,14 +1648,14 @@ class BeamSession(_Session):
         self.step += 1
         self._select(c)
 
-    def _select(self, c: int) -> None:
+    def _select(self, c: int, prefill_logits: torch.Tensor | None = None) -> None:
         if self.fused_state:
-            top, indices = self._topk()
+            top, indices = self._topk(prefill_logits)
             parent, token, valid = self._prepare_state(top, indices)
             self._reorder_cache(c, parent)
             self._finish(token, valid)
             return
-        top, parent, token, valid = self._rank()
+        top, parent, token, valid = self._rank(prefill_logits)
         self._reorder(c, top, parent, token)
         self._finish(token, valid)
 
@@ -1681,8 +1683,8 @@ class BeamSession(_Session):
     def _prepare_state(self, top: torch.Tensor, indices: torch.Tensor):
         return beam_kernels.reorder_state(self, top, indices)
 
-    def _rank(self) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        top, idx = self._topk()
+    def _rank(self, prefill_logits: torch.Tensor | None = None) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        top, idx = self._topk(prefill_logits)
         V = self.logits.shape[-1]
         parent = (idx // V + self.row_base.unsqueeze(1)).view(-1)
         token = (idx % V).view(-1)
@@ -1690,9 +1692,14 @@ class BeamSession(_Session):
         valid = self.active.index_select(0, parent) & torch.isfinite(top.view(-1))
         return top, parent, token, valid
 
-    def _topk(self) -> tuple[torch.Tensor, torch.Tensor]:
+    def _topk(self, prefill_logits: torch.Tensor | None = None) -> tuple[torch.Tensor, torch.Tensor]:
         B, K = self.batch, self.beam
         V = self.logits.shape[-1]
+        if prefill_logits is not None:
+            # The first selection has one live parent per utterance. Keep the original [B,K*V]
+            # candidate layout/global top-K (including ties), but normalize only its [B,V] logits.
+            cand = beam_kernels.candidates(self, torch.log_softmax(prefill_logits, dim=-1), prefill_logits)
+            return beam_topk(cand.view(B, K * V), K, self.local_topk)
 
         # 1. the K best extensions per utterance (scores accumulate fp32 log-probabilities)
         logits = self.logits[:, -1]  # [N, V]
@@ -1905,7 +1912,8 @@ class BeamSession(_Session):
         k, v = self.caches[c]
         k[:, :, :, :p] = new_kv[:, 0].repeat_interleave(K, dim=1)
         v[:, :, :, :p] = new_kv[:, 1].repeat_interleave(K, dim=1)
-        self.logits[:, -1] = logits.repeat_interleave(K, dim=0)
+        if not self.prefill_shared:
+            self.logits[:, -1] = logits.repeat_interleave(K, dim=0)
         self.seq[:, :p] = primer.repeat_interleave(K, dim=0)
         self._rules_start(self.seq[:, :p])
         self.score.zero_()
@@ -1922,7 +1930,7 @@ class BeamSession(_Session):
         if self.diagnostics:
             self._host_checks.clear()
         self._tail_group = self._tail_started = None
-        self._select(c)
+        self._select(c, logits if self.prefill_shared else None)
         self._run(c, p, max_new_tokens - 1, self.done)
 
         out = []
