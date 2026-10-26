@@ -115,6 +115,9 @@ def test_direct_input_matches_padded_graph_and_retains_outputs(normalize, source
     padded = torch.zeros(1, 1601, device="cuda")
     padded[0, :700].copy_(waves[0])
     with torch.autocast("cuda", dtype=torch.float16):
-        torch.testing.assert_close(
-            replay.from_wave(waves[0], 1601, torch.device("cuda")), frontend(padded), rtol=0, atol=0
-        )
+        actual_amp = replay.from_wave(waves[0], 1601, torch.device("cuda"))
+        expected_amp = frontend(padded)
+        # Existing fp16 eager logmel can underflow on silent padding; compare the same nonfinite mask.
+        assert torch.equal(actual_amp.isnan(), expected_amp.isnan())
+        assert torch.equal(actual_amp.isinf(), expected_amp.isinf())
+        torch.testing.assert_close(actual_amp, expected_amp, rtol=0, atol=0, equal_nan=True)
