@@ -81,7 +81,10 @@ def main():
     ap.add_argument("--cases", nargs="+", choices=CASES, default=list(CASES))
     ap.add_argument("--repeat", type=int, default=11)
     ap.add_argument("--ncu", action="store_true", help="bracket one warmed launch per case for Nsight")
+    ap.add_argument("--ncu-relaxed-poll", action="store_true", help="profile the experimental polling variant")
     args = ap.parse_args()
+    if args.ncu_relaxed_poll and not args.ncu:
+        ap.error("ncu-relaxed-poll is only for the separate counter pass")
     if args.repeat < 1:
         ap.error("repeat must be positive")
     if not os.environ.get("PBS_JOBID") and os.uname().nodename.startswith("login"):
@@ -94,7 +97,7 @@ def main():
     decoder, load_ms = wall(lambda: _load_decoder(cfg, files.checkpoint))
     mega, prepare_ms = wall(lambda dec=decoder: megakernel.MegaDecoder(dec, dev))
     del decoder
-    kernels = {"reference": megakernel_ring.RingDecoder(mega)}
+    kernels = {"reference": megakernel_ring.RingDecoder(mega, relaxed_poll=args.ncu_relaxed_poll)}
     if not args.ncu:
         kernels["instrumented"] = megakernel_ring.RingDecoder(mega, ts=True)
     save(
@@ -110,6 +113,7 @@ def main():
             load_ms=load_ms,
             weight_prepare_ms=prepare_ms,
             ncu=args.ncu,
+            relaxed_poll=args.ncu_relaxed_poll,
             scope="real model weights, synthetic fixed self/cross state; no encoder, audio, or request timing",
             default_ring=dict(
                 programs=kernels["reference"].P,
