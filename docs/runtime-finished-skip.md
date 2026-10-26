@@ -29,5 +29,9 @@ caches and the allocator peak is shared, not an isolated memory comparison. Engl
 silence/noise, long prompt, a repeated 30s window, drafted B1/B3, encoder lookahead, and 110s audio;
 long-form checks compare joined text/segments, not unavailable raw per-window tokens.
 
+`--request-latency` additionally collects alternating single-request B1 samples with the same
+warmed sessions. This is a separate optional verification pass; whole-list p95 is not per-request
+p95. Mixed-duration request percentiles and per-input timing variation must be reported separately.
+
 No measured speed improvement yet. Temporary environments/code/audio/logs stay on node-local
 storage. Only compact results and coarse progress are published to the shared project.

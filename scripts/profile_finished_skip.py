@@ -28,6 +28,7 @@ def main():
     ap.add_argument("--repeat", type=int, default=7)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--extra-checks", action="store_true")
+    ap.add_argument("--request-latency", action="store_true", help="also measure separate B1 requests")
     ap.add_argument("--long-audio", type=Path)
     args = ap.parse_args()
     if not os.environ.get("PBS_JOBID"):
@@ -58,13 +59,13 @@ def main():
         records, cold, samples = {}, {}, []
         torch.cuda.reset_peak_memory_stats()
 
-        def call(mode):
+        def call(mode, audio=waves):
             class Session(GreedySession):
                 def __init__(self, *args, **kwargs):
                     super().__init__(*args, **(kwargs | {'skip_finished': mode == 'skip'}))
             model._sessions = caches[mode]
             with patch.object(pipeline, 'GreedySession', Session):
-                return model.transcribe(waves, lang=args.lang, **options)
+                return model.transcribe(audio, lang=args.lang, **options)
 
         def record(outputs):
             return {it['id']: result_record(model, result, it, len(wave) / model.cfg.sample_rate)
@@ -85,6 +86,20 @@ def main():
                 assert record(outputs) == records[mode]
                 samples.append(dict(mode=mode, repeat=repeat, wall_ms=elapsed))
         save(args.out / case / 'wall.json', samples)
+        if args.request_latency and options['batch_size'] == 1:
+            requests = []
+            # Every feature/encoder shape was warmed by the complete B1 corpus above. Keep each
+            # mode's session/graph addresses unchanged; diagnostic counters are still absent.
+            for repeat in range(args.repeat):
+                for index, (item, wave) in enumerate(zip(items, waves)):
+                    order = tuple(caches) if (repeat + index) % 2 == 0 else tuple(caches)[::-1]
+                    for mode in order:
+                        result, elapsed = wall(lambda: call(mode, [wave]))
+                        actual = result_record(model, result[0], item, len(wave) / model.cfg.sample_rate)
+                        assert actual == records[mode][item['id']], 'single-request output changed'
+                        requests.append(dict(mode=mode, repeat=repeat, id=item['id'], wall_ms=elapsed))
+            save(args.out / case / 'request_wall.json', requests)
+
         summary = dict(agreement=agreement, cold_ms=cold, timing={}, quality={}, dispatch={})
         for mode in caches:
             values = [r['wall_ms'] for r in samples if r['mode'] == mode]
