@@ -745,6 +745,14 @@ class MegaBackend:
         """Whether the single-row kernel can skip a whole completed plain decode call."""
         return bool(getattr(self.kernel, "supports_finished_stop", False)) and id(self.kernel) not in self.failed
 
+    def supports_finished_groups(self, rows: int) -> bool:
+        """Whether the actual multi-row decode route supports a uniform completed-group exit."""
+        if rows < 2 or self.rows_kernel is None:
+            return False
+        kernel, tokens, limit = self.rows_kernel
+        return (bool(getattr(kernel, "supports_finished_groups", False)) and id(kernel) not in self.failed
+                and (tokens is None or rows <= tokens) and (limit is None or rows <= limit))
+
     @property
     def argmax(self) -> bool:
         """Whether step_fn takes ``pred``: calls on a kernel that can then write the logits' argmax there too
@@ -779,8 +787,11 @@ class MegaBackend:
         kw = {"pred": pred, "notime": notime} if pred is not None and getattr(kernel, "argmax", False) else {}
         if solo and getattr(kernel, "solo_differs", False):
             kw["solo"] = True
-        if stop is not None and kind == "decode" and tokens.shape == (1, 1) and getattr(kernel, "supports_finished_stop", False):
-            kw["stop"] = stop
+        if stop is not None and kind == "decode" and tokens.shape[1] == 1:
+            single = tokens.shape[0] == 1 and getattr(kernel, "supports_finished_stop", False)
+            group = tokens.shape[0] > 1 and getattr(kernel, "supports_finished_groups", False)
+            if single or group:
+                kw["stop"] = stop
         kargs = args
         if inp is not None:  # (the kernels take strided tokens / offsets)
             rows, w = inp

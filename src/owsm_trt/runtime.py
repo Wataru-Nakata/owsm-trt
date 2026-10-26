@@ -746,12 +746,15 @@ class GreedySession(_Session):
         fused_select: bool = False,
         lazy_plain: bool = False,
         skip_finished: bool = False,
+        skip_finished_groups: bool = False,
     ):
         # Allocate the optional flag before base eager step construction; normal allocation order
         # is unchanged when disabled. This is also the session's eventual EOS state, not a copy.
-        self._plain_stop = (torch.zeros(1, dtype=torch.bool, device=device)
-                            if skip_finished and batch == 1 and getattr(backend, "supports_finished_stop", False)
-                            else None)
+        single_stop = skip_finished and batch == 1 and getattr(backend, "supports_finished_stop", False)
+        group_stop = (skip_finished_groups and batch > 1
+                      and getattr(backend, "supports_finished_groups", lambda _: False)(batch))
+        self._plain_stop = (torch.zeros(batch, dtype=torch.bool, device=device)
+                            if single_stop or group_stop else None)
         self.skip_finished = self._plain_stop is not None
         super().__init__(
             backend, cfg, batch, capacity, eos, dtype, device, use_cuda_graph, chunk, buckets, rules,

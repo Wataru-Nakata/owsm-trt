@@ -595,13 +595,14 @@ if gluon is not None:
         dqkv, bqkv, cqkv, do_, bo, dcq, bcq, ccq, dco, bco, d1, b1, c1, d2, d2s, b2, dout, bout, cout,
         kc, vc, C, ck, cv, T, logits, new_kv,
         x, x2, qkv, ob, q2, hb, st, part, cnt2, xp, xml, xcnt, bar, err, done, ts,
-        R, S, L, V, eps,
+        R, S, L, V, eps, stop,
         D: gl.constexpr, H: gl.constexpr, DK: gl.constexpr, F: gl.constexpr, LF: gl.constexpr,
         MT: gl.constexpr, LMT: gl.constexpr, HL: gl.constexpr, MTF: gl.constexpr, LMTF: gl.constexpr,
         BNQ: gl.constexpr, LBNQ: gl.constexpr, BNF: gl.constexpr, LBNF: gl.constexpr, PART: gl.constexpr,
         LPART: gl.constexpr, SP: gl.constexpr, BT: gl.constexpr, NS: gl.constexpr, NW: gl.constexpr,
         MAXS: gl.constexpr, PFA: gl.constexpr, F2S: gl.constexpr, CR: gl.constexpr, CG: gl.constexpr,
         GQ: gl.constexpr, CSP: gl.constexpr, KLS: gl.constexpr, CLS: gl.constexpr, TS: gl.constexpr = False,
+        STOP_ROWS: gl.constexpr = 0,
     ):  # fmt: skip
         """A decoder call: embedding, L layers (LN1+QKV, self-attention, out-projection, LN2+cross-Q,
         cross-attention, cross-out, LN3+FFN1, FFN2), final LN + output layer, a grid barrier between stages.
@@ -610,6 +611,13 @@ if gluon is not None:
         two halves of K. MT tokens (MTF >= 8 for the split-K / output GEMMs); LayerNorm GEMMs read the residual
         stream as HL = 2 (hi/lo) or 1 (hi only) fp16 rows. With PFA, attention inputs are prefetched into L2
         while a program waits at the barrier before the attention stage."""
+        if STOP_ROWS:
+            # Immutable per-row flags are shared by all CTAs. Only a uniform whole-grid
+            # exit before any shared-memory/barrier setup is safe for this persistent kernel.
+            stop_rows = gl.arange(0, MT, layout=gl.BlockedLayout([1], [32], [NW], [0]))
+            ended = gl.load(stop + stop_rows, stop_rows < STOP_ROWS, other=True)
+            if gl.min(ended.to(gl.int32), 0) != 0:
+                return
         pid = gl.program_id(0)
         P = gl.num_programs(0)
         M = R * S
@@ -931,6 +939,7 @@ class GluonDecoder:
 
     name = "megakernel-gluon"
     shared_cross_kv = True
+    supports_finished_groups = True
 
     def __init__(self, mega, programs: int | None = None, num_warps: int = 4, maxs: int = 1 << 24, ts: bool = False,
                  prefetch_attention: bool = True, group_cross_queries: bool = False,
@@ -969,9 +978,12 @@ class GluonDecoder:
     def check(self) -> None:
         self.m.check()
 
-    def step_fn(self, tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv, kind="decode"):
+    def step_fn(self, tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv, kind="decode", stop=None):
         m = self.m
         R, S = tokens.shape
+        if stop is not None and (R < 2 or S != 1 or stop.numel() != R
+                                 or stop.dtype != torch.bool or stop.device != tokens.device):
+            raise ValueError("finished-group stop requires multiple rows/S1 and one boolean per row on the decoder device")
         cr = cross_k.shape[1]
         if cr < 1 or R % cr or cross_v.shape != cross_k.shape:
             raise ValueError("cross KV rows must divide decoder rows into equal utterance-major groups")
@@ -1011,7 +1023,7 @@ class GluonDecoder:
             m.cout,
             self_k, self_v, C, cross_k, cross_v, T, logits, new_kv,
             x, x2, qkv, ob, q2, hb, st, part, cnt2, xp, xml, xcnt, bar, self.err, done, self.ts,
-            R, S, L, m.V, m.eps,
+            R, S, L, m.V, m.eps, stop if stop is not None else bar,
         )  # fmt: skip
         const = dict(
             D=D, H=H, DK=D // H, F=F, LF=_log2(F), MT=mt, LMT=_log2(mt), HL=hl, MTF=mtf, LMTF=_log2(mtf), BNQ=self.bnq,
@@ -1020,7 +1032,7 @@ class GluonDecoder:
             CR=cr, CG=R // cr, KLS=self_k.stride(0), CLS=cross_k.stride(0),
             GQ=self.group_cross_queries,
             CSP=max(16, _pow2(S * (R // cr if self.group_cross_queries else 1))),
-            TS=bool(self.opts["TS"]),
+            TS=bool(self.opts["TS"]), STOP_ROWS=R if stop is not None else 0,
         )  # fmt: skip
 
         def run() -> None:
@@ -1029,4 +1041,5 @@ class GluonDecoder:
         run.buffers = (x, x2, qkv, ob, q2, hb, st, part, cnt2, xp, xml, xcnt, bar, done)
         run.const = const
         run.writes_cache = True
+        run.skips_finished = stop is not None
         return run
