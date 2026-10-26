@@ -219,6 +219,12 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   26.6–27.1%, with exact tokens/segments (12 inputs per condition,11 alternating repeats,
   versus the previously optimized path). Drafted/beam paths have no corresponding speedup claim.
   [Plain selection measurements and cold costs](docs/runtime-plain-selection.md).
+* **Cached-engine model loading.** Frontend/decoder helpers privately map supported ZIP checkpoints
+  and read only needed tensors. On H200 with node-local files and warmed OS/JIT caches, fresh-process
+  load medians fell from6.75 to4.61 s for1B and1.87 to1.61 s for102M (five alternating pairs, exact
+  English/Japanese public outputs). CPU peak RSS fell by2.33 GiB/196 MiB; GPU peak was unchanged.
+  These are startup measurements, not steady-state gains or cold-disk/build timings. Legacy formats
+  and shared-mapping configurations keep ordinary loading. [Measurements](docs/runtime-checkpoint-load.md).
 * **Unused draft setup is deferred.** `lazy_drafts=True` (default) creates verification buffers on first
   draft use and prepares each bucket/window/solo call and graph only when needed. With resident engines, session-cold translation/language identification was 33–36% shorter
   on H200/v4 1B and 102M, saving 45.4/26.1 MiB of unused buffers. Warm ASR work is unchanged; long-prompt

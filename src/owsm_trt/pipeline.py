@@ -282,6 +282,12 @@ class OWSM:
         With ``backend="tensorrt"`` engines are built on first use (a few minutes) and cached under
         ``~/.cache/owsm_trt`` (override with ``OWSM_TRT_CACHE``). ``backend="torch"`` skips TensorRT.
 
+        Cached-engine frontend/decoder loading privately maps supported ZIP checkpoints, reading
+        only the required tensors. Legacy/file-like checkpoints or shared-mapping configurations
+        use ordinary loading. No tensor precision changes; engine builds and full Torch model
+        loading keep their existing path. Measured startup improvements cover H200, v4 1B/102M,
+        node-local files and warmed OS/JIT caches.
+
         ``ctc_draft``: for greedy ASR, let the encoder's CTC head propose the transcript and check up
         to 31 proposed tokens per utterance and decoder call. The output is the greedy output; only the
         number of decoder calls changes.
@@ -1243,7 +1249,7 @@ def _check_kernel(kernel, decoder: Decoder, dev: torch.device, rows: int, window
 
 def _load_decoder(cfg, checkpoint: Path) -> Decoder:
     """The decoder's weights (fp32, on the CPU) for the decoder megakernel."""
-    sd = convert_espnet_state_dict(load_checkpoint(checkpoint))
+    sd = convert_espnet_state_dict(load_checkpoint(checkpoint, memory_map=True))
     dec = Decoder(cfg)
     dec.load_state_dict({k[len("decoder.") :]: v for k, v in sd.items() if k.startswith("decoder.")})
     return dec.eval().requires_grad_(False)
@@ -1251,7 +1257,7 @@ def _load_decoder(cfg, checkpoint: Path) -> Decoder:
 
 def _load_frontend(cfg, checkpoint: Path, device: torch.device) -> Frontend:
     """Only the fp32 frontend buffers are needed at runtime when the engines are cached."""
-    sd = load_checkpoint(checkpoint)
+    sd = load_checkpoint(checkpoint, memory_map=True)
     fe = Frontend(cfg)
     state = {"melmat": sd["frontend.logmel.melmat"]}
     if fe.global_mvn:

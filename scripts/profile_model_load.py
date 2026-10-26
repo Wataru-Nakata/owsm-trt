@@ -20,7 +20,7 @@ def worker(args):
     import importlib.metadata
     import resource
     from dataclasses import asdict
-    from functools import partial, wraps
+    from functools import wraps
 
     import torch
 
@@ -28,7 +28,12 @@ def worker(args):
     from owsm_trt.audio import load_audio
     from owsm_trt.build import engine_tag
 
-    selected = partial(modeling.load_checkpoint, memory_map=args.worker_mode == "mapped")
+    original_checkpoint = modeling.load_checkpoint
+
+    def selected(path, **kwargs):
+        # Force the ablation even when production helpers explicitly request mapping.
+        kwargs["memory_map"] = args.worker_mode == "mapped"
+        return original_checkpoint(path, **kwargs)
     phases = []
     load_calls = []
 
