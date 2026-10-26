@@ -25,6 +25,10 @@ def main():
     ap.add_argument("--limit", type=int, default=3)
     ap.add_argument("--mode", choices=("drafts", "verify", "plain"), default="drafts")
     ap.add_argument(
+        "--reuse-first-only", action="store_true",
+        help="Check cross-task reuse on the first cycle; timed fresh requests still require exact outputs",
+    )
+    ap.add_argument(
         "--cases", nargs="+", choices=("translation", "lid", "asr", "prompt", "stream", "stream8")
     )
     ap.add_argument("--out", type=Path, required=True)
@@ -90,6 +94,8 @@ def main():
                     raise RuntimeError(f"output changed: {task} lazy={lazy}")
                 expected[key] = result
                 (first if repeat < 0 else records).append(row)
+                if args.reuse_first_only and repeat >= 0:
+                    continue
                 # Reuse the same session across plain, long-prompt and streaming draft requests.
                 for next_task in cases:
                     result = call(next_task)
@@ -115,6 +121,8 @@ def main():
             gpu=torch.cuda.get_device_name(),
             commit=os.environ.get("OWSM_PROFILE_COMMIT"),
             option=option,
+            reuse_first_only=args.reuse_first_only,
+            frontend_graph=False,
             first_cold=first,
             samples=records,
             summary=summary,
