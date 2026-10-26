@@ -9,7 +9,7 @@ from test_model import TINY
 from owsm_trt import build
 
 
-@pytest.mark.parametrize("reuse,skip", [(True, True), (True, False), (False, True)])
+@pytest.mark.parametrize("reuse,skip", [(True, True), (True, False), (False, True), (True, None), (False, None)])
 def test_export_routing_keeps_copied_engines_and_profiles(tmp_path, monkeypatch, reuse, skip):
     source, target = tmp_path / "source", tmp_path / "target"
     source.mkdir()
@@ -27,7 +27,7 @@ def test_export_routing_keeps_copied_engines_and_profiles(tmp_path, monkeypatch,
         return path
 
     def both(model, directory, opts):
-        if reuse and skip:
+        if reuse and skip is not False:
             pytest.fail("exported an unused decoder")
         calls.append("decoder")
         path = directory / "decoder.onnx"
@@ -43,8 +43,9 @@ def test_export_routing_keeps_copied_engines_and_profiles(tmp_path, monkeypatch,
     monkeypatch.setattr(build, "_build", compile_graph)
     opts = build.BuildOptions(attn_plugin=False, attn_plugin_steps=False)
     build.build_engines(SimpleNamespace(cfg=TINY), target, opts, keep_onnx=True,
-                        decoders_from=source if reuse else None, skip_decoder_export=skip)
-    assert calls == (["encoder"] if reuse and skip else ["decoder", "encoder"])
+                        decoders_from=source if reuse else None,
+                        **({} if skip is None else {"skip_decoder_export": skip}))
+    assert calls == (["encoder"] if reuse and skip is not False else ["decoder", "encoder"])
     assert (target / "encoder.engine").read_bytes() == b"encoder-graph"
     meta = json.loads((target / "build.json").read_text())
     for name in ("decoder", "verify"):

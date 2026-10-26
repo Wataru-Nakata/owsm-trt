@@ -1,0 +1,536 @@
+{
+  "samples": [
+    {
+      "mode": "full",
+      "export_ms": 47540.718236006796,
+      "files": {
+        "encoder.onnx.data": {
+          "bytes": 1316891392,
+          "sha256": "84a4dd76369df69ad80a8dcc2a47894f66468589e32098ea9bd6183790d4f47e"
+        },
+        "encoder.onnx": {
+          "bytes": 3781296,
+          "sha256": "e8c3b695f9f5043eabd6d6886a1b8b2a0a9465b584ab60bc68459f3293e28ebe"
+        },
+        "decoder.onnx.data": {
+          "bytes": 744261284,
+          "sha256": "3cde9c3afd5c126f795cfe4380a401dc1cc493f0616909a9762dc237da811846"
+        },
+        "decoder.onnx": {
+          "bytes": 931252,
+          "sha256": "a9c41197bd3e8d32e879932a1063b11e1ff915402b78981a59630ee9b3bd1533"
+        }
+      },
+      "encoder_files": {
+        "encoder.onnx.data": {
+          "bytes": 1316891392,
+          "sha256": "84a4dd76369df69ad80a8dcc2a47894f66468589e32098ea9bd6183790d4f47e"
+        },
+        "encoder.onnx": {
+          "bytes": 3781296,
+          "sha256": "e8c3b695f9f5043eabd6d6886a1b8b2a0a9465b584ab60bc68459f3293e28ebe"
+        }
+      },
+      "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+      "scales_sha256": "6d10d965383627e1ca23dd7abf82c8669bcaadaa100f2a2998ab7ca659089c91",
+      "export_peak_cuda_bytes": 4489243136,
+      "torch": "2.14.1+cu130",
+      "cuda": "13.0",
+      "gpu": "NVIDIA H200",
+      "options": {
+        "dtype": "float16",
+        "max_batch": 16,
+        "capacity": 512,
+        "max_prefill": 256,
+        "max_verify": 32,
+        "workspace_gb": 8.0,
+        "opt_level": 3,
+        "verify_opt_level": 4,
+        "fp8_encoder": true,
+        "fp8_calibration": "s7897e857ee72",
+        "attn_plugin": true,
+        "attn_plugin_steps": true,
+        "dwconv_plugin": true,
+        "conv1_plugin": true,
+        "ctc_plugins": true
+      },
+      "repeat": 0
+    },
+    {
+      "mode": "encoder",
+      "export_ms": 25310.968074016273,
+      "files": {
+        "encoder.onnx.data": {
+          "bytes": 1316891392,
+          "sha256": "84a4dd76369df69ad80a8dcc2a47894f66468589e32098ea9bd6183790d4f47e"
+        },
+        "encoder.onnx": {
+          "bytes": 3781296,
+          "sha256": "e8c3b695f9f5043eabd6d6886a1b8b2a0a9465b584ab60bc68459f3293e28ebe"
+        }
+      },
+      "encoder_files": {
+        "encoder.onnx.data": {
+          "bytes": 1316891392,
+          "sha256": "84a4dd76369df69ad80a8dcc2a47894f66468589e32098ea9bd6183790d4f47e"
+        },
+        "encoder.onnx": {
+          "bytes": 3781296,
+          "sha256": "e8c3b695f9f5043eabd6d6886a1b8b2a0a9465b584ab60bc68459f3293e28ebe"
+        }
+      },
+      "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+      "scales_sha256": "6d10d965383627e1ca23dd7abf82c8669bcaadaa100f2a2998ab7ca659089c91",
+      "export_peak_cuda_bytes": 4489243136,
+      "torch": "2.14.1+cu130",
+      "cuda": "13.0",
+      "gpu": "NVIDIA H200",
+      "options": {
+        "dtype": "float16",
+        "max_batch": 16,
+        "capacity": 512,
+        "max_prefill": 256,
+        "max_verify": 32,
+        "workspace_gb": 8.0,
+        "opt_level": 3,
+        "verify_opt_level": 4,
+        "fp8_encoder": true,
+        "fp8_calibration": "s7897e857ee72",
+        "attn_plugin": true,
+        "attn_plugin_steps": true,
+        "dwconv_plugin": true,
+        "conv1_plugin": true,
+        "ctc_plugins": true
+      },
+      "repeat": 0
+    },
+    {
+      "mode": "encoder",
+      "export_ms": 26954.568231478333,
+      "files": {
+        "encoder.onnx.data": {
+          "bytes": 1316891392,
+          "sha256": "84a4dd76369df69ad80a8dcc2a47894f66468589e32098ea9bd6183790d4f47e"
+        },
+        "encoder.onnx": {
+          "bytes": 3781296,
+          "sha256": "e8c3b695f9f5043eabd6d6886a1b8b2a0a9465b584ab60bc68459f3293e28ebe"
+        }
+      },
+      "encoder_files": {
+        "encoder.onnx.data": {
+          "bytes": 1316891392,
+          "sha256": "84a4dd76369df69ad80a8dcc2a47894f66468589e32098ea9bd6183790d4f47e"
+        },
+        "encoder.onnx": {
+          "bytes": 3781296,
+          "sha256": "e8c3b695f9f5043eabd6d6886a1b8b2a0a9465b584ab60bc68459f3293e28ebe"
+        }
+      },
+      "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+      "scales_sha256": "6d10d965383627e1ca23dd7abf82c8669bcaadaa100f2a2998ab7ca659089c91",
+      "export_peak_cuda_bytes": 4489243136,
+      "torch": "2.14.1+cu130",
+      "cuda": "13.0",
+      "gpu": "NVIDIA H200",
+      "options": {
+        "dtype": "float16",
+        "max_batch": 16,
+        "capacity": 512,
+        "max_prefill": 256,
+        "max_verify": 32,
+        "workspace_gb": 8.0,
+        "opt_level": 3,
+        "verify_opt_level": 4,
+        "fp8_encoder": true,
+        "fp8_calibration": "s7897e857ee72",
+        "attn_plugin": true,
+        "attn_plugin_steps": true,
+        "dwconv_plugin": true,
+        "conv1_plugin": true,
+        "ctc_plugins": true
+      },
+      "repeat": 1
+    },
+    {
+      "mode": "full",
+      "export_ms": 50579.23396769911,
+      "files": {
+        "encoder.onnx.data": {
+          "bytes": 1316891392,
+          "sha256": "84a4dd76369df69ad80a8dcc2a47894f66468589e32098ea9bd6183790d4f47e"
+        },
+        "encoder.onnx": {
+          "bytes": 3781296,
+          "sha256": "e8c3b695f9f5043eabd6d6886a1b8b2a0a9465b584ab60bc68459f3293e28ebe"
+        },
+        "decoder.onnx.data": {
+          "bytes": 744261284,
+          "sha256": "3cde9c3afd5c126f795cfe4380a401dc1cc493f0616909a9762dc237da811846"
+        },
+        "decoder.onnx": {
+          "bytes": 931252,
+          "sha256": "a9c41197bd3e8d32e879932a1063b11e1ff915402b78981a59630ee9b3bd1533"
+        }
+      },
+      "encoder_files": {
+        "encoder.onnx.data": {
+          "bytes": 1316891392,
+          "sha256": "84a4dd76369df69ad80a8dcc2a47894f66468589e32098ea9bd6183790d4f47e"
+        },
+        "encoder.onnx": {
+          "bytes": 3781296,
+          "sha256": "e8c3b695f9f5043eabd6d6886a1b8b2a0a9465b584ab60bc68459f3293e28ebe"
+        }
+      },
+      "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+      "scales_sha256": "6d10d965383627e1ca23dd7abf82c8669bcaadaa100f2a2998ab7ca659089c91",
+      "export_peak_cuda_bytes": 4489243136,
+      "torch": "2.14.1+cu130",
+      "cuda": "13.0",
+      "gpu": "NVIDIA H200",
+      "options": {
+        "dtype": "float16",
+        "max_batch": 16,
+        "capacity": 512,
+        "max_prefill": 256,
+        "max_verify": 32,
+        "workspace_gb": 8.0,
+        "opt_level": 3,
+        "verify_opt_level": 4,
+        "fp8_encoder": true,
+        "fp8_calibration": "s7897e857ee72",
+        "attn_plugin": true,
+        "attn_plugin_steps": true,
+        "dwconv_plugin": true,
+        "conv1_plugin": true,
+        "ctc_plugins": true
+      },
+      "repeat": 1
+    },
+    {
+      "mode": "full",
+      "export_ms": 50697.903658263385,
+      "files": {
+        "encoder.onnx.data": {
+          "bytes": 1316891392,
+          "sha256": "84a4dd76369df69ad80a8dcc2a47894f66468589e32098ea9bd6183790d4f47e"
+        },
+        "encoder.onnx": {
+          "bytes": 3781296,
+          "sha256": "e8c3b695f9f5043eabd6d6886a1b8b2a0a9465b584ab60bc68459f3293e28ebe"
+        },
+        "decoder.onnx.data": {
+          "bytes": 744261284,
+          "sha256": "3cde9c3afd5c126f795cfe4380a401dc1cc493f0616909a9762dc237da811846"
+        },
+        "decoder.onnx": {
+          "bytes": 931252,
+          "sha256": "a9c41197bd3e8d32e879932a1063b11e1ff915402b78981a59630ee9b3bd1533"
+        }
+      },
+      "encoder_files": {
+        "encoder.onnx.data": {
+          "bytes": 1316891392,
+          "sha256": "84a4dd76369df69ad80a8dcc2a47894f66468589e32098ea9bd6183790d4f47e"
+        },
+        "encoder.onnx": {
+          "bytes": 3781296,
+          "sha256": "e8c3b695f9f5043eabd6d6886a1b8b2a0a9465b584ab60bc68459f3293e28ebe"
+        }
+      },
+      "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+      "scales_sha256": "6d10d965383627e1ca23dd7abf82c8669bcaadaa100f2a2998ab7ca659089c91",
+      "export_peak_cuda_bytes": 4489243136,
+      "torch": "2.14.1+cu130",
+      "cuda": "13.0",
+      "gpu": "NVIDIA H200",
+      "options": {
+        "dtype": "float16",
+        "max_batch": 16,
+        "capacity": 512,
+        "max_prefill": 256,
+        "max_verify": 32,
+        "workspace_gb": 8.0,
+        "opt_level": 3,
+        "verify_opt_level": 4,
+        "fp8_encoder": true,
+        "fp8_calibration": "s7897e857ee72",
+        "attn_plugin": true,
+        "attn_plugin_steps": true,
+        "dwconv_plugin": true,
+        "conv1_plugin": true,
+        "ctc_plugins": true
+      },
+      "repeat": 2
+    },
+    {
+      "mode": "encoder",
+      "export_ms": 26636.018324643373,
+      "files": {
+        "encoder.onnx.data": {
+          "bytes": 1316891392,
+          "sha256": "84a4dd76369df69ad80a8dcc2a47894f66468589e32098ea9bd6183790d4f47e"
+        },
+        "encoder.onnx": {
+          "bytes": 3781296,
+          "sha256": "e8c3b695f9f5043eabd6d6886a1b8b2a0a9465b584ab60bc68459f3293e28ebe"
+        }
+      },
+      "encoder_files": {
+        "encoder.onnx.data": {
+          "bytes": 1316891392,
+          "sha256": "84a4dd76369df69ad80a8dcc2a47894f66468589e32098ea9bd6183790d4f47e"
+        },
+        "encoder.onnx": {
+          "bytes": 3781296,
+          "sha256": "e8c3b695f9f5043eabd6d6886a1b8b2a0a9465b584ab60bc68459f3293e28ebe"
+        }
+      },
+      "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+      "scales_sha256": "6d10d965383627e1ca23dd7abf82c8669bcaadaa100f2a2998ab7ca659089c91",
+      "export_peak_cuda_bytes": 4489243136,
+      "torch": "2.14.1+cu130",
+      "cuda": "13.0",
+      "gpu": "NVIDIA H200",
+      "options": {
+        "dtype": "float16",
+        "max_batch": 16,
+        "capacity": 512,
+        "max_prefill": 256,
+        "max_verify": 32,
+        "workspace_gb": 8.0,
+        "opt_level": 3,
+        "verify_opt_level": 4,
+        "fp8_encoder": true,
+        "fp8_calibration": "s7897e857ee72",
+        "attn_plugin": true,
+        "attn_plugin_steps": true,
+        "dwconv_plugin": true,
+        "conv1_plugin": true,
+        "ctc_plugins": true
+      },
+      "repeat": 2
+    }
+  ],
+  "first": [
+    {
+      "mode": "encoder",
+      "export_ms": 24584.0763207525,
+      "files": {
+        "encoder.onnx.data": {
+          "bytes": 1316891392,
+          "sha256": "84a4dd76369df69ad80a8dcc2a47894f66468589e32098ea9bd6183790d4f47e"
+        },
+        "encoder.onnx": {
+          "bytes": 3781296,
+          "sha256": "e8c3b695f9f5043eabd6d6886a1b8b2a0a9465b584ab60bc68459f3293e28ebe"
+        }
+      },
+      "encoder_files": {
+        "encoder.onnx.data": {
+          "bytes": 1316891392,
+          "sha256": "84a4dd76369df69ad80a8dcc2a47894f66468589e32098ea9bd6183790d4f47e"
+        },
+        "encoder.onnx": {
+          "bytes": 3781296,
+          "sha256": "e8c3b695f9f5043eabd6d6886a1b8b2a0a9465b584ab60bc68459f3293e28ebe"
+        }
+      },
+      "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+      "scales_sha256": "6d10d965383627e1ca23dd7abf82c8669bcaadaa100f2a2998ab7ca659089c91",
+      "export_peak_cuda_bytes": 4489243136,
+      "torch": "2.14.1+cu130",
+      "cuda": "13.0",
+      "gpu": "NVIDIA H200",
+      "options": {
+        "dtype": "float16",
+        "max_batch": 16,
+        "capacity": 512,
+        "max_prefill": 256,
+        "max_verify": 32,
+        "workspace_gb": 8.0,
+        "opt_level": 3,
+        "verify_opt_level": 4,
+        "fp8_encoder": true,
+        "fp8_calibration": "s7897e857ee72",
+        "attn_plugin": true,
+        "attn_plugin_steps": true,
+        "dwconv_plugin": true,
+        "conv1_plugin": true,
+        "ctc_plugins": true
+      },
+      "repeat": -1
+    },
+    {
+      "mode": "full",
+      "export_ms": 47582.34264142811,
+      "files": {
+        "encoder.onnx.data": {
+          "bytes": 1316891392,
+          "sha256": "84a4dd76369df69ad80a8dcc2a47894f66468589e32098ea9bd6183790d4f47e"
+        },
+        "encoder.onnx": {
+          "bytes": 3781296,
+          "sha256": "e8c3b695f9f5043eabd6d6886a1b8b2a0a9465b584ab60bc68459f3293e28ebe"
+        },
+        "decoder.onnx.data": {
+          "bytes": 744261284,
+          "sha256": "3cde9c3afd5c126f795cfe4380a401dc1cc493f0616909a9762dc237da811846"
+        },
+        "decoder.onnx": {
+          "bytes": 931252,
+          "sha256": "a9c41197bd3e8d32e879932a1063b11e1ff915402b78981a59630ee9b3bd1533"
+        }
+      },
+      "encoder_files": {
+        "encoder.onnx.data": {
+          "bytes": 1316891392,
+          "sha256": "84a4dd76369df69ad80a8dcc2a47894f66468589e32098ea9bd6183790d4f47e"
+        },
+        "encoder.onnx": {
+          "bytes": 3781296,
+          "sha256": "e8c3b695f9f5043eabd6d6886a1b8b2a0a9465b584ab60bc68459f3293e28ebe"
+        }
+      },
+      "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+      "scales_sha256": "6d10d965383627e1ca23dd7abf82c8669bcaadaa100f2a2998ab7ca659089c91",
+      "export_peak_cuda_bytes": 4489243136,
+      "torch": "2.14.1+cu130",
+      "cuda": "13.0",
+      "gpu": "NVIDIA H200",
+      "options": {
+        "dtype": "float16",
+        "max_batch": 16,
+        "capacity": 512,
+        "max_prefill": 256,
+        "max_verify": 32,
+        "workspace_gb": 8.0,
+        "opt_level": 3,
+        "verify_opt_level": 4,
+        "fp8_encoder": true,
+        "fp8_calibration": "s7897e857ee72",
+        "attn_plugin": true,
+        "attn_plugin_steps": true,
+        "dwconv_plugin": true,
+        "conv1_plugin": true,
+        "ctc_plugins": true
+      },
+      "repeat": -1
+    }
+  ],
+  "encoder_exact": true,
+  "summary": {
+    "full": {
+      "p50_ms": 50579.23396769911,
+      "stdev_ms": 1461.1441535739425,
+      "min_ms": 47540.718236006796,
+      "max_ms": 50697.903658263385
+    },
+    "encoder": {
+      "p50_ms": 26636.018324643373,
+      "stdev_ms": 711.7001309416155,
+      "min_ms": 25310.968074016273,
+      "max_ms": 26954.568231478333
+    }
+  },
+  "smoke": {
+    "mode": "encoder",
+    "export_ms": 26646.953199990094,
+    "files": {
+      "encoder.onnx.data": {
+        "bytes": 1316891392,
+        "sha256": "84a4dd76369df69ad80a8dcc2a47894f66468589e32098ea9bd6183790d4f47e"
+      },
+      "encoder.onnx": {
+        "bytes": 3781296,
+        "sha256": "e8c3b695f9f5043eabd6d6886a1b8b2a0a9465b584ab60bc68459f3293e28ebe"
+      }
+    },
+    "encoder_files": {
+      "encoder.onnx.data": {
+        "bytes": 1316891392,
+        "sha256": "84a4dd76369df69ad80a8dcc2a47894f66468589e32098ea9bd6183790d4f47e"
+      },
+      "encoder.onnx": {
+        "bytes": 3781296,
+        "sha256": "e8c3b695f9f5043eabd6d6886a1b8b2a0a9465b584ab60bc68459f3293e28ebe"
+      }
+    },
+    "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+    "scales_sha256": "6d10d965383627e1ca23dd7abf82c8669bcaadaa100f2a2998ab7ca659089c91",
+    "export_peak_cuda_bytes": 4489243136,
+    "torch": "2.14.1+cu130",
+    "cuda": "13.0",
+    "gpu": "NVIDIA H200",
+    "options": {
+      "dtype": "float16",
+      "max_batch": 16,
+      "capacity": 512,
+      "max_prefill": 256,
+      "max_verify": 32,
+      "workspace_gb": 8.0,
+      "opt_level": 3,
+      "verify_opt_level": 4,
+      "fp8_encoder": true,
+      "fp8_calibration": "s7897e857ee72",
+      "attn_plugin": true,
+      "attn_plugin_steps": true,
+      "dwconv_plugin": true,
+      "conv1_plugin": true,
+      "ctc_plugins": true
+    },
+    "build_smoke": {
+      "wall_ms": 89611.39503587037,
+      "encoder_sha256": "65b5b9010be5e37ad874783ff65819446468ba2475c4b32ea68f28e6177d0b6e",
+      "copied_decoders_exact": true,
+      "shapes": [
+        {
+          "features": [
+            1,
+            200,
+            128
+          ],
+          "kv": [
+            18,
+            1,
+            16,
+            374,
+            64
+          ],
+          "ctc": [
+            1,
+            26
+          ]
+        },
+        {
+          "features": [
+            3,
+            200,
+            128
+          ],
+          "kv": [
+            18,
+            3,
+            16,
+            374,
+            64
+          ],
+          "ctc": [
+            3,
+            26
+          ]
+        }
+      ]
+    }
+  },
+  "note": "Fresh-process ONNX export component only. Excludes model load, TRT build, inference; shared OS/JIT caches warmed. Unchanged encoder ONNX/external data hashes are required.",
+  "job": "2773776.pbs1",
+  "frozen_commit": "2c2670e",
+  "decision": "Adopt skip_decoder_export=True by default for builds reusing existing decoder engines.",
+  "paired_reduction_percent": [
+    46.7593906588352,
+    46.70823158632247,
+    47.4613023367054
+  ]
+}

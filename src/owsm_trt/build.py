@@ -411,12 +411,12 @@ def build_engines(
     opts: BuildOptions,
     keep_onnx: bool = False,
     decoders_from: Path | None = None,
-    skip_decoder_export: bool = False,
+    skip_decoder_export: bool = True,
 ) -> None:
     """Export ``model`` (already on GPU in the target dtype) and build its engines into ``engine_dir``.
     ``decoders_from``: an engine directory of the same model and options but for the encoder's (an FP8
     encoder's fp16 counterpart), whose decoder engines are copied instead of built.
-    ``skip_decoder_export`` also omits their unused ONNX export (experimental; default False)."""
+    ``skip_decoder_export`` omits their unused ONNX export; set False to retain the joint export."""
     cfg = model.cfg
     engine_dir.mkdir(parents=True, exist_ok=True)
     onnx_dir = engine_dir / "onnx"

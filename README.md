@@ -132,6 +132,10 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
 * **TensorRT engines are built on first use.** The encoder and a decoder call are exported to ONNX and compiled
   into strongly-typed fp16 engines, cached under `~/.cache/owsm_trt` (set `OWSM_TRT_CACHE` to move them). Engines
   depend on the GPU and the TensorRT version.
+  * Builds reusing decoder engines (such as FP8 encoder builds) skip the unused decoder ONNX export.
+    On H200/1B, the export component fell from50.58 to26.64s (three alternating pairs, identical encoder
+    ONNX hashes); this is not a total-build or inference-speed measurement.
+    [Validation and scope](docs/runtime-decoder-export.md).
   * The encoder and the decoder have separate optimization profiles for batch 1 and for batches (and the decoder
     one for prompt prefill). Kernels tuned for batch 16 waste much of the GPU at batch 1 (encoder: 4.1 instead of
     5.0 ms).
