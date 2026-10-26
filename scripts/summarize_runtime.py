@@ -10,10 +10,13 @@ from pathlib import Path
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("run", type=Path)
+    ap.add_argument("--reference", default="reference", help="Timing baseline variant, e.g. graph")
     args = ap.parse_args()
     status = args.run / "exit_status.txt"
     report = {
         "exit_status": int(status.read_text()) if status.exists() else None,
+        "timing_reference": args.reference,
+        "agreement_reference": "reference",
         "source": json.loads((args.run / "source.json").read_text()),
         "datasets": {},
     }
@@ -35,9 +38,9 @@ def main():
             for row in records:
                 groups[row["variant"]][tuple(row["ids"])].append(row["wall_ms"])
             for v, s in summary.items():
-                s["rtfx_speedup"] = s["rtfx"] / summary["reference"]["rtfx"] - 1
+                s["rtfx_speedup"] = s["rtfx"] / summary[args.reference]["rtfx"] - 1
                 pairs = [
-                    statistics.median(groups["reference"][k]) / statistics.median(vals) - 1
+                    statistics.median(groups[args.reference][k]) / statistics.median(vals) - 1
                     for k, vals in groups[v].items()
                 ]
                 s["paired_median_speedup"] = statistics.median(pairs)
@@ -52,10 +55,11 @@ def main():
             print(
                 root.name,
                 name,
-                {v: round(s["rtfx_speedup"] * 100, 2) for v, s in summary.items() if v != "reference"},
+                {v: round(s["rtfx_speedup"] * 100, 2) for v, s in summary.items() if v != args.reference},
             )
         report["datasets"][root.name] = result
-    (args.run / "analysis.json").write_text(json.dumps(report, indent=2) + "\n")
+    filename = "analysis.json" if args.reference == "reference" else f"analysis-{args.reference}.json"
+    (args.run / filename).write_text(json.dumps(report, indent=2) + "\n")
 
 
 if __name__ == "__main__":
