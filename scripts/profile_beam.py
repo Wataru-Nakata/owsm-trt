@@ -189,10 +189,40 @@ def quality(items, records, lang):
             "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"}
 
 
+class IdentityObserved(BeamSession):
+    """Separate diagnostic session; counts parent identity without per-step host reads."""
+
+    def __init__(self, backend, cfg, batch, beam, capacity, eos, dtype, device, **kwargs):
+        self._identity_counts = torch.zeros(4, dtype=torch.long, device=device)
+        self._identity_rows = torch.arange(batch * beam, device=device)
+        super().__init__(backend, cfg, batch, beam, capacity, eos, dtype, device, **kwargs)
+
+    def _reorder_cache(self, c, parent):
+        identity = (parent == self._identity_rows).sum().view(1)
+        position = self.pos.to(torch.long)
+        self._identity_counts.add_(torch.cat((torch.ones_like(identity), identity,
+                                             identity * position, self.rows * position)))
+        super()._reorder_cache(c, parent)
+
+    def decode(self, primer, max_new_tokens):
+        self._identity_counts.zero_()
+        return super().decode(primer, max_new_tokens)
+
+    def get_diagnostics(self):
+        result = super().get_diagnostics()
+        calls, same, weighted, total = self._identity_counts.cpu().tolist()
+        assert calls == result['selection_calls'], 'identity counters include warmup or missed reorders'
+        result['kv_identity'] = dict(reorder_calls=calls, unchanged_rows=same, rows=calls*self.rows,
+            unchanged_prefix_positions=weighted, prefix_positions=total,
+            note='Counts all reordered slots, including inactive rows; prefix weights exclude unwritten zeros. '
+                 'Separate diagnostic graph only; no timing attributed to these counters.')
+        return result
+
+
 def make_session(model, cls, batch, beam, chunk, diagnostics=False, graph=True,
                  fused_rank=False, fused_finish=False, kv_reorder="torch", share_cross_kv=False, fused_state=False, compact_tail=False, local_topk=False, prefill_shared=False):
     extra = {"diagnostics": diagnostics, "fused_rank": fused_rank,
-             "fused_finish": fused_finish, "kv_reorder": kv_reorder, "share_cross_kv": share_cross_kv, "fused_state": fused_state, "compact_tail": compact_tail, "local_topk": local_topk, "prefill_shared": prefill_shared} if cls is BeamSession else {}
+             "fused_finish": fused_finish, "kv_reorder": kv_reorder, "share_cross_kv": share_cross_kv, "fused_state": fused_state, "compact_tail": compact_tail, "local_topk": local_topk, "prefill_shared": prefill_shared} if issubclass(cls, BeamSession) else {}
     backend = getattr(model, "_profile_backend", model.backend) if cls is BeamSession else model.backend
     return cls(backend, model.cfg, batch, beam, model.opts.capacity, model.tokenizer.eos,
                model.dtype, model.device, use_cuda_graph=graph, chunk=chunk, rules=model.rules, **extra)
@@ -401,7 +431,8 @@ def run_batch(model, args, items, waves, batch, legacy):
 
     diag = {}
     for b in sizes:
-        s = make_session(model, BeamSession, b, args.beam, args.chunk, diagnostics=True,
+        cls = IdentityObserved if args.kv_identity_stats else BeamSession
+        s = make_session(model, cls, b, args.beam, args.chunk, diagnostics=True,
                          fused_rank=args.fused_rank, fused_finish=args.fused_finish, kv_reorder=args.kv_reorder, share_cross_kv=args.share_cross_kv, fused_state=args.fused_state, compact_tail=args.compact_tail, local_topk=args.local_topk, prefill_shared=args.prefill_shared)
         for mode in [m for m in modes if m != "baseline"]:
             s.set_upper_bound(mode != "off")
@@ -541,7 +572,8 @@ def main():
     ap.add_argument("--fused-state", action="store_true", help="candidate only: fuse beam parent/token/history updates")
     ap.add_argument("--fused-rank", action="store_true", help="opt-in exact candidate-mask kernel")
     ap.add_argument("--fused-finish", action="store_true", help="opt-in exact beam-state kernel")
-    ap.add_argument("--kv-reorder", choices=["torch", "full", "prefix"], default="torch")
+    ap.add_argument("--kv-reorder", choices=["torch", "full", "prefix", "identity"], default="torch")
+    ap.add_argument("--kv-identity-stats", action="store_true", help="count unchanged parents in separate diagnostic graphs")
     ap.add_argument("--share-cross-kv", action="store_true")
     ap.add_argument("--gluon-group-queries", action="store_true",
                     help="candidate only: group beam queries sharing cross KV in one attention tile")

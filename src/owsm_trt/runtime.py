@@ -1581,8 +1581,8 @@ class BeamSession(_Session):
             chunk = 1 if upper_bound and batch == 1 else 4
         if chunk < 1:
             raise ValueError("beam completion-check interval must be positive")
-        if kv_reorder not in ("torch", "full", "prefix"):
-            raise ValueError("kv_reorder must be torch, full or prefix")
+        if kv_reorder not in ("torch", "full", "prefix", "identity"):
+            raise ValueError("kv_reorder must be torch, full, prefix or identity")
         n = batch * beam
         supports_shared = getattr(backend, "supports_shared_cross", lambda _: False)
         self.share_cross_kv = share_cross_kv and supports_shared(n)
@@ -1750,7 +1750,8 @@ class BeamSession(_Session):
                 buf.copy_(buf.index_select(1, parent))
         else:
             beam_kernels.reorder_kv(*self.caches[c], self._kv_scratch, parent, self.pos,
-                                   prefix=self.kv_reorder == "prefix")
+                                   prefix=self.kv_reorder in ("prefix", "identity"),
+                                   skip_identity=self.kv_reorder == "identity")
 
     def _finish(self, token: torch.Tensor, valid: torch.Tensor) -> None:
         if self.fused_finish:

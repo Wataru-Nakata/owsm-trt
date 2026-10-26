@@ -46,7 +46,7 @@ if triton is not None:
     @triton.jit
     def _reorder_kv(k, v, scratch, parent, pos_ptr, L: tl.constexpr, R: tl.constexpr,
                     H: tl.constexpr, C: tl.constexpr, D: tl.constexpr, PREFIX: tl.constexpr,
-                    COPY_BACK: tl.constexpr, BLOCK: tl.constexpr):
+                    COPY_BACK: tl.constexpr, BLOCK: tl.constexpr, SKIP_IDENTITY: tl.constexpr):
         # One contiguous head tile. All parent reads finish before the separate copy-back launch.
         head_row, tile, kv = tl.program_id(0), tl.program_id(1), tl.program_id(2)
         i = tile * BLOCK + tl.arange(0, BLOCK)
@@ -57,6 +57,18 @@ if triton is not None:
             written &= i < tl.load(pos_ptr) * D
         offset = head_row * C * D + i
         temporary = scratch + kv * L * R * H * C * D + offset
+        if SKIP_IDENTITY:
+            row = (head_row // H) % R
+            if tl.load(parent + row) == row:
+                # This row stays put and other rows only read it in the first launch. The
+                # second launch must still clear its unwritten tail, including stale NaNs.
+                if COPY_BACK and PREFIX:
+                    if kv == 0:
+                        tl.store(k + offset, 0, inside & ~written)
+                    else:
+                        tl.store(v + offset, 0, inside & ~written)
+                return
+
         if COPY_BACK:
             value = tl.load(temporary, written, other=0)
             # Keep every unwritten V slot finite: some attention paths multiply masked zeros by V.
@@ -193,17 +205,18 @@ def candidates(session, logp: torch.Tensor, prefill_logits: torch.Tensor | None 
 
 
 def reorder_kv(k: torch.Tensor, v: torch.Tensor, scratch: torch.Tensor, parent: torch.Tensor,
-               pos: torch.Tensor, prefix: bool) -> None:
+               pos: torch.Tensor, prefix: bool, skip_identity: bool = False) -> None:
     """[L, R, H, C, D] -> parent-gathered caches, using one fixed workspace for all buckets.
 
     Full mode preserves every slot exactly. Prefix mode preserves slots < pos and zeros the rest.
     Both launches use fixed addresses and no host read of pos; duplicate parents are safe.
+    Optional identity skipping avoids copying an unchanged parent, but still clears unwritten slots.
     """
     layers, rows, heads, c, d = k.shape
     grid = (layers * rows * heads, triton.cdiv(c * d, 2048), 2)
     for copy_back in (False, True):
         _reorder_kv[grid](k, v, scratch, parent, pos, layers, rows, heads, c, d,
-                         PREFIX=prefix, COPY_BACK=copy_back, BLOCK=2048, num_warps=4)
+                         PREFIX=prefix, COPY_BACK=copy_back, BLOCK=2048, SKIP_IDENTITY=skip_identity, num_warps=4)
 
 
 def reorder_state(session, top: torch.Tensor, indices: torch.Tensor):
