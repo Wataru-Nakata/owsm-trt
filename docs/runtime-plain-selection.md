@@ -18,3 +18,8 @@ EOS, repeated captured calls, final output slot, long prefill and bucket16/32/64
 `profile_runtime.py graph_plain` compares actual same-engine requests with accepted `graph_lazy`,
 including plain greedy with/without timestamps, translation, drafted/beam regressions and102M.
 All returned tokens/segments must match. No new speed claim until measurement.
+
+Job2772060 passed131 tests and the10-request public API rollback comparison. The benchmark then
+failed before timing because its PBS wrapper named the model-root config.yaml instead of the file
+under exp/. No selection/runtime performance result was produced. The wrapper path was corrected
+against the staged model tree for the retry; runtime/kernel code is unchanged.

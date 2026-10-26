@@ -77,7 +77,7 @@ timeout 400 "$PY" "$LOCAL/scripts/validate_greedy_api.py" \
     --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/manifest.json" \
     --out "$LOCAL/results/api1b" > "$LOCAL/results/api1b.log" 2>&1
 timeout 250 "$PY" "$LOCAL/scripts/profile_greedy_select.py" \
-    --config "$LOCAL/owsm_v4_medium_1B/config.yaml" --out "$LOCAL/results/selection.json" \
+    --config "$LOCAL/owsm_v4_medium_1B/exp/s2t_train_conv2d8_size1024_e18_d18_mel128_raw_bpe50000/config.yaml" --out "$LOCAL/results/selection.json" \
     > "$LOCAL/results/selection.log" 2>&1
 timeout 900 "$PY" "$LOCAL/scripts/profile_runtime.py" \
     --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/manifest.json" \
