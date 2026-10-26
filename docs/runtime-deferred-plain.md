@@ -3,7 +3,7 @@
 Job2771972's ASR cold record still prepared four plain decoder graphs even though the request only
 used drafted verification. The experiment adds `GreedySession(lazy_plain=True)` to defer those
 closures (including backend trial) and graphs until the first plain `decode` request. The high-level
-experiment flag `OWSM.greedy_lazy_plain` defaults False pending GPU comparisons. Beam is unchanged.
+internal flag `OWSM.greedy_lazy_plain` follows public `lazy_drafts=True` after the replication below. Beam is unchanged.
 
 Cold preparation zeros the shared plain token/offset/position/done state before trial/capture. It runs
 before the new request's prefill and rules initialization, so no live prefix needs preserving. Drafted
@@ -61,4 +61,38 @@ The next job repeats five cold task types seven times and validates the public r
 on both models. `--reuse-first-only` tests all cross-task reuse on the first cycle; every subsequent
 fresh request still requires exact output. It avoids repeatedly paying untimed setup for all tasks
 in every sample. Original2772365 performed reuse after every construction (60 timed rows/model,
-12 separate first observations), and remains unchanged. Default remainsOFF during this replication.
+12 separate first observations), and remains unchanged. Default remainedOFF in that measurement snapshot; adoption follows below.
+
+
+## Replication and adoption:2772457
+
+Sourcee8a2d000, same H200/checkpoints/engines. Nine focused GPU tests pass; public serial rollback
+versus the future deferred default matches all10 requests on each model, including plain, drafted,
+stream, beam, prompt and language-ID reuse. Seven timed fresh reconstructions per mode/task plus
+ten separate first observations per model all match. The actual one-token LID path leaves zero
+plain graphs, as intended afterf782942.
+
+| Model/request | Eager ms | Deferred ms | Reduction |
+|---|---:|---:|---:|
+| 1B ASR |283.63|267.59|5.65%|
+| 1B long prompt |283.29|269.49|4.87%|
+| 1B language ID |274.34|254.20|7.34%|
+| 1B translation |290.52|293.81|-1.13%|
+| 1B stream B8,12 inputs |1932.37|1902.80|1.53%|
+| 102M ASR |111.96|104.33|6.82%|
+| 102M long prompt |112.97|105.45|6.65%|
+| 102M language ID |107.85|99.06|8.15%|
+| 102M translation |113.30|112.57|0.64%|
+| 102M stream B8,12 inputs |1055.08|829.18|21.41%|
+
+ASR medians improve in both independent jobs, although individual paired samples include timing
+outliers. LID paired reductions are3.92–17.51% on1B and3.00–12.31% on102M.102M B8 improves in every
+pair,19.69–24.57%, replicating the earlier21.83% median. Translation controls fluctuate around no
+gain;1B B8 is also not a consistent gain. Earlier102M translation regression does not reproduce.
+No steady-state improvement is claimed. Existing eager fallback remains `lazy_drafts=False`;
+standalone GreedySession keeps explicit `lazy_plain=True`. Other GPUs/models are unmeasured.
+
+Adopted: high-level `lazy_drafts=True` also defers unused plain calls. This includes single-selection
+language ID; a later ordinary decode still prepares once before its prefill. No cache layout,
+decoder arithmetic, stopping or output rules change. Artifact: outputs/runtime-2772457, both API
+and cold JSONs; measured snapshot used the same internal flag set explicitly before any session.

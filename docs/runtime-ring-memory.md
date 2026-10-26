@@ -18,5 +18,24 @@ checkpoint/TensorRT engine hashes and actual dispatch are recorded. Long-form co
 text/segments because joined token IDs are unavailable. Human timestamp reference is unavailable.
 
 These settings already exist; this work must not be reported as introducing a new prefetch/ring
-kernel. No speed or quality result is available yet. No defaults change without repeatable benefit
+kernel. Measured results follow below. No defaults change without repeatable benefit
 and the applicable numerical/output checks. Script: scripts/profile_ring_memory.pbs.
+
+
+## Measured result:2772457, defaults retained
+
+H200/1B,11 alternating repeats. All shape checks pass. Turning attention prefetch off is slower on
+both corpora: direct ASR-1.2%, timestamps-1.75%, plain/translation approximately-3.4..-3.7% RTFx.
+English B1 streaming+1.48% does not reproduce in Japanese(-0.94%);110s long-form-2.98%. All exposed
+outputs match. Keep attention prefetch enabled.
+
+Chunk1 is slower by2.2–2.7% for direct ASR and8.8–9.8% for plain/translation. Chunk4 is slower by
+2.3–3.7% for direct ASR and3.2–4.3% for plain/translation; English long-form-7.72%. Both also regress
+B1 streaming in both corpora. Chunk1 changes token/text outputs on2/12 Japanese translation inputs;
+other sampled cases match, including chunk4. Translation has no reference transcript here, so this
+is a baseline difference, not a measured translation-quality error. Keep chunk2; no new runtime
+branch or high-level tuning option is warranted. The existing constructor options remain unchanged.
+
+Artifacts: outputs/runtime-2772457/{analysis.json,english_attention,japanese_attention,english_chunk,
+japanese_chunk}, environment/checkpoint/engine hashes, raw timing/dispatch/token/quality records and
+shape checks. These are rejected existing-setting ablations, not newly introduced kernel features.

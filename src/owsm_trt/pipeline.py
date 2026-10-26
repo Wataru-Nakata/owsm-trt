@@ -233,7 +233,7 @@ class OWSM:
         self.greedy_reuse_notime = False
         self.greedy_cache_draft_flags = greedy_kernels
         self.greedy_lazy_verify_graphs = lazy_drafts
-        self.greedy_lazy_plain = False
+        self.greedy_lazy_plain = lazy_drafts
         self._frontend_replay = None
         self.draft_stats = [0, 0]  # tokens emitted, decoder calls made by drafted decoding
         self.stream_priority = True  # decoder calls go first while the encoder works ahead
@@ -302,7 +302,10 @@ class OWSM:
         ``lazy_drafts`` (default True): create verification buffers on first draft use, then prepare
         each bucket/window/solo decoder call and graph only when needed. Translation and language
         identification avoid unused verification setup. An unseen shape still incurs cold setup;
-        warmed decoder calls are unchanged. False eagerly prepares every verification call/graph.
+        warmed decoder calls are unchanged. Plain decoder calls/graphs are also deferred until a
+        request needs more than the first prefill selection (language ID needs none). False eagerly
+        prepares both plain and verification calls/graphs. This reduces session-cold setup, not
+        steady-state decoder time; validated on H200 with v4 medium 1B/base 102M.
 
         ``draft_token_budget`` (default 256): maximum rows x verification window for greedy CTC
         drafts (at least one token per row). 128 improved H200/1B timestamped B8 throughput in the

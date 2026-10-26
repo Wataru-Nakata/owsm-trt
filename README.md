@@ -227,6 +227,12 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   three reconstructions, exact outputs). New shapes still incur setup; fully warm timing changed
   -0.5% to +0.8% across the measured cases. `lazy_drafts=False` restores eager construction.
   [Per-shape cold and warm validation](docs/runtime-lazy-verify.md).
+  Unused plain decoder graphs are also deferred until ordinary multi-token decode is needed.
+  Independently replicated incremental session-cold reductions were about5.6% for1B ASR,
+  3.8–6.8% for102M ASR and21–22% for102M B8 streaming; one-token language ID improved7–8%.
+  These use resident engines and warmed JIT; steady-state timing was unchanged within variation.
+  Translation still prepares its plain decoder on first use; no cold-speed claim applies to it.
+  [Deferred plain setup measurements](docs/runtime-deferred-plain.md).
 * **Rows are refilled (greedy ASR of more than one batch).** Utterances need from 1 to 25 decoder calls, and a fixed
   batch would wait for its slowest one. Instead a row whose utterance is done takes the next one for the following
   call, at its own cache offset (on the test set: 29 instead of 92 calls per pass at batch 8). The encoder works
