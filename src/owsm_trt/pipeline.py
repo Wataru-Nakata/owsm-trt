@@ -264,7 +264,7 @@ class OWSM:
         batches every four steps; see ``BeamSession`` for an explicit interval override.
 
         ``beam_kernels``: fuse beam candidate masking/scoring, finished-state updates and valid-prefix
-        KV reordering with Triton
+        KV reordering with Triton; share cross KV across beam rows when the decoder supports it
         (default True on CUDA when Triton is available). Full-vocabulary log-softmax and global top-K
         stay in PyTorch. False selects the reference operations; CPU and missing-Triton paths also
         use them. These kernels do not affect greedy decoding.
@@ -396,6 +396,7 @@ class OWSM:
                     upper_bound=self.beam_upper_bound,
                     fused_rank=self.beam_kernels, fused_finish=self.beam_kernels,
                     kv_reorder="prefix" if self.beam_kernels else "torch",
+                    share_cross_kv=self.beam_kernels,
                 )
         self._sessions.move_to_end(key)
         return self._sessions[key]

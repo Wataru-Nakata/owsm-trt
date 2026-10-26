@@ -124,7 +124,7 @@ def test_shared_beam_repeated_prompt_and_bucket_growth():
     decoder = megakernel_gluon.GluonDecoder(megakernel.MegaDecoder(model.decoder, dev))
     backend = megakernel.MegaBackend(TorchBackend(model.half()), decoder, 16, 8)
     args = (backend, CFG, 2, 3, 32, -1, torch.float16, dev)
-    ref = BeamSession(*args, buckets=[4, 8, 16, 32], diagnostics=True)
+    ref = BeamSession(*args, buckets=[4, 8, 16, 32], diagnostics=True, share_cross_kv=False)
     fast = BeamSession(*args, buckets=[4, 8, 16, 32], diagnostics=True, share_cross_kv=True)
     assert fast.share_cross_kv
     for primer_len, limit in ((3, 29), (9, 7), (3, 20)):

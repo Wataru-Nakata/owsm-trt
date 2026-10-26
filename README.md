@@ -229,6 +229,9 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   KV reordering now gathers the written prefix through fixed scratch storage in two launches, clearing
   the unused tail. [Further same-engine measurements](docs/beam-kv.md) show 3.9% / 8.7% additional RTFx
   at B=1 / B=3, with exact output agreement; `beam_kernels=False` also disables this path.
+  On supported Gluon shapes, beam rows now share encoder cross-KV storage. A further
+  [B=1 comparison](docs/beam-cross.md) measured 4.3% more RTFx and cross-KV buffers shrinking from
+  165.4 to 27.6 MB, with identical outputs. B=3/K=5 retains expanded KV with the TensorRT decoder.
 * **Timestamp rules.** Like ESPnet, every search applies its `ScoreFilter`: no timestamps after `<notimestamps>`;
   otherwise the output starts with a timestamp, timestamps come in increasing pairs, and `<eos>` only after a
   complete pair.
