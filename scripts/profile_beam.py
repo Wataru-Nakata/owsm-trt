@@ -190,9 +190,9 @@ def quality(items, records, lang):
 
 
 def make_session(model, cls, batch, beam, chunk, diagnostics=False, graph=True,
-                 fused_rank=False, fused_finish=False, kv_reorder="torch", share_cross_kv=False, fused_state=False, compact_tail=False):
+                 fused_rank=False, fused_finish=False, kv_reorder="torch", share_cross_kv=False, fused_state=False, compact_tail=False, local_topk=False):
     extra = {"diagnostics": diagnostics, "fused_rank": fused_rank,
-             "fused_finish": fused_finish, "kv_reorder": kv_reorder, "share_cross_kv": share_cross_kv, "fused_state": fused_state, "compact_tail": compact_tail} if cls is BeamSession else {}
+             "fused_finish": fused_finish, "kv_reorder": kv_reorder, "share_cross_kv": share_cross_kv, "fused_state": fused_state, "compact_tail": compact_tail, "local_topk": local_topk} if cls is BeamSession else {}
     backend = getattr(model, "_profile_backend", model.backend) if cls is BeamSession else model.backend
     return cls(backend, model.cfg, batch, beam, model.opts.capacity, model.tokenizer.eos,
                model.dtype, model.device, use_cuda_graph=graph, chunk=chunk, rules=model.rules, **extra)
@@ -235,7 +235,7 @@ def configure_gluon(model, programs=None, prefetch=None, group_queries=False, cr
 
 def profile_eager(model, args, waves, primer, out):
     s = make_session(model, BeamSession, len(waves), args.beam, args.chunk, diagnostics=True, graph=False,
-                     fused_rank=args.fused_rank, fused_finish=args.fused_finish, kv_reorder=args.kv_reorder, share_cross_kv=args.share_cross_kv, fused_state=args.fused_state, compact_tail=args.compact_tail)
+                     fused_rank=args.fused_rank, fused_finish=args.fused_finish, kv_reorder=args.kv_reorder, share_cross_kv=args.share_cross_kv, fused_state=args.fused_state, compact_tail=args.compact_tail, local_topk=args.local_topk)
     s.set_upper_bound(args.upper_bound != "off")
     s.encode(model._features(waves))
     expected = s.decode(primer, model._max_new())  # warm up this shape before attaching events
@@ -289,7 +289,7 @@ def run_batch(model, args, items, waves, batch, legacy):
             continue
         for b in sizes:
             s, ms = wall(lambda: make_session(model, cls, b, args.beam, args.chunk,
-                        fused_rank=args.fused_rank, fused_finish=args.fused_finish, kv_reorder=args.kv_reorder, share_cross_kv=args.share_cross_kv, fused_state=args.fused_state, compact_tail=args.compact_tail))
+                        fused_rank=args.fused_rank, fused_finish=args.fused_finish, kv_reorder=args.kv_reorder, share_cross_kv=args.share_cross_kv, fused_state=args.fused_state, compact_tail=args.compact_tail, local_topk=args.local_topk))
             sessions[kind, b] = s
             cross = {id(t): t for t in (s.cross_k, s.cross_v, s.cross_kb, s.cross_vb)}
             cross_bytes = sum(t.numel() * t.element_size() for t in cross.values())
@@ -301,6 +301,7 @@ def run_batch(model, args, items, waves, batch, legacy):
                                                        "kv_reorder": getattr(s, "kv_reorder", "torch"),
                                                        "share_cross_kv": getattr(s, "share_cross_kv", False),
                                                        "state": getattr(s, "fused_state", False),
+                                                       "local_topk": getattr(s, "local_topk", False),
                                                        "compact_tail": getattr(s, "compact_tail", False),
                                                        "compact_tail_fallback": getattr(s, "compact_tail_fallback", None),
                                                        "cross_kv_fallback": getattr(s, "cross_kv_fallback", None),
@@ -400,7 +401,7 @@ def run_batch(model, args, items, waves, batch, legacy):
     diag = {}
     for b in sizes:
         s = make_session(model, BeamSession, b, args.beam, args.chunk, diagnostics=True,
-                         fused_rank=args.fused_rank, fused_finish=args.fused_finish, kv_reorder=args.kv_reorder, share_cross_kv=args.share_cross_kv, fused_state=args.fused_state, compact_tail=args.compact_tail)
+                         fused_rank=args.fused_rank, fused_finish=args.fused_finish, kv_reorder=args.kv_reorder, share_cross_kv=args.share_cross_kv, fused_state=args.fused_state, compact_tail=args.compact_tail, local_topk=args.local_topk)
         for mode in [m for m in modes if m != "baseline"]:
             s.set_upper_bound(mode != "off")
             s.chunk = int(mode.removeprefix("on_chunk")) if mode.startswith("on_chunk") else args.chunk
@@ -465,7 +466,7 @@ def extra_checks(model, args, waves, legacy):
                 cls = legacy if mode == "baseline" else BeamSession
                 cache[key] = make_session(model, cls, batch, beam, args.chunk,
                                          fused_rank=args.fused_rank, fused_finish=args.fused_finish,
-                                         kv_reorder=args.kv_reorder, share_cross_kv=args.share_cross_kv, fused_state=args.fused_state, compact_tail=args.compact_tail)
+                                         kv_reorder=args.kv_reorder, share_cross_kv=args.share_cross_kv, fused_state=args.fused_state, compact_tail=args.compact_tail, local_topk=args.local_topk)
                 if mode != "baseline":
                     cache[key].set_upper_bound(mode == "on")
             return cache[key]
@@ -529,6 +530,8 @@ def main():
     ap.add_argument("--gluon-programs", type=int, help="candidate only: persistent CTA count")
     ap.add_argument("--gluon-prefetch", action=argparse.BooleanOptionalAction, default=None,
                     help="candidate only: attention prefetch; keep arithmetic and routing unchanged")
+    ap.add_argument("--local-topk", action="store_true",
+                    help="candidate only: parent-local then global top-K; equal-score ordering may differ")
     ap.add_argument("--baseline-runtime", type=Path)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--phases", action="store_true")
@@ -546,8 +549,10 @@ def main():
         ap.error("compare-chunks must be distinct positive integers")
     tuning = (args.gluon_programs is not None or args.gluon_prefetch is not None or args.gluon_group_queries
               or args.gluon_cross_splits is not None or args.gluon_max_rows is not None)
-    if tuning and not args.baseline_runtime:
-        ap.error("Gluon ablations require --baseline-runtime for the unchanged decoder")
+    if (tuning or args.local_topk) and not args.baseline_runtime:
+        ap.error("selection/Gluon ablations require --baseline-runtime for the unchanged reference")
+    if args.verify_api and args.local_topk:
+        ap.error("local-topk is not a public API option")
     if args.verify_api and not (args.beam == 5 and args.upper_bound == "on" and args.fused_state
                                 and args.fused_rank and args.fused_finish and args.kv_reorder == "prefix"
                                 and args.share_cross_kv and args.compact_tail and args.gluon_group_queries

@@ -51,8 +51,9 @@ def ready(s):
     s.logits[::s.beam, 0, 1] = 0
 
 
-def test_invalid_parents_do_not_revive():
-    s = session()
+@pytest.mark.parametrize("local", [False, True])
+def test_invalid_parents_do_not_revive(local):
+    s = session(local_topk=local)
     ready(s)
     s._select(4)
     assert s.active.sum() == 1
@@ -60,8 +61,9 @@ def test_invalid_parents_do_not_revive():
     assert s.ended_by_len.isneginf().all()
 
 
-def test_finite_candidate_below_old_sentinel_survives():
-    s = session()
+@pytest.mark.parametrize("local", [False, True])
+def test_finite_candidate_below_old_sentinel_survives(local):
+    s = session(local_topk=local)
     ready(s)
     s.score[0] = -2e10
     s._select(4)
@@ -70,8 +72,9 @@ def test_finite_candidate_below_old_sentinel_survives():
 
 
 @pytest.mark.parametrize("has_finished", [False, True])
-def test_all_candidates_forbidden(has_finished):
-    s = session()
+@pytest.mark.parametrize("local", [False, True])
+def test_all_candidates_forbidden(has_finished, local):
+    s = session(local_topk=local)
     ready(s)
     s.logits.zero_()
     s._rules_mask = lambda scores: scores.fill_(-torch.inf)
@@ -88,8 +91,9 @@ def test_all_candidates_forbidden(has_finished):
 
 
 @pytest.mark.parametrize("value", [float("nan"), float("inf")])
-def test_nonfinite_live_logits_raise(value):
-    s = session()
+@pytest.mark.parametrize("local", [False, True])
+def test_nonfinite_live_logits_raise(value, local):
+    s = session(local_topk=local)
     ready(s)
     s.logits[0, 0, 2] = value
     s._select(4)
@@ -97,8 +101,9 @@ def test_nonfinite_live_logits_raise(value):
         s._check()
 
 
-def test_inactive_nonfinite_logits_are_ignored():
-    s = session()
+@pytest.mark.parametrize("local", [False, True])
+def test_inactive_nonfinite_logits_are_ignored(local):
+    s = session(local_topk=local)
     ready(s)
     s.logits[1:] = float("nan")
     s.last_step.zero_()
@@ -114,8 +119,9 @@ def test_all_negative_infinity_is_exhaustion():
 
 
 @pytest.mark.parametrize("force", [False, True])
-def test_only_valid_eos_enters_history(force):
-    s = session()
+@pytest.mark.parametrize("local", [False, True])
+def test_only_valid_eos_enters_history(force, local):
+    s = session(local_topk=local)
     ready(s)
     if force:
         s.last_step.zero_()
@@ -129,9 +135,10 @@ def test_only_valid_eos_enters_history(force):
     assert s.ended_by_len[0, 5 if force else 4] == 0
 
 
-def test_timestamp_mask_can_leave_fewer_than_beam_candidates():
+@pytest.mark.parametrize("local", [False, True])
+def test_timestamp_mask_can_leave_fewer_than_beam_candidates(local):
     rules = TimestampRules(7, 5, 6, 0, 8, torch.device("cpu"))
-    s = session(beam=3, rules=rules)
+    s = session(local_topk=local, beam=3, rules=rules)
     ready(s)
     s.logits.zero_()
     s._rules_start(s.seq[:, :3])
@@ -141,8 +148,9 @@ def test_timestamp_mask_can_leave_fewer_than_beam_candidates():
     assert set(s.tok[s.active, 0].tolist()) == {5, 6}
 
 
-def test_partial_batch_completion_is_sticky():
-    s = session(batch=2)
+@pytest.mark.parametrize("local", [False, True])
+def test_partial_batch_completion_is_sticky(local):
+    s = session(local_topk=local, batch=2)
     ready(s)
     s.logits[0, 0, 1] = -torch.inf
     s.logits[0, 0, 0] = 0
@@ -157,8 +165,9 @@ def test_partial_batch_completion_is_sticky():
 
 
 @pytest.mark.parametrize("prompt_len, limit", [(3, 1), (7, 9), (15, 1)])
-def test_forced_eos_and_capacity(prompt_len, limit):
-    s = session(backend=ScriptedBackend([-torch.inf, 0., -torch.inf, -torch.inf,
+@pytest.mark.parametrize("local", [False, True])
+def test_forced_eos_and_capacity(prompt_len, limit, local):
+    s = session(local_topk=local, backend=ScriptedBackend([-torch.inf, 0., -torch.inf, -torch.inf,
                                         -torch.inf, -torch.inf, -torch.inf, -torch.inf]), diagnostics=True)
     assert s.decode(torch.tensor([[2] * prompt_len]), limit) == [[1] * limit]
     assert s.best_end.item() == prompt_len + limit

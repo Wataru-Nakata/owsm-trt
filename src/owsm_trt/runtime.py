@@ -1499,6 +1499,21 @@ LOG_ZERO = -1.0e10  # ESPnet's score for slots that must not be expanded
 END_DETECT_M, END_DETECT_D = 3, -10.0  # ESPnet's end_detect(M=3, D_end=log(exp(-10)))
 
 
+def beam_topk(candidates: torch.Tensor, beam: int, local: bool = False):
+    """[B, K*V] -> scores/parent-token indices [B, K]; local selection may change tie order."""
+    if not local:
+        return candidates.topk(beam, dim=-1)
+    batch, width = candidates.shape
+    vocab = width // beam
+    count = min(beam, vocab)
+    values, tokens = candidates.view(batch, beam, vocab).topk(count, dim=-1)
+    top, choice = values.view(batch, beam * count).topk(beam, dim=-1)
+    # Each parent's local K contains everything needed by global K. Keep original
+    # parent/token indices; do not collect EOS separately or replenish emptied slots.
+    indices = choice // count * vocab + tokens.view(batch, beam * count).gather(1, choice)
+    return top, indices
+
+
 class BeamSession(_Session):
     """Beam search over ``batch`` utterances x ``beam`` hypotheses, as ESPnet's ``BatchBeamSearch``.
 
@@ -1539,6 +1554,7 @@ class BeamSession(_Session):
         share_cross_kv: bool = True,
         fused_state: bool = True,
         compact_tail: bool = False,
+        local_topk: bool = False,
     ):
         # H200/1B, beam 5 with bound stopping: every-step checks help batch 1, but hurt batch 3.
         # Explicit intervals stay fixed when set_upper_bound toggles the device flag for ablations.
@@ -1556,6 +1572,7 @@ class BeamSession(_Session):
         super().__init__(backend, cfg, n, capacity, eos, dtype, device, use_cuda_graph, chunk, buckets, rules,
                          cross_rows=batch if self.share_cross_kv else None)
         self.batch, self.beam = batch, beam
+        self.local_topk = local_topk
         L, H, dk = cfg.dec_layers, cfg.dec_heads, cfg.d_model // cfg.dec_heads
         dev = {"device": device}
         # one row per utterance for the encoder and the primer; copied to every beam slot afterwards
@@ -1683,7 +1700,7 @@ class BeamSession(_Session):
             # Full-vocabulary normalization is unchanged. Invalid rows produce only non-finite
             # logp, which the kernel discards while flagging active NaN/+Inf inputs separately.
             cand = beam_kernels.candidates(self, torch.log_softmax(logits, dim=-1))
-            return cand.view(B, K * V).topk(K, dim=-1)
+            return beam_topk(cand.view(B, K * V), K, self.local_topk)
         bad = (torch.isnan(logits) | torch.isposinf(logits)).any(dim=-1)
         live_parent = self.active & ~self.done.repeat_interleave(K)
         self.numerical_error |= (bad & live_parent).view(B, K).any(dim=-1)
@@ -1693,7 +1710,7 @@ class BeamSession(_Session):
         safe = torch.where(usable.unsqueeze(1), logits, 0.0)
         logp = self._rules_mask(torch.log_softmax(safe, dim=-1))  # [N, V]
         cand = (self.score.unsqueeze(1) + logp).masked_fill(~usable.unsqueeze(1), float("-inf"))
-        return cand.view(B, K * V).topk(K, dim=-1)  # [B, K]
+        return beam_topk(cand.view(B, K * V), K, self.local_topk)  # [B, K]
 
     def _reorder(self, c: int, top: torch.Tensor, parent: torch.Tensor, token: torch.Tensor) -> None:
         self.score.copy_(top.view(-1))
