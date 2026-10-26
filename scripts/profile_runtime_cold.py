@@ -102,6 +102,9 @@ def main():
                     if next_task in expected and result != expected[next_task]:
                         raise RuntimeError(f"reuse changed output: {task}->{next_task} lazy={lazy}")
                     expected[next_task] = result
+        if progress := os.environ.get("OWSM_PROFILE_PROGRESS"):
+            with Path(progress).open("a") as f:
+                f.write(f"{args.out.name}: cold {args.mode} cycle {repeat} complete\n")
     summary = {}
     for task in cases:
         summary[task] = {
