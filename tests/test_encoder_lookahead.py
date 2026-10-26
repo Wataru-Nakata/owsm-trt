@@ -55,22 +55,55 @@ def test_staged_encoder_matches_sequential_reuse_and_partial_batch(beam, batch, 
                           use_cuda_graph=graphs, ctc_draft=False, beam_kernels=False, greedy_kernels=False)
     model._features = lambda rows: torch.stack(rows)
     model._wave = lambda value, _: value
+    snapshots = []
+    original_session = model._session
+
+    def observed_session(rows, width=1):
+        sess = original_session(rows, width)
+        if not getattr(sess, "_observed_cross", False):
+            original_decode = sess.decode
+
+            def decode(*args):
+                # Clones enqueue on the current stream without a host wait; retain overlap.
+                buffers = (getattr(sess, "cross_kb", sess.cross_k), getattr(sess, "cross_vb", sess.cross_v),
+                           sess.cross_k, sess.cross_v)
+                snapshots.append(tuple(t.clone() for t in buffers))
+                return original_decode(*args)
+
+            sess.decode = decode
+            sess._observed_cross = True
+        return sess
+
+    model._session = observed_session
+
+    def same_encoder_values(expected):
+        assert len(snapshots) == len(expected)
+        for actual, prior in zip(snapshots, expected):
+            for left, right in zip(actual, prior):
+                torch.testing.assert_close(left, right, rtol=0, atol=0)
+        snapshots.clear()
+
     items = [torch.randn(TINY.num_frames, TINY.n_mels, device=dev) for _ in range(7)]
     order = [6, 0, 4, 2, 1, 5, 3]
     chunks = [order[i:i+batch] for i in range(0, len(items), batch)]
     for primer in ([2, 3, 4], [2, 3, 4, 5, 6, 7, 8]):
         expected = [ids for chunk in chunks
                     for ids in model._decode([items[j] for j in chunk], [primer] * len(chunk), beam)]
+        encoder_values = snapshots.copy()
+        snapshots.clear()
         assert model._decode_lookahead(items, chunks, primer, beam, None) == expected
+        same_encoder_values(encoder_values)
         sessions = list(model._sessions.values())
         captures = [len(s._enc_graphs) for s in sessions]
         buffers = [[t.data_ptr() for bufs in s._lookahead_stage.values() for t in bufs] for s in sessions]
         assert model._decode_lookahead(items, chunks, primer, beam, None) == expected
+        same_encoder_values(encoder_values)
         assert captures == [len(s._enc_graphs) for s in sessions]
         assert buffers == [[t.data_ptr() for bufs in s._lookahead_stage.values() for t in bufs] for s in sessions]
         actual = [ids for chunk in chunks
                   for ids in model._decode([items[j] for j in chunk], [primer] * len(chunk), beam)]
         assert actual == expected  # Ordinary encode can safely follow asynchronous staging.
+        same_encoder_values(encoder_values)
     if graphs and batch == 3 and beam == 3:
         original = model._features
         count = 0
@@ -87,3 +120,4 @@ def test_staged_encoder_matches_sequential_reuse_and_partial_batch(beam, batch, 
             model._decode_lookahead(items, chunks, primer, beam, None)
         model._features = original
         assert model._decode_lookahead(items, chunks, primer, beam, None) == expected
+        same_encoder_values(encoder_values)

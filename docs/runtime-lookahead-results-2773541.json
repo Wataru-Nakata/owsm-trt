@@ -1,0 +1,1182 @@
+{
+  "job": "2773541.pbs1",
+  "source": "1a4a0bf8469c85bbe551ab92521f936f9d99be1b",
+  "results": {
+    "english1b": {
+      "beam_b1": {
+        "summary": {
+          "cold_ms": {
+            "reference": 17462.68220699858,
+            "lookahead": 8230.335308995564
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          },
+          "quality": {
+            "reference": {
+              "metric": "WER",
+              "reference_units": 1150,
+              "errors": 45,
+              "rate": 0.0391304347826087,
+              "annotated_utterances": 73,
+              "reference_timestamp_error": null,
+              "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+            },
+            "lookahead": {
+              "metric": "WER",
+              "reference_units": 1150,
+              "errors": 45,
+              "rate": 0.0391304347826087,
+              "annotated_utterances": 73,
+              "reference_timestamp_error": null,
+              "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+            }
+          },
+          "reference": {
+            "n": 7,
+            "p50": 1965.8028280246072,
+            "p95": 1970.4700687667355,
+            "min": 1963.214349001646,
+            "max": 1971.5433559613302,
+            "stdev": 2.5216950710933066,
+            "rtfx": 244.7014869153391
+          },
+          "reference_resources": {
+            "(1, 5)": {
+              "encoder_captures": 17,
+              "staging_bytes": 0
+            }
+          },
+          "lookahead": {
+            "n": 7,
+            "p50": 1859.894938999787,
+            "p95": 1931.1858327069785,
+            "min": 1857.3079609777778,
+            "max": 1957.3883070261218,
+            "stdev": 33.76494364543178,
+            "rtfx": 258.63550941145667
+          },
+          "lookahead_resources": {
+            "(1, 5)": {
+              "encoder_captures": 27,
+              "staging_bytes": 55151552
+            }
+          },
+          "shared_process_peak_cuda_bytes": 7736076800
+        },
+        "rtfx_gain_percent": 5.694294167055225,
+        "paired_gains_percent": [
+          6.002942135085632,
+          5.941150131152129,
+          5.185390372951737,
+          5.7021447303824635,
+          5.767288807284299,
+          5.168654276228279,
+          0.4248288344580686
+        ]
+      },
+      "beam_b3": {
+        "summary": {
+          "cold_ms": {
+            "reference": 9967.778715013992,
+            "lookahead": 13027.908420015592
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          },
+          "quality": {
+            "reference": {
+              "metric": "WER",
+              "reference_units": 1150,
+              "errors": 45,
+              "rate": 0.0391304347826087,
+              "annotated_utterances": 73,
+              "reference_timestamp_error": null,
+              "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+            },
+            "lookahead": {
+              "metric": "WER",
+              "reference_units": 1150,
+              "errors": 45,
+              "rate": 0.0391304347826087,
+              "annotated_utterances": 73,
+              "reference_timestamp_error": null,
+              "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+            }
+          },
+          "reference": {
+            "n": 7,
+            "p50": 1258.5156970308162,
+            "p95": 1263.8612677226774,
+            "min": 1257.481400971301,
+            "max": 1265.7177970395423,
+            "stdev": 2.686749684955936,
+            "rtfx": 382.22397713027596
+          },
+          "reference_resources": {
+            "(3, 5)": {
+              "encoder_captures": 12,
+              "staging_bytes": 0
+            },
+            "(1, 5)": {
+              "encoder_captures": 1,
+              "staging_bytes": 0
+            }
+          },
+          "lookahead": {
+            "n": 7,
+            "p50": 1183.4716260200366,
+            "p95": 1189.2077218100894,
+            "min": 1182.4669410125352,
+            "max": 1189.2839799984358,
+            "stdev": 2.7335759777461224,
+            "rtfx": 406.460843187005
+          },
+          "lookahead_resources": {
+            "(1, 5)": {
+              "encoder_captures": 1,
+              "staging_bytes": 27575776
+            },
+            "(3, 5)": {
+              "encoder_captures": 18,
+              "staging_bytes": 165454656
+            }
+          },
+          "shared_process_peak_cuda_bytes": 16468790272
+        },
+        "rtfx_gain_percent": 6.341011424426757,
+        "paired_gains_percent": [
+          6.426876871006626,
+          5.929168535045792,
+          6.266194394787683,
+          6.431364242044779,
+          6.263401524304224,
+          6.369202043416489,
+          6.318035886446038
+        ]
+      },
+      "translation_b1": {
+        "summary": {
+          "cold_ms": {
+            "reference": 7993.251252977643,
+            "lookahead": 7893.95646203775
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          },
+          "quality": {
+            "reference": {
+              "unmeasured": "No reference English translations in this manifest"
+            },
+            "lookahead": {
+              "unmeasured": "No reference English translations in this manifest"
+            }
+          },
+          "reference": {
+            "n": 7,
+            "p50": 1568.7787620117888,
+            "p95": 1576.7733673739713,
+            "min": 1559.5768360071816,
+            "max": 1576.9618309568614,
+            "stdev": 6.403995792494714,
+            "rtfx": 306.6301550278032
+          },
+          "reference_resources": {
+            "(1, 1)": {
+              "encoder_captures": 17,
+              "staging_bytes": 0
+            }
+          },
+          "lookahead": {
+            "n": 7,
+            "p50": 1445.002955966629,
+            "p95": 1463.100527774077,
+            "min": 1437.6212140196003,
+            "max": 1468.0259709712118,
+            "stdev": 9.38851554966514,
+            "rtfx": 332.89542627835914
+          },
+          "lookahead_resources": {
+            "(1, 1)": {
+              "encoder_captures": 27,
+              "staging_bytes": 55151552
+            }
+          },
+          "shared_process_peak_cuda_bytes": 10784028160
+        },
+        "rtfx_gain_percent": 8.565782203702167,
+        "paired_gains_percent": [
+          9.088608608375615,
+          6.86314772578045,
+          7.505462812505259,
+          8.635528249859759,
+          8.874648345175462,
+          8.623272231864698,
+          8.519504079004282
+        ]
+      },
+      "translation_b8": {
+        "summary": {
+          "cold_ms": {
+            "reference": 16993.36016899906,
+            "lookahead": 6239.164843980689
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          },
+          "quality": {
+            "reference": {
+              "unmeasured": "No reference English translations in this manifest"
+            },
+            "lookahead": {
+              "unmeasured": "No reference English translations in this manifest"
+            }
+          },
+          "reference": {
+            "n": 7,
+            "p50": 461.95135003654286,
+            "p95": 466.74968299339525,
+            "min": 460.13786597177386,
+            "max": 468.0857119965367,
+            "stdev": 2.4065655564316533,
+            "rtfx": 1041.3106812263836
+          },
+          "reference_resources": {
+            "(8, 1)": {
+              "encoder_captures": 8,
+              "staging_bytes": 0
+            },
+            "(1, 1)": {
+              "encoder_captures": 1,
+              "staging_bytes": 0
+            }
+          },
+          "lookahead": {
+            "n": 7,
+            "p50": 442.41472700377926,
+            "p95": 442.97914592316374,
+            "min": 439.7601390373893,
+            "max": 443.02695902297273,
+            "stdev": 1.0497387720804576,
+            "rtfx": 1087.2939928057388
+          },
+          "lookahead_resources": {
+            "(1, 1)": {
+              "encoder_captures": 1,
+              "staging_bytes": 27575776
+            },
+            "(8, 1)": {
+              "encoder_captures": 9,
+              "staging_bytes": 441212416
+            }
+          },
+          "shared_process_peak_cuda_bytes": 12996876800
+        },
+        "rtfx_gain_percent": 4.415907030282185,
+        "paired_gains_percent": [
+          4.795851875451862,
+          4.251055057489772,
+          4.15413954234789,
+          4.633827654091216,
+          4.560057623060532,
+          5.694282218106195,
+          4.627555336385458
+        ]
+      }
+    },
+    "japanese1b": {
+      "beam_b1": {
+        "summary": {
+          "cold_ms": {
+            "reference": 2628.9387499564327,
+            "lookahead": 3378.4619299694896
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            }
+          },
+          "quality": {
+            "reference": {
+              "metric": "CER",
+              "reference_units": 592,
+              "errors": 26,
+              "rate": 0.04391891891891892,
+              "annotated_utterances": 12,
+              "reference_timestamp_error": null,
+              "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+            },
+            "lookahead": {
+              "metric": "CER",
+              "reference_units": 592,
+              "errors": 26,
+              "rate": 0.04391891891891892,
+              "annotated_utterances": 12,
+              "reference_timestamp_error": null,
+              "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+            }
+          },
+          "reference": {
+            "n": 7,
+            "p50": 463.38592196116224,
+            "p95": 466.0563731158618,
+            "min": 458.66810699226335,
+            "max": 466.70627000276,
+            "stdev": 2.2990582318442745,
+            "rtfx": 339.8894798819558
+          },
+          "reference_resources": {
+            "(1, 5)": {
+              "encoder_captures": 8,
+              "staging_bytes": 0
+            }
+          },
+          "lookahead": {
+            "n": 7,
+            "p50": 442.9782419465482,
+            "p95": 443.6406553722918,
+            "min": 442.20625900197774,
+            "max": 443.75524995848536,
+            "stdev": 0.5603147231653808,
+            "rtfx": 355.5479368645936
+          },
+          "lookahead_resources": {
+            "(1, 5)": {
+              "encoder_captures": 11,
+              "staging_bytes": 55151552
+            }
+          },
+          "shared_process_peak_cuda_bytes": 7460852736
+        },
+        "rtfx_gain_percent": 4.606926047865922,
+        "paired_gains_percent": [
+          4.509547886643861,
+          4.606926047865922,
+          4.394173210547403,
+          3.3606040796527292,
+          5.26909397702553,
+          5.0493473750314655,
+          4.562238736412394
+        ]
+      },
+      "beam_b3": {
+        "summary": {
+          "cold_ms": {
+            "reference": 3448.1875440105796,
+            "lookahead": 3491.312652011402
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            }
+          },
+          "quality": {
+            "reference": {
+              "metric": "CER",
+              "reference_units": 592,
+              "errors": 26,
+              "rate": 0.04391891891891892,
+              "annotated_utterances": 12,
+              "reference_timestamp_error": null,
+              "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+            },
+            "lookahead": {
+              "metric": "CER",
+              "reference_units": 592,
+              "errors": 26,
+              "rate": 0.04391891891891892,
+              "annotated_utterances": 12,
+              "reference_timestamp_error": null,
+              "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+            }
+          },
+          "reference": {
+            "n": 7,
+            "p50": 281.95161500480026,
+            "p95": 282.86891379975714,
+            "min": 281.42430301522836,
+            "max": 282.9624490113929,
+            "stdev": 0.5447193932766474,
+            "rtfx": 558.6064828794066
+          },
+          "reference_resources": {
+            "(3, 5)": {
+              "encoder_captures": 4,
+              "staging_bytes": 0
+            }
+          },
+          "lookahead": {
+            "n": 7,
+            "p50": 272.5263680331409,
+            "p95": 273.0751669907477,
+            "min": 272.30755699565634,
+            "max": 273.1708849896677,
+            "stdev": 0.2839719947056872,
+            "rtfx": 577.9257293035477
+          },
+          "lookahead_resources": {
+            "(3, 5)": {
+              "encoder_captures": 4,
+              "staging_bytes": 165454656
+            }
+          },
+          "shared_process_peak_cuda_bytes": 15070322688
+        },
+        "rtfx_gain_percent": 3.458471574579236,
+        "paired_gains_percent": [
+          3.8293839431283505,
+          3.71360720865459,
+          3.486273046912758,
+          3.798318376127807,
+          3.141807104340333,
+          3.357178074308731,
+          3.0971913485275726
+        ]
+      },
+      "translation_b1": {
+        "summary": {
+          "cold_ms": {
+            "reference": 2265.3880569851026,
+            "lookahead": 3012.896825966891
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            }
+          },
+          "quality": {
+            "reference": {
+              "unmeasured": "No reference English translations in this manifest"
+            },
+            "lookahead": {
+              "unmeasured": "No reference English translations in this manifest"
+            }
+          },
+          "reference": {
+            "n": 7,
+            "p50": 338.2753749610856,
+            "p95": 338.7205945327878,
+            "min": 338.03545095724985,
+            "max": 338.7822970398702,
+            "stdev": 0.24574731271996447,
+            "rtfx": 465.5970007220254
+          },
+          "reference_resources": {
+            "(1, 1)": {
+              "encoder_captures": 8,
+              "staging_bytes": 0
+            }
+          },
+          "lookahead": {
+            "n": 7,
+            "p50": 320.1626669615507,
+            "p95": 320.9228283842094,
+            "min": 319.8110649827868,
+            "max": 321.08280999818817,
+            "stdev": 0.3852510524315434,
+            "rtfx": 491.93743135240265
+          },
+          "lookahead_resources": {
+            "(1, 1)": {
+              "encoder_captures": 11,
+              "staging_bytes": 55151552
+            }
+          },
+          "shared_process_peak_cuda_bytes": 10676137472
+        },
+        "rtfx_gain_percent": 5.657345427382432,
+        "paired_gains_percent": [
+          5.550233236653912,
+          5.448380129155095,
+          5.932012408046128,
+          5.565425799336143,
+          5.6128776747819575,
+          5.674398185040297,
+          5.657345427382432
+        ]
+      },
+      "translation_b8": {
+        "summary": {
+          "cold_ms": {
+            "reference": 11633.737795986235,
+            "lookahead": 1338.1448030122556
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            }
+          },
+          "quality": {
+            "reference": {
+              "unmeasured": "No reference English translations in this manifest"
+            },
+            "lookahead": {
+              "unmeasured": "No reference English translations in this manifest"
+            }
+          },
+          "reference": {
+            "n": 7,
+            "p50": 141.4818949997425,
+            "p95": 142.97337360330857,
+            "min": 140.80207800725475,
+            "max": 143.09391600545496,
+            "stdev": 0.7810026611292937,
+            "rtfx": 1113.21664160836
+          },
+          "reference_resources": {
+            "(8, 1)": {
+              "encoder_captures": 1,
+              "staging_bytes": 0
+            },
+            "(4, 1)": {
+              "encoder_captures": 1,
+              "staging_bytes": 0
+            }
+          },
+          "lookahead": {
+            "n": 7,
+            "p50": 141.6871619876474,
+            "p95": 142.5181908882223,
+            "min": 140.1338450377807,
+            "max": 142.6025439868681,
+            "stdev": 0.8182647461827336,
+            "rtfx": 1111.603886975527
+          },
+          "lookahead_resources": {
+            "(4, 1)": {
+              "encoder_captures": 1,
+              "staging_bytes": 110303104
+            },
+            "(8, 1)": {
+              "encoder_captures": 1,
+              "staging_bytes": 220606208
+            }
+          },
+          "shared_process_peak_cuda_bytes": 13364583424
+        },
+        "rtfx_gain_percent": -0.14487338515735138,
+        "paired_gains_percent": [
+          0.9380000247561249,
+          -0.13821629581720618,
+          0.3445745109793341,
+          -0.5898425579979216,
+          -0.6246747891455628,
+          0.4229535848462973,
+          0.79509557907953
+        ]
+      }
+    },
+    "english102m": {
+      "beam_b1": {
+        "summary": {
+          "cold_ms": {
+            "reference": 4092.4640700104646,
+            "lookahead": 5047.000709979329
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          },
+          "quality": {
+            "reference": {
+              "metric": "WER",
+              "reference_units": 1150,
+              "errors": 94,
+              "rate": 0.0817391304347826,
+              "annotated_utterances": 73,
+              "reference_timestamp_error": null,
+              "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+            },
+            "lookahead": {
+              "metric": "WER",
+              "reference_units": 1150,
+              "errors": 94,
+              "rate": 0.0817391304347826,
+              "annotated_utterances": 73,
+              "reference_timestamp_error": null,
+              "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+            }
+          },
+          "reference": {
+            "n": 7,
+            "p50": 960.6952559552155,
+            "p95": 963.0888327024877,
+            "min": 885.0194220431149,
+            "max": 963.4217310231179,
+            "stdev": 27.677435843864522,
+            "rtfx": 500.71536423036554
+          },
+          "reference_resources": {
+            "(1, 5)": {
+              "encoder_captures": 17,
+              "staging_bytes": 0
+            }
+          },
+          "lookahead": {
+            "n": 7,
+            "p50": 917.6244160044007,
+            "p95": 941.0664293798618,
+            "min": 914.367655001115,
+            "max": 948.2579429750331,
+            "stdev": 10.936344623113452,
+            "rtfx": 524.2176064740773
+          },
+          "lookahead_resources": {
+            "(1, 5)": {
+              "encoder_captures": 27,
+              "staging_bytes": 6896576
+            }
+          },
+          "shared_process_peak_cuda_bytes": 3007877120
+        },
+        "rtfx_gain_percent": 4.693732991364552,
+        "paired_gains_percent": [
+          4.869928608104468,
+          4.775394453437332,
+          4.089773354120707,
+          1.0902759536929096,
+          -6.668915499248628,
+          5.059278700026426,
+          4.8047564911955165
+        ]
+      },
+      "beam_b3": {
+        "summary": {
+          "cold_ms": {
+            "reference": 6303.907294000965,
+            "lookahead": 4831.360418989789
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          },
+          "quality": {
+            "reference": {
+              "metric": "WER",
+              "reference_units": 1150,
+              "errors": 94,
+              "rate": 0.0817391304347826,
+              "annotated_utterances": 73,
+              "reference_timestamp_error": null,
+              "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+            },
+            "lookahead": {
+              "metric": "WER",
+              "reference_units": 1150,
+              "errors": 94,
+              "rate": 0.0817391304347826,
+              "annotated_utterances": 73,
+              "reference_timestamp_error": null,
+              "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+            }
+          },
+          "reference": {
+            "n": 7,
+            "p50": 441.0675939870998,
+            "p95": 442.1479501063004,
+            "min": 440.080385946203,
+            "max": 442.3469500034116,
+            "stdev": 0.720685860159628,
+            "rtfx": 1090.6148661968332
+          },
+          "reference_resources": {
+            "(3, 5)": {
+              "encoder_captures": 12,
+              "staging_bytes": 0
+            },
+            "(1, 5)": {
+              "encoder_captures": 1,
+              "staging_bytes": 0
+            }
+          },
+          "lookahead": {
+            "n": 7,
+            "p50": 419.4528349908069,
+            "p95": 421.85789169743657,
+            "min": 418.42777899000794,
+            "max": 422.47479100478813,
+            "stdev": 1.2491974282724707,
+            "rtfx": 1146.8151717476003
+          },
+          "lookahead_resources": {
+            "(1, 5)": {
+              "encoder_captures": 1,
+              "staging_bytes": 3448288
+            },
+            "(3, 5)": {
+              "encoder_captures": 18,
+              "staging_bytes": 20689728
+            }
+          },
+          "shared_process_peak_cuda_bytes": 5234855424
+        },
+        "rtfx_gain_percent": 5.153084493222382,
+        "paired_gains_percent": [
+          5.431166890471628,
+          5.078191634981044,
+          5.166395115596978,
+          4.840937502100573,
+          4.981101383175446,
+          5.058093080345549,
+          4.703750240661875
+        ]
+      },
+      "translation_b1": {
+        "summary": {
+          "cold_ms": {
+            "reference": 4974.134253978264,
+            "lookahead": 3384.367788035888
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          },
+          "quality": {
+            "reference": {
+              "unmeasured": "No reference English translations in this manifest"
+            },
+            "lookahead": {
+              "unmeasured": "No reference English translations in this manifest"
+            }
+          },
+          "reference": {
+            "n": 7,
+            "p50": 522.5883820094168,
+            "p95": 523.9013645332307,
+            "min": 519.5114729576744,
+            "max": 524.4361610384658,
+            "stdev": 1.4198065867495644,
+            "rtfx": 920.4852070196462
+          },
+          "reference_resources": {
+            "(1, 1)": {
+              "encoder_captures": 17,
+              "staging_bytes": 0
+            }
+          },
+          "lookahead": {
+            "n": 7,
+            "p50": 482.58862597867846,
+            "p95": 483.4975191275589,
+            "min": 478.8702280493453,
+            "max": 483.6180060519837,
+            "stdev": 1.7179058936741938,
+            "rtfx": 996.7803820997076
+          },
+          "lookahead_resources": {
+            "(1, 1)": {
+              "encoder_captures": 27,
+              "staging_bytes": 6896576
+            }
+          },
+          "shared_process_peak_cuda_bytes": 4369830912
+        },
+        "rtfx_gain_percent": 8.288582423512313,
+        "paired_gains_percent": [
+          8.530293988481908,
+          8.288582423512313,
+          8.58604624449475,
+          8.870888082071083,
+          7.421863217771207,
+          8.805179042463052,
+          8.223792947418328
+        ]
+      },
+      "translation_b8": {
+        "summary": {
+          "cold_ms": {
+            "reference": 2064.50144801056,
+            "lookahead": 2187.318996991962
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          },
+          "quality": {
+            "reference": {
+              "unmeasured": "No reference English translations in this manifest"
+            },
+            "lookahead": {
+              "unmeasured": "No reference English translations in this manifest"
+            }
+          },
+          "reference": {
+            "n": 7,
+            "p50": 156.2471690122038,
+            "p95": 157.17929541133344,
+            "min": 155.37410898832604,
+            "max": 157.3515950003639,
+            "stdev": 0.6127516824172368,
+            "rtfx": 3078.678980496782
+          },
+          "reference_resources": {
+            "(8, 1)": {
+              "encoder_captures": 8,
+              "staging_bytes": 0
+            },
+            "(1, 1)": {
+              "encoder_captures": 1,
+              "staging_bytes": 0
+            }
+          },
+          "lookahead": {
+            "n": 7,
+            "p50": 148.9007839700207,
+            "p95": 149.14222090155818,
+            "min": 148.27783597866073,
+            "max": 149.18046101229265,
+            "stdev": 0.314988467410817,
+            "rtfx": 3230.5731519644
+          },
+          "lookahead_resources": {
+            "(1, 1)": {
+              "encoder_captures": 1,
+              "staging_bytes": 3448288
+            },
+            "(8, 1)": {
+              "encoder_captures": 9,
+              "staging_bytes": 55172608
+            }
+          },
+          "shared_process_peak_cuda_bytes": 4835794944
+        },
+        "rtfx_gain_percent": 4.933745039020221,
+        "paired_gains_percent": [
+          6.1194304339651895,
+          4.924651507296107,
+          4.524229472655672,
+          5.092357251805546,
+          5.001054296437402,
+          4.933745039020221,
+          4.6476825725965565
+        ]
+      }
+    }
+  },
+  "environments": {
+    "english1b": {
+      "commit": "1a4a0bf8469c85bbe551ab92521f936f9d99be1b",
+      "gpu": "NVIDIA H200",
+      "torch": "2.14.1+cu130",
+      "cuda": "13.0",
+      "versions": {
+        "triton": "3.8.0",
+        "tensorrt": "11.4.0.106"
+      },
+      "sm_count": 132,
+      "nvidia_smi": "name, uuid, driver_version\nNVIDIA H200, GPU-8e2d371e-8696-c57c-f005-a85f4d4b470b, 595.71.05",
+      "args": {
+        "model": "/local/2773541.pbs1/beam/owsm_v4_medium_1B",
+        "manifest": "/local/2773541.pbs1/beam/manifest.json",
+        "lang": "eng",
+        "limit": 73,
+        "repeat": 7,
+        "cases": [
+          "beam_b1",
+          "beam_b3",
+          "translation_b1",
+          "translation_b8"
+        ],
+        "trace": true,
+        "out": "/local/2773541.pbs1/beam/results/english1b"
+      },
+      "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+      "engine_sha256": {
+        "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+        "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+        "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+      },
+      "disk_ms": 117.2883819672279,
+      "load_ms": 8442.829118983354,
+      "note": "Whole-list throughput, identical sorted fixed batches. CUDA synchronization around wall samples; cold warmup/capture separate. Shared process allocator peak is not isolated variant VRAM."
+    },
+    "japanese1b": {
+      "commit": "1a4a0bf8469c85bbe551ab92521f936f9d99be1b",
+      "gpu": "NVIDIA H200",
+      "torch": "2.14.1+cu130",
+      "cuda": "13.0",
+      "versions": {
+        "triton": "3.8.0",
+        "tensorrt": "11.4.0.106"
+      },
+      "sm_count": 132,
+      "nvidia_smi": "name, uuid, driver_version\nNVIDIA H200, GPU-8e2d371e-8696-c57c-f005-a85f4d4b470b, 595.71.05",
+      "args": {
+        "model": "/local/2773541.pbs1/beam/owsm_v4_medium_1B",
+        "manifest": "/local/2773541.pbs1/beam/extra_manifest.json",
+        "lang": "jpn",
+        "limit": 12,
+        "repeat": 7,
+        "cases": [
+          "beam_b1",
+          "beam_b3",
+          "translation_b1",
+          "translation_b8"
+        ],
+        "trace": false,
+        "out": "/local/2773541.pbs1/beam/results/japanese1b"
+      },
+      "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+      "engine_sha256": {
+        "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+        "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+        "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+      },
+      "disk_ms": 20.85464500123635,
+      "load_ms": 4790.693320974242,
+      "note": "Whole-list throughput, identical sorted fixed batches. CUDA synchronization around wall samples; cold warmup/capture separate. Shared process allocator peak is not isolated variant VRAM."
+    },
+    "english102m": {
+      "commit": "1a4a0bf8469c85bbe551ab92521f936f9d99be1b",
+      "gpu": "NVIDIA H200",
+      "torch": "2.14.1+cu130",
+      "cuda": "13.0",
+      "versions": {
+        "triton": "3.8.0",
+        "tensorrt": "11.4.0.106"
+      },
+      "sm_count": 132,
+      "nvidia_smi": "name, uuid, driver_version\nNVIDIA H200, GPU-8e2d371e-8696-c57c-f005-a85f4d4b470b, 595.71.05",
+      "args": {
+        "model": "/local/2773541.pbs1/beam/owsm_v4_base_102M",
+        "manifest": "/local/2773541.pbs1/beam/manifest.json",
+        "lang": "eng",
+        "limit": 73,
+        "repeat": 7,
+        "cases": [
+          "beam_b1",
+          "beam_b3",
+          "translation_b1",
+          "translation_b8"
+        ],
+        "trace": false,
+        "out": "/local/2773541.pbs1/beam/results/english102m"
+      },
+      "checkpoint_sha256": "4702713d44ab3e239101f09182903cd28f7b51e565bb632008af12beefb37752",
+      "engine_sha256": {
+        "encoder.engine": "f3da9563c8ef41b6252388c18d89fac46cc5781cfa505d6750837e0c12e0f481",
+        "decoder.engine": "b6065937220853d65633f6f59ce0edab80270717b8971c8afa53baf9a2bf5f72",
+        "verify.engine": "34a912836635a2c6928abef52e6ea5140c5215bc8fa178ee8b1af07bd5458dcb"
+      },
+      "disk_ms": 146.85729198390618,
+      "load_ms": 4350.399708026089,
+      "note": "Whole-list throughput, identical sorted fixed batches. CUDA synchronization around wall samples; cold warmup/capture separate. Shared process allocator peak is not isolated variant VRAM."
+    }
+  }
+}
