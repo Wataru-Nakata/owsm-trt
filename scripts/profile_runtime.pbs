@@ -68,18 +68,18 @@ cp "$LOCAL/baseline_runtime.py" "$LOCAL/results/"
 nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv -l 5 \
     > "$LOCAL/results/gpu_utilization.csv" &
 SMI=$!
-timeout 600 "$PY" -m pytest -q -p no:cacheprovider "$LOCAL/tests/test_frontend_kernels.py" \
-    "$LOCAL/tests/test_frontend_graph.py" "$LOCAL/tests/test_model.py" "$LOCAL/tests/test_longform.py" \
+timeout 400 "$PY" -m pytest -q -p no:cacheprovider "$LOCAL/tests/test_frontend_kernels.py" \
+    "$LOCAL/tests/test_frontend_graph.py" "$LOCAL/tests/test_lazy_drafts.py" "$LOCAL/tests/test_model.py" "$LOCAL/tests/test_longform.py" \
     > "$LOCAL/results/tests.log" 2>&1
 printf '%s\n' 'frontend and model regression tests passed' >> "$OUT/progress.log"
-timeout 1600 "$PY" "$LOCAL/scripts/profile_runtime.py" \
+timeout 1000 "$PY" "$LOCAL/scripts/profile_runtime.py" \
     --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/manifest.json" \
-    --repeat 5 --variants reference both graph graph_both --trace --long-audio "$LOCAL/long_110s.wav" --out "$LOCAL/results/english" \
+    --repeat 7 --variants reference graph --lazy-drafts --long-audio "$LOCAL/long_110s.wav" --out "$LOCAL/results/english" \
     > "$LOCAL/results/english.log" 2>&1
 printf '%s\n' 'English runtime matrix complete' >> "$OUT/progress.log"
-timeout 600 "$PY" "$LOCAL/scripts/profile_runtime.py" \
+timeout 400 "$PY" "$LOCAL/scripts/profile_runtime.py" \
     --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/extra_manifest.json" --lang jpn \
-    --repeat 5 --variants reference both graph graph_both \
+    --repeat 7 --variants reference graph --lazy-drafts \
     --cases single_greedy single_ts stream_greedy_b1 stream_greedy_b8 beam_no_ts \
     --out "$LOCAL/results/japanese" > "$LOCAL/results/japanese.log" 2>&1
 printf '%s\n' 'Japanese runtime matrix complete' >> "$OUT/progress.log"
@@ -88,9 +88,17 @@ cp -a "$REPO/.cache/models/owsm_v4_base_102M" "$LOCAL/owsm_v4_base_102M"
 mkdir -p "$OWSM_TRT_CACHE/owsm_v4_base_102M"
 cp -a "$REPO/.cache/engines/owsm_v4_base_102M/v621-NVIDIA_H200-sm90-trt11.4.0.106-float16-3d0cbdc9" \
     "$OWSM_TRT_CACHE/owsm_v4_base_102M/"
-timeout 600 "$PY" "$LOCAL/scripts/profile_runtime.py" \
+timeout 400 "$PY" "$LOCAL/scripts/profile_runtime.py" \
     --model "$LOCAL/owsm_v4_base_102M" --manifest "$LOCAL/manifest.json" \
-    --repeat 5 --variants reference both graph graph_both \
+    --repeat 7 --variants reference graph --lazy-drafts \
     --cases single_greedy single_ts stream_greedy_b1 stream_greedy_b8 beam_no_ts \
     --out "$LOCAL/results/base102m" > "$LOCAL/results/base102m.log" 2>&1
 printf '%s\n' '102M runtime matrix complete' >> "$OUT/progress.log"
+timeout 550 "$PY" "$LOCAL/scripts/profile_runtime_cold.py" \
+    --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/manifest.json" --repeat 3 \
+    --out "$LOCAL/results/cold_1b" > "$LOCAL/results/cold_1b.log" 2>&1
+printf '%s\n' '1B cold comparison complete' >> "$OUT/progress.log"
+timeout 350 "$PY" "$LOCAL/scripts/profile_runtime_cold.py" \
+    --model "$LOCAL/owsm_v4_base_102M" --manifest "$LOCAL/manifest.json" --repeat 3 \
+    --out "$LOCAL/results/cold_102m" > "$LOCAL/results/cold_102m.log" 2>&1
+printf '%s\n' '102M cold comparison complete' >> "$OUT/progress.log"

@@ -20,9 +20,9 @@ beam eager event sample measured features/H2D0.885 ms, but that instrumented sam
 it is not a greedy bottleneck or speed claim. New frontend events/traces and uninstrumented wall
 measurements will decide adoption. Cold load/JIT/warmup are separated from steady-state samples.
 
-## Prepared B1 frontend graph experiment (not yet measured)
+## B1 frontend graph (measured and enabled)
 
-An independent opt-in `model.frontend_graph=True` captures STFT/mel/normalization on a dedicated
+`OWSM.from_pretrained(..., frontend_graph=True)` (default) captures STFT/mel/normalization on a dedicated
 capture stream. Replays serialize frontend workspace use through an event, while encoder/decoder
 work can still overlap. Each result is cloned before graph reuse, so another encoder stream cannot
 observe overwritten features. Shape/mode keys use a bounded32-entry cache; larger batches, CPU or
@@ -32,7 +32,8 @@ inputs/outputs and intermediate private pools add memory, which must be measured
 The address-lifetime/private-pool contract follows the official
 [PyTorch CUDA graph documentation](https://docs.pytorch.org/docs/stable/notes/cuda.html).
 Tests retain outputs across streams, repeat cache hits, hit the capacity limit, and exercise B>1
-fallback. The first GPU allocation still runs only the separately frozen pointwise experiment.
+fallback. The first allocation ran pointwise fusion separately; the second completed graph comparisons.
+See [measured results](runtime-results-2770946.md). `frontend_graph=False` restores the eager path.
 
 ## First allocation: partial result, 2770849
 

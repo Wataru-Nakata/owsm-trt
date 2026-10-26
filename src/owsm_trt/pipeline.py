@@ -209,17 +209,19 @@ class OWSM:
         beam_kernels: bool = True,
         beam_compact_tail: bool = False,
         beam_grouped_cross: bool = False,
+        frontend_graph: bool = True,
+        lazy_drafts: bool = False,
     ):
         self.cfg, self.tokenizer, self.frontend, self.backend = cfg, tokenizer, frontend, backend
         self.opts, self.device, self.use_cuda_graph = opts, device, use_cuda_graph
         self.ctc_draft = ctc_draft
-        self.lazy_drafts = False
+        self.lazy_drafts = lazy_drafts
         self.beam_upper_bound = beam_upper_bound
         self.beam_kernels = beam_kernels
         self.beam_compact_tail = beam_compact_tail
         self.beam_grouped_cross = beam_grouped_cross
         self._beam_backend = None
-        self.frontend_graph = False
+        self.frontend_graph = frontend_graph
         self._frontend_replay = None
         self.draft_stats = [0, 0]  # tokens emitted, decoder calls made by drafted decoding
         self.stream_priority = True  # decoder calls go first while the encoder works ahead
@@ -255,6 +257,8 @@ class OWSM:
         beam_kernels: bool = True,
         beam_compact_tail: bool = False,
         beam_grouped_cross: bool = False,
+        frontend_graph: bool = True,
+        lazy_drafts: bool = False,
         fp8: bool | str = False,
         fp8_margin: float = 1.0,
         fp8_skip: str = "",
@@ -267,6 +271,16 @@ class OWSM:
         ``ctc_draft``: for greedy ASR, let the encoder's CTC head propose the transcript and check up
         to 31 proposed tokens per utterance and decoder call. The output is the greedy output; only the
         number of decoder calls changes.
+
+        ``frontend_graph``: reuse CUDA graphs for single-utterance STFT/mel/normalization (default
+        True with ``use_cuda_graph``). A bounded 32-shape cache retains private graph buffers; each
+        returned feature tensor has its own storage. Larger batches, CPU and cache saturation run
+        eagerly. False restores eager frontend execution. Exact features/output verified on H200
+        with v4 medium 1B/base 102M; other GPUs/checkpoints are unmeasured.
+
+        ``lazy_drafts`` (experimental, default False): create verification buffers/graphs on first
+        draft use. Translation and language identification avoid unused verification setup. This
+        reduces cold work, not the number of steady-state decoder calls.
 
         ``beam_upper_bound``: stop beam search when the best finished score strictly exceeds every
         live score (default True). Existing stopping rules still apply; greedy decoding is unaffected.
@@ -351,7 +365,8 @@ class OWSM:
             graphs = use_cuda_graph and dev.type == "cuda"
             runner = TorchCTCBackend(net) if cfg.ctc_only else TorchBackend(net)
             return cls(cfg, tok, net.frontend, runner, opts, dev, graphs, ctc_draft,
-                       beam_upper_bound, beam_kernels, beam_compact_tail, beam_grouped_cross)
+                       beam_upper_bound, beam_kernels, beam_compact_tail, beam_grouped_cross,
+                       frontend_graph=frontend_graph, lazy_drafts=lazy_drafts)
         if backend != "tensorrt":
             raise ValueError(f"unknown backend {backend!r} (use 'tensorrt' or 'torch')")
 
@@ -390,7 +405,8 @@ class OWSM:
             if decoder_kernel and decoder_kernel != "0" and not cfg.ctc_only and dtype == "float16":
                 runner = _decoder_kernel(runner, cfg, files.checkpoint, dev, decoder_kernel)
             return cls(cfg, tok, frontend, runner, opts, dev, use_cuda_graph, ctc_draft,
-                       beam_upper_bound, beam_kernels, beam_compact_tail, beam_grouped_cross)
+                       beam_upper_bound, beam_kernels, beam_compact_tail, beam_grouped_cross,
+                       frontend_graph=frontend_graph, lazy_drafts=lazy_drafts)
 
     # ------------------------------------------------------------------ helpers
 

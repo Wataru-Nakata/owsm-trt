@@ -195,6 +195,11 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   (POWSM's CTC head writes phones). `ctc_draft=False` turns it off. A call checks at most
   256 tokens (rows × window), so at batch 16 a row gets up to 15 drafted tokens per call: wider calls cost more than
   they save.
+* **Single-utterance frontend graphs.** STFT/mel/normalization use a bounded CUDA graph cache by default;
+  `frontend_graph=False` restores eager execution. H200 measurements with identical engines found single
+  greedy RTFx +4.3% for v4 medium1B and +11.5% for base102M (English73, five alternating repeats), with exact
+  features/tokens/segments. Larger batches run eagerly; graph buffers add cold work and memory. Pointwise
+  frontend fusion remains disabled. [Scope, p50/p95 and limitations](docs/runtime-results-2770946.md).
 * **Rows are refilled (greedy ASR of more than one batch).** Utterances need from 1 to 25 decoder calls, and a fixed
   batch would wait for its slowest one. Instead a row whose utterance is done takes the next one for the following
   call, at its own cache offset (on the test set: 29 instead of 92 calls per pass at batch 8). The encoder works

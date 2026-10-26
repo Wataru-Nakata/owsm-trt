@@ -6,7 +6,7 @@ import torch
 class FrontendReplay:
     def __init__(self, frontend, max_entries: int = 32):
         if max_entries < 1:
-            raise ValueError('max_entries must be positive')
+            raise ValueError("max_entries must be positive")
         self.frontend = frontend
         self.max_entries = max_entries
         self.entries = {}
@@ -15,10 +15,15 @@ class FrontendReplay:
         self.fallbacks = 0
 
     def __call__(self, speech: torch.Tensor) -> torch.Tensor:
-        if speech.device.type != 'cuda' or speech.shape[0] != 1 or torch.is_grad_enabled():
+        if speech.device.type != "cuda" or speech.shape[0] != 1 or torch.is_grad_enabled():
             return self.frontend(speech)
-        key = (tuple(speech.shape), speech.dtype, speech.device,
-               self.frontend.fused_power, self.frontend.fused_logmel)
+        key = (
+            tuple(speech.shape),
+            speech.dtype,
+            speech.device,
+            self.frontend.fused_power,
+            self.frontend.fused_logmel,
+        )
         if key not in self.entries:
             if len(self.entries) == self.max_entries:
                 self.fallbacks += 1
@@ -52,8 +57,14 @@ class FrontendReplay:
         return result
 
     def info(self) -> dict:
-        return {'captures': len(self.entries), 'max_entries': self.max_entries, 'fallbacks': self.fallbacks,
-                'input_output_bytes': sum((inp.numel()*inp.element_size() + out.numel()*out.element_size())
-                                          for inp,out,_ in self.entries.values()),
-                'workspace_bytes': None,
-                'memory_note': 'input/output only; captured intermediate private pools are additional'}
+        return {
+            "captures": len(self.entries),
+            "max_entries": self.max_entries,
+            "fallbacks": self.fallbacks,
+            "input_output_bytes": sum(
+                (inp.numel() * inp.element_size() + out.numel() * out.element_size())
+                for inp, out, _ in self.entries.values()
+            ),
+            "workspace_bytes": None,
+            "memory_note": "input/output only; captured intermediate private pools are additional",
+        }

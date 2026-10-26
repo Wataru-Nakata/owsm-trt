@@ -18,9 +18,19 @@ def test_unused_drafts_and_idempotent_setup():
             return lambda: None
 
     backend = Backend()
-    session = GreedySession(backend, TINY, 1, 32, 1, torch.float32, torch.device("cpu"),
-                            use_cuda_graph=False, buckets=[8, 16, 32], draft_windows=(2, 4, 8),
-                            lazy_drafts=True)
+    session = GreedySession(
+        backend,
+        TINY,
+        1,
+        32,
+        1,
+        torch.float32,
+        torch.device("cpu"),
+        use_cuda_graph=False,
+        buckets=[8, 16, 32],
+        draft_windows=(2, 4, 8),
+        lazy_drafts=True,
+    )
     assert backend.calls == 3 and not session._verify
     session._prepare_drafts()
     assert backend.calls == 15 and len(session._verify) == 12
@@ -38,8 +48,19 @@ def test_lazy_capture_before_long_prefill_and_reuse(timestamp):
     cross = torch.randn(2, 1, 4, TINY.enc_frames, 8, device="cuda")
     reference = None
     for lazy in (False, True):
-        sess = GreedySession(TorchBackend(model), TINY, 1, 32, 1, torch.float32, torch.device("cuda"),
-                             buckets=[16, 32], draft_windows=(2, 4, 8), rules=rules, lazy_drafts=lazy)
+        sess = GreedySession(
+            TorchBackend(model),
+            TINY,
+            1,
+            32,
+            1,
+            torch.float32,
+            torch.device("cuda"),
+            buckets=[16, 32],
+            draft_windows=(2, 4, 8),
+            rules=rules,
+            lazy_drafts=lazy,
+        )
         sess.cross_k.copy_(cross)
         sess.cross_v.copy_(cross)
         assert bool(sess._verify) != lazy
