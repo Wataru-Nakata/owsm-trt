@@ -72,3 +72,14 @@ prefill. Capture warmup resets the shared pinned input to zero offsets; otherwis
 large offsets could be replayed against smaller cache buckets. Tests explicitly inject that condition,
 retain graph identities, switch short/long/notime/timed/mixed requests and compare streaming outputs.
 Cold captures/memory and actual chosen graphs are recorded separately. No speed claim yet.
+
+## Short-primer flag initialization (prepared)
+
+For drafted requests whose primer fits a verification window, online timestamp count/last/first and
+previous-token state live in `_Verify.inp` and the CPU row state. Reinitializing the corresponding
+base-session buffers is unnecessary. The candidate `cache_draft_flags=True` updates just per-row
+notime flags, caching their host tuple across matching requests. Plain decode and long prefill
+invalidate that cache and still initialize all state. Mixed batches copy their distinct flags.
+No decoder logits, selection or accepted tokens change by design. Tests include plain-decode
+interposition between identical draft primers to catch stale flag caching. This option remains
+experimental and disabled pending a separate same-engine ablation against notime reuse.

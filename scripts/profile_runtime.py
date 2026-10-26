@@ -32,6 +32,7 @@ VARIANTS = (
     "graph_split",
     "graph_fused",
     "graph_notime",
+    "graph_cached",
 )
 CASES = {
     "single_greedy": (1, 1, False, True, False, "asr", None, None),
@@ -87,10 +88,18 @@ def count_draft_dispatch(model, call):
 def variant(model, name):
     model.frontend.fused_power = name in ("power", "both", "graph_both")
     model.frontend.fused_logmel = name in ("post", "both", "graph_both")
-    model.frontend_graph = name in ("graph", "graph_both", "graph_split", "graph_fused", "graph_notime")
-    model.greedy_split_choose = name in ("graph_split", "graph_fused", "graph_notime")
-    model.greedy_fuse_accept = name in ("graph_fused", "graph_notime")
-    model.greedy_reuse_notime = name == "graph_notime"
+    model.frontend_graph = name in (
+        "graph",
+        "graph_both",
+        "graph_split",
+        "graph_fused",
+        "graph_notime",
+        "graph_cached",
+    )
+    model.greedy_split_choose = name in ("graph_split", "graph_fused", "graph_notime", "graph_cached")
+    model.greedy_fuse_accept = name in ("graph_fused", "graph_notime", "graph_cached")
+    model.greedy_reuse_notime = name in ("graph_notime", "graph_cached")
+    model.greedy_cache_draft_flags = name == "graph_cached"
 
 
 def captures(model):
@@ -174,6 +183,7 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
             "split": OrderedDict(),
             "fused": OrderedDict(),
             "notime": OrderedDict(),
+            "cached": OrderedDict(),
         }
     )
 
@@ -182,16 +192,13 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
             configure(model, v)
         else:
             variant(model, v)
-        mode = (
-            "notime"
-            if model.greedy_reuse_notime
-            else "fused"
-            if model.greedy_fuse_accept
-            else "split"
-            if model.greedy_split_choose
-            else "serial"
-        )
-        model._sessions = pools[v if configure is not None else mode]
+        modes = {
+            "graph_split": "split",
+            "graph_fused": "fused",
+            "graph_notime": "notime",
+            "graph_cached": "cached",
+        }
+        model._sessions = pools[v if configure is not None else modes.get(v, "serial")]
 
     path = args.out / name
     cold, records, samples = {}, {v: {} for v in args.variants}, []
@@ -257,7 +264,9 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
             "memory_scope": (
                 "all variant session pools resident; not standalone deployment peak"
                 if configure is not None
-                or any(v in args.variants for v in ("graph_split", "graph_fused", "graph_notime"))
+                or any(
+                    v in args.variants for v in ("graph_split", "graph_fused", "graph_notime", "graph_cached")
+                )
                 else "shared sessions and all frontend variants resident"
             ),
             "draft_decoder_calls": sum(r["draft_decoder_calls"] for r in rows),

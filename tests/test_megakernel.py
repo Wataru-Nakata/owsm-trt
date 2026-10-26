@@ -406,8 +406,9 @@ def test_ring_program_budget_matches_decoder(model, programs):
 @gluon_only
 @pytest.mark.parametrize("rows", [1, 2])
 @pytest.mark.parametrize("start_plain", [False, True])
+@pytest.mark.parametrize("cached_flags", [False, True])
 @torch.inference_mode()
-def test_notime_reuse_modes_long_prefill_and_graph_lifetimes(model, rows, start_plain):
+def test_notime_reuse_modes_long_prefill_and_graph_lifetimes(model, rows, start_plain, cached_flags):
     from owsm_trt.runtime import TimestampRules
 
     m16 = copy.deepcopy(model).half()
@@ -454,6 +455,7 @@ def test_notime_reuse_modes_long_prefill_and_graph_lifetimes(model, rows, start_
             split_choose=True,
             fuse_accept=True,
             reuse_notime=reuse,
+            cache_draft_flags=reuse and cached_flags,
         )
         sess.cross_k.copy_(cross[0])
         sess.cross_v.copy_(cross[1])
@@ -472,6 +474,10 @@ def test_notime_reuse_modes_long_prefill_and_graph_lifetimes(model, rows, start_
                 assert all(b.notime_graph is not None for b in bounds)
             if reuse and index > 1:
                 assert graph_ids == [id(b.notime_graph) for b in bounds]
+            if index == 2:
+                outs.append(sess.decode(torch.tensor([timed] * rows, device=dev), 10))
+                outs.append(sess.decode_drafted([plain] * rows, [[5, 6, 7]] * rows, 20)[0])
+                assert sess.t_notime.all()
         # The streaming path uses the same request mode before launching its encoder.
         # Fixed synthetic draft factory; no audio/reference model work on login nodes.
         outputs, _ = sess.decode_stream(plain, iter(feats), lambda ids: [[5, 6, 7]] * len(ids), 20)

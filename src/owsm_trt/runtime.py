@@ -734,6 +734,7 @@ class GreedySession(_Session):
         split_choose: bool = False,
         fuse_accept: bool = False,
         reuse_notime: bool = False,
+        cache_draft_flags: bool = False,
     ):
         super().__init__(
             backend, cfg, batch, capacity, eos, dtype, device, use_cuda_graph, chunk, buckets, rules
@@ -741,6 +742,8 @@ class GreedySession(_Session):
         self.split_choose = split_choose
         self.fuse_accept = fuse_accept
         self.reuse_notime = reuse_notime
+        self.cache_draft_flags = cache_draft_flags
+        self._draft_flags = None
         self._draft_notime = False
         self.punctuation = punctuation  # see _resync
         self.batch = batch
@@ -805,6 +808,22 @@ class GreedySession(_Session):
                 ver.capture()
         self._draft_notime = notime
         self._drafts_ready = True
+
+    def _rules_start(self, primer: torch.Tensor) -> None:
+        super()._rules_start(primer)
+        self._draft_flags = None  # plain decoding/prefill may replace the shared per-row flags
+
+    def _draft_flags_start(self, primers: list[list[int]]) -> None:
+        if self.rules is None:
+            return
+        flags = tuple(self.rules.notime in row for row in primers)
+        if flags != self._draft_flags:
+            if all(x == flags[0] for x in flags):
+                self.t_notime.fill_(flags[0])
+            else:
+                self.t_notime.copy_(torch.tensor(flags, dtype=torch.bool, device=self.device))
+            self._draft_flags = flags
+        # Draft windows carry count/last/first/previous-token in their own input, not base session state.
 
     def _draft_rule_mode(self, primers: list[list[int]]) -> None:
         # Same predicate as _rules_start, known on the host already; mixed batches keep normal rules.
@@ -895,7 +914,9 @@ class GreedySession(_Session):
             raise ValueError(f"prompt of {p} tokens does not fit the cache capacity {self.capacity}")
         self._draft_rule_mode(primers)  # cold capture must precede rules state and prefill
         prefill = p >= self.windows[-1]  # the primer does not fit a window: prefill it on its own
-        if prefill or self.rules is not None:
+        if self.cache_draft_flags and not prefill:
+            self._draft_flags_start(primers)
+        elif prefill or self.rules is not None:
             if not isinstance(primer, torch.Tensor):
                 primer = torch.tensor(primers, device=self.device)
             self.tok.fill_(-1)
@@ -944,7 +965,9 @@ class GreedySession(_Session):
             raise ValueError(f"a primer of {p} tokens does not fit a draft window")
         max_new_tokens = min(max_new_tokens, self.capacity - p)
         self._draft_rule_mode([primer])
-        if self.rules is not None:
+        if self.cache_draft_flags:
+            self._draft_flags_start([primer] * self.rows)
+        elif self.rules is not None:
             self.tok.fill_(-1)
             self._rules_start(torch.tensor([primer] * self.rows, device=self.device))
         cuda = self.device.type == "cuda"
