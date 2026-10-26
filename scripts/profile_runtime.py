@@ -285,7 +285,14 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
                 path / f"actual_dispatch_{v}.json",
                 observe(model, lambda: [call([waves[i] for i in chunk]) for chunk in chunks]),
             )
-    if args.trace and name in ("single_greedy", "stream_greedy_b8", "long_greedy"):
+    if args.trace and name in (
+        "single_greedy",
+        "single_ts",
+        "stream_greedy_b1",
+        "stream_greedy_b8",
+        "stream_ts_b8",
+        "long_greedy",
+    ):
         for v in args.variants:
             activate(v)
             group = [waves[i] for i in chunks[0]]
