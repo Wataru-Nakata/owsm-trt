@@ -3,8 +3,7 @@
 The measured scope expands beyond timestamp beam: direct greedy with/without CTC drafts,
 timestamps, streaming greedy B1/B8/B16, streaming timestamps B8, no-timestamp beam, timestamp-beam
 regression, translation, long prompt and a110-second recording. Main corpus is English73; Japanese12
-covers direct greedy/TS, stream B1/B8 and no-timestamp beam. Other checkpoints, CTC-only models and
-GPUs remain unmeasured. Engine/checkpoint hashes, warmup/capture/dispatch and all token/segment
+covers direct greedy/TS, stream B1/B8 and no-timestamp beam. The 102M checkpoint is now measured too; CTC-only models and other GPUs remain pending. Engine/checkpoint hashes, warmup/capture/dispatch and all token/segment
 outputs are saved. Single requests and whole-manifest throughput are separate metrics.
 
 The first candidate is frontend pointwise fusion. STFT and full fp32 mel GEMM remain unchanged.
@@ -50,13 +49,13 @@ are in `outputs/runtime-2770849/english`, including all alternating samples and 
 The follow-up separates frontend graph alone from graph plus fusion, adds whole-runtime traces,
 and includes the cached 102M checkpoint without an engine rebuild.
 
-## Prepared lazy draft setup (not yet measured)
+## Lazy draft setup (measured and enabled)
 
-`model.lazy_drafts=True` defers verification buffers, backend closures and graph capture until the
+`OWSM.from_pretrained(..., lazy_drafts=True)` (default) defers verification buffers, backend closures and graph capture until the
 first `decode_drafted`/`decode_stream` call. Translation and language identification can therefore
 use a greedy session without preparing unused draft windows. Setup completes before timestamp
-state/prefill because capture warmup writes self-KV. Repeat calls reuse the same setup. The initial
-default is False until GPU validation; standalone `GreedySession` has the same `lazy_drafts` switch.
+state/prefill because capture warmup writes self-KV. Repeat calls reuse the same setup. GPU validation passed in job2771009. False restores eager initialization; standalone `GreedySession`
+retains eager construction by default and accepts the same explicit switch.
 `scripts/profile_runtime_cold.py` compares session construction with resident engines/JIT, records
 first observations separately, and checks mode switches on the same session. This optimization
 targets cold latency and unused memory, not a steady-state decoder speedup.

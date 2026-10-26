@@ -210,7 +210,7 @@ class OWSM:
         beam_compact_tail: bool = False,
         beam_grouped_cross: bool = False,
         frontend_graph: bool = True,
-        lazy_drafts: bool = False,
+        lazy_drafts: bool = True,
     ):
         self.cfg, self.tokenizer, self.frontend, self.backend = cfg, tokenizer, frontend, backend
         self.opts, self.device, self.use_cuda_graph = opts, device, use_cuda_graph
@@ -258,7 +258,7 @@ class OWSM:
         beam_compact_tail: bool = False,
         beam_grouped_cross: bool = False,
         frontend_graph: bool = True,
-        lazy_drafts: bool = False,
+        lazy_drafts: bool = True,
         fp8: bool | str = False,
         fp8_margin: float = 1.0,
         fp8_skip: str = "",
@@ -278,7 +278,7 @@ class OWSM:
         eagerly. False restores eager frontend execution. Exact features/output verified on H200
         with v4 medium 1B/base 102M; other GPUs/checkpoints are unmeasured.
 
-        ``lazy_drafts`` (experimental, default False): create verification buffers/graphs on first
+        ``lazy_drafts`` (default True): create verification buffers/graphs on first
         draft use. Translation and language identification avoid unused verification setup. This
         reduces cold work, not the number of steady-state decoder calls.
 
