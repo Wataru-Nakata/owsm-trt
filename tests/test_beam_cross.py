@@ -87,7 +87,7 @@ def test_shared_gluon_logits_kv_and_graph_replay(batch, beam, prefetch, group_qu
         list(ck.repeat_interleave(beam, dim=1).float()),
         list(cv.repeat_interleave(beam, dim=1).float()),
     )
-    outputs, graphs, inputs = [], [], []
+    outputs, graphs, inputs, runs = [], [], [], []
     for shared in (False, True):
         cross = (ck, cv) if shared else tuple(t.repeat_interleave(beam, dim=1) for t in (ck, cv))
         kc, vc = k.clone(), v.clone()
@@ -95,6 +95,9 @@ def test_shared_gluon_logits_kv_and_graph_replay(batch, beam, prefetch, group_qu
         new = torch.empty(cfg.dec_layers, 2, rows, cfg.dec_heads, 1, cfg.d_model // cfg.dec_heads,
                           dtype=torch.float16, device=dev)
         run = kernel.step_fn(tokens, offsets, kc, vc, *cross, logits, new)
+        # CUDA graphs retain addresses, not Python owners of preallocated workspaces.
+        # Keep both closures alive so the allocator cannot recycle the first graph's scratch.
+        runs.append(run)
         run()
         torch.cuda.synchronize()
         kernel.check()

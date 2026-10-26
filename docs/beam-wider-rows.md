@@ -28,3 +28,12 @@ changed by the experiment. Speed and wider-row parity are unmeasured until resul
 Reproduce inside an allocation with `scripts/profile_gluon_rows.pbs`; prepared code/engines/audio
 are staged locally and only coarse progress/final artifacts are published. Submission uses the
 standing serial1 GPU authorization and a fresh account-capacity/queue/duplicate check.
+
+## First validation attempt:2773118
+
+Source80fd2e8 stopped after14passing tests at shared/expanded graph-replay comparison B2/K3
+(capacity128): one row's logits differed. No load/beam benchmark ran. Inspection found that the
+test retained graph/input/output tensors but not both closures owning externally allocated
+workspaces. CUDA graph replay requires those addresses to remain valid. The test now retains
+both owners; all exact comparisons remain. This is a suspected cause pending GPU revalidation,
+not an assertion that the kernel is correct. Raw failure: `outputs/runtime-2773118/tests.log`.
