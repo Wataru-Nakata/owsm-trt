@@ -48,3 +48,14 @@ components but only 1.0% combined, requiring replication before attribution. The
 are in `outputs/runtime-2770849/english`, including all alternating samples and token outputs.
 The follow-up separates frontend graph alone from graph plus fusion, adds whole-runtime traces,
 and includes the cached 102M checkpoint without an engine rebuild.
+
+## Prepared lazy draft setup (not yet measured)
+
+`model.lazy_drafts=True` defers verification buffers, backend closures and graph capture until the
+first `decode_drafted`/`decode_stream` call. Translation and language identification can therefore
+use a greedy session without preparing unused draft windows. Setup completes before timestamp
+state/prefill because capture warmup writes self-KV. Repeat calls reuse the same setup. The initial
+default is False until GPU validation; standalone `GreedySession` has the same `lazy_drafts` switch.
+`scripts/profile_runtime_cold.py` compares session construction with resident engines/JIT, records
+first observations separately, and checks mode switches on the same session. This optimization
+targets cold latency and unused memory, not a steady-state decoder speedup.

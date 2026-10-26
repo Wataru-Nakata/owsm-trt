@@ -213,6 +213,7 @@ class OWSM:
         self.cfg, self.tokenizer, self.frontend, self.backend = cfg, tokenizer, frontend, backend
         self.opts, self.device, self.use_cuda_graph = opts, device, use_cuda_graph
         self.ctc_draft = ctc_draft
+        self.lazy_drafts = False
         self.beam_upper_bound = beam_upper_bound
         self.beam_kernels = beam_kernels
         self.beam_compact_tail = beam_compact_tail
@@ -408,7 +409,7 @@ class OWSM:
                 times = frozenset(range(t.first_time, t.last_time + 1)) if t.first_time is not None else set()
                 self._sessions[key] = GreedySession(
                     self.backend, self.cfg, batch, *args, draft_windows=windows, rules=self.rules,
-                    punctuation=t.punctuation | times,
+                    punctuation=t.punctuation | times, lazy_drafts=self.lazy_drafts,
                 )  # fmt: skip
             else:
                 backend = self.backend

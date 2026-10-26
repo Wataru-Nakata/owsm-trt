@@ -76,6 +76,7 @@ def main() -> None:
     for c, graph in sess.graphs.items():
         sess.pos.zero_()  # replays advance pos; stay inside the bucket
         res[f"graph replay, cache bucket {c}"] = timed(graph.replay, min(50, c - 2))
+    sess._prepare_drafts()  # cold setup outside the per-window measurements
     for (c, w), ver in getattr(sess, "_verify", {}).items():
         if c in (64, 512) and ver.graph is not None:  # offsets are 0: the window stays in the bucket
             res[f"verify window {w:2d}, cache bucket {c}"] = timed(ver.graph.replay, 50)

@@ -730,6 +730,7 @@ class GreedySession(_Session):
         draft_windows: tuple[int, ...] = (),
         rules: TimestampRules | None = None,
         punctuation: frozenset[int] = frozenset(),
+        lazy_drafts: bool = False,
     ):
         super().__init__(
             backend, cfg, batch, capacity, eos, dtype, device, use_cuda_graph, chunk, buckets, rules
@@ -749,6 +750,15 @@ class GreedySession(_Session):
         self._verify: dict[tuple[int, int], _Bound] = {}
         # single-row calls with nothing alongside (no encoder in decode_stream): a megakernel may take more SMs
         self._verify_solo: dict[tuple[int, int], _Bound] = {}
+        self._drafts_ready = False
+        if not lazy_drafts:
+            self._prepare_drafts()
+
+    def _prepare_drafts(self) -> None:
+        """Prepare only before starting a request: capture warmup writes the shared self-KV cache."""
+        if self._drafts_ready:
+            return
+        cfg, batch, backend, rules, eos = self.cfg, self.batch, self.backend, self.rules, self.eos
         solo = batch == 1 and getattr(backend, "solo_differs", False)
         for w in self.windows:
             bufs = _Verify(cfg, batch, w, self.kw, rules, self.t_notime, eos)
@@ -781,9 +791,10 @@ class GreedySession(_Session):
                         solo=True, **extra,
                     )  # fmt: skip
                     self._verify_solo[c, w] = bufs.bind(step, k, v)
-        if use_cuda_graph:
+        if self.use_cuda_graph:
             for ver in (*self._verify.values(), *self._verify_solo.values()):
                 ver.capture()
+        self._drafts_ready = True
 
     @property
     def self_k(self) -> torch.Tensor:
@@ -855,6 +866,7 @@ class GreedySession(_Session):
         """
         if not self.windows:
             raise RuntimeError("the session was created without draft_windows")
+        self._prepare_drafts()
         primers = primer.tolist() if isinstance(primer, torch.Tensor) else [list(x) for x in primer]
         b, p = len(primers), len(primers[0])
         assert b == self.batch and len(drafts) == b
@@ -906,6 +918,7 @@ class GreedySession(_Session):
         """
         if not self.windows:
             raise RuntimeError("the session was created without draft_windows")
+        self._prepare_drafts()
         p = len(primer)
         if p >= self.windows[-1]:
             raise ValueError(f"a primer of {p} tokens does not fit a draft window")

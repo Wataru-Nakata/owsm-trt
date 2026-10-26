@@ -645,7 +645,8 @@ def test_batched_drafted_decoding_is_greedy(model, primer, rules):
 
 
 @pytest.mark.parametrize("rules", [False, True], ids=["free", "rules"])
-def test_drafted_decoding_with_a_long_primer(model, rules):
+@pytest.mark.parametrize("lazy_drafts", [False, True])
+def test_drafted_decoding_with_a_long_primer(model, rules, lazy_drafts):
     """A primer longer than the largest window is prefilled on its own; then drafts as usual."""
     torch.manual_seed(7)
     feats = model.frontend(torch.randn(2, TINY.num_samples))
@@ -656,7 +657,7 @@ def test_drafted_decoding_with_a_long_primer(model, rules):
     greedy.encode(feats)
     ref = greedy.decode(pr, 20)
     assert min(len(r) for r in ref) > 10
-    sess = GreedySession(_DistinctBackend(model), TINY, 2, 32, eos=1, draft_windows=(2, 4, 8), **kw)
+    sess = GreedySession(_DistinctBackend(model), TINY, 2, 32, eos=1, draft_windows=(2, 4, 8), lazy_drafts=lazy_drafts, **kw)
     sess.encode(feats)
     bad = list(ref[0])
     bad[2:4] = [7, 8, 9]
@@ -680,7 +681,8 @@ class _DistinctBackend(TorchBackend):
 
 @pytest.mark.parametrize("primer", [[2, 3, 4], [2, 3, 4, NOTIME]], ids=["timestamps", "notimestamps"])
 @pytest.mark.parametrize("rules", [False, True], ids=["free", "rules"])
-def test_streamed_drafted_decoding_is_greedy(model, primer, rules):
+@pytest.mark.parametrize("lazy_drafts", [False, True])
+def test_streamed_drafted_decoding_is_greedy(model, primer, rules, lazy_drafts):
     """decode_stream refills a row as soon as its utterance is done: whatever the order of the
     utterances and of the refills, each one gets its greedy output, in fewer calls than fixed batches."""
     import random
@@ -711,7 +713,7 @@ def test_streamed_drafted_decoding_is_greedy(model, primer, rules):
         bad = list(r)
         bad[1:3] = [7, 8, 9]
         drafts.append([r, bad, [], [rng.randrange(2, 50) for _ in range(20)]][i % 4])
-    sess = session(rows, eos, draft_windows=(2, 4, 8))
+    sess = session(rows, eos, draft_windows=(2, 4, 8), lazy_drafts=lazy_drafts)
     for seed in range(3):
         order = list(range(n))
         random.Random(seed).shuffle(order)
@@ -723,7 +725,7 @@ def test_streamed_drafted_decoding_is_greedy(model, primer, rules):
         fixed = 0
         for i in range(0, n, rows):
             idx = order[i : i + rows]
-            batch = session(len(idx), eos, draft_windows=(2, 4, 8))
+            batch = session(len(idx), eos, draft_windows=(2, 4, 8), lazy_drafts=lazy_drafts)
             batch.encode(feats[idx])
             got, c = batch.decode_drafted(pr[idx], [drafts[j] for j in idx], 20, insertions)
             assert got == [ref[j] for j in idx]
