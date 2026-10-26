@@ -25,3 +25,31 @@ outside request latency. Long-form has no public joined token IDs, so its compar
 `scripts/profile_ring_programs.pbs` stages the environment, source, model, cached engines and English73/
 Japanese12/110s audio into node-local storage. It uses the established serial1GPU<=1h policy, with fresh
 queue/group/duplicate/account-cap192 checks at submission. No measurement or default adoption yet.
+
+## Measured outcome: retain32/64
+
+Job2771706 (source2f0d4f8,H200) passed6 kernel/KV tests and every real-checkpoint check. English4/
+Japanese3 runtime cases had identical sampled tokens/text/time segments for all settings. Baseline
+32/64 already used fused selection. Seven alternating steady-state repeats gave these RTFx changes:
+
+| Case |16/64|48/64|32/96|
+|---|---:|---:|---:|
+| English single greedy |-2.21%|+0.75%|-0.69%|
+| English single timestamps |-2.64%|+1.29%|-0.79%|
+| English stream B1 |-6.47%|-0.79%|+0.01%|
+| English110s |-5.21%|+1.59%|-1.45%|
+| Japanese single greedy |-2.62%|+1.41%|-0.54%|
+| Japanese single timestamps |-3.68%|+1.59%|-0.82%|
+| Japanese stream B1 |-11.54%|-0.98%|-0.99%|
+
+48/64 trades a small single-request gain for slower streaming;16/64 and32/96 do not improve the
+measured workload broadly. The default stays32/64. All settings already existed; no kernel addition
+is claimed. The N classification remains despite exact outputs on these samples. Actual decoder
+call counts, solo/concurrent selection, cross-split count and TensorRT fallbacks are in the per-case
+`actual_dispatch_<variant>.json`; their histogram sizes are not total decoder call counts.
+
+Artifacts: `outputs/runtime-2771706/analysis.json`, per-language shape_checks/environment/summary,
+per-case wall/tokens/cold/dispatch, tests.log and edge_recipe.json. The separate edge experiment
+checks exact fused-selection outputs on silence and noise; it is not an annotated quality score.
+The job exited0 in6m50s and its monitor stopped. Subsequent work continues on the same authorized
+serial1GPU settings with fresh capacity/duplicate checks.
