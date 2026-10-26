@@ -1379,6 +1379,7 @@ class BeamSession(_Session):
         fused_finish: bool = True,
         kv_reorder: str = "prefix",
         share_cross_kv: bool = True,
+        fused_state: bool = False,
     ):
         # H200/1B, beam 5 with bound stopping: every-step checks help batch 1, but hurt batch 3.
         # Explicit intervals stay fixed when set_upper_bound toggles the device flag for ablations.
@@ -1418,6 +1419,12 @@ class BeamSession(_Session):
         self.upper_bound = torch.tensor(upper_bound, dtype=torch.bool, **dev)
         self.fused_rank = fused_rank and kernels.available(device)
         self.fused_finish = fused_finish and kernels.available(device)
+        self.fused_state = fused_state and kernels.available(device) and beam <= 8 and capacity <= 512
+        self._selection_state = None
+        if self.fused_state:
+            self._selection_state = (torch.empty(n, dtype=torch.long, **dev),
+                                     torch.empty(n, dtype=torch.long, **dev),
+                                     torch.empty(n, dtype=torch.bool, **dev))
         self.kv_reorder = kv_reorder if kernels.available(device) else "torch"
         self._kv_scratch = None
         if self.kv_reorder != "torch":
@@ -1442,11 +1449,29 @@ class BeamSession(_Session):
         self._select(c)
 
     def _select(self, c: int) -> None:
+        if self.fused_state:
+            top, indices = self._topk()
+            parent, token, valid = self._prepare_state(top, indices)
+            self._reorder_cache(c, parent)
+            self._finish(token, valid)
+            return
         top, parent, token, valid = self._rank()
         self._reorder(c, top, parent, token)
         self._finish(token, valid)
 
+    def _prepare_state(self, top: torch.Tensor, indices: torch.Tensor):
+        return beam_kernels.reorder_state(self, top, indices)
+
     def _rank(self) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        top, idx = self._topk()
+        V = self.logits.shape[-1]
+        parent = (idx // V + self.row_base.unsqueeze(1)).view(-1)
+        token = (idx % V).view(-1)
+        # _topk masks every done utterance to -inf before selection.
+        valid = self.active.index_select(0, parent) & torch.isfinite(top.view(-1))
+        return top, parent, token, valid
+
+    def _topk(self) -> tuple[torch.Tensor, torch.Tensor]:
         B, K = self.batch, self.beam
         V = self.logits.shape[-1]
 
@@ -1456,11 +1481,7 @@ class BeamSession(_Session):
             # Full-vocabulary normalization is unchanged. Invalid rows produce only non-finite
             # logp, which the kernel discards while flagging active NaN/+Inf inputs separately.
             cand = beam_kernels.candidates(self, torch.log_softmax(logits, dim=-1))
-            top, idx = cand.view(B, K * V).topk(K, dim=-1)
-            parent = (idx // V + self.row_base.unsqueeze(1)).view(-1)
-            token = (idx % V).view(-1)
-            valid = self.active.index_select(0, parent) & torch.isfinite(top.view(-1))
-            return top, parent, token, valid
+            return cand.view(B, K * V).topk(K, dim=-1)
         bad = (torch.isnan(logits) | torch.isposinf(logits)).any(dim=-1)
         live_parent = self.active & ~self.done.repeat_interleave(K)
         self.numerical_error |= (bad & live_parent).view(B, K).any(dim=-1)
@@ -1470,23 +1491,22 @@ class BeamSession(_Session):
         safe = torch.where(usable.unsqueeze(1), logits, 0.0)
         logp = self._rules_mask(torch.log_softmax(safe, dim=-1))  # [N, V]
         cand = (self.score.unsqueeze(1) + logp).masked_fill(~usable.unsqueeze(1), float("-inf"))
-        top, idx = cand.view(B, K * V).topk(K, dim=-1)  # [B, K]
-        parent = (idx // V + self.row_base.unsqueeze(1)).view(-1)  # [N] row each extension comes from
-        token = (idx % V).view(-1)
-        valid = live_parent.index_select(0, parent) & torch.isfinite(top.view(-1))
-        return top, parent, token, valid
+        return cand.view(B, K * V).topk(K, dim=-1)  # [B, K]
 
     def _reorder(self, c: int, top: torch.Tensor, parent: torch.Tensor, token: torch.Tensor) -> None:
         self.score.copy_(top.view(-1))
         self.seq.copy_(self.seq.index_select(0, parent))
         self.seq.index_copy_(1, self.pos, token.unsqueeze(1))
+        self._reorder_cache(c, parent)
+        self._rules_advance(token, parent)
+
+    def _reorder_cache(self, c: int, parent: torch.Tensor) -> None:
         if self.kv_reorder == "torch":
             for buf in self.caches[c]:
                 buf.copy_(buf.index_select(1, parent))
         else:
             beam_kernels.reorder_kv(*self.caches[c], self._kv_scratch, parent, self.pos,
                                    prefix=self.kv_reorder == "prefix")
-        self._rules_advance(token, parent)
 
     def _finish(self, token: torch.Tensor, valid: torch.Tensor) -> None:
         if self.fused_finish:

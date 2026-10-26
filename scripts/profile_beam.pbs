@@ -109,12 +109,19 @@ if [ "${EXPERIMENT:-stopping}" = splits ]; then
     done
     exit 0
 fi
-if [ "${EXPERIMENT:-stopping}" = cross ] || [ "${EXPERIMENT:-stopping}" = final ]; then
+if [ "${EXPERIMENT:-stopping}" = cross ] || [ "${EXPERIMENT:-stopping}" = final ] || [ "${EXPERIMENT:-stopping}" = state ]; then
     timeout 900 "$PY" -m pytest -q -p no:cacheprovider "$LOCAL/tests/test_beam_cross.py" \
         "$LOCAL/tests/test_megakernel.py::test_ring_solo_is_bitwise_the_same" \
         "$LOCAL/tests/test_megakernel.py::test_backend_trial_falls_back" \
         > "$LOCAL/results/cross_tests.log" 2>&1
     printf '%s\n' 'shared cross KV and decoder regression tests passed' >> "$OUT/progress.log"
+    STATE_FLAGS=()
+    if [ "$EXPERIMENT" = state ]; then
+        timeout 300 "$PY" -m pytest -q -p no:cacheprovider "$LOCAL/tests/test_beam_state.py" \
+            > "$LOCAL/results/state_tests.log" 2>&1
+        printf '%s\n' 'beam state fusion tests passed' >> "$OUT/progress.log"
+        STATE_FLAGS+=(--fused-state)
+    fi
     for batch in 1 3; do
         interval=4
         [ "$batch" != 1 ] || interval=1
@@ -124,7 +131,7 @@ if [ "${EXPERIMENT:-stopping}" = cross ] || [ "${EXPERIMENT:-stopping}" = final 
             --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/manifest.json" \
             --beam 5 --timestamps --batch "$batch" --chunk "$interval" --repeat 5 \
             --limit "${PROFILE_LIMIT:-73}" --upper-bound on --fused-rank --fused-finish \
-            --kv-reorder prefix --share-cross-kv --baseline-runtime "$LOCAL/baseline_runtime.py" \
+            --kv-reorder prefix --share-cross-kv "${STATE_FLAGS[@]}" --baseline-runtime "$LOCAL/baseline_runtime.py" \
             "${DETAIL[@]}" --out "$LOCAL/results/${EXPERIMENT}_b${batch}" \
             > "$LOCAL/results/${EXPERIMENT}_b${batch}.log" 2>&1
         printf 'shared cross KV batch %s complete\n' "$batch" >> "$OUT/progress.log"
@@ -133,7 +140,7 @@ if [ "${EXPERIMENT:-stopping}" = cross ] || [ "${EXPERIMENT:-stopping}" = final 
                 --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/extra_manifest.json" \
                 --lang "${EXTRA_LANG:?set the second manifest language}" \
                 --beam 5 --timestamps --batch "$batch" --chunk "$interval" --repeat 3 \
-                --upper-bound on --fused-rank --fused-finish --kv-reorder prefix --share-cross-kv \
+                --upper-bound on --fused-rank --fused-finish --kv-reorder prefix --share-cross-kv "${STATE_FLAGS[@]}" \
                 --baseline-runtime "$LOCAL/baseline_runtime.py" \
                 --out "$LOCAL/results/${EXPERIMENT}_japanese_b${batch}" \
                 > "$LOCAL/results/${EXPERIMENT}_japanese_b${batch}.log" 2>&1

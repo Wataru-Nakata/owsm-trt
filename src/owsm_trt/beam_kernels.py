@@ -8,6 +8,42 @@ if triton is not None:
     import triton.language as tl
 
     @triton.jit
+    def _reorder_state(top, indices, parent_out, token_out, valid_out, active, done, seq, score,
+                       notime, first, count, last, pos_ptr, K: tl.constexpr, V: tl.constexpr,
+                       C: tl.constexpr, RULES: tl.constexpr, FIRST: tl.constexpr, LAST: tl.constexpr,
+                       BK: tl.constexpr, BC: tl.constexpr):
+        b = tl.program_id(0)
+        slot, column = tl.arange(0, BK), tl.arange(0, BC)
+        row = b * K + slot
+        index = tl.load(indices + row, slot < K, other=0)
+        parent = b * K + index // V
+        token = index % V
+        value = tl.load(top + row, slot < K, other=float("-inf"))
+        valid = tl.load(active + parent, slot < K, other=False) & ~tl.load(done + b)
+        valid &= (value == value) & (tl.abs(value) != float("inf"))
+        mask = (slot < K)[:, None] & (column < C + 2)[None, :]
+        history = tl.load(seq + parent[:, None] * (C + 2) + column[None, :], mask, other=0)
+        history = tl.where(column[None, :] == tl.load(pos_ptr), token[:, None], history)
+        if RULES:
+            old_notime = tl.load(notime + parent, slot < K, other=False)
+            old_count = tl.load(count + parent, slot < K, other=0)
+            old_last = tl.load(last + parent, slot < K, other=-1)
+            is_time = (token >= FIRST) & (token <= LAST)
+        # Each CTA owns an utterance and all its parents. Read every source before any in-place
+        # write: duplicated parents and permutation cycles must not see another warp's new state.
+        tl.debug_barrier()
+        tl.store(seq + row[:, None] * (C + 2) + column[None, :], history, mask)
+        tl.store(score + row, value, slot < K)
+        tl.store(parent_out + row, parent, slot < K)
+        tl.store(token_out + row, token, slot < K)
+        tl.store(valid_out + row, valid, slot < K)
+        if RULES:
+            tl.store(notime + row, old_notime, slot < K)
+            tl.store(first + row, False, slot < K)
+            tl.store(count + row, old_count + is_time.to(tl.int64), slot < K)
+            tl.store(last + row, tl.where(is_time, token, old_last), slot < K)
+
+    @triton.jit
     def _reorder_kv(k, v, scratch, parent, pos_ptr, L: tl.constexpr, R: tl.constexpr,
                     H: tl.constexpr, C: tl.constexpr, D: tl.constexpr, PREFIX: tl.constexpr,
                     COPY_BACK: tl.constexpr, BLOCK: tl.constexpr):
@@ -166,6 +202,21 @@ def reorder_kv(k: torch.Tensor, v: torch.Tensor, scratch: torch.Tensor, parent: 
     for copy_back in (False, True):
         _reorder_kv[grid](k, v, scratch, parent, pos, layers, rows, heads, c, d,
                          PREFIX=prefix, COPY_BACK=copy_back, BLOCK=2048, num_warps=4)
+
+
+def reorder_state(session, top: torch.Tensor, indices: torch.Tensor):
+    """Unchanged global top-K indices -> parent/token/valid and gathered token/timestamp state."""
+    s = session
+    rules = s.rules
+    first, last = (rules.first_time, rules.last_time) if rules else (0, -1)
+    parent, token, valid = s._selection_state
+    _reorder_state[(s.batch,)](
+        top, indices, parent, token, valid, s.active, s.done, s.seq, s.score,
+        s.t_notime, s.t_first, s.t_count, s.t_last, s.pos,
+        s.beam, s.logits.shape[-1], s.capacity, rules is not None, first, last,
+        BK=triton.next_power_of_2(s.beam), BC=triton.next_power_of_2(s.capacity + 2), num_warps=4,
+    )
+    return parent, token, valid
 
 
 def finish(session, token: torch.Tensor, valid: torch.Tensor, end_detect_m: int, end_detect_d: float) -> None:
