@@ -232,6 +232,8 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   On supported Gluon shapes, beam rows now share encoder cross-KV storage. A further
   [B=1 comparison](docs/beam-cross.md) measured 4.3% more RTFx and cross-KV buffers shrinking from
   165.4 to 27.6 MB, with identical outputs. B=3/K=5 retains expanded KV with the TensorRT decoder.
+  The [combined KV comparison](docs/beam-final.md) measured 9.25% / 8.90% additional RTFx at B=1 / B=3
+  against the already fused search path on English73, and 9.46% / 9.70% on Japanese12, with exact outputs.
 * **Timestamp rules.** Like ESPnet, every search applies its `ScoreFilter`: no timestamps after `<notimestamps>`;
   otherwise the output starts with a timestamp, timestamps come in increasing pairs, and `<eos>` only after a
   complete pair.

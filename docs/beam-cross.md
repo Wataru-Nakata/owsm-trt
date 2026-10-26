@@ -19,13 +19,13 @@ CPU checks cover buffer aliasing, unsupported backends and repeated encoder upda
 trial failure across all buckets. Five allocation-only tests compare exact Gluon logits/self-KV and
 CUDA graph replays, two utterance/beam layouts, prefetch on/off, repeated primer lengths and bucket
 growth. Existing Ring tests exercise the unchanged shared attention helper signature. These GPU
-checks are pending before the next job. Focused CPU checks:32 passed,6 skipped (the five new GPU
+checks passed in the allocation reported below. Focused CPU checks:32 passed,6 skipped (the five new GPU
 checks plus an existing CUDA-only case). No model/audio processing was run on the login node.
 
-The next one-GPU allocation runs English73/Japanese12 at B=1 and B=3, same loaded checkpoint/engines,
+The one-GPU allocation ran English73/Japanese12 at B=1 and B=3, same loaded checkpoint/engines,
 with alternating baseline/candidate order. B=3 is a fallback regression/control (English's one-item
 tail can still share KV). Actual sharing, fallback reasons, distinct KV-buffer bytes, kernel dispatch,
-cold costs, outputs and independent eager traces are saved. Performance/adoption remain unverified.
+cold costs, outputs and independent eager traces are saved. Performance/adoption are reported below.
 
 ## Measured result and adoption
 

@@ -17,7 +17,7 @@ both modes and existing Ring/fallback tests (17 extra tests, plus221 base tests)
 
 `EXPERIMENT=group` benchmarks B1/K5 on English73 and Japanese12, alternates reference/candidate,
 keeps the same engines/weights, and includes the six English extra cases. This isolates query
-packing from the already adopted storage-sharing change. GPU performance and adoption are pending.
+packing from the already adopted storage-sharing change. The measured result below determines adoption.
 
 ## Result: not adopted
 

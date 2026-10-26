@@ -299,4 +299,4 @@ The monitor reports actual allocated overage immediately; other users' jobs are 
 Further measurements and default changes are documented separately: [search fusion](beam-fusion.md),
 [prefix self-KV gathers](beam-kv.md), [decoder settings with no gain](beam-decoder.md), and
 [shared cross-KV](beam-cross.md). Their isolated gains must not be added or multiplied into a claim
-about the final combination; a same-engine combined comparison is prepared next.
+about the final combination; [the final same-engine comparison](beam-final.md) measures the combination directly.

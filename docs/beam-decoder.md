@@ -8,7 +8,7 @@ On H200, R=5 (B=1, K=5) uses Gluon; R=15 remains TensorRT under the existing rou
 132→128 persistent CTAs, attention prefetch enabled→disabled, and their combination. The current
 1B GEMM tiling requires at least 128 programs and the persistent grid must fit available SMs.
 Neither variant changes precision, arithmetic tiling, beam width or routing limits. Changes in
-execution scheduling still require actual token comparison before adoption; speed is unmeasured.
+execution scheduling still require actual token comparison before adoption; the measured result is reported below.
 
 `profile_beam.py --gluon-programs 128` and/or `--no-gluon-prefetch` build a separate backend wrapper
 for candidate sessions, retaining the reference wrapper and its dispatch/failure state. Both share
@@ -21,8 +21,7 @@ The prepared `EXPERIMENT=decoder` job tests 221 cases, then alternates each cand
 reference for English73 (5 repetitions) and Japanese12 (3 repetitions), B=1/K=5/timestamps. Each
 English run has separate eager profiling and six additional compatibility cases. All outputs stay
 node-local until final publication, except coarse phase updates. Standing one-GPU authorization
-and a fresh successful <=192 GPU admission audit remain required. No new GPU measurement or
-runtime-default change is claimed by this preparation.
+and a fresh successful <=192 GPU admission audit remain required. The preparation did not assume a speed gain; the measurement below determines adoption.
 
 ## Result: retain existing settings
 

@@ -501,7 +501,7 @@ class _Session:
 
     Buffers (H = decoder heads, c = bucket length, T = encoder frames):
       caches[c]       2 x [L, rows, H, c, d_k]  KV cache, slot t holds position t
-      cross_k/cross_v [L, rows, H, T, d_k]
+      cross_k/cross_v [L, cross_rows or rows, H, T, d_k] (shared beam KV uses utterance rows)
       logits          [rows, 1, V]              of the last decoder call
     A decoding step (``_body``) feeds ``tok`` at ``pos`` and then selects the next tokens from the
     logits (``_select``); the first selection, from the prefill logits, runs eagerly.
