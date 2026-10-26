@@ -11,6 +11,7 @@ import json
 import logging
 import os
 import time
+from collections import OrderedDict
 from dataclasses import asdict
 from pathlib import Path
 
@@ -21,7 +22,7 @@ from owsm_trt import OWSM, hub
 from owsm_trt.audio import load_audio
 from owsm_trt.build import engine_tag
 
-VARIANTS = ("reference", "power", "post", "both", "graph", "graph_both", "graph_direct")
+VARIANTS = ("reference", "power", "post", "both", "graph", "graph_both", "graph_direct", "graph_split")
 CASES = {
     "single_greedy": (1, 1, False, True, False, "asr", None, None),
     "single_ts": (1, 1, True, True, False, "asr", None, None),
@@ -41,8 +42,9 @@ CASES = {
 def variant(model, name):
     model.frontend.fused_power = name in ("power", "both", "graph_both")
     model.frontend.fused_logmel = name in ("post", "both", "graph_both")
-    model.frontend_graph = name in ("graph", "graph_both", "graph_direct")
+    model.frontend_graph = name in ("graph", "graph_both", "graph_direct", "graph_split")
     model.frontend_direct = name == "graph_direct"
+    model.greedy_split_choose = name == "graph_split"
 
 
 def captures(model):
@@ -93,10 +95,17 @@ def run_case(model, args, name, items, waves):
             return model.transcribe_long(ws, lang=args.lang, task=task, beam_size=beam, batch_size=batch)
         return model.transcribe(ws, timestamps=timestamps, **kw)
 
+    # Decoder graphs bind selection at capture: modes need separate sessions, same engine/checkpoint.
+    pools = {False: model._sessions, True: OrderedDict()}
+
+    def activate(v):
+        variant(model, v)
+        model._sessions = pools[model.greedy_split_choose]
+
     path = args.out / name
     cold, records, samples = {}, {v: {} for v in args.variants}, []
     for v in args.variants:
-        variant(model, v)
+        activate(v)
         before_allocated, before_reserved = torch.cuda.memory_allocated(), torch.cuda.memory_reserved()
         _, ms = wall(lambda: [call([waves[i] for i in chunk]) for chunk in chunks])
         cold[v] = {
@@ -107,11 +116,14 @@ def run_case(model, args, name, items, waves):
             "reserved_delta_bytes": torch.cuda.memory_reserved() - before_reserved,
             "frontend_graph": model._frontend_replay.info() if model._frontend_replay else None,
         }
-    after_warmup = captures(model)
+    after_warmup = {}
+    for v in args.variants:
+        activate(v)
+        after_warmup[v] = captures(model)
     frontend_captures = len(model._frontend_replay.entries) if model._frontend_replay else 0
     for repeat in range(args.repeat):
         for v in args.variants if repeat % 2 == 0 else args.variants[::-1]:
-            variant(model, v)
+            activate(v)
             for chunk in chunks:
                 group = [waves[i] for i in chunk]
                 start_calls = model.draft_stats[1]
@@ -120,7 +132,7 @@ def run_case(model, args, name, items, waves):
                 current_frontend_captures = (
                     len(model._frontend_replay.entries) if model._frontend_replay else 0
                 )
-                if captures(model) != after_warmup or current_frontend_captures != frontend_captures:
+                if captures(model) != after_warmup[v] or current_frontend_captures != frontend_captures:
                     raise RuntimeError(f"new session/capture in steady-state {name}/{v}")
                 samples.append(
                     {
@@ -160,7 +172,7 @@ def run_case(model, args, name, items, waves):
         }
     if args.trace and name in ("single_greedy", "stream_greedy_b8", "long_greedy"):
         for v in args.variants:
-            variant(model, v)
+            activate(v)
             group = [waves[i] for i in chunks[0]]
             with torch.profiler.profile(
                 activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA]

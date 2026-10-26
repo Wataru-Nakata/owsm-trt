@@ -23,8 +23,8 @@ def available(device: torch.device) -> bool:
 if triton is not None:
 
     @triton.jit
-    def _choose(logits, inp, notime, pred, V, W: tl.constexpr, RULES: tl.constexpr, first_time, last_time, eos,
-                BV: tl.constexpr, SKIP_NOTIME: tl.constexpr = False):  # fmt: skip
+    def _choose(logits, inp, notime, pred, scores, V, W: tl.constexpr, RULES: tl.constexpr, first_time, last_time, eos,
+                BV: tl.constexpr, SKIP_NOTIME: tl.constexpr = False, PARTS: tl.constexpr = 1):  # fmt: skip
         """One window position: inp row = [W tokens | offset | #timestamps | last timestamp | first position].
         SKIP_NOTIME: rows with <notimestamps> are left alone (their argmax is there already)."""
         r = tl.program_id(0)
@@ -48,7 +48,9 @@ if triton is not None:
         best = tl.full([], float("-inf"), tl.float32)
         best_i = tl.full([], 0, tl.int64)
         base = logits + (r * W + i).to(tl.int64) * V
-        for v0 in range(0, V, BV):
+        start = tl.program_id(2) * BV if PARTS > 1 else 0
+        stop = start + BV if PARTS > 1 else V
+        for v0 in range(start, stop, BV):
             v = v0 + tl.arange(0, BV)
             x = tl.load(base + v, mask=v < V, other=float("-inf"))
             if RULES:
@@ -63,7 +65,26 @@ if triton is not None:
             m = tl.max(x, 0)
             best_i = tl.where(m > best, v0 + tl.argmax(x, 0).to(tl.int64), best_i)  # ties: the first one
             best = tl.maximum(best, m)
-        tl.store(pred + r * W + i, best_i)
+        dest = (r * W + i) * PARTS + tl.program_id(2) if PARTS > 1 else r * W + i
+        tl.store(pred + dest, best_i)
+        if PARTS > 1:
+            tl.store(scores + dest, best)
+
+    @triton.jit
+    def _choose_reduce(scores, indices, notime, pred, W: tl.constexpr, PARTS: tl.constexpr,
+                       BP: tl.constexpr, SKIP_NOTIME: tl.constexpr):  # fmt: skip
+        r, i = tl.program_id(0), tl.program_id(1)
+        if SKIP_NOTIME:
+            if tl.load(notime + r) != 0:
+                return
+        p = tl.arange(0, BP)
+        at = (r * W + i) * PARTS + p
+        val = tl.load(scores + at, p < PARTS, other=float("-inf"))
+        best = tl.max(val, 0)
+        # Select the first vocabulary block, then its original argmax. All-invalid stays token 0.
+        part = tl.min(tl.where((p < PARTS) & (val == best), p, BP), 0)
+        idx = tl.load(indices + (r * W + i) * PARTS + part, part < PARTS, other=0)
+        tl.store(pred + r * W + i, tl.where(best > float("-inf"), idx, 0))
 
     @triton.jit
     def _write_kv(new_kv, k, v, offs, R, S, C, H: tl.constexpr, D: tl.constexpr, BS: tl.constexpr):
@@ -102,14 +123,30 @@ if triton is not None:
 
 
 def choose(logits: torch.Tensor, inp: torch.Tensor, notime: torch.Tensor, pred: torch.Tensor, rules,
-           skip_notime: bool = False) -> None:  # fmt: skip
+           skip_notime: bool = False, workspace: tuple | None = None) -> None:  # fmt: skip
     """``pred`` [R, W] = argmax of ``logits`` [R, W, V] under ``rules`` (None: plain argmax); ``inp``
     [R, W + 4] as in runtime._Verify, ``notime`` [R] bool; ``skip_notime``: only the rows without
     <notimestamps> (``pred`` holds the others' already)."""
     R, W, V = logits.shape
     args = (rules.first_time, rules.last_time, rules.eos) if rules is not None else (0, -1, -1)
-    _choose[(R, W)](logits, inp, notime, pred, V, W, rules is not None, *args, BV=2048, SKIP_NOTIME=skip_notime,
-                    num_warps=4)  # fmt: skip
+    parts = workspace[0].shape[-1] if workspace is not None else 1
+    scores, indices = workspace if workspace is not None else (logits, pred)
+    _choose[(R, W, parts)](logits, inp, notime, indices, scores, V, W, rules is not None, *args,
+                          BV=2048, SKIP_NOTIME=skip_notime, PARTS=parts, num_warps=4)  # fmt: skip
+    if parts > 1:
+        _choose_reduce[(R, W)](scores, indices, notime, pred, W, parts, triton.next_power_of_2(parts),
+                              skip_notime, num_warps=1)  # fmt: skip
+    elif workspace is not None:
+        raise ValueError("choose workspace requires at least two vocabulary blocks")
+
+
+def choose_workspace(rows: int, window: int, vocab: int, device) -> tuple | None:
+    """Private per-session [R,W,ceil(V/2048)] partial maxima and indices; graph-stable addresses."""
+    parts = (vocab + 2047) // 2048
+    if parts < 2:
+        return None
+    shape = (rows, window, parts)
+    return (torch.empty(shape, device=device), torch.empty(shape, device=device, dtype=torch.long))
 
 
 def write_kv(new_kv: torch.Tensor, k: torch.Tensor, v: torch.Tensor, offs: torch.Tensor) -> None:

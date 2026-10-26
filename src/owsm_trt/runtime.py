@@ -731,10 +731,12 @@ class GreedySession(_Session):
         rules: TimestampRules | None = None,
         punctuation: frozenset[int] = frozenset(),
         lazy_drafts: bool = False,
+        split_choose: bool = False,
     ):
         super().__init__(
             backend, cfg, batch, capacity, eos, dtype, device, use_cuda_graph, chunk, buckets, rules
         )
+        self.split_choose = split_choose
         self.punctuation = punctuation  # see _resync
         self.batch = batch
         self.seq = torch.zeros(batch, capacity + 1, dtype=torch.long, device=device)
@@ -761,7 +763,7 @@ class GreedySession(_Session):
         cfg, batch, backend, rules, eos = self.cfg, self.batch, self.backend, self.rules, self.eos
         solo = batch == 1 and getattr(backend, "solo_differs", False)
         for w in self.windows:
-            bufs = _Verify(cfg, batch, w, self.kw, rules, self.t_notime, eos)
+            bufs = _Verify(cfg, batch, w, self.kw, rules, self.t_notime, eos, self.split_choose)
             for c, (k, v) in self.caches.items():
                 kind = "verify" if w > 1 else "decode"
                 # a decoder megakernel can do the argmax itself: plain, or with <notimestamps> (no timestamp
@@ -1242,6 +1244,7 @@ class _Verify:
         rules: TimestampRules | None,
         notime: torch.Tensor,
         eos: int,
+        split_choose: bool = False,
     ):
         L, H, dk = cfg.dec_layers, cfg.dec_heads, cfg.d_model // cfg.dec_heads
         dev = {"device": kw["device"]}
@@ -1264,6 +1267,12 @@ class _Verify:
         self.res = torch.zeros(rows, 2, dtype=torch.long, **dev)  # what comes back: see accept()
         self.ar = torch.arange(w, **dev)
         self.fast = kernels.available(kw["device"])  # Triton kernels for the work around the decoder call
+
+        self.choose_workspace = (
+            kernels.choose_workspace(rows, w, cfg.vocab_size, kw["device"])
+            if split_choose and self.fast
+            else None
+        )
 
     def predict(self) -> torch.Tensor:
         """Argmax after each window position [rows, w], with the rules applied position by position."""
@@ -1318,9 +1327,11 @@ class _Bound:
             if not written:
                 kernels.write_kv(b.new_kv, self.k, self.v, b.offs)
             if not getattr(self.step, "writes_pred", False):
-                kernels.choose(b.logits, b.inp, b.notime, b.pred, b.rules)
+                kernels.choose(b.logits, b.inp, b.notime, b.pred, b.rules, workspace=b.choose_workspace)
             elif b.rules is not None:  # (the kernel's argmax holds for the rows with <notimestamps>)
-                kernels.choose(b.logits, b.inp, b.notime, b.pred, b.rules, skip_notime=True)
+                kernels.choose(
+                    b.logits, b.inp, b.notime, b.pred, b.rules, skip_notime=True, workspace=b.choose_workspace
+                )
             kernels.accept(b.pred, b.inp, b.res, b.eos)
         else:
             if not written:

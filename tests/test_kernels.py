@@ -14,8 +14,9 @@ pytestmark = pytest.mark.skipif(
 )
 
 
+@pytest.mark.parametrize("split", [False, True])
 @pytest.mark.parametrize("rules_on", [False, True], ids=["free", "rules"])
-def test_choose_matches_torch(rules_on):
+def test_choose_matches_torch(rules_on, split):
     torch.manual_seed(0)
     V, R, W = 3000, 64, 8
     first_time, last_time, notime_tok, eos = 100, 200, 50, 2
@@ -41,7 +42,14 @@ def test_choose_matches_torch(rules_on):
     bufs.logits[:, :, eos] += 2.0  # make the rules matter for <eos> too
     ref = bufs.predict()
     out = torch.full_like(ref, -7)
-    kernels.choose(bufs.logits, bufs.inp, bufs.notime, out, rules)
+    kernels.choose(
+        bufs.logits,
+        bufs.inp,
+        bufs.notime,
+        out,
+        rules,
+        workspace=kernels.choose_workspace(R, W, V, "cuda") if split else None,
+    )
     assert torch.equal(out, ref)
 
 
@@ -105,3 +113,69 @@ def test_attention_kernels_match_reference(shape):
         torch.testing.assert_close(
             ap.cross_attn_triton(q, k, v, config=config), ref_cross, rtol=1e-2, atol=2e-3
         )
+
+
+@pytest.mark.parametrize("shape", [(1, 1, 2051), (1, 16, 51865), (3, 8, 50003), (8, 4, 3000)])
+@pytest.mark.parametrize("skip", [False, True])
+@torch.inference_mode()
+def test_split_choose_edges_graph_and_nonfinite(shape, skip):
+    R, W, V = shape
+    rules = TimestampRules(50, 100, 200, 2, V, torch.device("cuda"))
+    cfg = dataclasses.replace(TINY, vocab_size=V)
+    notime = torch.arange(R, device="cuda") % 2 == 1
+    bufs = _Verify(
+        cfg,
+        R,
+        W,
+        {"device": torch.device("cuda"), "dtype": torch.float16},
+        rules,
+        notime,
+        2,
+        split_choose=True,
+    )
+    bufs.inp[:, :W] = 300
+    bufs.inp[:, W + 1] = 1  # inside timestamp pair: text and later timestamp, no EOS
+    bufs.inp[:, W + 2] = 100
+    bufs.inp[:, W + 3] = -1
+    expected = torch.empty_like(bufs.pred)
+
+    def call():
+        kernels.choose(bufs.logits, bufs.inp, notime, bufs.pred, rules, skip, workspace=bufs.choose_workspace)
+
+    call()  # JIT outside capture
+    graph = torch.cuda.CUDAGraph()
+    with torch.cuda.graph(graph):
+        call()
+    for mode in ("random", "tie", "near_tie", "invalid", "inf", "nan", "all_nan", "first", "after_end"):
+        bufs.logits.normal_()
+        bufs.inp[:, W + 1] = 1
+        bufs.inp[:, W + 2] = 100
+        bufs.inp[:, W + 3] = -1
+        bufs.inp[:, :W] = 300
+        if mode in ("tie", "near_tie", "invalid", "inf"):
+            bufs.logits.fill_(float("-inf"))
+        if mode in ("tie", "near_tie", "inf"):
+            bufs.logits[..., 2047] = 1 if mode != "inf" else float("inf")
+            bufs.logits[..., 2049] = 1 if mode != "inf" else float("inf")
+            if mode == "near_tie":
+                bufs.logits[..., 2049] = torch.nextafter(
+                    torch.tensor(1.0, device="cuda"), torch.tensor(2.0, device="cuda")
+                )
+        if mode == "nan":
+            bufs.logits[..., 2050:] = float("nan")
+            bufs.logits[..., 300] = float("nan")
+        if mode == "all_nan":
+            bufs.logits.fill_(float("nan"))
+        if mode == "first":
+            bufs.inp[:, W + 3] = 0
+            bufs.logits[..., 100] = bufs.logits[..., 200] = 50
+        if mode == "after_end":
+            bufs.inp[:, :W] = 200
+            bufs.inp[:, W + 1] = 2
+            bufs.inp[:, W + 2] = 200
+            bufs.logits[..., 2] = bufs.logits[..., 200] = 50
+        expected.fill_(-7)
+        bufs.pred.fill_(-7)
+        kernels.choose(bufs.logits, bufs.inp, notime, expected, rules, skip)
+        graph.replay()
+        assert torch.equal(bufs.pred, expected), mode
