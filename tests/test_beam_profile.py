@@ -123,3 +123,20 @@ def test_row_slice_mapping_rejects_invalid_settings(splits):
 
     with pytest.raises(ValueError, match="maps positive row counts"):
         GluonDecoder(None, cross_splits=splits)
+
+
+
+def test_ring_rows_ablation_preserves_reference_routing_and_weights():
+    from profile_ring_programs import ring_rows_backend
+
+    from owsm_trt.megakernel import MegaBackend
+
+    kernel = object()
+    base = MegaBackend(object(), kernel, 32, 8, rows_kernel=(None, 16, 8), trial=True)
+    candidate = ring_rows_backend(base)
+    assert candidate.inner is base.inner and candidate.kernel is kernel
+    assert base.rows_kernel == (None, 16, 8)
+    assert candidate.rows_kernel == (kernel, 32, 8)
+    assert candidate.max_tokens == base.max_tokens and candidate.max_rows == base.max_rows
+    candidate.failed.add(id(kernel))
+    assert not base.failed

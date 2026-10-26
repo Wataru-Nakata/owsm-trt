@@ -186,7 +186,8 @@ def test_ring_step_matches_decoder(model, rows, window, programs, chunk, warps):
 
 
 @gluon_only
-@pytest.mark.parametrize("rows,window", [(1, 1), (1, 8), (1, 32), (2, 3)])
+@pytest.mark.parametrize("rows,window", [(1, 1), (1, 8), (1, 32), (2, 3),
+                                         (3, 1), (5, 1), (8, 1), (8, 4)])
 @pytest.mark.parametrize("solo", [False, True])
 def test_ring_step_other_widths(model384, rows, window, solo):
     """A model width that is not a power of 2 (statistics in 6 parts, 6 K tiles per unit) and the solo calls
