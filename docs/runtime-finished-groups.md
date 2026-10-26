@@ -4,9 +4,11 @@ The measured single-row Ring guard does not skip multi-row decoder calls. In job
 translationB3 still entered33/712 already-EOS calls on1B and45/712 on102M; Japanese had3/176 and
 5/818. These are measured calls, not a predicted speedup. The completed 1B subset of job2773955 measures the group guard below.
 
-`GreedySession(skip_finished_groups=True)` is an independent low-level experiment, defaultFalse.
+`GreedySession(skip_finished_groups=True)` retains its low-level defaultFalse. The public factory
+now enables it with `greedy_kernels=True`, subject to actual backend capability; public GPU
+verification and an independent timing repeat are prepared in the next job.
 It is eligible only when the actual multi-row backend route supports it (currently Gluon within
-its existing token/row limits). The existing public single-row flag and route limits do not change.
+its existing token/row limits). `greedy_kernels=False` disables both single-row and multi-row guards. Route limits do not change.
 It passes the session's per-row EOS flags to the kernel. Every CTA reduces the same immutable
 vector before any shared-memory setup or persistent-grid barrier. Only when all rows have ended
 does every CTA return. Partial completion keeps the full original computation. This does not skip
@@ -46,3 +48,9 @@ made. The later independent identity-KV replication was not reached. Unsupported
 public-option wiring and independent replication are the next verification steps; the failed
 job is not reported as an overall success. Both optimizations remain off in public defaults at
 this result commit. Neither speedups nor cold/shared-process memory observations are combined.
+
+
+The follow-up runner validates the public factory and rollback on1B and102M, including plain
+B3 timestamps and translation B8. It repeats the eight1B timing conditions, tests all eligible
+R2..8 GPU flag/restart contracts, and completes the previously unexecuted independent KV
+replication. The102M comparison is functional fallback coverage, not a group-guard speed test.

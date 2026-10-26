@@ -86,6 +86,13 @@ for SIZE in 1b 102m; do
         cp -a "$REPO/.cache/engines/owsm_v4_base_102M/v621-NVIDIA_H200-sm90-trt11.4.0.106-float16-3d0cbdc9" \
             "$OWSM_TRT_CACHE/owsm_v4_base_102M/"
     fi
+    timeout 400 "$PY" "$LOCAL/scripts/validate_greedy_api.py" \
+        --model "$MODEL" --manifest "$LOCAL/manifest.json" --finished-stop \
+        --out "$LOCAL/results/${SIZE}_api" > "$LOCAL/results/${SIZE}_api.log" 2>&1
+    printf '%s finished-group public API and rollback verified\n' "$SIZE" >> "$OUT/progress.log"
+    # 102M's actual multi-row route is TensorRT. Validate that fallback above; do not
+    # benchmark an unsupported guard or force another numerical decoder route.
+    if [ "$SIZE" = 102m ]; then continue; fi
     for CORPUS in english japanese; do
         MANIFEST="$LOCAL/manifest.json"
         LANG_ID=eng

@@ -29,7 +29,7 @@ def main():
     args = ap.parse_args()
     if not os.environ.get("PBS_JOBID") and os.uname().nodename.startswith("login"):
         ap.error("model/audio work requires a compute allocation")
-    items = json.loads(Path(args.manifest).read_text())[:3]
+    items = json.loads(Path(args.manifest).read_text())[:8]
     waves = [load_audio(x["path"]) for x in items]
     expected, records, engine_hashes = {}, {}, None
     for mode, options in (("serial", {"greedy_kernels": False, "lazy_drafts": False}), ("default", {})):
@@ -51,15 +51,17 @@ def main():
             ("prompt", {"timestamps": True, "prompt": "Previous speech context. " * 20}),
             ("plain_decoder", {"timestamps": True}),
             ("translation", {"task": "st_eng"}),
+            ("plain_group_ts", {"batch_size": 3, "timestamps": True}),
+            ("translation_group", {"batch_size": 8, "task": "st_eng"}),
             ("beam_ts", {"beam_size": 5, "timestamps": True}),
             ("single_ts_again", {"timestamps": True}),
         ):
-            enabled = name != "plain_decoder"
+            enabled = name not in ("plain_decoder", "plain_group_ts")
             if model.ctc_draft != enabled:
                 # Construction options bind session windows; rebuild only when this test changes them.
                 model._sessions.clear()
             model.ctc_draft = enabled
-            source = waves if name.startswith("stream") else waves[0]
+            source = waves if name.startswith("stream") or "group" in name else waves[0]
             out = model.transcribe(source, lang=args.lang, **kwargs)
             results[name] = [asdict(x) for x in out] if isinstance(out, list) else asdict(out)
             dispatch[name] = captures(model)
@@ -67,8 +69,9 @@ def main():
                 for sess in model._sessions.values():
                     if not isinstance(sess, GreedySession):
                         continue
-                    expected_guard = mode == 'default' and sess.batch == 1 and bool(
-                        getattr(model.backend, 'supports_finished_stop', False))
+                    supported = (bool(getattr(model.backend, 'supports_finished_stop', False)) if sess.batch == 1
+                                 else getattr(model.backend, 'supports_finished_groups', lambda rows: False)(sess.batch))
+                    expected_guard = mode == 'default' and supported
                     if sess.skip_finished is not expected_guard:
                         raise RuntimeError(f'public finished-stop option mismatch: {mode}/{name}')
                     if any(bool(getattr(fn, 'skips_finished', False)) is not expected_guard
@@ -112,7 +115,7 @@ def main():
             note="Functional public-option/session-reuse regression; no steady-state timing claim.",
         ),
     )
-    print("public default/serial rollback: all 10 requests equal", flush=True)
+    print("public default/serial rollback: all requests equal", flush=True)
 
 
 if __name__ == "__main__":

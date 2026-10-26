@@ -747,9 +747,11 @@ class MegaBackend:
 
     def supports_finished_groups(self, rows: int) -> bool:
         """Whether the actual multi-row decode route supports a uniform completed-group exit."""
-        if rows < 2 or self.rows_kernel is None:
+        if rows < 2:
             return False
-        kernel, tokens, limit = self.rows_kernel
+        kernel, tokens, limit = self.kernel, self.max_tokens, self.max_rows
+        if self.rows_kernel is not None:
+            kernel, tokens, limit = self.rows_kernel
         return (bool(getattr(kernel, "supports_finished_groups", False)) and id(kernel) not in self.failed
                 and (tokens is None or rows <= tokens) and (limit is None or rows <= limit))
 

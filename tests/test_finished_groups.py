@@ -64,10 +64,12 @@ def test_partial_rows_are_computed_until_whole_group_ends(batch, lazy):
 
 @pytest.mark.parametrize("rows,failed,expected", [(1, False, False), (3, False, True),
                                                  (8, False, True), (9, False, False), (3, True, False)])
-def test_group_capability_uses_actual_routing_limits(rows, failed, expected):
+@pytest.mark.parametrize("separate", [False, True])
+def test_group_capability_uses_actual_routing_limits(rows, failed, expected, separate):
     kernel = SimpleNamespace(supports_finished_groups=True)
     backend = megakernel.MegaBackend.__new__(megakernel.MegaBackend)
-    backend.rows_kernel = kernel, 16, 8
+    backend.kernel, backend.max_tokens, backend.max_rows = kernel, 16, 8
+    backend.rows_kernel = (kernel, 16, 8) if separate else None
     backend.failed = {id(kernel)} if failed else set()
     assert backend.supports_finished_groups(rows) is expected
 
@@ -83,7 +85,7 @@ def test_gluon_rejects_invalid_group_stop(rows, window, dtype, count):
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="compute GPU required")
-@pytest.mark.parametrize("rows", [3, 4, 8])
+@pytest.mark.parametrize("rows", [2, 3, 4, 5, 6, 7, 8])
 @pytest.mark.parametrize("graphs", [False, True])
 @torch.inference_mode()
 def test_gluon_partial_full_done_and_restart_exact(rows, graphs):
@@ -135,3 +137,31 @@ def test_gluon_rejects_strided_group_flags():
     with pytest.raises(ValueError, match="finished-group"):
         kernel.step_fn(torch.zeros(3, 1, dtype=torch.long), None, None, None, None, None, None, None,
                        stop=torch.zeros(6, dtype=torch.bool)[::2])
+
+
+@pytest.mark.parametrize("enabled", [False, True])
+@pytest.mark.parametrize("supported", [False, True])
+@pytest.mark.parametrize("batch", [3, 8])
+def test_public_group_factory_and_unsupported_fallback(enabled, supported, batch):
+    from owsm_trt.pipeline import OWSM
+
+    backend = GroupBackend()
+    if not supported:
+        backend.supports_finished_groups = lambda rows: False
+    tokenizer = SimpleNamespace(first_time=None, notime=None, eos=0, punctuation=frozenset())
+    model = OWSM(CFG, tokenizer, None, backend,
+                 SimpleNamespace(dtype="float32", capacity=16), torch.device("cpu"),
+                 use_cuda_graph=False, ctc_draft=False, greedy_kernels=enabled)
+    session = model._session(batch)
+    assert session.skip_finished is (enabled and supported)
+    assert model._session(batch) is session
+    expected = [[], [1]*2, [1]*7] + [[1]*3]*(batch-3)
+    assert session.decode(torch.tensor([[2, 3, 4]]*batch), 10) == expected
+    assert all(bool(getattr(fn, "skips_finished", False)) is (enabled and supported)
+               for fn in session._steps.values())
+
+
+def test_group_capability_does_not_replace_unsupported_rows_route():
+    kernel = SimpleNamespace(supports_finished_groups=True)
+    backend = megakernel.MegaBackend(SimpleNamespace(), kernel, 16, 8, rows_kernel=(None, 16, 8))
+    assert not backend.supports_finished_groups(3)

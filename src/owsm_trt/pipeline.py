@@ -485,6 +485,7 @@ class OWSM:
                     reuse_notime=self.greedy_reuse_notime, cache_draft_flags=self.greedy_cache_draft_flags,
                     lazy_verify_graphs=self.greedy_lazy_verify_graphs, fused_select=self.greedy_fused_select,
                     lazy_plain=self.greedy_lazy_plain, skip_finished=self.greedy_skip_finished,
+                    skip_finished_groups=self.greedy_skip_finished,
                 )  # fmt: skip
             else:
                 backend = self.backend
