@@ -70,7 +70,7 @@ nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv -l 5 \
 SMI=$!
 timeout 500 "$PY" -m pytest -q -p no:cacheprovider \
     "$LOCAL/tests/test_frontend_graph.py" "$LOCAL/tests/test_frontend_kernels.py" \
-    "$LOCAL/tests/test_lazy_drafts.py" "$LOCAL/tests/test_model.py" \
+    "$LOCAL/tests/test_lazy_drafts.py" "$LOCAL/tests/test_model.py" "$LOCAL/tests/test_longform.py" \
     > "$LOCAL/results/tests.log" 2>&1
 printf '%s\n' 'focused API and frontend regression tests passed' >> "$OUT/progress.log"
 timeout 1100 "$PY" "$LOCAL/scripts/profile_draft_windows.py" \
