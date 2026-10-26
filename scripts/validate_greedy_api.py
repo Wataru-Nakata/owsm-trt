@@ -29,7 +29,7 @@ def main():
     items = json.loads(Path(args.manifest).read_text())[:3]
     waves = [load_audio(x["path"]) for x in items]
     expected, records, engine_hashes = {}, {}, None
-    for mode, options in (("serial", {"greedy_kernels": False}), ("default", {})):
+    for mode, options in (("serial", {"greedy_kernels": False, "lazy_drafts": False}), ("default", {})):
         model, load_ms = wall(lambda: OWSM.from_pretrained(args.model, **options))
         files = hub.resolve(args.model)
         engines = hub.cache_dir() / files.name.replace("/", "--") / engine_tag(model.opts)

@@ -231,7 +231,7 @@ class OWSM:
         self.greedy_fuse_accept = greedy_kernels
         self.greedy_reuse_notime = False
         self.greedy_cache_draft_flags = greedy_kernels
-        self.greedy_lazy_verify_graphs = False
+        self.greedy_lazy_verify_graphs = lazy_drafts
         self._frontend_replay = None
         self.draft_stats = [0, 0]  # tokens emitted, decoder calls made by drafted decoding
         self.stream_priority = True  # decoder calls go first while the encoder works ahead
@@ -297,9 +297,10 @@ class OWSM:
         vocabularies keep the reference path. Exact sampled output and latency checks cover H200,
         v4 medium 1B/base 102M, English/Japanese. Other GPUs are unmeasured. Beam decoding is independent.
 
-        ``lazy_drafts`` (default True): create verification buffers/graphs on first
-        draft use. Translation and language identification avoid unused verification setup. This
-        reduces cold work, not the number of steady-state decoder calls.
+        ``lazy_drafts`` (default True): create verification buffers on first draft use, then prepare
+        each bucket/window/solo decoder call and graph only when needed. Translation and language
+        identification avoid unused verification setup. An unseen shape still incurs cold setup;
+        warmed decoder calls are unchanged. False eagerly prepares every verification call/graph.
 
         ``draft_token_budget`` (default 256): maximum rows x verification window for greedy CTC
         drafts (at least one token per row). 128 improved H200/1B timestamped B8 throughput in the

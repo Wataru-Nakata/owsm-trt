@@ -214,10 +214,14 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   5% on 102M, with exact sampled output. This initialization change does not apply to streaming or
   long prefill. `greedy_kernels=False` restores serial selection and full initialization. CPU, missing Triton
   and small vocabularies retain the reference path. [Measurements and limits](docs/runtime-greedy-selection.md).
-* **Unused draft setup is deferred.** `lazy_drafts=True` (default) creates verification graphs on first
-  draft use. With resident engines, session-cold translation/language identification was 33–36% shorter
+* **Unused draft setup is deferred.** `lazy_drafts=True` (default) creates verification buffers on first
+  draft use and prepares each bucket/window/solo call and graph only when needed. With resident engines, session-cold translation/language identification was 33–36% shorter
   on H200/v4 1B and 102M, saving 45.4/26.1 MiB of unused buffers. Warm ASR work is unchanged; long-prompt
-  cold measurements varied. `lazy_drafts=False` restores eager construction.
+  cold measurements varied. Deferring individual calls also reduced resident-engine session-cold ASR
+  time by 34–39% on 1B/102M and B8 streaming setup/request time by about 60–61% (12 English recordings,
+  three reconstructions, exact outputs). New shapes still incur setup; fully warm timing changed
+  -0.5% to +0.8% across the measured cases. `lazy_drafts=False` restores eager construction.
+  [Per-shape cold and warm validation](docs/runtime-lazy-verify.md).
 * **Rows are refilled (greedy ASR of more than one batch).** Utterances need from 1 to 25 decoder calls, and a fixed
   batch would wait for its slowest one. Instead a row whose utterance is done takes the next one for the following
   call, at its own cache offset (on the test set: 29 instead of 92 calls per pass at batch 8). The encoder works

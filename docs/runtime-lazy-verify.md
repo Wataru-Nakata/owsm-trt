@@ -39,3 +39,29 @@ records first-use time/counts, then explicitly prepares all potential verificati
 steady-state comparison. The latter tests hot-path overhead and prevents timing a new capture when
 encoder overlap changes solo dispatch; it is not a requirement that deployments prewarm every shape.
 Memory in that multi-variant steady benchmark is not the cold memory saving or deployment peak.
+
+## B8/102M replication and adoption
+
+Job2771972 (source097e53d) passed all public/API and cold comparisons for1B/102M and12 English inputs
+including B8 streaming, plus English7/Japanese translation warm-profile cases. All outputs match.
+Session-cold medians (three reconstructions, warmed backend/JIT):
+
+| Model/request | Eager verify | Deferred verify | Reduction |
+|---|---:|---:|---:|
+| 1B ASR B1 |365.64ms|242.52ms|33.67%|
+| 1B stream B8,12 inputs |3986.77ms|1544.28ms|61.26%|
+| 102M ASR B1 |174.80ms|106.69ms|38.96%|
+| 102M long prompt |173.17ms|112.65ms|34.95%|
+| 102M stream B8,12 inputs |2307.81ms|912.91ms|60.44%|
+
+With all possible verification shapes explicitly warm, RTFx changes ranged-0.48% to+0.75% in the
+English cases and-0.21% in Japanese translation; no steady-state speedup is claimed. Direct1B/102M
+allocation deltas fell27.0/12.1MiB. Streaming allocator/context retention varied; raw samples remain
+available instead of treating differences of medians as per-request guarantees.
+
+High-level `lazy_drafts=True` now enables this behavior as well as deferring the whole unused draft
+setup. False restores eager verification preparation. Standalone GreedySession retains explicit
+`lazy_verify_graphs=True`. First use of an unseen shape, including solo/concurrent switching, has
+setup cost; a warm model does not imply every shape is warm. KV preservation is only on cold setup.
+Other GPUs/checkpoints are unmeasured. Artifact: `outputs/runtime-2771972` (`cold1b`, `cold102m`, API
+records, `analysis-graph_flags.json`, raw wall/capture/trace/dispatch records).
