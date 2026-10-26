@@ -24,3 +24,20 @@ real-checkpoint checks against fp32; English73/Japanese12, nine alternating whol
 for plain B3, timestamp B3, translation B8, timestamp beam5 B1, and drafted timestamp B8. Wall,
 cold load/capture and dispatch instrumentation are separate. Both variants' sessions coexist,
 so allocator peaks and compiler-cache-biased cold observations are not isolated deployment gains.
+
+
+## Gate failure2774096: no speed measurement
+
+Frozen41a7d86 passed19 D384/scheduling kernel tests, but the real102M checkpoint failed an
+additional row check: max absolute logit difference divided by reference range0.0744 (gate<0.02),
+argmax agreement0.88. The process stopped before any corpus timing or quality summary; Japanese
+was not run. The old script saved shape details only after all checks, so this artifact cannot
+distinguish R8 S1 from R8 S4. No speed/output-compatibility claim or production routing change
+is made from this failed job. Logs remain in `outputs/runtime-2774096/`.
+
+`diagnose_ring_rows.py` is prepared to persist every R1/R3/R5/R8 S1 and R8 S4 check, using both
+the64-frame random input of the existing gate and the full encoder time dimension. It compares
+CPU/GPU fp32, GPU fp16, Ring and (only at supported encoder shapes) the same TensorRT engines,
+including per-layer new-KV error and Ring replay determinism. Additional real-audio prefill
+states cover R3/R5/R8. It does not relax the production gate, run performance measurements or
+interpret a numerical diagnosis as adoption. Source/provenance and partial cases are retained.
