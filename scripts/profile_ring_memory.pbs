@@ -69,15 +69,40 @@ cp "$LOCAL/baseline_runtime.py" "$LOCAL/results/"
 nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv -l 5 \
     > "$LOCAL/results/gpu_utilization.csv" &
 SMI=$!
+timeout 180 "$PY" -m pytest -vv -x --tb=short -p no:cacheprovider \
+    "$LOCAL/tests/test_lazy_plain.py" > "$LOCAL/results/tests.log" 2>&1
+printf '%s\n' 'Deferred plain single-token and switching tests complete' >> "$OUT/progress.log"
+timeout 200 "$PY" "$LOCAL/scripts/validate_greedy_api.py" \
+    --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/manifest.json" --lazy-plain \
+    --out "$LOCAL/results/api1b" > "$LOCAL/results/api1b.log" 2>&1
+timeout 300 "$PY" "$LOCAL/scripts/profile_runtime_cold.py" \
+    --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/manifest.json" \
+    --mode plain --repeat 7 --reuse-first-only --limit 12 --cases asr prompt lid translation stream8 \
+    --out "$LOCAL/results/cold1b" > "$LOCAL/results/cold1b.log" 2>&1
+printf '%s\n' '1B public API and cold replication complete' >> "$OUT/progress.log"
+cp -a "$REPO/.cache/models/owsm_v4_base_102M" "$LOCAL/owsm_v4_base_102M"
+mkdir -p "$OWSM_TRT_CACHE/owsm_v4_base_102M"
+cp -a "$REPO/.cache/engines/owsm_v4_base_102M/v621-NVIDIA_H200-sm90-trt11.4.0.106-float16-3d0cbdc9" \
+    "$OWSM_TRT_CACHE/owsm_v4_base_102M/"
+timeout 200 "$PY" "$LOCAL/scripts/validate_greedy_api.py" \
+    --model "$LOCAL/owsm_v4_base_102M" --manifest "$LOCAL/manifest.json" --lazy-plain \
+    --out "$LOCAL/results/api102m" > "$LOCAL/results/api102m.log" 2>&1
+timeout 300 "$PY" "$LOCAL/scripts/profile_runtime_cold.py" \
+    --model "$LOCAL/owsm_v4_base_102M" --manifest "$LOCAL/manifest.json" \
+    --mode plain --repeat 7 --reuse-first-only --limit 12 --cases asr prompt lid translation stream8 \
+    --out "$LOCAL/results/cold102m" > "$LOCAL/results/cold102m.log" 2>&1
+printf '%s\n' '102M public API and cold replication complete' >> "$OUT/progress.log"
 for SWEEP in attention chunk; do
-    timeout 1100 "$PY" "$LOCAL/scripts/profile_ring_programs.py" \
+    ENG_LIMIT=700; JA_LIMIT=300
+    if [ "$SWEEP" = chunk ]; then ENG_LIMIT=900; JA_LIMIT=400; fi
+    timeout "$ENG_LIMIT" "$PY" "$LOCAL/scripts/profile_ring_programs.py" \
         --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/manifest.json" \
         --repeat 11 --sweep "$SWEEP" --split-choose --fuse-accept \
         --long-audio "$LOCAL/long_110s.wav" \
         --cases single_greedy single_ts plain_greedy plain_ts translation stream_greedy_b1 long_greedy \
         --out "$LOCAL/results/english_$SWEEP" > "$LOCAL/results/english_$SWEEP.log" 2>&1
     printf '%s\n' "English $SWEEP comparison complete" >> "$OUT/progress.log"
-    timeout 450 "$PY" "$LOCAL/scripts/profile_ring_programs.py" \
+    timeout "$JA_LIMIT" "$PY" "$LOCAL/scripts/profile_ring_programs.py" \
         --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/extra_manifest.json" --lang jpn \
         --repeat 11 --sweep "$SWEEP" --split-choose --fuse-accept \
         --cases single_greedy single_ts plain_greedy plain_ts translation stream_greedy_b1 \
