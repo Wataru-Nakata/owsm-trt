@@ -287,3 +287,16 @@ enforce an account-wide limit against concurrent job submissions/releases. No ad
 submitted in response. At verified completion the account had 184 allocated and zero queued GPUs.
 The capacity monitor stopped after completion and the approved additional-job allowance is consumed.
 The audit is preserved in `outputs/beam-implementation/monitor-status.json` and the compact result record.
+
+## Subsequent authorization and optimization
+
+The user subsequently authorized serial one-GPU jobs with the same gai51740/R9920261300/rt_HG,
+one-node, one-hour settings without repeated questions, subject to the account192-GPU cap. This
+supersedes the historical one-job allowance above. Every new job still requires a fresh successful
+queue/capacity/duplicate check; allocated plus eligible queued plus the new GPU must be<=192.
+The monitor reports actual allocated overage immediately; other users' jobs are never altered.
+
+Further measurements and default changes are documented separately: [search fusion](beam-fusion.md),
+[prefix self-KV gathers](beam-kv.md), [decoder settings with no gain](beam-decoder.md), and
+[shared cross-KV](beam-cross.md). Their isolated gains must not be added or multiplied into a claim
+about the final combination; a same-engine combined comparison is prepared next.

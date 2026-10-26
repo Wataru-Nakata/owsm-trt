@@ -76,7 +76,7 @@ timeout 480 "$PY" -m pytest -q -p no:cacheprovider "$LOCAL/tests/test_beam.py" \
     > "$LOCAL/results/tests.log" 2>&1
 echo "beam and model regression tests passed"
 printf '%s\n' 'regression tests passed' >> "$OUT/progress.log"
-if [ "${EXPERIMENT:-stopping}" = cross ]; then
+if [ "${EXPERIMENT:-stopping}" = cross ] || [ "${EXPERIMENT:-stopping}" = final ]; then
     timeout 900 "$PY" -m pytest -q -p no:cacheprovider "$LOCAL/tests/test_beam_cross.py" \
         "$LOCAL/tests/test_megakernel.py::test_ring_solo_is_bitwise_the_same" \
         "$LOCAL/tests/test_megakernel.py::test_backend_trial_falls_back" \
@@ -92,8 +92,8 @@ if [ "${EXPERIMENT:-stopping}" = cross ]; then
             --beam 5 --timestamps --batch "$batch" --chunk "$interval" --repeat 5 \
             --limit "${PROFILE_LIMIT:-73}" --upper-bound on --fused-rank --fused-finish \
             --kv-reorder prefix --share-cross-kv --baseline-runtime "$LOCAL/baseline_runtime.py" \
-            "${DETAIL[@]}" --out "$LOCAL/results/cross_b${batch}" \
-            > "$LOCAL/results/cross_b${batch}.log" 2>&1
+            "${DETAIL[@]}" --out "$LOCAL/results/${EXPERIMENT}_b${batch}" \
+            > "$LOCAL/results/${EXPERIMENT}_b${batch}.log" 2>&1
         printf 'shared cross KV batch %s complete\n' "$batch" >> "$OUT/progress.log"
         if [ -n "${EXTRA_MANIFEST:-}" ]; then
             timeout 360 "$PY" "$LOCAL/scripts/profile_beam.py" \
@@ -102,8 +102,8 @@ if [ "${EXPERIMENT:-stopping}" = cross ]; then
                 --beam 5 --timestamps --batch "$batch" --chunk "$interval" --repeat 3 \
                 --upper-bound on --fused-rank --fused-finish --kv-reorder prefix --share-cross-kv \
                 --baseline-runtime "$LOCAL/baseline_runtime.py" \
-                --out "$LOCAL/results/cross_japanese_b${batch}" \
-                > "$LOCAL/results/cross_japanese_b${batch}.log" 2>&1
+                --out "$LOCAL/results/${EXPERIMENT}_japanese_b${batch}" \
+                > "$LOCAL/results/${EXPERIMENT}_japanese_b${batch}.log" 2>&1
             printf 'shared cross KV Japanese batch %s complete\n' "$batch" >> "$OUT/progress.log"
         fi
     done

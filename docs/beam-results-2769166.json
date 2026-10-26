@@ -1,0 +1,751 @@
+{
+  "source": {
+    "commit": "3ec871da1add45d0b8ba95010ae030d9cf496392",
+    "baseline_commit": "e32e48addd4f00b99e952d50630ab99248909f99",
+    "group": "gai51740",
+    "queue": "R9920261300",
+    "resource": "rt_HG",
+    "nodes": 1,
+    "gpus": 1,
+    "walltime": "01:00:00",
+    "account_gpu_cap": 192,
+    "english_limit": 73,
+    "japanese_limit": 12,
+    "experiment": "group",
+    "status": "approved_not_submitted",
+    "approved_jobs": 1,
+    "additional_jobs_submitted": 0,
+    "snapshot": "/groups/gai51740/acc12576tt/github.com/owsm_trt/outputs/beam-grouped-cross/snapshot-3ec871da.tar",
+    "approval": "Standing user authorization: serial1GPU under account192, same approved resource settings; no repeated confirmation.",
+    "prepared_at": "2026-10-26T02:41:29.140699+00:00",
+    "next_action": "Fresh capacity gate, submit once, monitor, analyze, adopt only measured improvement."
+  },
+  "runs": {
+    "group_b1": {
+      "summary": {
+        "baseline": {
+          "transcribe_ms": {
+            "n": 365,
+            "p50": 25.636108010075986,
+            "p95": 54.626202618237585,
+            "min": 9.967075020540506,
+            "max": 114.62972601293586,
+            "stdev": 15.02297176736008
+          },
+          "decode_ms": {
+            "n": 365,
+            "p50": 22.381067974492908,
+            "p95": 51.01191599969752,
+            "min": 6.876122992252931,
+            "max": 109.36852800659835,
+            "stdev": 14.841832380253809
+          },
+          "decoder_calls": {
+            "n": 365,
+            "p50": 21.0,
+            "p95": 51.0,
+            "min": 5,
+            "max": 109,
+            "stdev": 15.292126320954372
+          },
+          "decode_ms_per_selection": {
+            "n": 365,
+            "p50": 1.0135382229539875,
+            "p95": 1.114620319955672,
+            "min": 0.9771498411686884,
+            "max": 1.2401728357266013,
+            "stdev": 0.04161458310937999
+          },
+          "rtfx": 230.42335705228115,
+          "peak_allocated_bytes": 6851791872,
+          "quality": {
+            "metric": "WER",
+            "reference_units": 1150,
+            "errors": 45,
+            "rate": 0.0391304347826087,
+            "annotated_utterances": 73,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          },
+          "within_group_cv_median": 0.005021827413919882,
+          "within_group_cv_max": 0.021398651551559175
+        },
+        "on": {
+          "transcribe_ms": {
+            "n": 365,
+            "p50": 26.228228001855314,
+            "p95": 55.934434389928356,
+            "min": 10.113630996784195,
+            "max": 116.2278309930116,
+            "stdev": 15.382031062995164
+          },
+          "decode_ms": {
+            "n": 365,
+            "p50": 22.940652997931466,
+            "p95": 52.3421514139045,
+            "min": 6.954744982067496,
+            "max": 112.1316330099944,
+            "stdev": 15.227675395856398
+          },
+          "decoder_calls": {
+            "n": 365,
+            "p50": 21.0,
+            "p95": 51.0,
+            "min": 5,
+            "max": 109,
+            "stdev": 15.292126320954372
+          },
+          "decode_ms_per_selection": {
+            "n": 365,
+            "p50": 1.0389662694741184,
+            "p95": 1.1500016776456807,
+            "min": 1.0002535931623966,
+            "max": 1.2329921689039718,
+            "stdev": 0.042532762293302405
+          },
+          "rtfx": 225.49367421796006,
+          "peak_allocated_bytes": 6851791872,
+          "quality": {
+            "metric": "WER",
+            "reference_units": 1150,
+            "errors": 45,
+            "rate": 0.0391304347826087,
+            "annotated_utterances": 73,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          },
+          "within_group_cv_median": 0.005895573816605756,
+          "within_group_cv_max": 0.016909337287014783
+        }
+      },
+      "paired_group_speedup": {
+        "median": -0.02189537582665435,
+        "min": -0.045083393263711136,
+        "max": 0.0016134627979411675,
+        "faster_groups": 1,
+        "groups": 73
+      },
+      "rtfx_speedup": -0.02139402401468604,
+      "same_decoder_calls": true,
+      "cold": {
+        "fixed/b1": {
+          "session_create_jit_capture_ms": 3353.188720997423,
+          "dispatch": {
+            "64": {
+              "implementation": "megakernel-gluon",
+              "module": "owsm_trt.megakernel_gluon",
+              "fallback_reason": null,
+              "writes_cache": true
+            },
+            "128": {
+              "implementation": "megakernel-gluon",
+              "module": "owsm_trt.megakernel_gluon",
+              "fallback_reason": null,
+              "writes_cache": true
+            },
+            "256": {
+              "implementation": "megakernel-gluon",
+              "module": "owsm_trt.megakernel_gluon",
+              "fallback_reason": null,
+              "writes_cache": true
+            },
+            "512": {
+              "implementation": "megakernel-gluon",
+              "module": "owsm_trt.megakernel_gluon",
+              "fallback_reason": null,
+              "writes_cache": true
+            }
+          },
+          "search_kernels": {
+            "rank": true,
+            "finish": true,
+            "kv_reorder": "prefix",
+            "share_cross_kv": true,
+            "cross_kv_fallback": null,
+            "cross_kv_bytes": 27574272
+          },
+          "capture_shapes": {
+            "decoder": {
+              "rows=5,cache=64": 1,
+              "rows=5,cache=128": 1,
+              "rows=5,cache=256": 1,
+              "rows=5,cache=512": 1
+            },
+            "encoder": {
+              "((1, 700, 128), 0)": 1,
+              "((1, 600, 128), 0)": 1,
+              "((1, 1300, 128), 0)": 1,
+              "((1, 1100, 128), 0)": 1,
+              "((1, 3000, 128), 0)": 1,
+              "((1, 1000, 128), 0)": 1,
+              "((1, 1900, 128), 0)": 1,
+              "((1, 1600, 128), 0)": 1,
+              "((1, 800, 128), 0)": 1,
+              "((1, 300, 128), 0)": 1,
+              "((1, 1200, 128), 0)": 1,
+              "((1, 500, 128), 0)": 1,
+              "((1, 400, 128), 0)": 1,
+              "((1, 200, 128), 0)": 1,
+              "((1, 1500, 128), 0)": 1,
+              "((1, 1400, 128), 0)": 1,
+              "((1, 900, 128), 0)": 1
+            }
+          }
+        },
+        "baseline/b1": {
+          "session_create_jit_capture_ms": 2587.75418298319,
+          "dispatch": {
+            "64": {
+              "implementation": "megakernel-gluon",
+              "module": "owsm_trt.megakernel_gluon",
+              "fallback_reason": null,
+              "writes_cache": true
+            },
+            "128": {
+              "implementation": "megakernel-gluon",
+              "module": "owsm_trt.megakernel_gluon",
+              "fallback_reason": null,
+              "writes_cache": true
+            },
+            "256": {
+              "implementation": "megakernel-gluon",
+              "module": "owsm_trt.megakernel_gluon",
+              "fallback_reason": null,
+              "writes_cache": true
+            },
+            "512": {
+              "implementation": "megakernel-gluon",
+              "module": "owsm_trt.megakernel_gluon",
+              "fallback_reason": null,
+              "writes_cache": true
+            }
+          },
+          "search_kernels": {
+            "rank": true,
+            "finish": true,
+            "kv_reorder": "prefix",
+            "share_cross_kv": true,
+            "cross_kv_fallback": null,
+            "cross_kv_bytes": 27574272
+          },
+          "capture_shapes": {
+            "decoder": {
+              "rows=5,cache=64": 1,
+              "rows=5,cache=128": 1,
+              "rows=5,cache=256": 1,
+              "rows=5,cache=512": 1
+            },
+            "encoder": {
+              "((1, 700, 128), 0)": 1,
+              "((1, 600, 128), 0)": 1,
+              "((1, 1300, 128), 0)": 1,
+              "((1, 1100, 128), 0)": 1,
+              "((1, 3000, 128), 0)": 1,
+              "((1, 1000, 128), 0)": 1,
+              "((1, 1900, 128), 0)": 1,
+              "((1, 1600, 128), 0)": 1,
+              "((1, 800, 128), 0)": 1,
+              "((1, 300, 128), 0)": 1,
+              "((1, 1200, 128), 0)": 1,
+              "((1, 500, 128), 0)": 1,
+              "((1, 400, 128), 0)": 1,
+              "((1, 200, 128), 0)": 1,
+              "((1, 1500, 128), 0)": 1,
+              "((1, 1400, 128), 0)": 1,
+              "((1, 900, 128), 0)": 1
+            }
+          }
+        },
+        "baseline": {
+          "warmup_ms": 6506.144356011646
+        },
+        "on": {
+          "warmup_ms": 6304.942988004768
+        }
+      },
+      "environment": {
+        "git_commit": "3ec871da1add45d0b8ba95010ae030d9cf496392",
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106",
+          "numpy": "2.5.4",
+          "sentencepiece": "0.2.2"
+        },
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "baseline_runtime_sha256": "eed61c47ce0ae7327fed978a0ad50f68761b5004643f27299484ff95c070cb4c",
+        "cold": {
+          "disk_load_ms": 112.59572298149578,
+          "from_pretrained_ms": 10782.300886989105,
+          "components_ms": {
+            "_load_frontend": [
+              1323.5067269997671
+            ],
+            "_load_decoder": [
+              2681.9627279764973
+            ]
+          },
+          "jit_separate": null,
+          "jit_note": "included in backend/session setup; not independently attributed"
+        },
+        "args": {
+          "model": "/local/2769166.pbs1/beam/owsm_v4_medium_1B",
+          "manifest": "/local/2769166.pbs1/beam/manifest.json",
+          "beam": 5,
+          "timestamps": true,
+          "batch": [
+            1
+          ],
+          "prompt": null,
+          "lang": "eng",
+          "task": "asr",
+          "backend": "tensorrt",
+          "decoder_kernel": "auto",
+          "repeat": 5,
+          "limit": 73,
+          "chunk": 1,
+          "compare_chunks": [],
+          "upper_bound": "on",
+          "fused_rank": true,
+          "fused_finish": true,
+          "kv_reorder": "prefix",
+          "share_cross_kv": true,
+          "gluon_group_queries": true,
+          "gluon_programs": null,
+          "gluon_prefetch": null,
+          "baseline_runtime": "/local/2769166.pbs1/beam/baseline_runtime.py",
+          "out": "/local/2769166.pbs1/beam/results/group_b1",
+          "phases": true,
+          "trace": true,
+          "disk": true,
+          "extra_checks": true,
+          "long_audio": "/local/2769166.pbs1/beam/long_110s.wav"
+        }
+      },
+      "eager_kernel_ms_by_phase": {
+        "prefill": 1.1144650000000005,
+        "unattributed": 0.10326900000000014,
+        "selection": 2.2978590000000008,
+        "reorder": 0.7055860000000004,
+        "finish_and_history": 0.055582000000000006,
+        "decoder": 18.305743999999997
+      }
+    },
+    "group_japanese_b1": {
+      "summary": {
+        "baseline": {
+          "transcribe_ms": {
+            "n": 36,
+            "p50": 34.939347504405305,
+            "p95": 82.96209100808483,
+            "min": 23.801992007065564,
+            "max": 83.12976401066408,
+            "stdev": 17.219947501305793
+          },
+          "decode_ms": {
+            "n": 36,
+            "p50": 31.329747493145987,
+            "p95": 78.83457173738861,
+            "min": 20.289789012167603,
+            "max": 78.99706799071282,
+            "stdev": 16.98250236464186
+          },
+          "decoder_calls": {
+            "n": 36,
+            "p50": 30.5,
+            "p95": 79.0,
+            "min": 19,
+            "max": 79,
+            "stdev": 17.480743373463522
+          },
+          "decode_ms_per_selection": {
+            "n": 36,
+            "p50": 0.9958140966069373,
+            "p95": 1.017828640397056,
+            "min": 0.9801377498661168,
+            "max": 1.02681778219488,
+            "stdev": 0.012263213662325743
+          },
+          "rtfx": 326.03370117130896,
+          "peak_allocated_bytes": 6851791872,
+          "quality": {
+            "metric": "CER",
+            "reference_units": 592,
+            "errors": 26,
+            "rate": 0.04391891891891892,
+            "annotated_utterances": 12,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            }
+          },
+          "within_group_cv_median": 0.0019235768482279932,
+          "within_group_cv_max": 0.008271692408432703
+        },
+        "on": {
+          "transcribe_ms": {
+            "n": 36,
+            "p50": 35.72769548918586,
+            "p95": 84.86855425144313,
+            "min": 24.279078003019094,
+            "max": 84.88643099553883,
+            "stdev": 17.619450277527523
+          },
+          "decode_ms": {
+            "n": 36,
+            "p50": 32.20939400489442,
+            "p95": 80.80657874961616,
+            "min": 20.853567984886467,
+            "max": 80.87666099891067,
+            "stdev": 17.41716512847988
+          },
+          "decoder_calls": {
+            "n": 36,
+            "p50": 30.5,
+            "p95": 79.0,
+            "min": 19,
+            "max": 79,
+            "stdev": 17.480743373463522
+          },
+          "decode_ms_per_selection": {
+            "n": 36,
+            "p50": 1.021644728027364,
+            "p95": 1.0428518246044405,
+            "min": 1.0053632032833304,
+            "max": 1.0434569499921054,
+            "stdev": 0.011690237700854488
+          },
+          "rtfx": 319.0671039277315,
+          "peak_allocated_bytes": 6851791872,
+          "quality": {
+            "metric": "CER",
+            "reference_units": 592,
+            "errors": 26,
+            "rate": 0.04391891891891892,
+            "annotated_utterances": 12,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            }
+          },
+          "within_group_cv_median": 0.0012853378363802113,
+          "within_group_cv_max": 0.006084208697497661
+        }
+      },
+      "paired_group_speedup": {
+        "median": -0.021301349060014352,
+        "min": -0.02483529214244018,
+        "max": -0.014260557450606948,
+        "faster_groups": 0,
+        "groups": 12
+      },
+      "rtfx_speedup": -0.021367721246451588,
+      "same_decoder_calls": true,
+      "cold": {
+        "fixed/b1": {
+          "session_create_jit_capture_ms": 108.9229850040283,
+          "dispatch": {
+            "64": {
+              "implementation": "megakernel-gluon",
+              "module": "owsm_trt.megakernel_gluon",
+              "fallback_reason": null,
+              "writes_cache": true
+            },
+            "128": {
+              "implementation": "megakernel-gluon",
+              "module": "owsm_trt.megakernel_gluon",
+              "fallback_reason": null,
+              "writes_cache": true
+            },
+            "256": {
+              "implementation": "megakernel-gluon",
+              "module": "owsm_trt.megakernel_gluon",
+              "fallback_reason": null,
+              "writes_cache": true
+            },
+            "512": {
+              "implementation": "megakernel-gluon",
+              "module": "owsm_trt.megakernel_gluon",
+              "fallback_reason": null,
+              "writes_cache": true
+            }
+          },
+          "search_kernels": {
+            "rank": true,
+            "finish": true,
+            "kv_reorder": "prefix",
+            "share_cross_kv": true,
+            "cross_kv_fallback": null,
+            "cross_kv_bytes": 27574272
+          },
+          "capture_shapes": {
+            "decoder": {
+              "rows=5,cache=64": 1,
+              "rows=5,cache=128": 1,
+              "rows=5,cache=256": 1,
+              "rows=5,cache=512": 1
+            },
+            "encoder": {
+              "((1, 1200, 128), 0)": 1,
+              "((1, 2400, 128), 0)": 1,
+              "((1, 900, 128), 0)": 1,
+              "((1, 1300, 128), 0)": 1,
+              "((1, 1100, 128), 0)": 1,
+              "((1, 1000, 128), 0)": 1,
+              "((1, 3000, 128), 0)": 1,
+              "((1, 1600, 128), 0)": 1
+            }
+          }
+        },
+        "baseline/b1": {
+          "session_create_jit_capture_ms": 21.084808016894385,
+          "dispatch": {
+            "64": {
+              "implementation": "megakernel-gluon",
+              "module": "owsm_trt.megakernel_gluon",
+              "fallback_reason": null,
+              "writes_cache": true
+            },
+            "128": {
+              "implementation": "megakernel-gluon",
+              "module": "owsm_trt.megakernel_gluon",
+              "fallback_reason": null,
+              "writes_cache": true
+            },
+            "256": {
+              "implementation": "megakernel-gluon",
+              "module": "owsm_trt.megakernel_gluon",
+              "fallback_reason": null,
+              "writes_cache": true
+            },
+            "512": {
+              "implementation": "megakernel-gluon",
+              "module": "owsm_trt.megakernel_gluon",
+              "fallback_reason": null,
+              "writes_cache": true
+            }
+          },
+          "search_kernels": {
+            "rank": true,
+            "finish": true,
+            "kv_reorder": "prefix",
+            "share_cross_kv": true,
+            "cross_kv_fallback": null,
+            "cross_kv_bytes": 27574272
+          },
+          "capture_shapes": {
+            "decoder": {
+              "rows=5,cache=64": 1,
+              "rows=5,cache=128": 1,
+              "rows=5,cache=256": 1,
+              "rows=5,cache=512": 1
+            },
+            "encoder": {
+              "((1, 1200, 128), 0)": 1,
+              "((1, 2400, 128), 0)": 1,
+              "((1, 900, 128), 0)": 1,
+              "((1, 1300, 128), 0)": 1,
+              "((1, 1100, 128), 0)": 1,
+              "((1, 1000, 128), 0)": 1,
+              "((1, 3000, 128), 0)": 1,
+              "((1, 1600, 128), 0)": 1
+            }
+          }
+        },
+        "baseline": {
+          "warmup_ms": 2304.658566019498
+        },
+        "on": {
+          "warmup_ms": 2345.737955009099
+        }
+      },
+      "environment": {
+        "git_commit": "3ec871da1add45d0b8ba95010ae030d9cf496392",
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106",
+          "numpy": "2.5.4",
+          "sentencepiece": "0.2.2"
+        },
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "baseline_runtime_sha256": "eed61c47ce0ae7327fed978a0ad50f68761b5004643f27299484ff95c070cb4c",
+        "cold": {
+          "disk_load_ms": 18.13219001633115,
+          "from_pretrained_ms": 7151.939447008772,
+          "components_ms": {
+            "_load_frontend": [
+              1368.4420710196719
+            ],
+            "_load_decoder": [
+              2890.783287002705
+            ]
+          },
+          "jit_separate": null,
+          "jit_note": "included in backend/session setup; not independently attributed"
+        },
+        "args": {
+          "model": "/local/2769166.pbs1/beam/owsm_v4_medium_1B",
+          "manifest": "/local/2769166.pbs1/beam/extra_manifest.json",
+          "beam": 5,
+          "timestamps": true,
+          "batch": [
+            1
+          ],
+          "prompt": null,
+          "lang": "jpn",
+          "task": "asr",
+          "backend": "tensorrt",
+          "decoder_kernel": "auto",
+          "repeat": 3,
+          "limit": null,
+          "chunk": 1,
+          "compare_chunks": [],
+          "upper_bound": "on",
+          "fused_rank": true,
+          "fused_finish": true,
+          "kv_reorder": "prefix",
+          "share_cross_kv": true,
+          "gluon_group_queries": true,
+          "gluon_programs": null,
+          "gluon_prefetch": null,
+          "baseline_runtime": "/local/2769166.pbs1/beam/baseline_runtime.py",
+          "out": "/local/2769166.pbs1/beam/results/group_japanese_b1",
+          "phases": false,
+          "trace": false,
+          "disk": false,
+          "extra_checks": false,
+          "long_audio": null
+        }
+      }
+    }
+  },
+  "english_extra_agreement": {
+    "group": {
+      "baseline": {
+        "no_timestamps": true,
+        "translation": true,
+        "prompt": true,
+        "silence_noise": true,
+        "30s_repeated_speech": true,
+        "long_audio": true
+      },
+      "off": {
+        "no_timestamps": true,
+        "translation": true,
+        "prompt": true,
+        "silence_noise": true,
+        "30s_repeated_speech": true,
+        "long_audio": true
+      },
+      "on": {
+        "no_timestamps": true,
+        "translation": true,
+        "prompt": true,
+        "silence_noise": true,
+        "30s_repeated_speech": true,
+        "long_audio": true
+      }
+    }
+  }
+}

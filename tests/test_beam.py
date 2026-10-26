@@ -259,4 +259,6 @@ def test_pipeline_forwards_beam_kernel_choice(monkeypatch, enabled):
     )
     s = model._session(1, 3)
     assert captured["fused_rank"] is enabled and captured["fused_finish"] is enabled
+    assert captured["kv_reorder"] == ("prefix" if enabled else "torch")
+    assert captured["share_cross_kv"] is enabled
     assert model._session(1, 3) is s
