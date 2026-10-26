@@ -14,6 +14,7 @@ from profile_runtime import captures
 from owsm_trt import OWSM, hub
 from owsm_trt.audio import load_audio
 from owsm_trt.build import engine_tag
+from owsm_trt.runtime import GreedySession
 
 
 @torch.inference_mode()
@@ -23,6 +24,7 @@ def main():
     ap.add_argument("--manifest", required=True)
     ap.add_argument("--lang", default="eng")
     ap.add_argument("--lazy-plain", action="store_true", help="Validate opt-in deferred plain setup")
+    ap.add_argument("--finished-stop", action="store_true", help="Assert the public finished-call guard and rollback")
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
     if not os.environ.get("PBS_JOBID") and os.uname().nodename.startswith("login"):
@@ -61,6 +63,18 @@ def main():
             out = model.transcribe(source, lang=args.lang, **kwargs)
             results[name] = [asdict(x) for x in out] if isinstance(out, list) else asdict(out)
             dispatch[name] = captures(model)
+            if args.finished_stop:
+                for sess in model._sessions.values():
+                    if not isinstance(sess, GreedySession):
+                        continue
+                    expected_guard = mode == 'default' and sess.batch == 1 and bool(
+                        getattr(model.backend, 'supports_finished_stop', False))
+                    if sess.skip_finished is not expected_guard:
+                        raise RuntimeError(f'public finished-stop option mismatch: {mode}/{name}')
+                    if any(bool(getattr(fn, 'skips_finished', False)) is not expected_guard
+                           for fn in sess._steps.values()):
+                        raise RuntimeError(f'actual finished-stop dispatch mismatch: {mode}/{name}')
+
             if name == "plain_decoder" and model._session(1).windows:
                 raise RuntimeError("plain decoder check accidentally used drafted decoding")
             if name == "plain_decoder" and (model._session(1).select_workspace is not None) != (mode == "default"):
@@ -89,6 +103,7 @@ def main():
         dict(
             all_equal=True,
             lazy_plain=args.lazy_plain,
+            finished_stop=args.finished_stop,
             checkpoint_sha256=sha256(files.checkpoint),
             engine_sha256=engine_hashes,
             gpu=torch.cuda.get_device_name(),
