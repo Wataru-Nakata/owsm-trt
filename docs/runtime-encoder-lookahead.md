@@ -19,7 +19,7 @@ refill; ended hypotheses stay within their original group. No claim about single
 
 Eight lightweight CPU routing/order tests pass. Eight GPU tests are prepared for tiny real
 encoders/decoders: greedy/beam, graph/eager, B1/B3, mixed final batch, long primer, repeat reuse,
-ordinary encode after staging and exception recovery. These16 tests pass in2773541 (7.23s); stronger exact encoder-KV snapshots are prepared for follow-up.
+ordinary encode after staging and exception recovery. These16 tests pass in2773541 (7.23s); stronger exact encoder-KV snapshots also pass in2773664.
 
 `scripts/profile_encoder_lookahead.py` alternates reference/lookahead whole-list calls with the
 same checkpoint/engines. It first warms every encountered shape, requires exact tokens/time/
@@ -89,7 +89,7 @@ English inputs. Full tokens/times/segments/text match in all seven additional co
 attention and tail compaction enabled. The wide result is the **additional** lookahead comparison
 against that same wide/tail configuration; it is not a product of separate speedup claims.
 The repeated ordinary beam B3 median improves but one pair regresses2.26%; no sample was removed.
-The102M B1 outlier still requires its own replication. Cold observations retain unequal first-use
+The102M B1 replication is reported below. Cold observations retain unequal first-use
 compiler caches and cannot establish a startup improvement.
 
 The separately recorded12-input trace contains61,914 GPU kernel events with stream IDs. After
@@ -100,7 +100,7 @@ parsed inside the next compute allocation, not on the login node.
 
 Warm throughput gains and exact observed outputs support an explicit option. The default stays
 False because extra staging/captures have cold and memory costs and small batches can be neutral.
-The final production-option and strengthened exact encoder-KV checks are the next validation step.
+The final production-option and strengthened exact encoder-KV checks pass as reported below.
 
 ```python
 model = OWSM.from_pretrained("espnet/owsm_v4_medium_1B", encoder_lookahead=True)
@@ -110,3 +110,23 @@ results = model.transcribe(recordings, beam_size=5, timestamps=True, batch_size=
 [Follow-up timings and overlap evidence](runtime-lookahead-results-2773582.json); full results:
 `outputs/runtime-2773582/lookahead_{repeat,two,wide}`. Translation and fixed plain ASR also use
 this path; existing drafted ASR streaming and single-batch calls retain theirs.
+
+
+## Public API acceptance and102M tail latency (2773664)
+
+Frozenacd09b3. All45 focused tests pass, including bitwise raw and beam-expanded cross-KV checks
+for staged/sequential GPU encoders with graph/eager execution, partial batches, long primers,
+repeated reuse and exception recovery. The actual `from_pretrained(encoder_lookahead=True)`
+option matches False on seven mixed speech/silence/noise cases: single requests before/after
+reuse, B3 beam with/without timestamps, a long prompt, plain greedy timestamps and translation.
+Staging is observed only on eligible calls. No fallback or output difference is found.
+
+The independent102M English73 beam5TS B1 comparison uses11 alternating pairs. Whole-list p50
+is954.38→911.27ms (+4.73% RTFx), but p95 is968.33→1002.89ms. Three pairs regress (minimum-9.92%,
+maximum+5.86%, median+4.73%). Full tokens/times/segments/text match73/73 and WER stays94/1150.
+The earlier outlier is therefore **not dismissed as resolved**: the positive median coexists
+with worse tail latency. Keep this option off by default; it does not establish a universal
+single-request or p95 improvement. No samples are discarded.
+
+[All verification and paired measurements](runtime-adoption-results-2773664.json); raw public API
+outputs: `outputs/runtime-2773664/public_api`; timings: `outputs/runtime-2773664/repeat102m`.

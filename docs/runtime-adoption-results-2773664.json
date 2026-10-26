@@ -1,0 +1,306 @@
+{
+  "source": {
+    "group": "gai51740",
+    "queue": "R9920261300",
+    "resource": "rt_HG",
+    "nodes": 1,
+    "gpus": 1,
+    "walltime": "01:00:00",
+    "account_gpu_cap": 192,
+    "approval": "Standing user authorization: serial1 GPU, same settings, account cap192, no repeated confirmation.",
+    "commit": "acd09b34ab142f35ccd7a9511c0fe9c4d010f64c",
+    "baseline_commit": "acd09b34ab142f35ccd7a9511c0fe9c4d010f64c",
+    "experiment": "runtime_adoption_verify",
+    "status": "approved_not_submitted",
+    "approved_jobs": 1,
+    "additional_jobs_submitted": 0,
+    "snapshot": "/groups/gai51740/acc12576tt/github.com/owsm_trt/outputs/runtime-adoption-verify/snapshot-acd09b34.tar",
+    "prepared_at": "2026-10-26T16:43:47.780150+00:00",
+    "depends_on": "2773582 terminal exit0/46tests and all load+lookahead outputs verified; fresh admission before submission"
+  },
+  "exit_status": "0",
+  "loads": {
+    "load1b": {
+      "summary": {
+        "initialized": {
+          "model_load_ms": {
+            "n": 3,
+            "median": 4556.311235006433,
+            "min": 4271.106148022227,
+            "max": 4727.303845982533,
+            "stdev": 188.177444118392
+          },
+          "load_peak_rss_kib": {
+            "n": 3,
+            "median": 4355456,
+            "min": 4353272,
+            "max": 4357608,
+            "stdev": 1770.1806561917786
+          },
+          "load_peak_cuda_bytes": {
+            "n": 3,
+            "median": 2040667648,
+            "min": 2040667648,
+            "max": 2040667648,
+            "stdev": 0.0
+          }
+        },
+        "skipped": {
+          "model_load_ms": {
+            "n": 3,
+            "median": 3199.5173979667015,
+            "min": 2993.998104997445,
+            "max": 3343.6614270322025,
+            "stdev": 143.48059089577305
+          },
+          "load_peak_rss_kib": {
+            "n": 3,
+            "median": 4369788,
+            "min": 4350776,
+            "max": 4371992,
+            "stdev": 9524.427168543465
+          },
+          "load_peak_cuda_bytes": {
+            "n": 3,
+            "median": 2040667648,
+            "min": 2040667648,
+            "max": 2040667648,
+            "stdev": 0.0
+          }
+        }
+      },
+      "all_equal": true,
+      "workers": 11,
+      "requests_per_worker": 10,
+      "production_classes": {
+        "skipped": [
+          "_UninitializedLinear"
+        ],
+        "initialized": [
+          "Linear"
+        ],
+        "production": [
+          "_UninitializedLinear"
+        ]
+      },
+      "paired_reductions_percent": [
+        29.90110755304356,
+        26.614727252549475,
+        32.318346731915916
+      ],
+      "median_reduction_percent": 29.77833969320175,
+      "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+      "engine_sha256": {
+        "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+        "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+        "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+      }
+    },
+    "load102m": {
+      "summary": {
+        "initialized": {
+          "model_load_ms": {
+            "n": 3,
+            "median": 1617.4907250097021,
+            "min": 1521.8415859853849,
+            "max": 1624.3354260222986,
+            "stdev": 46.786269321906204
+          },
+          "load_peak_rss_kib": {
+            "n": 3,
+            "median": 1500316,
+            "min": 1499444,
+            "max": 1513272,
+            "stdev": 6323.078575082447
+          },
+          "load_peak_cuda_bytes": {
+            "n": 3,
+            "median": 730622976,
+            "min": 730622976,
+            "max": 730622976,
+            "stdev": 0.0
+          }
+        },
+        "skipped": {
+          "model_load_ms": {
+            "n": 3,
+            "median": 1354.5885919593275,
+            "min": 1334.9776179529727,
+            "max": 1411.7394190398045,
+            "stdev": 32.56306947645317
+          },
+          "load_peak_rss_kib": {
+            "n": 3,
+            "median": 1497492,
+            "min": 1492776,
+            "max": 1500024,
+            "stdev": 3003.4273755161785
+          },
+          "load_peak_cuda_bytes": {
+            "n": 3,
+            "median": 730622976,
+            "min": 730622976,
+            "max": 730622976,
+            "stdev": 0.0
+          }
+        }
+      },
+      "all_equal": true,
+      "workers": 11,
+      "requests_per_worker": 10,
+      "production_classes": {
+        "skipped": [
+          "_UninitializedLinear"
+        ],
+        "initialized": [
+          "Linear"
+        ],
+        "production": [
+          "_UninitializedLinear"
+        ]
+      },
+      "paired_reductions_percent": [
+        13.088183855172264,
+        17.466134592829576,
+        10.99017109049244
+      ],
+      "median_reduction_percent": 16.253702663352076,
+      "checkpoint_sha256": "4702713d44ab3e239101f09182903cd28f7b51e565bb632008af12beefb37752",
+      "engine_sha256": {
+        "encoder.engine": "f3da9563c8ef41b6252388c18d89fac46cc5781cfa505d6750837e0c12e0f481",
+        "decoder.engine": "b6065937220853d65633f6f59ce0edab80270717b8971c8afa53baf9a2bf5f72",
+        "verify.engine": "34a912836635a2c6928abef52e6ea5140c5215bc8fa178ee8b1af07bd5458dcb"
+      }
+    }
+  },
+  "public_api": {
+    "all_equal": true,
+    "cases": [
+      "single",
+      "beam_ts",
+      "beam_notime",
+      "beam_prompt",
+      "plain_ts",
+      "translation",
+      "single_again"
+    ],
+    "staging": {
+      "False": {
+        "single": 0,
+        "beam_ts": 0,
+        "beam_notime": 0,
+        "beam_prompt": 0,
+        "plain_ts": 0,
+        "translation": 0,
+        "single_again": 0
+      },
+      "True": {
+        "single": 0,
+        "beam_ts": 3,
+        "beam_notime": 3,
+        "beam_prompt": 3,
+        "plain_ts": 3,
+        "translation": 3,
+        "single_again": 2
+      }
+    }
+  },
+  "lookahead102m": {
+    "summary": {
+      "cold_ms": {
+        "reference": 3256.4268459682353,
+        "lookahead": 4192.049573000986
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        }
+      },
+      "quality": {
+        "reference": {
+          "metric": "WER",
+          "reference_units": 1150,
+          "errors": 94,
+          "rate": 0.0817391304347826,
+          "annotated_utterances": 73,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "lookahead": {
+          "metric": "WER",
+          "reference_units": 1150,
+          "errors": 94,
+          "rate": 0.0817391304347826,
+          "annotated_utterances": 73,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "reference": {
+        "n": 11,
+        "p50": 954.3817260419019,
+        "p95": 968.3335775043815,
+        "min": 880.6222240091302,
+        "max": 972.0228189835325,
+        "stdev": 28.095799251417983,
+        "rtfx": 504.02775102892144
+      },
+      "reference_resources": {
+        "(1, 5)": {
+          "encoder_captures": 17,
+          "staging_bytes": 0
+        }
+      },
+      "lookahead": {
+        "n": 11,
+        "p50": 911.267884017434,
+        "p95": 1002.890526491683,
+        "min": 906.4235019613989,
+        "max": 1061.0332989599556,
+        "stdev": 43.28272417777727,
+        "rtfx": 527.8742765292023
+      },
+      "lookahead_resources": {
+        "(1, 5)": {
+          "encoder_captures": 27,
+          "staging_bytes": 6896576
+        }
+      },
+      "shared_process_peak_cuda_bytes": 3007877120
+    },
+    "paired_gains_percent": [
+      5.061608554485941,
+      4.971848124152389,
+      4.879595977723805,
+      5.042419791516317,
+      4.730758521593015,
+      5.857383206843636,
+      -9.917332005963242,
+      -3.4935384444978568,
+      -3.4869755701504412,
+      2.8870208840365397,
+      4.262866293789647
+    ],
+    "paired_median": 4.730758521593015,
+    "rtfx_gain_percent": 4.731192965387443,
+    "caution": "Positive p50 but worse p95 and3/11 negative pairs; keep explicit opt-in, no universal latency improvement."
+  },
+  "tests": "45 passed in10.30s, including exact raw/expanded encoder KV snapshots and graph/exception reuse"
+}

@@ -105,10 +105,28 @@ Production megakernel setup now explicitly requests `skip_init=True` at both dec
 sites. The private helper keeps its ordinary default for reference/diagnostic use; full-model Torch
 loading and engine building retain normal construction. Strict state copying and initialized position
 buffers remain. `empty_init=True` still reproduces the rejected meta experiment. RNG consumption
-changes as documented above; loaded inference outputs match. An unmodified production-settings
-worker with actual module-class diagnostics is prepared as the final adoption check.
+changes as documented above; loaded inference outputs match. The final unmodified production-settings worker is verified below.
 
 [All load samples and hashes](runtime-decoder-skip-results-2773582.json); raw workers/output records:
 `outputs/runtime-2773582/load1b`, `load102m`. These gains are additional to mapped loading in this
 comparison, but should not be multiplied by the mapping percentages from another job. No single-
 request steady-state, disk-cold or engine-build speed improvement is attributed to this change.
+
+
+## Production dispatch and independent replication (2773664)
+
+Frozenacd09b3, H200, three fresh-process timing pairs per model. The unmodified factory uses
+`_UninitializedLinear` for megakernel setup; the explicit reference uses ordinary `Linear`. Both
+1B and102M pass this class check. All572 public API calls across22 fresh workers match complete
+outputs and engine/checkpoint hashes.45 focused tests pass in10.30s, including the storage/init
+and strengthened lookahead checks.
+
+|Model|Initialized p50|Skipped p50|Load reduction|Paired reductions|
+|---|---:|---:|---:|---:|
+|1B|4556.31ms|3199.52ms|29.78%|26.61–32.32%|
+|102M|1617.49ms|1354.59ms|16.25%|10.99–17.47%|
+
+GPU peaks are unchanged. This remains warmed node-local cached-engine loading, excluding engine
+build, disk-cold loading and steady-state inference. No additional production change was needed.
+[Verification and samples](runtime-adoption-results-2773664.json); raw outputs:
+`outputs/runtime-2773664/load1b`, `load102m`.
