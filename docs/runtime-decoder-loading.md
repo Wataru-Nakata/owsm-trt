@@ -23,3 +23,14 @@ The existing fresh-process profiler can compare `--experiment decoder_init`, wit
 using adopted private mapping. Initialized/empty workers alternate; Python/CUDA init and
 instrumented helper times stay separate. Actual engine/checkpoint hashes and all English/Japanese
 ASR/TS/translation/beam/LID outputs must match. No speed or memory improvement is yet measured.
+
+Prepared driver: `scripts/profile_decoder_load.pbs`, tests first, then five alternating fresh-process
+pairs for1B and102M plus first/instrumented observations. Engines/checkpoints/audio and temporary
+outputs remain node-local. Submission is serial after the active decoder-shape allocation ends
+and a fresh queue/capacity/duplicate audit succeeds.
+
+```sh
+python scripts/profile_model_load.py --model /local/owsm_v4_medium_1B \
+  --manifest /local/manifest.json --extra-manifest /local/extra_manifest.json \
+  --experiment decoder_init --repeat 5 --out /local/results/load1b
+```
