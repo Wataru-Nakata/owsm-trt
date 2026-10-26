@@ -70,3 +70,7 @@ Reproduce within a compute allocation:
 uv run python scripts/profile_runtime.py --model <model> --manifest <manifest> --variants reference graph --lazy-drafts --repeat 7 --out <result-dir>
 uv run python scripts/profile_runtime_cold.py --model <model> --manifest <manifest> --repeat 3 --out <cold-result-dir>
 ```
+
+Timing scope: steady-state calls use resident models and already loaded audio. Disk load is recorded
+separately as an aggregate, not as per-request disk-inclusive p50/p95. The long-form API returns
+empty joined token lists; its comparison verifies text/segment timing, not hidden window token IDs.

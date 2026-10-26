@@ -134,6 +134,7 @@ def run_case(model, args, name, items, waves):
                 )
                 for i, result in zip(chunk, results):
                     r = result_record(model, result, items[i], len(waves[i]) / model.cfg.sample_rate)
+                    r["token_ids_available"] = name != "long_greedy"
                     previous = records[v].get(items[i]["id"])
                     if previous is not None and any(
                         previous[k] != r[k] for k in ("tokens", "text", "segments")
@@ -150,6 +151,11 @@ def run_case(model, args, name, items, waves):
             "draft_decoder_calls": sum(r["draft_decoder_calls"] for r in rows),
             "agreement": comparison(records["reference"], records[v]),
             "quality": quality(items, records[v], args.lang) if task == "asr" else None,
+            "token_comparison_scope": (
+                "segment/text only; long-form returns no joined token IDs"
+                if name == "long_greedy"
+                else "returned token IDs"
+            ),
         }
     if args.trace and name in ("single_greedy", "stream_greedy_b8", "long_greedy"):
         for v in args.variants:

@@ -195,18 +195,18 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   (POWSM's CTC head writes phones). `ctc_draft=False` turns it off. A call checks at most
   256 tokens (rows × window), so at batch 16 a row gets up to 15 drafted tokens per call: wider calls cost more than
   they save. `draft_token_budget=128` is an opt-in for H200/1B B8: timestamped throughput improved
-  3.6% English/6.9% Japanese in the window sweep. Smaller windows can change fp16 output and are not
-  always faster; the default remains256. [All settings and output differences](docs/runtime-results-2771126.md).
+  4.2% English/6.8% Japanese in the public-API replication. Smaller windows can change fp16 output and are not
+  always faster; the default remains 256. [API validation](docs/runtime-results-2771267.md) and [all window settings/differences](docs/runtime-results-2771126.md).
 * **Single-utterance frontend graphs.** STFT/mel/normalization use a bounded CUDA graph cache by default;
   `frontend_graph=False` restores eager execution. H200 measurements with identical engines found single
-  greedy RTFx +4.3% for v4 medium1B and +11.5% for base102M (English73, five alternating repeats), with exact
+  greedy RTFx +4.3% for v4 medium 1B and +11.5% for base 102M (English 73, five alternating repeats), with exact
   features/tokens/segments. Larger batches run eagerly; graph buffers add cold work and memory. Pointwise
   frontend fusion remains disabled. A seven-repeat validation reproduced +5.0%/+12.1%, including lazy
-  draft setup. CTC-only v4 1B also improved single-utterance RTFx4.4% English/5.2% Japanese with exact
+  draft setup. CTC-only v4 1B also improved single-utterance RTFx 4.4% English/5.2% Japanese with exact
   features/output. [Runtime measurements](docs/runtime-results-2771009.md), [CTC measurements](docs/runtime-results-2771126.md).
 * **Unused draft setup is deferred.** `lazy_drafts=True` (default) creates verification graphs on first
   draft use. With resident engines, session-cold translation/language identification was 33–36% shorter
-  on H200/v4 1B and102M, saving45.4/26.1MiB of unused buffers. Warm ASR work is unchanged; long-prompt
+  on H200/v4 1B and 102M, saving 45.4/26.1 MiB of unused buffers. Warm ASR work is unchanged; long-prompt
   cold measurements varied. `lazy_drafts=False` restores eager construction.
 * **Rows are refilled (greedy ASR of more than one batch).** Utterances need from 1 to 25 decoder calls, and a fixed
   batch would wait for its slowest one. Instead a row whose utterance is done takes the next one for the following
@@ -246,13 +246,13 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   [B=1 comparison](docs/beam-cross.md) measured 4.3% more RTFx and cross-KV buffers shrinking from
   165.4 to 27.6 MB, with identical outputs. B=3/K=5 retains expanded KV with the TensorRT decoder.
   The [combined KV comparison](docs/beam-final.md) measured 9.25% / 8.90% additional RTFx at B=1 / B=3
-  against the already fused search path on English73, and 9.46% / 9.70% on Japanese12, with exact outputs.
+  against the already fused search path on English 73, and 9.46% / 9.70% on Japanese12, with exact outputs.
   Parent selection, token-history gather and timestamp state now share one kernel for K<=8 and
   capacity<=512. [The next same-engine comparison](docs/beam-state-fusion.md) adds4.30% /4.24% RTFx
-  at B=1 / B=3 on English73, and5.07% /4.02% on Japanese12, with identical outputs and275 GPU tests.
+  at B=1 / B=3 on English 73, and5.07% /4.02% on Japanese12, with identical outputs and275 GPU tests.
   For further speed, opt into `beam_grouped_cross=True` and `beam_compact_tail=True` in
   `OWSM.from_pretrained`. [The combined H200/1B comparison](docs/beam-fast.md) measures11.83% /14.70%
-  more RTFx at B=1 / B=3 on English73 and12.36% /16.29% on Japanese12 versus the pre-state-fusion version.
+  more RTFx at B=1 / B=3 on English 73 and12.36% /16.29% on Japanese12 versus the pre-state-fusion version.
   These options remain off by default: English B3 has two20 ms timestamp changes, and silence text
   can change. Main text/WER/CER match; all293 GPU tests and production-API output checks pass.
   Tail compaction adds12 graphs at B3 and first-time JIT/capture cost; see the report for cold timings.

@@ -65,4 +65,5 @@ lanes; English throughput improvement is negligible. No CTC decoding or padding 
 
 Artifacts: `outputs/runtime-2771126/draft_analysis.json`, `analysis.json`, per-case raw samples,
 tokens, quality and actual dispatch counts. Source/environment/hash metadata are beside them.
-The public `draft_token_budget=128` path is undergoing an independent replication before final acceptance.
+The public `draft_token_budget=128` path passed an independent11-repeat replication; see
+[runtime API acceptance](runtime-results-2771267.md).

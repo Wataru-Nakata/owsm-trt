@@ -75,3 +75,21 @@ CTC-only v4 1B is also added to the frontend-graph comparison using a locally ca
 engine. Exact outputs passed; single-utterance RTFx improved4.35% English/5.15% Japanese.
 See [the full sweep and CTC report](runtime-results-2771126.md). Multi-GPU, engine rebuilds, lower precision and altered audio
 padding are outside these experiments.
+
+Timing scope: steady-state calls use resident models and already loaded audio. Disk load is recorded
+separately as an aggregate, not as per-request disk-inclusive p50/p95. The long-form API returns
+empty joined token lists; its comparison verifies text/segment timing, not hidden window token IDs.
+
+## Accepted defaults and optional throughput setting
+
+The completed acceptance job2771267 passed118 tests. `frontend_graph=True` and `lazy_drafts=True`
+are enabled by default. `draft_token_budget=128` is an optional N-class setting for the measured
+H200/1B B8 workload; the default stays256. Its public API replication improved timestamped RTFx
+4.20% English and6.82% Japanese with matching outputs.
+
+See [public API acceptance and reproduction](runtime-results-2771267.md),
+[replicated single-request and cold results](runtime-results-2771009.md), and
+[the full window sweep and CTC-only results](runtime-results-2771126.md). All five GPU jobs are
+finished. The first profiler job had an argument error; its completed partial measurements and
+the correction are retained. No unsupported speedup, other-GPU coverage or long-form token-ID
+coverage is implied. Full-corpus quality/annotated timestamp accuracy beyond these samples is pending.

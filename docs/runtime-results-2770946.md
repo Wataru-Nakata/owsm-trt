@@ -51,3 +51,7 @@ their summed kernel or CPU durations are not the uninstrumented wall measurement
 
 Reproduce using `scripts/profile_runtime.py --model <local model> --manifest <manifest>
 --variants reference both graph graph_both --repeat 5 --out <directory>` inside a compute allocation.
+
+Timing scope: steady-state calls use resident models and already loaded audio. Disk load is recorded
+separately as an aggregate, not as per-request disk-inclusive p50/p95. The long-form API returns
+empty joined token lists; its comparison verifies text/segment timing, not hidden window token IDs.
