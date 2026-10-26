@@ -234,6 +234,11 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   165.4 to 27.6 MB, with identical outputs. B=3/K=5 retains expanded KV with the TensorRT decoder.
   The [combined KV comparison](docs/beam-final.md) measured 9.25% / 8.90% additional RTFx at B=1 / B=3
   against the already fused search path on English73, and 9.46% / 9.70% on Japanese12, with exact outputs.
+  Parent selection, token-history gather and timestamp state now share one kernel for K<=8 and
+  capacity<=512. [The next same-engine comparison](docs/beam-state-fusion.md) adds4.30% /4.24% RTFx
+  at B=1 / B=3 on English73, and5.07% /4.02% on Japanese12, with identical outputs and275 GPU tests.
+  The separate [grouped-attention experiment](docs/beam-cross-splits.md) gains about6% at B=1 but changes
+  the silence transcript; it remains opt-in and is not part of these default-path results.
 * **Timestamp rules.** Like ESPnet, every search applies its `ScoreFilter`: no timestamps after `<notimestamps>`;
   otherwise the output starts with a timestamp, timestamps come in increasing pairs, and `<eos>` only after a
   complete pair.
