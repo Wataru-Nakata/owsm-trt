@@ -21,12 +21,16 @@ def main():
         "datasets": {},
     }
     for root in sorted(args.run.iterdir()):
-        if not (root / "summary.json").is_file() or not (root / "frontend.json").is_file():
+        if not (root / "summary.json").is_file() or not (root / "environment.json").is_file():
             continue
         summaries = json.loads((root / "summary.json").read_text())
         result = {
             "environment": json.loads((root / "environment.json").read_text()),
-            "frontend": json.loads((root / "frontend.json").read_text()),
+            "frontend": (
+                json.loads((root / "frontend.json").read_text())
+                if (root / "frontend.json").is_file()
+                else None
+            ),
             "cases": {},
         }
         for name, summary in summaries.items():

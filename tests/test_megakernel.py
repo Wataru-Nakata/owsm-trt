@@ -124,7 +124,9 @@ gluon_only = pytest.mark.skipif(
 
 
 @gluon_only
-@pytest.mark.parametrize("rows,window", [(1, 1), (1, 8), (2, 3), (8, 1), (8, 4), (1, 16), (1, 32), (4, 8), (2, 16)])
+@pytest.mark.parametrize(
+    "rows,window", [(1, 1), (1, 8), (2, 3), (8, 1), (8, 4), (1, 16), (1, 32), (4, 8), (2, 16)]
+)
 def test_gluon_step_matches_decoder(model, rows, window, kind="gluon", programs=None, chunk=2, warps=4, cfg=CFG,
                                     solo=False):  # fmt: skip
     dec = model.decoder
@@ -390,3 +392,12 @@ def test_ring_session_with_rules(model, primer):
         outs.append(out)
     assert not be.failed
     assert outs[0] == outs[1]
+
+
+@gluon_only
+@pytest.mark.parametrize("programs", [16, 48, 96])
+def test_ring_program_budget_matches_decoder(model, programs):
+    """Existing SM-budget settings: logits, argmax, new KV and cache writes including idle CTAs."""
+    if torch.cuda.get_device_properties("cuda").multi_processor_count < programs:
+        pytest.skip("requires enough SMs for the persistent grid")
+    test_gluon_step_matches_decoder(model, 1, 8, "ring", programs=programs)

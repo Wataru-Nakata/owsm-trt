@@ -89,7 +89,7 @@ def dispatch(model):
     return result
 
 
-def run_case(model, args, name, items, waves, configure=None):
+def run_case(model, args, name, items, waves, configure=None, observe=None):
     batch, beam, timestamps, draft, stream, task, prompt, limit = CASES[name]
     model.ctc_draft = draft
     model._sessions.clear()
@@ -199,6 +199,13 @@ def run_case(model, args, name, items, waves, configure=None):
                 else "returned token IDs"
             ),
         }
+    if observe is not None:
+        for v in args.variants:
+            activate(v)
+            save(
+                path / f"actual_dispatch_{v}.json",
+                observe(model, lambda: [call([waves[i] for i in chunk]) for chunk in chunks]),
+            )
     if args.trace and name in ("single_greedy", "stream_greedy_b8", "long_greedy"):
         for v in args.variants:
             activate(v)
