@@ -194,7 +194,7 @@ def make_session(model, cls, batch, beam, chunk, diagnostics=False, graph=True,
                model.dtype, model.device, use_cuda_graph=graph, chunk=chunk, rules=model.rules, **extra)
 
 
-def configure_gluon(model, programs=None, prefetch=None):
+def configure_gluon(model, programs=None, prefetch=None, group_queries=False, cross_splits=None):
     """Independent dispatch state, shared immutable weights/engines; baseline closures stay unchanged."""
     from owsm_trt.megakernel import MegaBackend
     from owsm_trt.megakernel_gluon import GluonDecoder
@@ -208,7 +208,8 @@ def configure_gluon(model, programs=None, prefetch=None):
     if programs is not None and not 1 <= programs <= torch.cuda.get_device_properties(model.device).multi_processor_count:
         raise ValueError("program count must fit the GPU's SMs for the persistent grid barrier")
     kernel = GluonDecoder(source.m, programs=programs or source.P, num_warps=source.nw,
-                          prefetch_attention=source.pfa if prefetch is None else prefetch)
+                          prefetch_attention=source.pfa if prefetch is None else prefetch,
+                          group_cross_queries=group_queries, cross_splits=cross_splits)
     backend = MegaBackend(base.inner, base.kernel, base.max_tokens, base.max_rows,
                           rows_kernel=base.rows_kernel, trial=base.trial)
     backend.failed = set(base.failed)
@@ -219,7 +220,8 @@ def configure_gluon(model, programs=None, prefetch=None):
     model._profile_backend = backend
     return {"programs": kernel.P, "warps": kernel.nw, "prefetch_attention": kernel.pfa,
             "reference_programs": source.P, "reference_prefetch_attention": source.pfa,
-            "routing_limits_unchanged": True}
+            "routing_limits_unchanged": True, "group_cross_queries": group_queries,
+            "cross_splits": cross_splits}
 
 
 def profile_eager(model, args, waves, primer, out):
@@ -277,6 +279,9 @@ def run_batch(model, args, items, waves, batch, legacy):
             s, ms = wall(lambda: make_session(model, cls, b, args.beam, args.chunk,
                         fused_rank=args.fused_rank, fused_finish=args.fused_finish, kv_reorder=args.kv_reorder, share_cross_kv=args.share_cross_kv))
             sessions[kind, b] = s
+            cross = {id(t): t for t in (s.cross_k, s.cross_v, s.cross_kb, s.cross_vb)}
+            cross_bytes = sum(t.numel() * t.element_size() for t in cross.values())
+            del cross
             cold[f"{kind}/b{b}"] = {"session_create_jit_capture_ms": ms,
                                     "dispatch": dispatch(s),
                                     "search_kernels": {"rank": getattr(s, "fused_rank", False),
@@ -284,8 +289,7 @@ def run_batch(model, args, items, waves, batch, legacy):
                                                        "kv_reorder": getattr(s, "kv_reorder", "torch"),
                                                        "share_cross_kv": getattr(s, "share_cross_kv", False),
                                                        "cross_kv_fallback": getattr(s, "cross_kv_fallback", None),
-                                                       "cross_kv_bytes": sum(t.numel() * t.element_size() for t in
-                                                           {id(t): t for t in (s.cross_k, s.cross_v, s.cross_kb, s.cross_vb)}.values())}}
+                                                       "cross_kv_bytes": cross_bytes}}
     kw = dict(lang=args.lang, task=args.task, timestamps=args.timestamps, prompt=args.prompt,
               batch_size=batch, beam_size=args.beam)
 
@@ -479,6 +483,10 @@ def main():
     ap.add_argument("--fused-finish", action="store_true", help="opt-in exact beam-state kernel")
     ap.add_argument("--kv-reorder", choices=["torch", "full", "prefix"], default="torch")
     ap.add_argument("--share-cross-kv", action="store_true")
+    ap.add_argument("--gluon-group-queries", action="store_true",
+                    help="candidate only: group beam queries sharing cross KV in one attention tile")
+    ap.add_argument("--gluon-cross-splits", type=int, choices=[1, 2, 4, 8],
+                    help="candidate only: key slices per cross-attention head (changes FP reduction order)")
     ap.add_argument("--gluon-programs", type=int, help="candidate only: persistent CTA count")
     ap.add_argument("--gluon-prefetch", action=argparse.BooleanOptionalAction, default=None,
                     help="candidate only: attention prefetch; keep arithmetic and routing unchanged")
@@ -496,7 +504,9 @@ def main():
         ap.error("repeat, chunk and limit must be positive")
     if any(n < 1 for n in args.compare_chunks) or len(set(args.compare_chunks)) != len(args.compare_chunks):
         ap.error("compare-chunks must be distinct positive integers")
-    if (args.gluon_programs is not None or args.gluon_prefetch is not None) and not args.baseline_runtime:
+    tuning = (args.gluon_programs is not None or args.gluon_prefetch is not None or args.gluon_group_queries
+              or args.gluon_cross_splits is not None)
+    if tuning and not args.baseline_runtime:
         ap.error("Gluon ablations require --baseline-runtime for the unchanged decoder")
     if not os.environ.get("PBS_JOBID") and os.uname().nodename.startswith("login"):
         ap.error("audio and inference must run in an allocated compute job")
@@ -525,8 +535,9 @@ def main():
     for name, fn in originals.items():
         setattr(pipeline, name, fn)
     decoder_options = None
-    if args.gluon_programs is not None or args.gluon_prefetch is not None:
-        decoder_options = configure_gluon(model, args.gluon_programs, args.gluon_prefetch)
+    if tuning:
+        decoder_options = configure_gluon(model, args.gluon_programs, args.gluon_prefetch,
+                                          args.gluon_group_queries, args.gluon_cross_splits)
     if any(len(w) > model.cfg.num_samples for w in waves):
         ap.error("manifest contains audio longer than a model window; use a separate long-form evaluation")
     files = hub.resolve(args.model)

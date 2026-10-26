@@ -599,7 +599,7 @@ if gluon is not None:
         BNQ: gl.constexpr, LBNQ: gl.constexpr, BNF: gl.constexpr, LBNF: gl.constexpr, PART: gl.constexpr,
         LPART: gl.constexpr, SP: gl.constexpr, BT: gl.constexpr, NS: gl.constexpr, NW: gl.constexpr,
         MAXS: gl.constexpr, PFA: gl.constexpr, F2S: gl.constexpr, CR: gl.constexpr, CG: gl.constexpr,
-        TS: gl.constexpr = False,
+        GQ: gl.constexpr, CSP: gl.constexpr, TS: gl.constexpr = False,
     ):  # fmt: skip
         """A decoder call: embedding, L layers (LN1+QKV, self-attention, out-projection, LN2+cross-Q,
         cross-attention, cross-out, LN3+FFN1, FFN2), final LN + output layer, a grid barrier between stages.
@@ -762,13 +762,16 @@ if gluon is not None:
             _garrive(bar)
             _issue_w(d1, layer * F + nf_z, 0, mb.index(0), w0, BNF, D, has_f)
             if PFA:
-                if pid_z < R * H * NS:
+                prefetch_rows = R // CG if GQ else R
+                if pid_z < prefetch_rows * H * NS:
                     sp = pid_z % NS
                     bh = pid_z // NS
                     tch = ((T + NS - 1) // NS + 15) // 16 * 16
                     t_lo = sp * tch
                     nk = gl.minimum(T, t_lo + tch) - t_lo
-                    if CG == 1:
+                    if GQ:
+                        cb = ((layer * CR + bh // H) * H + bh % H).to(gl.int64) * T * DK + t_lo * DK
+                    elif CG == 1:
                         cb = ((layer * R + bh // H) * H + bh % H).to(gl.int64) * T * DK + t_lo * DK
                     else:
                         cb = ((layer * CR + (bh // H) // CG) * H + bh % H).to(gl.int64) * T * DK + t_lo * DK
@@ -779,11 +782,15 @@ if gluon is not None:
                 gl.store(ts + ((g - 1) * P + pid_z) * 8 + 1, _now())
                 gl.store(ts + (g * P + pid_z) * 8, _now())
             # cross-attention -> ob
+            # The same SP=16 tile can carry several beam queries. Keep each query's softmax and
+            # the original key slicing/reduction order; only share its K/V loads with its siblings.
+            cross_rows = R // CG if GQ else R
+            cross_window = S * CG if GQ else S
             _cross_attn_g(
                 pid_z,
                 P,
-                R,
-                S,
+                cross_rows,
+                cross_window,
                 layer,
                 q2_z,
                 ck_z,
@@ -796,12 +803,12 @@ if gluon is not None:
                 D,
                 H,
                 DK,
-                SP,
+                CSP,
                 BT,
                 NS,
                 NW,
                 CR=CR,
-                CG=CG,
+                CG=1 if GQ else CG,
             )
             if TS:
                 gl.store(ts + (g * P + pid_z) * 8 + 5, _now())
@@ -926,7 +933,10 @@ class GluonDecoder:
     shared_cross_kv = True
 
     def __init__(self, mega, programs: int | None = None, num_warps: int = 4, maxs: int = 1 << 24, ts: bool = False,
-                 prefetch_attention: bool = True):  # fmt: skip
+                 prefetch_attention: bool = True, group_cross_queries: bool = False,
+                 cross_splits: int | None = None):  # fmt: skip
+        if cross_splits is not None and cross_splits not in (1, 2, 4, 8):
+            raise ValueError("cross_splits must be 1, 2, 4 or 8")
         self.m = mega
         d, f = mega.D, mega.F
         dev = mega.device
@@ -938,6 +948,8 @@ class GluonDecoder:
         if max(units) > self.P or not pow2 or not 256 <= d <= 1024 or f < 512:
             raise ValueError("the model's GEMMs do not fit this GPU's SMs (or the kernel's tiling)")
         self.nw, self.maxs, self.pfa = num_warps, maxs, prefetch_attention
+        self.group_cross_queries = group_cross_queries
+        self.cross_splits = cross_splits
         self.descs = (
             slab_desc(mega.wqkv, self.bnq), slab_desc(mega.wo, self.part), slab_desc(mega.wcq, self.part),
             slab_desc(mega.wco, self.part), slab_desc(mega.w1, self.bnf), slab_desc(mega.w2, 64, 512),
@@ -966,7 +978,7 @@ class GluonDecoder:
         mt = max(2, _pow2(M))
         mtf = max(8, mt)
         hl = 2 if mt <= 16 else 1  # LayerNorm GEMMs: the residual stream as a hi/lo pair while it fits
-        ns = max(1, min(8, P // (R * H)))
+        ns = self.cross_splits or max(1, min(8, P // (R * H)))
         f16 = {"device": dev, "dtype": torch.float16}
         i32 = {"device": dev, "dtype": torch.int32}
         x = torch.zeros(M, D, device=dev)
@@ -996,6 +1008,8 @@ class GluonDecoder:
             LBNQ=_log2(self.bnq), BNF=self.bnf, LBNF=_log2(self.bnf), PART=self.part, LPART=_log2(self.part),
             SP=max(16, _pow2(S)), BT=64, NS=ns, NW=self.nw, MAXS=self.maxs, PFA=self.pfa, F2S=mt <= 8,
             CR=cr, CG=R // cr,
+            GQ=self.group_cross_queries,
+            CSP=max(16, _pow2(S * (R // cr if self.group_cross_queries else 1))),
             TS=bool(self.opts["TS"]),
         )  # fmt: skip
 

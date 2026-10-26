@@ -66,14 +66,15 @@ gluon_only = pytest.mark.skipif(
 @gluon_only
 @pytest.mark.parametrize("batch,beam", [(1, 5), (2, 3)])
 @pytest.mark.parametrize("prefetch", [False, True])
+@pytest.mark.parametrize("group_queries", [False, True])
 @torch.inference_mode()
-def test_shared_gluon_logits_kv_and_graph_replay(batch, beam, prefetch):
+def test_shared_gluon_logits_kv_and_graph_replay(batch, beam, prefetch, group_queries):
     from test_megakernel import CFG, _model
 
     cfg, dev = CFG, torch.device("cuda")
     model = _model(cfg)
     kernel = megakernel_gluon.GluonDecoder(megakernel.MegaDecoder(model.decoder, dev),
-                                         prefetch_attention=prefetch)
+                                         prefetch_attention=prefetch, group_cross_queries=group_queries)
     rows, c = batch * beam, 64
     shape = (cfg.dec_layers, rows, cfg.dec_heads, c, cfg.d_model // cfg.dec_heads)
     k, v = [torch.randn(shape, device=dev, dtype=torch.float16) for _ in range(2)]
@@ -114,14 +115,16 @@ def test_shared_gluon_logits_kv_and_graph_replay(batch, beam, prefetch):
 
 
 @gluon_only
+@pytest.mark.parametrize("group_queries", [False, True])
 @torch.inference_mode()
-def test_shared_beam_repeated_prompt_and_bucket_growth():
+def test_shared_beam_repeated_prompt_and_bucket_growth(group_queries):
     from test_megakernel import CFG, _model
 
     from owsm_trt.runtime import BeamSession, TorchBackend
 
     model, dev = _model(CFG), torch.device("cuda")
-    decoder = megakernel_gluon.GluonDecoder(megakernel.MegaDecoder(model.decoder, dev))
+    decoder = megakernel_gluon.GluonDecoder(megakernel.MegaDecoder(model.decoder, dev),
+                                           group_cross_queries=group_queries)
     backend = megakernel.MegaBackend(TorchBackend(model.half()), decoder, 16, 8)
     args = (backend, CFG, 2, 3, 32, -1, torch.float16, dev)
     ref = BeamSession(*args, buckets=[4, 8, 16, 32], diagnostics=True, share_cross_kv=False)
@@ -140,3 +143,43 @@ def test_shared_beam_repeated_prompt_and_bucket_growth():
         n = int(ref.step) + 1
         for name in ("scores", "state"):
             torch.testing.assert_close(fast._beam_history[name][:n], ref._beam_history[name][:n], rtol=0, atol=0)
+
+
+@gluon_only
+@pytest.mark.parametrize("grouped", [False, True])
+@pytest.mark.parametrize("splits", [2, 4, 8])
+@torch.inference_mode()
+def test_cross_splits_numeric_agreement_and_empty_slices(grouped, splits):
+    from test_megakernel import CFG, _model
+
+    cfg, dev = CFG, torch.device("cuda")
+    model = _model(cfg)
+    weights = megakernel.MegaDecoder(model.decoder, dev)
+    rows, batch, length = 6, 2, 65  # NS=8 includes empty key slices after 16-column rounding.
+    shape = (cfg.dec_layers, rows, cfg.dec_heads, 16, cfg.d_model // cfg.dec_heads)
+    k, v = [torch.randn(shape, dtype=torch.float16, device=dev) for _ in range(2)]
+    cshape = (cfg.dec_layers, batch, cfg.dec_heads, length, cfg.d_model // cfg.dec_heads)
+    ck, cv = [torch.randn(cshape, dtype=torch.float16, device=dev) for _ in range(2)]
+    token = torch.randint(0, cfg.vocab_size, (rows, 1), device=dev)
+    offsets = torch.arange(rows, device=dev)
+    outputs = []
+    for changed in (False, True):
+        kernel = megakernel_gluon.GluonDecoder(weights, cross_splits=splits if changed else None,
+                                             group_cross_queries=grouped and changed)
+        logits = torch.empty(rows, 1, cfg.vocab_size, device=dev)
+        new = torch.empty(cfg.dec_layers, 2, rows, cfg.dec_heads, 1, cfg.d_model // cfg.dec_heads,
+                          dtype=torch.float16, device=dev)
+        run = kernel.step_fn(token, offsets, k.clone(), v.clone(), ck, cv, logits, new)
+        run()
+        torch.cuda.synchronize()
+        kernel.check()
+        first = (logits.clone(), new.clone())
+        for _ in range(3):
+            run()
+        torch.cuda.synchronize()
+        kernel.check()
+        for actual, old in zip((logits, new), first):
+            torch.testing.assert_close(actual, old, rtol=0, atol=0)
+        outputs.append(first)
+    for actual, reference in zip(outputs[1], outputs[0]):
+        torch.testing.assert_close(actual, reference, rtol=.005, atol=.02)

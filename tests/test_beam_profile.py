@@ -11,7 +11,8 @@ def test_gluon_options_keep_reference_dispatch_and_weights(monkeypatch):
     from owsm_trt import megakernel, megakernel_gluon
 
     class Kernel:
-        def __init__(self, mega, programs=132, num_warps=4, prefetch_attention=True):
+        def __init__(self, mega, programs=132, num_warps=4, prefetch_attention=True, group_cross_queries=False,
+                     cross_splits=None):
             self.m, self.P, self.nw, self.pfa = mega, programs, num_warps, prefetch_attention
 
     monkeypatch.setattr(megakernel_gluon, "GluonDecoder", Kernel)
