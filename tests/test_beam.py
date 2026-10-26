@@ -222,8 +222,9 @@ def test_bound_toggle_preserves_tokens_and_reduces_steps(diagnostics):
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA required")
-def test_cuda_graph_diagnostics_and_bound_toggle():
-    s = session(backend=ScriptedBackend([4., 1., 0., -1., -2., -3., -4., -5.]),
+@pytest.mark.parametrize("local", [False, True])
+def test_cuda_graph_diagnostics_and_bound_toggle(local):
+    s = session(local_topk=local, backend=ScriptedBackend([4., 1., 0., -1., -2., -3., -4., -5.]),
                 diagnostics=True, device=torch.device("cuda"), use_cuda_graph=True, upper_bound=False)
     primer = torch.tensor([[2, 3, 4]], device="cuda")
     off = s.decode(primer, 13)

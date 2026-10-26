@@ -83,3 +83,17 @@ Four slices are fastest among these settings. The next serial allocation measure
 (the B3/H16 group has96 attention units at NS2) and decoder initialization independently.
 No routing limit or public default has been changed; an eventual fast mode needs public API
 validation, including silence/noise and shape/fallback limits.
+
+## Two-slice follow-up (2773320)
+
+A separate seven-repeat, alternating comparison uses source37e9348 and the same1B engine hashes.
+All four R10/R15 real-shape checks pass;19 load/storage tests pass. Against each run's unchanged
+TensorRT baseline, grouped2 improves RTFx16.91%/18.09% for English/Japanese B2 and16.69%/17.11%
+for B3. English p50 B3 is48.28→41.28ms; Japanese is74.70→63.09ms. Decoder-call counts are unchanged.
+All text matches, WER45/1150 and CER26/592 are unchanged. English token/time/segments match71/73,
+Japanese12/12. The same two English segment ends shift+20ms as grouped4/8; no reference timestamps
+are available. This remains an opt-in N result. Two slices are the next B3 candidate; four remain
+the next B2 candidate. Cross-job absolute times are not an isolated two-versus-four-slice comparison.
+
+[Compact follow-up metrics](runtime-results-2773320.json); full artifacts and eager phases:
+`outputs/runtime-2773320/grouped2_{english,japanese}`. No production routing change in this job.

@@ -1,0 +1,1680 @@
+{
+  "job": "2773320.pbs1",
+  "source": "37e9348d80669532f7c5a390ea6068581ce07439",
+  "runs": {
+    "grouped2_english/b2": {
+      "summary": {
+        "baseline": {
+          "transcribe_ms": {
+            "n": 259,
+            "p50": 45.67550600040704,
+            "p95": 95.72630185284652,
+            "min": 24.066306999884546,
+            "max": 159.85143702710047,
+            "stdev": 23.912242313108898
+          },
+          "decode_ms": {
+            "n": 259,
+            "p50": 39.51076901284978,
+            "p95": 89.24425478908233,
+            "min": 18.23327102465555,
+            "max": 151.04344999417663,
+            "stdev": 23.87656301267558
+          },
+          "decoder_calls": {
+            "n": 259,
+            "p50": 28.0,
+            "p95": 65.0,
+            "min": 12,
+            "max": 109,
+            "stdev": 17.4117413346245
+          },
+          "decode_ms_per_selection": {
+            "n": 259,
+            "p50": 1.3665389650950914,
+            "p95": 1.3956809057873683,
+            "min": 0.9448248560407332,
+            "max": 1.439958000376534,
+            "stdev": 0.06841655862822109
+          },
+          "rtfx": 248.95946560618248,
+          "peak_allocated_bytes": 9519900160,
+          "quality": {
+            "metric": "WER",
+            "reference_units": 1150,
+            "errors": 45,
+            "rate": 0.0391304347826087,
+            "annotated_utterances": 73,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          }
+        },
+        "on": {
+          "transcribe_ms": {
+            "n": 259,
+            "p50": 38.91059901798144,
+            "p95": 80.8999611181207,
+            "min": 20.82732698181644,
+            "max": 135.78604097710922,
+            "stdev": 20.18572947059625
+          },
+          "decode_ms": {
+            "n": 259,
+            "p50": 33.11969497008249,
+            "p95": 74.79665828868747,
+            "min": 15.461470989976078,
+            "max": 128.75524203991517,
+            "stdev": 20.13401493080845
+          },
+          "decoder_calls": {
+            "n": 259,
+            "p50": 28.0,
+            "p95": 65.0,
+            "min": 12,
+            "max": 109,
+            "stdev": 17.4117413346245
+          },
+          "decode_ms_per_selection": {
+            "n": 259,
+            "p50": 1.1493209190666676,
+            "p95": 1.1816807533281721,
+            "min": 0.948300903906957,
+            "max": 1.2184599226412292,
+            "stdev": 0.03604953953579412
+          },
+          "rtfx": 291.05733992060914,
+          "peak_allocated_bytes": 9519657472,
+          "quality": {
+            "metric": "WER",
+            "reference_units": 1150,
+            "errors": 45,
+            "rate": 0.0391304347826087,
+            "annotated_utterances": 73,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 71,
+              "total": 73,
+              "different_ids": [
+                "1272-128104-0004",
+                "1272-141231-0005"
+              ]
+            },
+            "timestamp_tokens": {
+              "equal": 71,
+              "total": 73,
+              "different_ids": [
+                "1272-128104-0004",
+                "1272-141231-0005"
+              ]
+            },
+            "segments": {
+              "equal": 71,
+              "total": 73,
+              "different_ids": [
+                "1272-128104-0004",
+                "1272-141231-0005"
+              ]
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          }
+        }
+      },
+      "rtfx_change": 0.1690952951394078,
+      "paired_median": 0.1753428388534346,
+      "paired_min": -0.0022724722328837377,
+      "paired_max": 0.1837225406602374,
+      "improved_groups": 36,
+      "groups": 37,
+      "exact_token_groups": 35,
+      "exact_group_paired_median": 0.17590845354283546,
+      "cv_median": {
+        "baseline": 0.0047441337872222555,
+        "on": 0.006386448408194322
+      },
+      "same_decoder_calls": true,
+      "output_differences": {
+        "1272-128104-0004": {
+          "reference": {
+            "id": "1272-128104-0004",
+            "input_seconds": 29.4,
+            "tokens": [
+              182,
+              12306,
+              8655,
+              1691,
+              1685,
+              9105,
+              1727,
+              1688,
+              2353,
+              1692,
+              1795,
+              6220,
+              1685,
+              1689,
+              14916,
+              12969,
+              1685,
+              1684,
+              1689,
+              5820,
+              1890,
+              1691,
+              1685,
+              30984,
+              1683,
+              2579,
+              11127,
+              1685,
+              1727,
+              1717,
+              3523,
+              1717,
+              1688,
+              2386,
+              1737,
+              1724,
+              13106,
+              1687,
+              706,
+              728,
+              34918,
+              8119,
+              9131,
+              1701,
+              2580,
+              1724,
+              3082,
+              1691,
+              1685,
+              14595,
+              1685,
+              6832,
+              1735,
+              1758,
+              1933,
+              1693,
+              1686,
+              2047,
+              1902,
+              1694,
+              34918,
+              4623,
+              3311,
+              2251,
+              1690,
+              9786,
+              1748,
+              12859,
+              1684,
+              1689,
+              34918,
+              3637,
+              6939,
+              9856,
+              4824,
+              1748,
+              1882,
+              3920,
+              1688,
+              18773,
+              1683,
+              1685,
+              13498,
+              1693,
+              1686,
+              1929,
+              1992,
+              1722,
+              2881,
+              1684,
+              1872,
+              24118,
+              2257,
+              1688,
+              1683,
+              1685,
+              3521,
+              2512,
+              1724,
+              1723,
+              1693,
+              1688,
+              33136,
+              15292,
+              1684,
+              2202,
+              1847,
+              2325,
+              1652
+            ],
+            "token_count": 109,
+            "timestamp_tokens": [
+              182,
+              706,
+              728,
+              1652
+            ],
+            "timestamp_count": 4,
+            "text": "Linnell's pictures are a sort of up guards and atom paintings, and Mason's exquisite idyls are as national as a jingo poem. Mister Birkett Foster's landscapes smile at one much in the same way that Mister Carker used to flash his teeth, and Mister John Collier gives his sitter a cheerful slap in the back before he says, \"Like a shampooer in a Turkish bath, next man.\"",
+            "segments": [
+              {
+                "start": 0.0,
+                "end": 10.48,
+                "text": "Linnell's pictures are a sort of up guards and atom paintings, and Mason's exquisite idyls are as national as a jingo poem."
+              },
+              {
+                "start": 10.92,
+                "end": 29.4,
+                "text": "Mister Birkett Foster's landscapes smile at one much in the same way that Mister Carker used to flash his teeth, and Mister John Collier gives his sitter a cheerful slap in the back before he says, \"Like a shampooer in a Turkish bath, next man.\""
+              }
+            ],
+            "segment_count": 2,
+            "empty_segments": 0,
+            "invalid_segments": 0,
+            "unpaired_timestamp": false,
+            "nonmonotonic_timestamps": false
+          },
+          "candidate": {
+            "id": "1272-128104-0004",
+            "input_seconds": 29.4,
+            "tokens": [
+              182,
+              12306,
+              8655,
+              1691,
+              1685,
+              9105,
+              1727,
+              1688,
+              2353,
+              1692,
+              1795,
+              6220,
+              1685,
+              1689,
+              14916,
+              12969,
+              1685,
+              1684,
+              1689,
+              5820,
+              1890,
+              1691,
+              1685,
+              30984,
+              1683,
+              2579,
+              11127,
+              1685,
+              1727,
+              1717,
+              3523,
+              1717,
+              1688,
+              2386,
+              1737,
+              1724,
+              13106,
+              1687,
+              707,
+              728,
+              34918,
+              8119,
+              9131,
+              1701,
+              2580,
+              1724,
+              3082,
+              1691,
+              1685,
+              14595,
+              1685,
+              6832,
+              1735,
+              1758,
+              1933,
+              1693,
+              1686,
+              2047,
+              1902,
+              1694,
+              34918,
+              4623,
+              3311,
+              2251,
+              1690,
+              9786,
+              1748,
+              12859,
+              1684,
+              1689,
+              34918,
+              3637,
+              6939,
+              9856,
+              4824,
+              1748,
+              1882,
+              3920,
+              1688,
+              18773,
+              1683,
+              1685,
+              13498,
+              1693,
+              1686,
+              1929,
+              1992,
+              1722,
+              2881,
+              1684,
+              1872,
+              24118,
+              2257,
+              1688,
+              1683,
+              1685,
+              3521,
+              2512,
+              1724,
+              1723,
+              1693,
+              1688,
+              33136,
+              15292,
+              1684,
+              2202,
+              1847,
+              2325,
+              1652
+            ],
+            "token_count": 109,
+            "timestamp_tokens": [
+              182,
+              707,
+              728,
+              1652
+            ],
+            "timestamp_count": 4,
+            "text": "Linnell's pictures are a sort of up guards and atom paintings, and Mason's exquisite idyls are as national as a jingo poem. Mister Birkett Foster's landscapes smile at one much in the same way that Mister Carker used to flash his teeth, and Mister John Collier gives his sitter a cheerful slap in the back before he says, \"Like a shampooer in a Turkish bath, next man.\"",
+            "segments": [
+              {
+                "start": 0.0,
+                "end": 10.5,
+                "text": "Linnell's pictures are a sort of up guards and atom paintings, and Mason's exquisite idyls are as national as a jingo poem."
+              },
+              {
+                "start": 10.92,
+                "end": 29.4,
+                "text": "Mister Birkett Foster's landscapes smile at one much in the same way that Mister Carker used to flash his teeth, and Mister John Collier gives his sitter a cheerful slap in the back before he says, \"Like a shampooer in a Turkish bath, next man.\""
+              }
+            ],
+            "segment_count": 2,
+            "empty_segments": 0,
+            "invalid_segments": 0,
+            "unpaired_timestamp": false,
+            "nonmonotonic_timestamps": false
+          }
+        },
+        "1272-141231-0005": {
+          "reference": {
+            "id": "1272-141231-0005",
+            "input_seconds": 5.81,
+            "tokens": [
+              182,
+              1887,
+              4841,
+              1702,
+              1726,
+              1688,
+              1826,
+              2704,
+              6927,
+              1692,
+              1822,
+              1684,
+              1689,
+              1748,
+              2810,
+              4667,
+              2114,
+              20975,
+              1692,
+              1700,
+              1687,
+              472
+            ],
+            "token_count": 22,
+            "timestamp_tokens": [
+              182,
+              472
+            ],
+            "timestamp_count": 2,
+            "text": "A minute is not a very large measure of time, and his body needed every fraction of it.",
+            "segments": [
+              {
+                "start": 0.0,
+                "end": 5.8,
+                "text": "A minute is not a very large measure of time, and his body needed every fraction of it."
+              }
+            ],
+            "segment_count": 1,
+            "empty_segments": 0,
+            "invalid_segments": 0,
+            "unpaired_timestamp": false,
+            "nonmonotonic_timestamps": false
+          },
+          "candidate": {
+            "id": "1272-141231-0005",
+            "input_seconds": 5.81,
+            "tokens": [
+              182,
+              1887,
+              4841,
+              1702,
+              1726,
+              1688,
+              1826,
+              2704,
+              6927,
+              1692,
+              1822,
+              1684,
+              1689,
+              1748,
+              2810,
+              4667,
+              2114,
+              20975,
+              1692,
+              1700,
+              1687,
+              473
+            ],
+            "token_count": 22,
+            "timestamp_tokens": [
+              182,
+              473
+            ],
+            "timestamp_count": 2,
+            "text": "A minute is not a very large measure of time, and his body needed every fraction of it.",
+            "segments": [
+              {
+                "start": 0.0,
+                "end": 5.82,
+                "text": "A minute is not a very large measure of time, and his body needed every fraction of it."
+              }
+            ],
+            "segment_count": 1,
+            "empty_segments": 0,
+            "invalid_segments": 0,
+            "unpaired_timestamp": false,
+            "nonmonotonic_timestamps": false
+          }
+        }
+      }
+    },
+    "grouped2_english/b3": {
+      "summary": {
+        "baseline": {
+          "transcribe_ms": {
+            "n": 175,
+            "p50": 48.28190099215135,
+            "p95": 100.51999709685333,
+            "min": 30.995557026471943,
+            "max": 166.83545801788568,
+            "stdev": 27.975866648184248
+          },
+          "decode_ms": {
+            "n": 175,
+            "p50": 40.73305596830323,
+            "p95": 92.48092070920393,
+            "min": 19.87725804792717,
+            "max": 156.81735699763522,
+            "stdev": 27.522549969155904
+          },
+          "decoder_calls": {
+            "n": 175,
+            "p50": 28.0,
+            "p95": 65.0,
+            "min": 16,
+            "max": 109,
+            "stdev": 19.160208767129863
+          },
+          "decode_ms_per_selection": {
+            "n": 175,
+            "p50": 1.4015052403355468,
+            "p95": 1.4228571730822743,
+            "min": 0.9465360975203415,
+            "max": 1.4367391156744869,
+            "stdev": 0.08852798411407621
+          },
+          "rtfx": 322.5598689102355,
+          "peak_allocated_bytes": 10828064768,
+          "quality": {
+            "metric": "WER",
+            "reference_units": 1150,
+            "errors": 45,
+            "rate": 0.0391304347826087,
+            "annotated_utterances": 73,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          }
+        },
+        "on": {
+          "transcribe_ms": {
+            "n": 175,
+            "p50": 41.27856600098312,
+            "p95": 85.53609470836818,
+            "min": 26.78447001380846,
+            "max": 142.86942197941244,
+            "stdev": 23.841873322111606
+          },
+          "decode_ms": {
+            "n": 175,
+            "p50": 34.38605897827074,
+            "p95": 78.03976509021595,
+            "min": 19.784862000960857,
+            "max": 134.50132502475753,
+            "stdev": 23.385260892525842
+          },
+          "decoder_calls": {
+            "n": 175,
+            "p50": 28.0,
+            "p95": 65.0,
+            "min": 16,
+            "max": 109,
+            "stdev": 19.160208767129863
+          },
+          "decode_ms_per_selection": {
+            "n": 175,
+            "p50": 1.181420770886003,
+            "p95": 1.2149610779220785,
+            "min": 0.9421362857600408,
+            "max": 1.2227393184068867,
+            "stdev": 0.047772788710723886
+          },
+          "rtfx": 376.39969036126644,
+          "peak_allocated_bytes": 10828064256,
+          "quality": {
+            "metric": "WER",
+            "reference_units": 1150,
+            "errors": 45,
+            "rate": 0.0391304347826087,
+            "annotated_utterances": 73,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 71,
+              "total": 73,
+              "different_ids": [
+                "1272-128104-0004",
+                "1272-141231-0005"
+              ]
+            },
+            "timestamp_tokens": {
+              "equal": 71,
+              "total": 73,
+              "different_ids": [
+                "1272-128104-0004",
+                "1272-141231-0005"
+              ]
+            },
+            "segments": {
+              "equal": 71,
+              "total": 73,
+              "different_ids": [
+                "1272-128104-0004",
+                "1272-141231-0005"
+              ]
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          }
+        }
+      },
+      "rtfx_change": 0.16691419683709618,
+      "paired_median": 0.17309251959969463,
+      "paired_min": 0.020014753058534174,
+      "paired_max": 0.1783220573548676,
+      "improved_groups": 25,
+      "groups": 25,
+      "exact_token_groups": 23,
+      "exact_group_paired_median": 0.17309251959969463,
+      "cv_median": {
+        "baseline": 0.002180904384072792,
+        "on": 0.0034399668296429204
+      },
+      "same_decoder_calls": true,
+      "output_differences": {
+        "1272-128104-0004": {
+          "reference": {
+            "id": "1272-128104-0004",
+            "input_seconds": 29.4,
+            "tokens": [
+              182,
+              12306,
+              8655,
+              1691,
+              1685,
+              9105,
+              1727,
+              1688,
+              2353,
+              1692,
+              1795,
+              6220,
+              1685,
+              1689,
+              14916,
+              12969,
+              1685,
+              1684,
+              1689,
+              5820,
+              1890,
+              1691,
+              1685,
+              30984,
+              1683,
+              2579,
+              11127,
+              1685,
+              1727,
+              1717,
+              3523,
+              1717,
+              1688,
+              2386,
+              1737,
+              1724,
+              13106,
+              1687,
+              706,
+              728,
+              34918,
+              8119,
+              9131,
+              1701,
+              2580,
+              1724,
+              3082,
+              1691,
+              1685,
+              14595,
+              1685,
+              6832,
+              1735,
+              1758,
+              1933,
+              1693,
+              1686,
+              2047,
+              1902,
+              1694,
+              34918,
+              4623,
+              3311,
+              2251,
+              1690,
+              9786,
+              1748,
+              12859,
+              1684,
+              1689,
+              34918,
+              3637,
+              6939,
+              9856,
+              4824,
+              1748,
+              1882,
+              3920,
+              1688,
+              18773,
+              1683,
+              1685,
+              13498,
+              1693,
+              1686,
+              1929,
+              1992,
+              1722,
+              2881,
+              1684,
+              1872,
+              24118,
+              2257,
+              1688,
+              1683,
+              1685,
+              3521,
+              2512,
+              1724,
+              1723,
+              1693,
+              1688,
+              33136,
+              15292,
+              1684,
+              2202,
+              1847,
+              2325,
+              1652
+            ],
+            "token_count": 109,
+            "timestamp_tokens": [
+              182,
+              706,
+              728,
+              1652
+            ],
+            "timestamp_count": 4,
+            "text": "Linnell's pictures are a sort of up guards and atom paintings, and Mason's exquisite idyls are as national as a jingo poem. Mister Birkett Foster's landscapes smile at one much in the same way that Mister Carker used to flash his teeth, and Mister John Collier gives his sitter a cheerful slap in the back before he says, \"Like a shampooer in a Turkish bath, next man.\"",
+            "segments": [
+              {
+                "start": 0.0,
+                "end": 10.48,
+                "text": "Linnell's pictures are a sort of up guards and atom paintings, and Mason's exquisite idyls are as national as a jingo poem."
+              },
+              {
+                "start": 10.92,
+                "end": 29.4,
+                "text": "Mister Birkett Foster's landscapes smile at one much in the same way that Mister Carker used to flash his teeth, and Mister John Collier gives his sitter a cheerful slap in the back before he says, \"Like a shampooer in a Turkish bath, next man.\""
+              }
+            ],
+            "segment_count": 2,
+            "empty_segments": 0,
+            "invalid_segments": 0,
+            "unpaired_timestamp": false,
+            "nonmonotonic_timestamps": false
+          },
+          "candidate": {
+            "id": "1272-128104-0004",
+            "input_seconds": 29.4,
+            "tokens": [
+              182,
+              12306,
+              8655,
+              1691,
+              1685,
+              9105,
+              1727,
+              1688,
+              2353,
+              1692,
+              1795,
+              6220,
+              1685,
+              1689,
+              14916,
+              12969,
+              1685,
+              1684,
+              1689,
+              5820,
+              1890,
+              1691,
+              1685,
+              30984,
+              1683,
+              2579,
+              11127,
+              1685,
+              1727,
+              1717,
+              3523,
+              1717,
+              1688,
+              2386,
+              1737,
+              1724,
+              13106,
+              1687,
+              707,
+              728,
+              34918,
+              8119,
+              9131,
+              1701,
+              2580,
+              1724,
+              3082,
+              1691,
+              1685,
+              14595,
+              1685,
+              6832,
+              1735,
+              1758,
+              1933,
+              1693,
+              1686,
+              2047,
+              1902,
+              1694,
+              34918,
+              4623,
+              3311,
+              2251,
+              1690,
+              9786,
+              1748,
+              12859,
+              1684,
+              1689,
+              34918,
+              3637,
+              6939,
+              9856,
+              4824,
+              1748,
+              1882,
+              3920,
+              1688,
+              18773,
+              1683,
+              1685,
+              13498,
+              1693,
+              1686,
+              1929,
+              1992,
+              1722,
+              2881,
+              1684,
+              1872,
+              24118,
+              2257,
+              1688,
+              1683,
+              1685,
+              3521,
+              2512,
+              1724,
+              1723,
+              1693,
+              1688,
+              33136,
+              15292,
+              1684,
+              2202,
+              1847,
+              2325,
+              1652
+            ],
+            "token_count": 109,
+            "timestamp_tokens": [
+              182,
+              707,
+              728,
+              1652
+            ],
+            "timestamp_count": 4,
+            "text": "Linnell's pictures are a sort of up guards and atom paintings, and Mason's exquisite idyls are as national as a jingo poem. Mister Birkett Foster's landscapes smile at one much in the same way that Mister Carker used to flash his teeth, and Mister John Collier gives his sitter a cheerful slap in the back before he says, \"Like a shampooer in a Turkish bath, next man.\"",
+            "segments": [
+              {
+                "start": 0.0,
+                "end": 10.5,
+                "text": "Linnell's pictures are a sort of up guards and atom paintings, and Mason's exquisite idyls are as national as a jingo poem."
+              },
+              {
+                "start": 10.92,
+                "end": 29.4,
+                "text": "Mister Birkett Foster's landscapes smile at one much in the same way that Mister Carker used to flash his teeth, and Mister John Collier gives his sitter a cheerful slap in the back before he says, \"Like a shampooer in a Turkish bath, next man.\""
+              }
+            ],
+            "segment_count": 2,
+            "empty_segments": 0,
+            "invalid_segments": 0,
+            "unpaired_timestamp": false,
+            "nonmonotonic_timestamps": false
+          }
+        },
+        "1272-141231-0005": {
+          "reference": {
+            "id": "1272-141231-0005",
+            "input_seconds": 5.81,
+            "tokens": [
+              182,
+              1887,
+              4841,
+              1702,
+              1726,
+              1688,
+              1826,
+              2704,
+              6927,
+              1692,
+              1822,
+              1684,
+              1689,
+              1748,
+              2810,
+              4667,
+              2114,
+              20975,
+              1692,
+              1700,
+              1687,
+              472
+            ],
+            "token_count": 22,
+            "timestamp_tokens": [
+              182,
+              472
+            ],
+            "timestamp_count": 2,
+            "text": "A minute is not a very large measure of time, and his body needed every fraction of it.",
+            "segments": [
+              {
+                "start": 0.0,
+                "end": 5.8,
+                "text": "A minute is not a very large measure of time, and his body needed every fraction of it."
+              }
+            ],
+            "segment_count": 1,
+            "empty_segments": 0,
+            "invalid_segments": 0,
+            "unpaired_timestamp": false,
+            "nonmonotonic_timestamps": false
+          },
+          "candidate": {
+            "id": "1272-141231-0005",
+            "input_seconds": 5.81,
+            "tokens": [
+              182,
+              1887,
+              4841,
+              1702,
+              1726,
+              1688,
+              1826,
+              2704,
+              6927,
+              1692,
+              1822,
+              1684,
+              1689,
+              1748,
+              2810,
+              4667,
+              2114,
+              20975,
+              1692,
+              1700,
+              1687,
+              473
+            ],
+            "token_count": 22,
+            "timestamp_tokens": [
+              182,
+              473
+            ],
+            "timestamp_count": 2,
+            "text": "A minute is not a very large measure of time, and his body needed every fraction of it.",
+            "segments": [
+              {
+                "start": 0.0,
+                "end": 5.82,
+                "text": "A minute is not a very large measure of time, and his body needed every fraction of it."
+              }
+            ],
+            "segment_count": 1,
+            "empty_segments": 0,
+            "invalid_segments": 0,
+            "unpaired_timestamp": false,
+            "nonmonotonic_timestamps": false
+          }
+        }
+      }
+    },
+    "grouped2_japanese/b2": {
+      "summary": {
+        "baseline": {
+          "transcribe_ms": {
+            "n": 42,
+            "p50": 71.0481885180343,
+            "p95": 119.09275898069609,
+            "min": 45.59869697550312,
+            "max": 119.60253998404369,
+            "stdev": 25.687950969221887
+          },
+          "decode_ms": {
+            "n": 42,
+            "p50": 63.675128476461396,
+            "p95": 111.69056754442863,
+            "min": 39.42454495700076,
+            "max": 111.84643697924912,
+            "stdev": 25.31819481701975
+          },
+          "decoder_calls": {
+            "n": 42,
+            "p50": 46.0,
+            "p95": 81.0,
+            "min": 28,
+            "max": 81,
+            "stdev": 18.676336780952404
+          },
+          "decode_ms_per_selection": {
+            "n": 42,
+            "p50": 1.3579650866156279,
+            "p95": 1.3736993081442175,
+            "min": 1.3478164261466534,
+            "max": 1.3842622765564714,
+            "stdev": 0.007958709684206896
+          },
+          "rtfx": 352.39249108677484,
+          "peak_allocated_bytes": 8293339136,
+          "quality": {
+            "metric": "CER",
+            "reference_units": 592,
+            "errors": 26,
+            "rate": 0.04391891891891892,
+            "annotated_utterances": 12,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            }
+          }
+        },
+        "on": {
+          "transcribe_ms": {
+            "n": 42,
+            "p50": 59.58554951939732,
+            "p95": 100.95081884937827,
+            "min": 38.82984002120793,
+            "max": 101.51172400219366,
+            "stdev": 21.728658111843075
+          },
+          "decode_ms": {
+            "n": 42,
+            "p50": 53.27934451634064,
+            "p95": 94.00326875620522,
+            "min": 33.04355900036171,
+            "max": 94.34625302674249,
+            "stdev": 21.32247501296746
+          },
+          "decoder_calls": {
+            "n": 42,
+            "p50": 46.0,
+            "p95": 81.0,
+            "min": 28,
+            "max": 81,
+            "stdev": 18.676336780952404
+          },
+          "decode_ms_per_selection": {
+            "n": 42,
+            "p50": 1.1385879332518525,
+            "p95": 1.153024273865147,
+            "min": 1.1270022981702106,
+            "max": 1.1638268960864637,
+            "stdev": 0.008290291534249422
+          },
+          "rtfx": 416.12813584912027,
+          "peak_allocated_bytes": 8293339136,
+          "quality": {
+            "metric": "CER",
+            "reference_units": 592,
+            "errors": 26,
+            "rate": 0.04391891891891892,
+            "annotated_utterances": 12,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            }
+          }
+        }
+      },
+      "rtfx_change": 0.18086550188905948,
+      "paired_median": 0.17896649225743644,
+      "paired_min": 0.17573381030809698,
+      "paired_max": 0.18627653960119717,
+      "improved_groups": 6,
+      "groups": 6,
+      "exact_token_groups": 6,
+      "exact_group_paired_median": 0.17896649225743644,
+      "cv_median": {
+        "baseline": 0.00626699464658839,
+        "on": 0.004827227217310664
+      },
+      "same_decoder_calls": true,
+      "output_differences": {}
+    },
+    "grouped2_japanese/b3": {
+      "summary": {
+        "baseline": {
+          "transcribe_ms": {
+            "n": 28,
+            "p50": 74.70040098996833,
+            "p95": 125.05472915363498,
+            "min": 53.760865004733205,
+            "max": 125.24408602621406,
+            "stdev": 28.169867190705475
+          },
+          "decode_ms": {
+            "n": 28,
+            "p50": 65.9473100095056,
+            "p95": 115.53388023748994,
+            "min": 46.034272003453225,
+            "max": 115.89888198068365,
+            "stdev": 27.486581089216706
+          },
+          "decoder_calls": {
+            "n": 28,
+            "p50": 46.0,
+            "p95": 81.0,
+            "min": 32,
+            "max": 81,
+            "stdev": 19.434183800715687
+          },
+          "decode_ms_per_selection": {
+            "n": 28,
+            "p50": 1.3981418695413201,
+            "p95": 1.4118456126264547,
+            "min": 1.3916893860145487,
+            "max": 1.4207655409778897,
+            "stdev": 0.0072691569232653745
+          },
+          "rtfx": 481.3042249718196,
+          "peak_allocated_bytes": 9602603520,
+          "quality": {
+            "metric": "CER",
+            "reference_units": 592,
+            "errors": 26,
+            "rate": 0.04391891891891892,
+            "annotated_utterances": 12,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            }
+          }
+        },
+        "on": {
+          "transcribe_ms": {
+            "n": 28,
+            "p50": 63.09351997333579,
+            "p95": 107.26071910758037,
+            "min": 45.93023797497153,
+            "max": 107.33500495553017,
+            "stdev": 24.23021333736147
+          },
+          "decode_ms": {
+            "n": 28,
+            "p50": 55.333702999632806,
+            "p95": 98.64199144067243,
+            "min": 38.82824903121218,
+            "max": 98.81522500654683,
+            "stdev": 23.60160623358776
+          },
+          "decoder_calls": {
+            "n": 28,
+            "p50": 46.0,
+            "p95": 81.0,
+            "min": 32,
+            "max": 81,
+            "stdev": 19.434183800715687
+          },
+          "decode_ms_per_selection": {
+            "n": 28,
+            "p50": 1.1783421105587115,
+            "p95": 1.2029511151301515,
+            "min": 1.1735141900292523,
+            "max": 1.2050637195920344,
+            "stdev": 0.010698331115845013
+          },
+          "rtfx": 563.64205443987,
+          "peak_allocated_bytes": 9602603520,
+          "quality": {
+            "metric": "CER",
+            "reference_units": 592,
+            "errors": 26,
+            "rate": 0.04391891891891892,
+            "annotated_utterances": 12,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            }
+          }
+        }
+      },
+      "rtfx_change": 0.17107231808087953,
+      "paired_median": 0.1704335417767413,
+      "paired_min": 0.16496201269147437,
+      "paired_max": 0.17706424103602547,
+      "improved_groups": 4,
+      "groups": 4,
+      "exact_token_groups": 4,
+      "exact_group_paired_median": 0.1704335417767413,
+      "cv_median": {
+        "baseline": 0.0044852447292045815,
+        "on": 0.002590547648752395
+      },
+      "same_decoder_calls": true,
+      "output_differences": {}
+    }
+  },
+  "load": {
+    "load1b": {
+      "summary": {
+        "initialized": {
+          "model_load_ms": {
+            "n": 5,
+            "median": 4079.162710055243,
+            "min": 4018.7209600117058,
+            "max": 4328.09928804636,
+            "stdev": 109.15113531045453
+          },
+          "load_peak_rss_kib": {
+            "n": 5,
+            "median": 4352476,
+            "min": 4352372,
+            "max": 4355056,
+            "stdev": 1165.9527263144078
+          },
+          "load_peak_cuda_bytes": {
+            "n": 5,
+            "median": 2040667648,
+            "min": 2040667648,
+            "max": 2040667648,
+            "stdev": 0.0
+          }
+        },
+        "empty": {
+          "model_load_ms": {
+            "n": 5,
+            "median": 5299.339241988491,
+            "min": 5216.468924016226,
+            "max": 5731.5516550443135,
+            "stdev": 188.74744708474554
+          },
+          "load_peak_rss_kib": {
+            "n": 5,
+            "median": 4422960,
+            "min": 4420348,
+            "max": 4440620,
+            "stdev": 7328.421210601912
+          },
+          "load_peak_cuda_bytes": {
+            "n": 5,
+            "median": 2040667648,
+            "min": 2040667648,
+            "max": 2040667648,
+            "stdev": 0.0
+          }
+        }
+      },
+      "median_reduction_percent": -29.9124261193475,
+      "paired_reductions_percent": [
+        -20.525629770634566,
+        -28.78561569826119,
+        -26.892539421472918,
+        -32.14714902694313,
+        -40.50804202823015
+      ],
+      "rss_saved_mib": -68.83203125,
+      "all_equal": true,
+      "outputs_per_worker": 26,
+      "workers": 14,
+      "first": [
+        {
+          "mode": "empty",
+          "model_load_ms": 9995.784863014705
+        },
+        {
+          "mode": "initialized",
+          "model_load_ms": 4200.344077020418
+        }
+      ],
+      "instrumented": [
+        {
+          "mode": "empty",
+          "model_load_ms": 6193.168767960742,
+          "helper_host_timings": [
+            {
+              "helper": "load_checkpoint",
+              "host_elapsed_ms": 58.75708896201104
+            },
+            {
+              "helper": "_load_frontend",
+              "host_elapsed_ms": 62.93555902084336
+            },
+            {
+              "helper": "load_checkpoint",
+              "host_elapsed_ms": 57.583543995860964
+            },
+            {
+              "helper": "_load_decoder",
+              "host_elapsed_ms": 3230.599929986056
+            }
+          ],
+          "checkpoint_load_calls": [
+            {
+              "mmap": true,
+              "map_location": "cpu",
+              "weights_only": true
+            },
+            {
+              "mmap": true,
+              "map_location": "cpu",
+              "weights_only": true
+            }
+          ]
+        },
+        {
+          "mode": "initialized",
+          "model_load_ms": 4019.040964951273,
+          "helper_host_timings": [
+            {
+              "helper": "load_checkpoint",
+              "host_elapsed_ms": 43.82308601634577
+            },
+            {
+              "helper": "_load_frontend",
+              "host_elapsed_ms": 47.40537697216496
+            },
+            {
+              "helper": "load_checkpoint",
+              "host_elapsed_ms": 42.504402983468026
+            },
+            {
+              "helper": "_load_decoder",
+              "host_elapsed_ms": 1449.7736589983106
+            }
+          ],
+          "checkpoint_load_calls": [
+            {
+              "mmap": true,
+              "map_location": "cpu",
+              "weights_only": true
+            },
+            {
+              "mmap": true,
+              "map_location": "cpu",
+              "weights_only": true
+            }
+          ]
+        }
+      ]
+    },
+    "load102m": {
+      "summary": {
+        "initialized": {
+          "model_load_ms": {
+            "n": 5,
+            "median": 1629.0360019775108,
+            "min": 1495.5158969969489,
+            "max": 1638.429009995889,
+            "stdev": 54.023991668010154
+          },
+          "load_peak_rss_kib": {
+            "n": 5,
+            "median": 1501636,
+            "min": 1498348,
+            "max": 1510084,
+            "stdev": 4156.643723005377
+          },
+          "load_peak_cuda_bytes": {
+            "n": 5,
+            "median": 730622976,
+            "min": 730622976,
+            "max": 730622976,
+            "stdev": 0.0
+          }
+        },
+        "empty": {
+          "model_load_ms": {
+            "n": 5,
+            "median": 4428.753039974254,
+            "min": 4250.324003980495,
+            "max": 5238.16564300796,
+            "stdev": 356.1444983835137
+          },
+          "load_peak_rss_kib": {
+            "n": 5,
+            "median": 1566832,
+            "min": 1563024,
+            "max": 1573284,
+            "stdev": 3310.258092656825
+          },
+          "load_peak_cuda_bytes": {
+            "n": 5,
+            "median": 730622976,
+            "min": 730622976,
+            "max": 730622976,
+            "stdev": 0.0
+          }
+        }
+      },
+      "median_reduction_percent": -171.86342319004154,
+      "paired_reductions_percent": [
+        -184.20453520522938,
+        -164.86946726529257,
+        -181.7109190408976,
+        -223.12319457427242,
+        -170.30484768976143
+      ],
+      "rss_saved_mib": -63.66796875,
+      "all_equal": true,
+      "outputs_per_worker": 26,
+      "workers": 14,
+      "first": [
+        {
+          "mode": "empty",
+          "model_load_ms": 5722.961066989228
+        },
+        {
+          "mode": "initialized",
+          "model_load_ms": 1328.682926017791
+        }
+      ],
+      "instrumented": [
+        {
+          "mode": "empty",
+          "model_load_ms": 4540.654394018929,
+          "helper_host_timings": [
+            {
+              "helper": "load_checkpoint",
+              "host_elapsed_ms": 22.062591975554824
+            },
+            {
+              "helper": "_load_frontend",
+              "host_elapsed_ms": 25.878071028273553
+            },
+            {
+              "helper": "load_checkpoint",
+              "host_elapsed_ms": 19.480105955153704
+            },
+            {
+              "helper": "_load_decoder",
+              "host_elapsed_ms": 3163.9419400016777
+            }
+          ],
+          "checkpoint_load_calls": [
+            {
+              "mmap": true,
+              "map_location": "cpu",
+              "weights_only": true
+            },
+            {
+              "mmap": true,
+              "map_location": "cpu",
+              "weights_only": true
+            }
+          ]
+        },
+        {
+          "mode": "initialized",
+          "model_load_ms": 1819.6813850081526,
+          "helper_host_timings": [
+            {
+              "helper": "load_checkpoint",
+              "host_elapsed_ms": 22.09654700709507
+            },
+            {
+              "helper": "_load_frontend",
+              "host_elapsed_ms": 25.944901979528368
+            },
+            {
+              "helper": "load_checkpoint",
+              "host_elapsed_ms": 19.447905011475086
+            },
+            {
+              "helper": "_load_decoder",
+              "host_elapsed_ms": 259.59900097223
+            }
+          ],
+          "checkpoint_load_calls": [
+            {
+              "mmap": true,
+              "map_location": "cpu",
+              "weights_only": true
+            },
+            {
+              "mmap": true,
+              "map_location": "cpu",
+              "weights_only": true
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
