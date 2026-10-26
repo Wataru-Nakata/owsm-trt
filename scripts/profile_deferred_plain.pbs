@@ -6,6 +6,7 @@
 #PBS -l walltime=01:00:00
 #PBS -j oe
 set -euo pipefail
+ulimit -c 0
 : "${PBS_JOBID:?run via qsub}"
 : "${PBS_LOCALDIR:?run via qsub}"
 : "${SNAPSHOT:?immutable source archive prepared before submission}"
@@ -68,10 +69,11 @@ cp "$LOCAL/baseline_runtime.py" "$LOCAL/results/"
 nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv -l 5 \
     > "$LOCAL/results/gpu_utilization.csv" &
 SMI=$!
-timeout 600 "$PY" -m pytest -q -p no:cacheprovider \
+timeout 600 "$PY" -m pytest -vv -x --tb=short -p no:cacheprovider \
+    "$LOCAL/tests/test_lazy_plain.py" \
     "$LOCAL/tests/test_model.py" "$LOCAL/tests/test_kernels.py" \
     "$LOCAL/tests/test_greedy_select.py" "$LOCAL/tests/test_lazy_drafts.py" \
-    "$LOCAL/tests/test_greedy_flags.py" "$LOCAL/tests/test_lazy_plain.py" \
+    "$LOCAL/tests/test_greedy_flags.py" \
     > "$LOCAL/results/tests.log" 2>&1
 printf '%s\n' 'GPU state/capture and regression tests complete' >> "$OUT/progress.log"
 timeout 700 "$PY" "$LOCAL/scripts/profile_runtime_cold.py" \

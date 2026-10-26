@@ -53,6 +53,10 @@ def test_deferred_plain_after_drafts_prefill_and_repeated_switches(rows, graphs,
     torch.manual_seed(82)
     dev = torch.device("cuda")
     model = OWSMModel(TINY).eval().requires_grad_(False).to(dev)
+    # Draft padding feeds EOS through the embedding: keep it in vocabulary. Suppress its logit
+    # instead of using a negative sentinel, so untimed requests exercise the later cache buckets.
+    model.decoder.output_layer.weight[1].zero_()
+    model.decoder.output_layer.bias[1] = -1e4
     rules = TimestampRules(6, 30, 40, 1, TINY.vocab_size, dev) if timed else None
     cross = [
         torch.randn(TINY.dec_layers, rows, TINY.dec_heads, TINY.enc_frames, 8, device=dev) for _ in range(2)
@@ -67,7 +71,7 @@ def test_deferred_plain_after_drafts_prefill_and_repeated_switches(rows, graphs,
             TINY,
             rows,
             64,
-            -1,
+            1,
             torch.float32,
             dev,
             use_cuda_graph=graphs,
@@ -84,6 +88,8 @@ def test_deferred_plain_after_drafts_prefill_and_repeated_switches(rows, graphs,
         outputs = []
         for primer, count in ((primers, 40), (long_primers, 34)):
             outputs.append(sess.decode_drafted(primer, [[] for _ in range(rows)], count, insertions)[0])
+            if not timed:
+                assert all(len(row) == count for row in outputs[-1])
             assert bool(sess._steps) != lazy
             assert len(sess.graphs) == (3 if graphs and not lazy else 0)
         # Language-ID-style prefill alone must not construct plain token-by-token steps.
