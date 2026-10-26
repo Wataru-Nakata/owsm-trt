@@ -20,7 +20,7 @@ def worker(args):
     import importlib.metadata
     import resource
     from dataclasses import asdict
-    from functools import wraps
+    from functools import partial, wraps
 
     import torch
 
@@ -32,9 +32,12 @@ def worker(args):
 
     def selected(path, **kwargs):
         # Force the ablation even when production helpers explicitly request mapping.
-        if args.worker_mode != "production":
+        if args.worker_mode in ("eager", "mapped"):
             kwargs["memory_map"] = args.worker_mode == "mapped"
         return original_checkpoint(path, **kwargs)
+
+    if args.worker_mode in ("initialized", "empty"):
+        pipeline._load_decoder = partial(pipeline._load_decoder, empty_init=args.worker_mode == "empty")
     phases = []
     load_calls = []
 
@@ -140,8 +143,9 @@ def main():
     ap.add_argument("--manifest", required=True)
     ap.add_argument("--extra-manifest")
     ap.add_argument("--repeat", type=int, default=5)
+    ap.add_argument("--experiment", choices=("mapping", "decoder_init"), default="mapping")
     ap.add_argument("--out", type=Path, required=True)
-    ap.add_argument("--worker-mode", choices=("eager", "mapped", "production"), help=argparse.SUPPRESS)
+    ap.add_argument("--worker-mode", choices=("eager", "mapped", "production", "initialized", "empty"), help=argparse.SUPPRESS)
     ap.add_argument("--verify-production", action="store_true",
                     help="also validate an instrumented worker using unmodified production load settings")
     ap.add_argument("--instrument", action="store_true", help=argparse.SUPPRESS)
@@ -155,10 +159,11 @@ def main():
         return
     args.out.mkdir(parents=True, exist_ok=True)
     records, first, detail, expected, hashes = [], [], [], None, None
+    variants = ("eager", "mapped") if args.experiment == "mapping" else ("initialized", "empty")
     for repeat in range(-1, args.repeat + 1 + int(args.verify_production)):
         instrumented = repeat >= args.repeat
         modes = (("production",) if repeat > args.repeat else
-                 ("eager", "mapped") if repeat % 2 == 0 else ("mapped", "eager"))
+                 variants if repeat % 2 == 0 else variants[::-1])
         for mode in modes:
             cmd = [
                 sys.executable,
@@ -197,7 +202,7 @@ def main():
                 with Path(progress).open("a") as f:
                     f.write(f"{args.out.name}: model load {mode} cycle {repeat} complete\n")
     summary = {}
-    for mode in ("eager", "mapped"):
+    for mode in variants:
         rows = [r for r in records if r["mode"] == mode]
         summary[mode] = {}
         for field in ("model_load_ms", "load_peak_rss_kib", "load_peak_cuda_bytes"):
@@ -210,6 +215,7 @@ def main():
                 stdev=statistics.pstdev(values),
             )
     result = dict(
+        experiment=args.experiment,
         summary=summary,
         samples=records,
         first=first,

@@ -28,6 +28,7 @@ from .modeling import (
     frames_needed,
     load_checkpoint,
     load_model,
+    sinusoidal_positions,
 )
 from .runtime import (
     BeamSession,
@@ -1247,10 +1248,20 @@ def _check_kernel(kernel, decoder: Decoder, dev: torch.device, rows: int, window
         )
 
 
-def _load_decoder(cfg, checkpoint: Path) -> Decoder:
+def _load_decoder(cfg, checkpoint: Path, *, empty_init: bool = False) -> Decoder:
     """The decoder's weights (fp32, on the CPU) for the decoder megakernel."""
     sd = convert_espnet_state_dict(load_checkpoint(checkpoint, memory_map=True))
-    dec = Decoder(cfg)
+    if empty_init:
+        with torch.device("meta"):
+            dec = Decoder(cfg)
+        # All parameters are overwritten by strict loading. The nonpersistent position
+        # table is the sole buffer and must be regenerated after empty allocation.
+        if set(dict(dec.named_buffers())) != {"pe"}:
+            raise RuntimeError("empty decoder initialization requires an explicit buffer initialization policy")
+        dec.to_empty(device="cpu")
+        dec.pe = sinusoidal_positions(dec.pe.shape[0], cfg.d_model)
+    else:
+        dec = Decoder(cfg)
     dec.load_state_dict({k[len("decoder.") :]: v for k, v in sd.items() if k.startswith("decoder.")})
     return dec.eval().requires_grad_(False)
 
