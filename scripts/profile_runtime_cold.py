@@ -1,4 +1,4 @@
-"""Session-cold costs with warm engines/JIT; defer draft setup or individual verification calls."""
+"""Session-cold costs with warm engines/JIT; defer draft, verification or plain decoder setup."""
 
 import argparse
 import gc
@@ -23,7 +23,7 @@ def main():
     ap.add_argument("--manifest", required=True)
     ap.add_argument("--repeat", type=int, default=3)
     ap.add_argument("--limit", type=int, default=3)
-    ap.add_argument("--mode", choices=("drafts", "verify"), default="drafts")
+    ap.add_argument("--mode", choices=("drafts", "verify", "plain"), default="drafts")
     ap.add_argument(
         "--cases", nargs="+", choices=("translation", "lid", "asr", "prompt", "stream", "stream8")
     )
@@ -58,7 +58,11 @@ def main():
         return [asdict(r) for r in result]
 
     cases = args.cases or ("translation", "lid", "asr", "prompt", "stream")
-    option = "lazy_drafts" if args.mode == "drafts" else "greedy_lazy_verify_graphs"
+    option = {
+        "drafts": "lazy_drafts",
+        "verify": "greedy_lazy_verify_graphs",
+        "plain": "greedy_lazy_plain",
+    }[args.mode]
     records, expected, first = [], {}, []
     for repeat in range(-1, args.repeat):
         for task in cases:

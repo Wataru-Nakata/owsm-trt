@@ -36,6 +36,7 @@ VARIANTS = (
     "graph_flags",
     "graph_lazy",
     "graph_plain",
+    "graph_deferred",
 )
 CASES = {
     "single_greedy": (1, 1, False, True, False, "asr", None, None),
@@ -90,6 +91,11 @@ def count_draft_dispatch(model, call):
 
 
 def variant(model, name):
+    if name == "graph_deferred":
+        variant(model, "graph_plain")
+        model.greedy_lazy_plain = True
+        return
+    model.greedy_lazy_plain = False
     model.frontend.fused_power = name in ("power", "both", "graph_both")
     model.frontend.fused_logmel = name in ("post", "both", "graph_both")
     model.frontend_graph = name in (
@@ -133,6 +139,8 @@ def captures(model):
             "plain_select_fused": getattr(s, "select_workspace", None) is not None,
             "ctc": len(getattr(s, "_runs", {})),
             "decode": len(getattr(s, "graphs", {})),
+            "plain_ready": getattr(s, "_plain_ready", None),
+            "plain_steps": len(getattr(s, "_steps", {})),
             "verify": len(getattr(s, "_verify", {})) + len(getattr(s, "_verify_solo", {})),
             "ready_verify_steps": sum(
                 v.step is not None
@@ -217,6 +225,7 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
             "flags": OrderedDict(),
             "lazy": OrderedDict(),
             "plain": OrderedDict(),
+            "deferred": OrderedDict(),
         }
     )
 
@@ -233,6 +242,7 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
             "graph_flags": "flags",
             "graph_lazy": "lazy",
             "graph_plain": "plain",
+            "graph_deferred": "deferred",
         }
         model._sessions = pools[v if configure is not None else modes.get(v, "serial")]
 
@@ -326,6 +336,7 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
                         "graph_flags",
                         "graph_lazy",
                         "graph_plain",
+                        "graph_deferred",
                     )
                 )
                 else "shared sessions and all frontend variants resident"
