@@ -1333,8 +1333,10 @@ def _check_kernel(kernel, decoder: Decoder, dev: torch.device, rows: int, window
         )
 
 
-def _load_decoder(cfg, checkpoint: Path, *, empty_init: bool = False) -> Decoder:
+def _load_decoder(cfg, checkpoint: Path, *, empty_init: bool = False, skip_init: bool = False) -> Decoder:
     """The decoder's weights (fp32, on the CPU) for the decoder megakernel."""
+    if empty_init and skip_init:
+        raise ValueError("meta and direct skipped initialization are separate ablations")
     sd = convert_espnet_state_dict(load_checkpoint(checkpoint, memory_map=True))
     if empty_init:
         with torch.device("meta"):
@@ -1346,7 +1348,7 @@ def _load_decoder(cfg, checkpoint: Path, *, empty_init: bool = False) -> Decoder
         dec.to_empty(device="cpu")
         dec.pe = sinusoidal_positions(dec.pe.shape[0], cfg.d_model)
     else:
-        dec = Decoder(cfg)
+        dec = Decoder(cfg, initialize=not skip_init)
     dec.load_state_dict({k[len("decoder.") :]: v for k, v in sd.items() if k.startswith("decoder.")})
     return dec.eval().requires_grad_(False)
 

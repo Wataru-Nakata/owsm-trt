@@ -1,4 +1,4 @@
-# Decoder initialization experiment
+# Decoder initialization experiments
 
 After mapped loading,2773040's separately instrumented1B decoder helper still took1607ms
 (102M256ms). It constructs all randomly initialized parameters and then overwrites them from
@@ -22,7 +22,7 @@ All nine decoder tests and ten checkpoint tests passed in allocation2773320 (19 
 The existing fresh-process profiler can compare `--experiment decoder_init`, with both sides
 using adopted private mapping. Initialized/empty workers alternate; Python/CUDA init and
 instrumented helper times stay separate. Actual engine/checkpoint hashes and all English/Japanese
-ASR/TS/translation/beam/LID outputs must match. No speed or memory improvement is yet measured.
+ASR/TS/translation/beam/LID outputs must match. The measured meta-mode regression is reported below.
 
 Prepared driver: `scripts/profile_decoder_load.pbs`, tests first, then five alternating fresh-process
 pairs for1B and102M plus first/instrumented observations. Engines/checkpoints/audio and temporary
@@ -62,3 +62,24 @@ to justify this meta construction path. Production keeps `empty_init=False`.
 Full records and raw outputs: `outputs/runtime-2773320/load1b`, `load102m`, `load_analysis.json`.
 The first observations, Python/CUDA initialization, validation and hash I/O remain excluded from
 the reported load samples. No cold-disk, engine-build or steady-state gain is claimed.
+
+## Direct parameter allocation follow-up (prepared, unmeasured)
+
+The mapped/ordinary helper still measured1449.77ms for1B after the meta experiment. A separate
+`_load_decoder(..., skip_init=True)` now uses standard Linear/Embedding subclasses whose
+`reset_parameters` is empty. Their normal PyTorch constructors allocate storage and establish
+attributes; no global initializer monkeypatch or meta dispatch is used. The loader immediately
+performs the original strict, copying state load. Missing weights fail before a decoder is returned.
+Norms and nonpersistent positional buffers initialize normally. Full models and default Decoder
+construction retain ordinary nn.Linear/Embedding and initialization order.
+
+This skips random draws and therefore changes global RNG consumption; it does not change
+loaded weights, parameter dtype, checkpoint storage ownership or numerical forward operations.
+Defaults remain False. The prior meta path remains a separate reproduction option; using both
+raises an error. Nineteen small model tests are prepared: both modes' ZIP/legacy/dtype/strict/error
+and forward checks plus a direct-RNG/position-buffer guard. They require a compute allocation.
+
+`scripts/profile_decoder_skip.pbs` first runs these tests and focused naive beam/greedy/timestamp
+regressions, then `profile_model_load.py --experiment decoder_skip --repeat 5` on1B/102M in fresh
+processes with the same node-local cached engines. All English/Japanese public outputs must match.
+This is a new ablation, not an attribution of the previous meta slowdown; no improvement is assumed.

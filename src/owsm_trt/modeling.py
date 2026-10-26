@@ -158,13 +158,13 @@ class Conv2dSubsampling(nn.Module):
 class MultiHeadedAttention(nn.Module):
     explicit = False  # export option: attention written out (see explicit_attention)
 
-    def __init__(self, d: int, n_heads: int):
+    def __init__(self, d: int, n_heads: int, *, linear: type[nn.Linear] = nn.Linear):
         super().__init__()
         self.h, self.d_k = n_heads, d // n_heads
-        self.linear_q = nn.Linear(d, d)
-        self.linear_k = nn.Linear(d, d)
-        self.linear_v = nn.Linear(d, d)
-        self.linear_out = nn.Linear(d, d)
+        self.linear_q = linear(d, d)
+        self.linear_k = linear(d, d)
+        self.linear_v = linear(d, d)
+        self.linear_out = linear(d, d)
 
     def heads(self, x: torch.Tensor) -> torch.Tensor:
         # [B, T, d] -> [B, H, T, d_k]
@@ -250,10 +250,10 @@ class FusableSiLU(nn.Module):
 
 
 class FeedForward(nn.Module):
-    def __init__(self, d: int, units: int, activation: nn.Module):
+    def __init__(self, d: int, units: int, activation: nn.Module, *, linear: type[nn.Linear] = nn.Linear):
         super().__init__()
-        self.w_1 = nn.Linear(d, units)
-        self.w_2 = nn.Linear(units, d)
+        self.w_1 = linear(d, units)
+        self.w_2 = linear(units, d)
         self.activation = activation
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -477,27 +477,43 @@ def frames_needed(cfg: OWSMConfig, samples: int) -> int:
     return min(cfg.num_frames, first_pad + field + step)
 
 
+class _UninitializedLinear(nn.Linear):
+    """Checkpoint-only construction: strict loading must overwrite every parameter before use."""
+
+    def reset_parameters(self) -> None:
+        pass
+
+
+class _UninitializedEmbedding(nn.Embedding):
+    def reset_parameters(self) -> None:
+        pass
+
+
 class DecoderLayer(nn.Module):
-    def __init__(self, d: int, n_heads: int, units: int):
+    def __init__(self, d: int, n_heads: int, units: int, *, linear: type[nn.Linear] = nn.Linear):
         super().__init__()
-        self.self_attn = MultiHeadedAttention(d, n_heads)
-        self.src_attn = MultiHeadedAttention(d, n_heads)
-        self.feed_forward = FeedForward(d, units, nn.ReLU())
+        self.self_attn = MultiHeadedAttention(d, n_heads, linear=linear)
+        self.src_attn = MultiHeadedAttention(d, n_heads, linear=linear)
+        self.feed_forward = FeedForward(d, units, nn.ReLU(), linear=linear)
         self.norm1 = LayerNorm(d)
         self.norm2 = LayerNorm(d)
         self.norm3 = LayerNorm(d)
 
 
 class Decoder(nn.Module):
-    def __init__(self, cfg: OWSMConfig, max_positions: int = 5000):
+    def __init__(self, cfg: OWSMConfig, max_positions: int = 5000, *, initialize: bool = True):
         super().__init__()
         d = cfg.d_model
-        self.embed = nn.Sequential(nn.Embedding(cfg.vocab_size, d))
+        # The default/full-model path is unchanged. Only a strict checkpoint loader may request
+        # empty parameters; deterministic norms/position buffers still initialize normally.
+        linear = nn.Linear if initialize else _UninitializedLinear
+        embedding = nn.Embedding if initialize else _UninitializedEmbedding
+        self.embed = nn.Sequential(embedding(cfg.vocab_size, d))
         self.decoders = nn.ModuleList(
-            DecoderLayer(d, cfg.dec_heads, cfg.dec_ffn) for _ in range(cfg.dec_layers)
+            DecoderLayer(d, cfg.dec_heads, cfg.dec_ffn, linear=linear) for _ in range(cfg.dec_layers)
         )
         self.after_norm = LayerNorm(d)
-        self.output_layer = nn.Linear(d, cfg.vocab_size)
+        self.output_layer = linear(d, cfg.vocab_size)
         self.xscale = math.sqrt(d)
         self.register_buffer("pe", sinusoidal_positions(max_positions, d), persistent=False)
         # Self-attention over [cache | new] without concatenating them (faster in eager PyTorch). For a

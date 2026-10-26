@@ -36,8 +36,9 @@ def worker(args):
             kwargs["memory_map"] = args.worker_mode == "mapped"
         return original_checkpoint(path, **kwargs)
 
-    if args.worker_mode in ("initialized", "empty"):
-        pipeline._load_decoder = partial(pipeline._load_decoder, empty_init=args.worker_mode == "empty")
+    if args.worker_mode in ("initialized", "empty", "skipped"):
+        pipeline._load_decoder = partial(pipeline._load_decoder, empty_init=args.worker_mode == "empty",
+                                         skip_init=args.worker_mode == "skipped")
     phases = []
     load_calls = []
 
@@ -143,9 +144,9 @@ def main():
     ap.add_argument("--manifest", required=True)
     ap.add_argument("--extra-manifest")
     ap.add_argument("--repeat", type=int, default=5)
-    ap.add_argument("--experiment", choices=("mapping", "decoder_init"), default="mapping")
+    ap.add_argument("--experiment", choices=("mapping", "decoder_init", "decoder_skip"), default="mapping")
     ap.add_argument("--out", type=Path, required=True)
-    ap.add_argument("--worker-mode", choices=("eager", "mapped", "production", "initialized", "empty"), help=argparse.SUPPRESS)
+    ap.add_argument("--worker-mode", choices=("eager", "mapped", "production", "initialized", "empty", "skipped"), help=argparse.SUPPRESS)
     ap.add_argument("--verify-production", action="store_true",
                     help="also validate an instrumented worker using unmodified production load settings")
     ap.add_argument("--instrument", action="store_true", help=argparse.SUPPRESS)
@@ -159,7 +160,8 @@ def main():
         return
     args.out.mkdir(parents=True, exist_ok=True)
     records, first, detail, expected, hashes = [], [], [], None, None
-    variants = ("eager", "mapped") if args.experiment == "mapping" else ("initialized", "empty")
+    variants = {"mapping": ("eager", "mapped"), "decoder_init": ("initialized", "empty"),
+                "decoder_skip": ("initialized", "skipped")}[args.experiment]
     for repeat in range(-1, args.repeat + 1 + int(args.verify_production)):
         instrumented = repeat >= args.repeat
         modes = (("production",) if repeat > args.repeat else
