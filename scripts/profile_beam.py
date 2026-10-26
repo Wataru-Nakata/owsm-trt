@@ -412,6 +412,24 @@ def run_batch(model, args, items, waves, batch, legacy):
         primer = torch.tensor([model._primer(args.lang, args.task, args.timestamps, args.prompt)] * len(group),
                               device=model.device)
         save(out / "phases.json", profile_eager(model, args, group, primer, out))
+    if args.verify_api:
+        # Exercise OWSM's production session factory, independently of profiler-supplied sessions.
+        original_options = model.beam_compact_tail, model.beam_grouped_cross, model._beam_backend
+        model.beam_compact_tail = model.beam_grouped_cross = True
+        model._beam_backend = None
+        model._sessions.clear()
+        actual = {}
+        try:
+            for indices in chunks:
+                results = model.transcribe([waves[i] for i in indices], **kw)
+                for i, result in zip(indices, results):
+                    actual[items[i]["id"]] = result_record(model, result, items[i], len(waves[i]) / model.cfg.sample_rate)
+            agreement = comparison(records["on"], actual)
+            save(out / "api_agreement.json", agreement)
+            assert all(v["equal"] == v["total"] for v in agreement.values()), "public API and measured mode differ"
+        finally:
+            model._sessions.clear()
+            model.beam_compact_tail, model.beam_grouped_cross, model._beam_backend = original_options
     return summary
 
 
@@ -507,6 +525,7 @@ def main():
     ap.add_argument("--phases", action="store_true")
     ap.add_argument("--trace", action="store_true")
     ap.add_argument("--disk", action="store_true")
+    ap.add_argument("--verify-api", action="store_true", help="check production API with both measured opt-in options")
     ap.add_argument("--extra-checks", action="store_true")
     ap.add_argument("--long-audio")
     args = ap.parse_args()
@@ -520,6 +539,11 @@ def main():
               or args.gluon_cross_splits is not None)
     if tuning and not args.baseline_runtime:
         ap.error("Gluon ablations require --baseline-runtime for the unchanged decoder")
+    if args.verify_api and not (args.beam == 5 and args.upper_bound == "on" and args.fused_state
+                                and args.fused_rank and args.fused_finish and args.kv_reorder == "prefix"
+                                and args.share_cross_kv and args.compact_tail and args.gluon_group_queries
+                                and args.gluon_cross_splits == 8):
+        ap.error("verify-api requires the combined K5 state/prefix/shared/tail/grouped8 upper-bound ON mode")
     if not os.environ.get("PBS_JOBID") and os.uname().nodename.startswith("login"):
         ap.error("audio and inference must run in an allocated compute job")
     args.out.mkdir(parents=True, exist_ok=True)

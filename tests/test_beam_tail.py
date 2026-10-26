@@ -47,6 +47,9 @@ def test_tail_reuse_partial_end_bucket_and_capacity(last_group, chunk):
         if max(targets) > 6:
             assert fast._tail_started[0] == last_group
             assert fast.get_diagnostics()['decoder_row_calls'] < ref.get_diagnostics()['decoder_row_calls']
+            d = fast.get_diagnostics()
+            assert sum(u['executed_decoder_calls'] for u in d['utterances']) * fast.beam == d['decoder_row_calls']
+            assert all(u['extra_decoder_calls'] >= 0 for u in d['utterances'])
         else:
             assert fast._tail_started is None
 

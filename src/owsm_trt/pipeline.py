@@ -207,12 +207,17 @@ class OWSM:
         ctc_draft: bool = True,
         beam_upper_bound: bool = True,
         beam_kernels: bool = True,
+        beam_compact_tail: bool = False,
+        beam_grouped_cross: bool = False,
     ):
         self.cfg, self.tokenizer, self.frontend, self.backend = cfg, tokenizer, frontend, backend
         self.opts, self.device, self.use_cuda_graph = opts, device, use_cuda_graph
         self.ctc_draft = ctc_draft
         self.beam_upper_bound = beam_upper_bound
         self.beam_kernels = beam_kernels
+        self.beam_compact_tail = beam_compact_tail
+        self.beam_grouped_cross = beam_grouped_cross
+        self._beam_backend = None
         self.draft_stats = [0, 0]  # tokens emitted, decoder calls made by drafted decoding
         self.stream_priority = True  # decoder calls go first while the encoder works ahead
         self.dtype = DTYPES[opts.dtype]
@@ -245,6 +250,8 @@ class OWSM:
         decoder_kernel: bool | str | None = None,
         beam_upper_bound: bool = True,
         beam_kernels: bool = True,
+        beam_compact_tail: bool = False,
+        beam_grouped_cross: bool = False,
         fp8: bool | str = False,
         fp8_margin: float = 1.0,
         fp8_skip: str = "",
@@ -268,6 +275,15 @@ class OWSM:
         (default True on CUDA when Triton is available). Full-vocabulary log-softmax and global top-K
         stay in PyTorch. False selects the reference operations; CPU and missing-Triton paths also
         use them. These kernels do not affect greedy decoding.
+
+        ``beam_compact_tail`` (experimental, default False): once only one utterance remains in a
+        beam batch, decode its rows only when a shared-cross-KV decoder supports that shape.
+        Shape/kernel changes may change tokens. Additional group/bucket graphs increase cold start.
+
+        ``beam_grouped_cross`` (experimental, default False): for K5 with ``beam_kernels=True``,
+        group cross-attention queries and use eight key slices on an available Gluon decoder. This
+        changes reduction order and can change tokens (observed on silence). Larger full batches
+        still dispatch to TensorRT; compacted tails can use it. Greedy keeps the original decoder. Measurements currently cover H200/1B only.
 
         ``fp8_calibration`` (experimental, TensorRT): run the encoder's linear layers and subsampling
         convolutions in FP8, with input ranges measured on these recordings.
@@ -330,7 +346,7 @@ class OWSM:
             graphs = use_cuda_graph and dev.type == "cuda"
             runner = TorchCTCBackend(net) if cfg.ctc_only else TorchBackend(net)
             return cls(cfg, tok, net.frontend, runner, opts, dev, graphs, ctc_draft,
-                       beam_upper_bound, beam_kernels)
+                       beam_upper_bound, beam_kernels, beam_compact_tail, beam_grouped_cross)
         if backend != "tensorrt":
             raise ValueError(f"unknown backend {backend!r} (use 'tensorrt' or 'torch')")
 
@@ -369,7 +385,7 @@ class OWSM:
             if decoder_kernel and decoder_kernel != "0" and not cfg.ctc_only and dtype == "float16":
                 runner = _decoder_kernel(runner, cfg, files.checkpoint, dev, decoder_kernel)
             return cls(cfg, tok, frontend, runner, opts, dev, use_cuda_graph, ctc_draft,
-                       beam_upper_bound, beam_kernels)
+                       beam_upper_bound, beam_kernels, beam_compact_tail, beam_grouped_cross)
 
     # ------------------------------------------------------------------ helpers
 
@@ -391,12 +407,18 @@ class OWSM:
                     punctuation=t.punctuation | times,
                 )  # fmt: skip
             else:
+                backend = self.backend
+                if self.beam_grouped_cross and self.beam_kernels and beam == 5:
+                    if self._beam_backend is None:
+                        self._beam_backend = _grouped_beam_backend(self.backend)
+                    backend = self._beam_backend
                 self._sessions[key] = BeamSession(
-                    self.backend, self.cfg, batch, beam, *args, rules=self.rules,
+                    backend, self.cfg, batch, beam, *args, rules=self.rules,
                     upper_bound=self.beam_upper_bound,
                     fused_rank=self.beam_kernels, fused_finish=self.beam_kernels,
                     kv_reorder="prefix" if self.beam_kernels else "torch",
                     share_cross_kv=self.beam_kernels, fused_state=self.beam_kernels,
+                    compact_tail=self.beam_compact_tail,
                 )
         self._sessions.move_to_end(key)
         return self._sessions[key]
@@ -1015,6 +1037,29 @@ def _quantize_encoder(
         fp8_mod.quantize(net.encoder, amax, margin, skip),
         len(waves),
     )
+
+
+def _grouped_beam_backend(base):
+    """Independent experimental dispatch, sharing weights/engines; greedy retains ``base``."""
+    from .megakernel_gluon import GluonDecoder
+
+    if not isinstance(base, megakernel.MegaBackend):
+        log.warning("grouped beam attention needs an available Gluon decoder; using the existing backend")
+        return base
+    source = base.rows_kernel[0] if base.rows_kernel is not None else base.kernel
+    if not isinstance(source, GluonDecoder) or id(source) in base.failed:
+        log.warning("grouped beam attention has no available multi-row Gluon kernel; using the existing backend")
+        return base
+    kernel = GluonDecoder(source.m, programs=source.P, num_warps=source.nw,
+                          prefetch_attention=source.pfa, group_cross_queries=True, cross_splits=8)
+    backend = megakernel.MegaBackend(base.inner, base.kernel, base.max_tokens, base.max_rows,
+                                    rows_kernel=base.rows_kernel, trial=base.trial)
+    backend.failed = set(base.failed)
+    if base.rows_kernel is None:
+        backend.kernel = kernel
+    else:
+        backend.rows_kernel = (kernel, *base.rows_kernel[1:])
+    return backend
 
 
 def _decoder_kernel(runner, cfg, checkpoint: Path, dev: torch.device, which):

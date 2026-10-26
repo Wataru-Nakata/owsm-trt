@@ -1639,7 +1639,8 @@ class BeamSession(_Session):
 
         Selection 0 follows prefill, without a single-token decoder call. A logical end step is a
         zero-based search index; best_end includes the primer, excludes the appended forced EOS.
-        Extra decoder calls include both chunk overshoot and waiting for other batch members.
+        Extra decoder calls include chunk overshoot and waiting before tail compaction; subsequent
+        batch replays that skip an ended group are reported separately.
         """
         if self._beam_history is None:
             return None
@@ -1660,6 +1661,10 @@ class BeamSession(_Session):
                                if last_update is not None else None)
             first_check = next((i for i in self._host_checks if end is not None and i >= end), None)
             detected = self._host_checks[-1] if self._host_checks and end is not None else None
+            if self.compact_tail:
+                detected = first_check  # the existing check now reads every utterance's done flag
+            calls = (self._tail_started[1] if self._tail_started is not None and self._tail_started[0] != b
+                     else steps - 1)
             if not self._host_checks and end is not None:
                 detected = 0  # max_new_tokens=1: collected at the final output transfer
             utterances.append({
@@ -1668,7 +1673,9 @@ class BeamSession(_Session):
                 "first_bound_step": next((i for i, row in enumerate(rows) if row["bound"]), None),
                 "last_best_update_step": last_update,
                 "logical_end_step": end, "host_observed_done_step": detected,
-                "extra_decoder_calls": steps - 1 - end if end is not None else None,
+                "executed_decoder_calls": calls,
+                "extra_decoder_calls": calls - end if end is not None else None,
+                "batch_replays_after_logical_end": steps - 1 - end if end is not None else None,
                 "chunk_overshoot": first_check - end if first_check is not None else 0,
                 "stop_mask": rows[end]["stop_mask"] if end is not None else 0,
                 "best_end_with_primer": rows[-1]["best_end"],
