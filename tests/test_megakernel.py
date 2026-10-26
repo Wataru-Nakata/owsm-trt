@@ -401,3 +401,84 @@ def test_ring_program_budget_matches_decoder(model, programs):
     if torch.cuda.get_device_properties("cuda").multi_processor_count < programs:
         pytest.skip("requires enough SMs for the persistent grid")
     test_gluon_step_matches_decoder(model, 1, 8, "ring", programs=programs)
+
+
+@gluon_only
+@pytest.mark.parametrize("rows", [1, 2])
+@pytest.mark.parametrize("start_plain", [False, True])
+@torch.inference_mode()
+def test_notime_reuse_modes_long_prefill_and_graph_lifetimes(model, rows, start_plain):
+    from owsm_trt.runtime import TimestampRules
+
+    m16 = copy.deepcopy(model).half()
+    m16.frontend.float()
+    dev = torch.device("cuda")
+    backend = megakernel.MegaBackend(
+        TorchBackend(m16),
+        megakernel_ring.RingDecoder(megakernel.MegaDecoder(model.decoder, dev)),
+        32,
+        8,
+        trial=True,
+    )
+    rules = TimestampRules(999, 900, 998, 1, CFG.vocab_size, dev)
+    torch.manual_seed(27)
+    cross = [
+        torch.randn(CFG.dec_layers, rows, CFG.dec_heads, CFG.enc_frames, 64, device=dev, dtype=torch.float16)
+        for _ in range(2)
+    ]
+    plain, timed = [2, 3, 999], [2, 3, 4]
+    long_plain = [2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 999]
+    patterns = [
+        [plain if start_plain else timed] * rows,
+        [long_plain] * rows,
+        [plain] * rows,
+        [plain if i % 2 else timed for i in range(rows)],
+        [timed] * rows,
+        [plain] * rows,
+    ]
+    feats = [m16.frontend(torch.randn(rows, CFG.num_samples, device=dev)) for _ in range(2)]
+    reference = None
+    for reuse in (False, True):
+        sess = GreedySession(
+            backend,
+            CFG,
+            rows,
+            64,
+            eos=1,
+            dtype=torch.float16,
+            device=dev,
+            buckets=[16, 32, 64],
+            draft_windows=(2, 4, 8),
+            rules=rules,
+            lazy_drafts=True,
+            split_choose=True,
+            fuse_accept=True,
+            reuse_notime=reuse,
+        )
+        sess.cross_k.copy_(cross[0])
+        sess.cross_v.copy_(cross[1])
+        outs, graph_ids = [], None
+        for index, primers in enumerate(patterns):
+            outs.append(sess.decode_drafted(primers, [[5, 6, 7, 8]] * rows, 36)[0])
+            bounds = [*sess._verify.values(), *sess._verify_solo.values()]
+            assert all(b.use_notime == (reuse and all(999 in p for p in primers)) for b in bounds)
+            if index == 0:
+                if reuse and start_plain:
+                    assert all(b.graph is None and b.notime_graph is not None for b in bounds)
+                for bound in bounds:
+                    bound.bufs.host[:, bound.bufs.w] = 60  # deliberately unsafe for cold small-bucket replay
+            if reuse and index == 1:
+                graph_ids = [id(b.notime_graph) for b in bounds]
+                assert all(b.notime_graph is not None for b in bounds)
+            if reuse and index > 1:
+                assert graph_ids == [id(b.notime_graph) for b in bounds]
+        # The streaming path uses the same request mode before launching its encoder.
+        # Fixed synthetic draft factory; no audio/reference model work on login nodes.
+        outputs, _ = sess.decode_stream(plain, iter(feats), lambda ids: [[5, 6, 7]] * len(ids), 20)
+        assert len(outputs) == 2 * rows
+        outs.append(outputs)
+        if reference is None:
+            reference = outs
+        else:
+            assert outs == reference
+        assert not backend.failed

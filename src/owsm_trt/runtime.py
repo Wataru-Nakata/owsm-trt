@@ -733,12 +733,15 @@ class GreedySession(_Session):
         lazy_drafts: bool = False,
         split_choose: bool = False,
         fuse_accept: bool = False,
+        reuse_notime: bool = False,
     ):
         super().__init__(
             backend, cfg, batch, capacity, eos, dtype, device, use_cuda_graph, chunk, buckets, rules
         )
         self.split_choose = split_choose
         self.fuse_accept = fuse_accept
+        self.reuse_notime = reuse_notime
+        self._draft_notime = False
         self.punctuation = punctuation  # see _resync
         self.batch = batch
         self.seq = torch.zeros(batch, capacity + 1, dtype=torch.long, device=device)
@@ -758,7 +761,7 @@ class GreedySession(_Session):
         if not lazy_drafts:
             self._prepare_drafts()
 
-    def _prepare_drafts(self) -> None:
+    def _prepare_drafts(self, notime: bool = False) -> None:
         """Prepare only before starting a request: capture warmup writes the shared self-KV cache."""
         if self._drafts_ready:
             return
@@ -796,10 +799,23 @@ class GreedySession(_Session):
                         solo=True, **extra,
                     )  # fmt: skip
                     self._verify_solo[c, w] = bufs.bind(step, k, v)
-        if self.use_cuda_graph:
-            for ver in (*self._verify.values(), *self._verify_solo.values()):
+        for ver in (*self._verify.values(), *self._verify_solo.values()):
+            ver.select_notime(notime)
+            if self.use_cuda_graph:
                 ver.capture()
+        self._draft_notime = notime
         self._drafts_ready = True
+
+    def _draft_rule_mode(self, primers: list[list[int]]) -> None:
+        # Same predicate as _rules_start, known on the host already; mixed batches keep normal rules.
+        notime = (self.reuse_notime and self.rules is not None
+                  and all(self.rules.notime in row for row in primers))
+        self._prepare_drafts(notime=notime)
+        if notime == self._draft_notime:
+            return
+        for bound in (*self._verify.values(), *self._verify_solo.values()):
+            bound.select_notime(notime)
+        self._draft_notime = notime
 
     @property
     def self_k(self) -> torch.Tensor:
@@ -871,13 +887,13 @@ class GreedySession(_Session):
         """
         if not self.windows:
             raise RuntimeError("the session was created without draft_windows")
-        self._prepare_drafts()
         primers = primer.tolist() if isinstance(primer, torch.Tensor) else [list(x) for x in primer]
         b, p = len(primers), len(primers[0])
         assert b == self.batch and len(drafts) == b
         max_new_tokens = min(max_new_tokens, self.capacity - p)
         if max_new_tokens <= 0:
             raise ValueError(f"prompt of {p} tokens does not fit the cache capacity {self.capacity}")
+        self._draft_rule_mode(primers)  # cold capture must precede rules state and prefill
         prefill = p >= self.windows[-1]  # the primer does not fit a window: prefill it on its own
         if prefill or self.rules is not None:
             if not isinstance(primer, torch.Tensor):
@@ -923,11 +939,11 @@ class GreedySession(_Session):
         """
         if not self.windows:
             raise RuntimeError("the session was created without draft_windows")
-        self._prepare_drafts()
         p = len(primer)
         if p >= self.windows[-1]:
             raise ValueError(f"a primer of {p} tokens does not fit a draft window")
         max_new_tokens = min(max_new_tokens, self.capacity - p)
+        self._draft_rule_mode([primer])
         if self.rules is not None:
             self.tok.fill_(-1)
             self._rules_start(torch.tensor([primer] * self.rows, device=self.device))
@@ -1318,8 +1334,29 @@ class _Bound:
     def __init__(self, bufs: _Verify, step, k, v):
         self.bufs, self.step, self.k, self.v = bufs, step, k, v
         self.graph: torch.cuda.CUDAGraph | None = None
+        self.notime_graph: torch.cuda.CUDAGraph | None = None
+        self.use_notime = False
+        self.graph_enabled = False
 
-    def body(self) -> None:
+    def select_notime(self, enabled: bool) -> None:
+        self.use_notime = (enabled and self.bufs.fast and self.bufs.rules is not None
+                           and getattr(self.step, "writes_pred", False))
+        if self.graph_enabled:
+            self._ensure_graph()
+
+    def _ensure_graph(self) -> None:
+        graph = self.notime_graph if self.use_notime else self.graph
+        if graph is None:
+            # A prior request may leave a large offset in this window's shared host input.
+            # Capture warmup must start at zero even for smaller cache buckets.
+            self.bufs.host.zero_()
+            graph = capture_graph(lambda: self.body(skip_rules=self.use_notime))
+            if self.use_notime:
+                self.notime_graph = graph
+            else:
+                self.graph = graph
+
+    def body(self, skip_rules: bool = False) -> None:
         b = self.bufs
         b.inp.copy_(b.host, non_blocking=True)
         if not getattr(self.step, "reads_inp", False):  # (a decoder megakernel reads them in inp)
@@ -1331,7 +1368,7 @@ class _Bound:
             if not written:
                 kernels.write_kv(b.new_kv, self.k, self.v, b.offs)
             writes_pred = getattr(self.step, "writes_pred", False)
-            needs_choose = not writes_pred or b.rules is not None
+            needs_choose = not writes_pred or (b.rules is not None and not skip_rules)
             if needs_choose and b.fuse_accept and b.choose_workspace is not None:
                 kernels.choose_accept(
                     b.logits, b.inp, b.notime, b.pred, b.rules, b.res, b.eos,
@@ -1355,7 +1392,8 @@ class _Bound:
         b.res_host.copy_(b.res, non_blocking=True)
 
     def capture(self) -> None:
-        self.graph = capture_graph(self.body)
+        self.graph_enabled = True
+        self._ensure_graph()
 
     def __call__(self, flat: list[int], meanwhile: Callable[[], None] | None = None) -> list[list[int]]:
         """``flat``: per row, the window's tokens + [offset, #timestamps, last timestamp, first position],
@@ -1363,7 +1401,8 @@ class _Bound:
         running ``meanwhile()`` while the GPU works."""
         b = self.bufs
         b.host_flat[:] = np.frombuffer(array("q", flat), dtype=np.int64)  # read by the call, reused after it
-        self.graph.replay() if self.graph is not None else self.body()
+        graph = self.notime_graph if self.use_notime else self.graph
+        graph.replay() if graph is not None else self.body(skip_rules=self.use_notime)
         if meanwhile is not None:
             meanwhile()
         if b.ready is not None:

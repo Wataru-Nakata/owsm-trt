@@ -4,7 +4,6 @@ import argparse
 import importlib.metadata
 import json
 import os
-from collections import Counter
 from dataclasses import asdict
 from functools import partial
 from pathlib import Path
@@ -12,8 +11,7 @@ from types import SimpleNamespace
 
 import torch
 from profile_beam import command, save, sha256, wall
-from profile_draft_windows import Counted
-from profile_runtime import CASES, run_case
+from profile_runtime import CASES, count_draft_dispatch, run_case
 
 from owsm_trt import OWSM, hub, megakernel, megakernel_ring
 from owsm_trt.audio import load_audio
@@ -119,30 +117,11 @@ def main():
         m.greedy_split_choose = args.split_choose
         m.greedy_fuse_accept = args.fuse_accept
 
-    def observe(m, call):
-        counts, restore = Counter(), []
-        for sess in m._sessions.values():
-            for label in ("_verify", "_verify_solo"):
-                table = getattr(sess, label, {})
-                for (c, w), bound in list(table.items()):
-                    step = bound.step
-                    key = (
-                        f"cache{c}/window{w}/{label}/{getattr(step, 'dispatch', 'unknown')}"
-                        f"/programs{getattr(step, 'programs', None)}"
-                        f"/cross_splits{getattr(step, 'const', {}).get('NS')}"
-                    )
-                    restore.append((table, (c, w), bound))
-                    table[c, w] = Counted(bound, key, counts)
-        try:
-            call()  # outside uninstrumented timing
-        finally:
-            for table, key, bound in restore:
-                table[key] = bound
-        return dict(counts)
-
     summary = {}
     for name in args.cases:
-        summary[name] = run_case(model, args, name, items, waves, configure=configure, observe=observe)
+        summary[name] = run_case(
+            model, args, name, items, waves, configure=configure, observe=count_draft_dispatch
+        )
         save(args.out / "summary.json", summary)
     differences = [
         (c, v)

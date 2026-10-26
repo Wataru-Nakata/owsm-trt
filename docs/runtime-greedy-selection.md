@@ -48,3 +48,27 @@ selection: serial choose+accept and fused partial-choose+reduce-accept both have
 The follow-up includes exact acceptance runs, intermediate EOS, irregular window sizes, graph reuse,
 and the same timestamp/nonfinite cases. `profile_greedy_choose.py --fused` times choose+accept for all
 three modes, rather than mixing a choose-only baseline with acceptance-inclusive candidates.
+
+Job2771634 passed127 tests and all17 runtime cases. Fused selection retained exact sampled outputs.
+Against graph/serial, timestamped single RTFx improved4.15% English/5.18% Japanese on1B and8.99% on102M;
+110s improved6.05%. Synthetic choose+accept R1W1 was46.50us serial,6.66us split,5.75us fused.
+English plain B1 streaming nevertheless changed-2.01% with candidate CV2.21%; all variants used174
+calls and two fused trials were high outliers. This does not justify declaring the plain-mode issue
+resolved. Data: `outputs/runtime-2771634/analysis-graph.json`, selection.json, wall/tokens/cold records.
+Job2771706 additionally passed the synthetic1s/30s silence and30s noise comparison (4 API cases);
+its `edge_recipe.json` defines the node-local input generation. These are baseline agreement checks,
+not annotated WER/timestamp accuracy. The normal default is still unchanged.
+
+## Reuse notime prediction (prepared)
+
+When every primer contains the same notime token used by `_rules_start` and the backend already
+writes the correctly masked argmax, the extra choose kernel can be omitted entirely. Mixed batches,
+TensorRT closures without an argmax and timestamp requests keep normal selection. The request's
+primer is already on the host; no per-step device synchronization is added.
+
+`reuse_notime=True` is experimental. With lazy draft setup, first use captures only the requested
+mode's graphs. The other mode is captured only if later needed, before timestamp-state setup and
+prefill. Capture warmup resets the shared pinned input to zero offsets; otherwise a previous request's
+large offsets could be replayed against smaller cache buckets. Tests explicitly inject that condition,
+retain graph identities, switch short/long/notime/timed/mixed requests and compare streaming outputs.
+Cold captures/memory and actual chosen graphs are recorded separately. No speed claim yet.

@@ -13,24 +13,12 @@ from pathlib import Path
 
 import torch
 from profile_beam import comparison, quality, result_record, save, sha256, stats, wall
-from profile_runtime import captures, dispatch
+from profile_runtime import Counted, captures, dispatch
 
 from owsm_trt import OWSM, hub, megakernel
 from owsm_trt.audio import load_audio
 from owsm_trt.build import engine_tag
 from owsm_trt.pipeline import _check_kernel, _load_decoder
-
-
-class Counted:
-    def __init__(self, bound, key, counts):
-        self.bound, self.key, self.counts = bound, key, counts
-
-    def __getattr__(self, name):
-        return getattr(self.bound, name)
-
-    def __call__(self, *args, **kwargs):
-        self.counts[self.key] += 1
-        return self.bound(*args, **kwargs)
 
 
 @torch.inference_mode()

@@ -11,7 +11,7 @@ import json
 import logging
 import os
 import time
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 from dataclasses import asdict
 from pathlib import Path
 
@@ -22,7 +22,17 @@ from owsm_trt import OWSM, hub
 from owsm_trt.audio import load_audio
 from owsm_trt.build import engine_tag
 
-VARIANTS = ("reference", "power", "post", "both", "graph", "graph_both", "graph_split", "graph_fused")
+VARIANTS = (
+    "reference",
+    "power",
+    "post",
+    "both",
+    "graph",
+    "graph_both",
+    "graph_split",
+    "graph_fused",
+    "graph_notime",
+)
 CASES = {
     "single_greedy": (1, 1, False, True, False, "asr", None, None),
     "single_ts": (1, 1, True, True, False, "asr", None, None),
@@ -39,12 +49,48 @@ CASES = {
 }
 
 
+class Counted:
+    def __init__(self, bound, key, counts):
+        self.bound, self.key, self.counts = bound, key, counts
+
+    def __getattr__(self, name):
+        return getattr(self.bound, name)
+
+    def __call__(self, *args, **kwargs):
+        self.counts[self.key] += 1
+        return self.bound(*args, **kwargs)
+
+
+def count_draft_dispatch(model, call):
+    counts, restore = Counter(), []
+    for sess in model._sessions.values():
+        for label in ("_verify", "_verify_solo"):
+            table = getattr(sess, label, {})
+            for (c, w), bound in list(table.items()):
+                step = bound.step
+                key = (
+                    f"rows{sess.rows}/cache{c}/window{w}/{label}/{getattr(step, 'dispatch', 'unknown')}"
+                    f"/programs{getattr(step, 'programs', None)}"
+                    f"/cross_splits{getattr(step, 'const', {}).get('NS')}"
+                    f"/notime_graph{getattr(bound, 'use_notime', False)}"
+                )
+                restore.append((table, (c, w), bound))
+                table[c, w] = Counted(bound, key, counts)
+    try:
+        call()  # excluded from uninstrumented timing; all requests within a case use the same primer mode
+    finally:
+        for table, key, bound in restore:
+            table[key] = bound
+    return dict(counts)
+
+
 def variant(model, name):
     model.frontend.fused_power = name in ("power", "both", "graph_both")
     model.frontend.fused_logmel = name in ("post", "both", "graph_both")
-    model.frontend_graph = name in ("graph", "graph_both", "graph_split", "graph_fused")
-    model.greedy_split_choose = name in ("graph_split", "graph_fused")
-    model.greedy_fuse_accept = name == "graph_fused"
+    model.frontend_graph = name in ("graph", "graph_both", "graph_split", "graph_fused", "graph_notime")
+    model.greedy_split_choose = name in ("graph_split", "graph_fused", "graph_notime")
+    model.greedy_fuse_accept = name in ("graph_fused", "graph_notime")
+    model.greedy_reuse_notime = name == "graph_notime"
 
 
 def captures(model):
@@ -54,6 +100,16 @@ def captures(model):
             "ctc": len(getattr(s, "_runs", {})),
             "decode": len(getattr(s, "graphs", {})),
             "verify": len(getattr(s, "_verify", {})) + len(getattr(s, "_verify_solo", {})),
+            "normal_verify_graphs": sum(
+                v.graph is not None
+                for label in ("_verify", "_verify_solo")
+                for v in getattr(s, label, {}).values()
+            ),
+            "notime_graphs": sum(
+                v.notime_graph is not None
+                for label in ("_verify", "_verify_solo")
+                for v in getattr(s, label, {}).values()
+            ),
             "selection_fused_windows": len(
                 {
                     id(v.bufs)
@@ -113,7 +169,12 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
     pools = (
         {v: OrderedDict() for v in args.variants}
         if configure is not None
-        else {"serial": model._sessions, "split": OrderedDict(), "fused": OrderedDict()}
+        else {
+            "serial": model._sessions,
+            "split": OrderedDict(),
+            "fused": OrderedDict(),
+            "notime": OrderedDict(),
+        }
     )
 
     def activate(v):
@@ -121,7 +182,15 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
             configure(model, v)
         else:
             variant(model, v)
-        mode = "fused" if model.greedy_fuse_accept else "split" if model.greedy_split_choose else "serial"
+        mode = (
+            "notime"
+            if model.greedy_reuse_notime
+            else "fused"
+            if model.greedy_fuse_accept
+            else "split"
+            if model.greedy_split_choose
+            else "serial"
+        )
         model._sessions = pools[v if configure is not None else mode]
 
     path = args.out / name
@@ -187,7 +256,8 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
             "peak_allocated_bytes": max(r["peak_allocated_bytes"] for r in rows),
             "memory_scope": (
                 "all variant session pools resident; not standalone deployment peak"
-                if configure is not None or any(v in args.variants for v in ("graph_split", "graph_fused"))
+                if configure is not None
+                or any(v in args.variants for v in ("graph_split", "graph_fused", "graph_notime"))
                 else "shared sessions and all frontend variants resident"
             ),
             "draft_decoder_calls": sum(r["draft_decoder_calls"] for r in rows),
@@ -238,7 +308,7 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
     print(name, {v: round(s["rtfx"], 2) for v, s in summary.items()}, flush=True)
     if progress := os.environ.get("OWSM_PROFILE_PROGRESS"):
         with Path(progress).open("a") as f:
-            f.write(f"{args.lang} {name} complete\n")
+            f.write(f"{args.out.name} {args.lang} {name} complete\n")
     return summary
 
 
@@ -302,6 +372,7 @@ def main():
     ap.add_argument("--repeat", type=int, default=5)
     ap.add_argument("--long-audio")
     ap.add_argument("--trace", action="store_true")
+    ap.add_argument("--count-dispatch", action="store_true")
     ap.add_argument("--lazy-drafts", action="store_true")
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
@@ -347,7 +418,9 @@ def main():
     frontend_profile(model, args, waves)
     summary = {}
     for name in args.cases:
-        summary[name] = run_case(model, args, name, items, waves)
+        summary[name] = run_case(
+            model, args, name, items, waves, observe=count_draft_dispatch if args.count_dispatch else None
+        )
         save(args.out / "summary.json", summary)
     bad = [
         (case, v)
