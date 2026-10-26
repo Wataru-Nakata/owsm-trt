@@ -130,18 +130,21 @@ def main():
 
                 def _prepare_steps(self):
                     super()._prepare_steps()
+                    # Capture tensors, not the session: a self->closure->self cycle can be
+                    # collected during the next CUDA capture and destroy old TRT/graph owners.
+                    counts, done = self.counts, self.done
                     for c, fn in self._steps.items():
                         def observed(fn=fn):
-                            self.counts[0].add_(1)
-                            self.counts[1].add_(self.done.all().to(torch.int32))
+                            counts[0].add_(1)
+                            counts[1].add_(done.all().to(torch.int32))
                             fn()
                         observed.__dict__.update(fn.__dict__)
                         self._steps[c] = observed
 
-                def decode(self, primer, maximum):
+                def decode(self, primer, max_new_tokens):
                     self._prepare_plain()
                     self.counts.zero_()
-                    tokens = super().decode(primer, maximum)
+                    tokens = super().decode(primer, max_new_tokens)
                     diagnostic.append(dict(calls=self.counts.cpu().tolist(), output_lengths=list(map(len, tokens)),
                                            skip_finished=self.skip_finished))
                     return tokens
@@ -153,6 +156,9 @@ def main():
             diagnostics[mode] = diagnostic
             save(args.out / case / f'{mode}_diagnostics.json', dict(batches=diagnostic,
                  sorted_ids=[items[i]['id'] for i in sorted(range(len(waves)), key=lambda i: len(waves[i]))]))
+            torch.cuda.synchronize()
+            model._sessions.clear()
+            gc.collect()  # Release diagnostic graph/context owners outside every capture.
         assert [[b['calls'], b['output_lengths']] for b in diagnostics['reference']] == [
             [b['calls'], b['output_lengths']] for b in diagnostics['skip']], 'changed replay/EOS counts'
         summary['diagnostic_calls'] = {mode: dict(total=sum(b['calls'][0] for b in rows),

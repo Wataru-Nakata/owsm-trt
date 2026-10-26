@@ -13,10 +13,8 @@ reported and invalidates the benchmark. This is whole-call skipping after comple
 per-row beam compaction. It does not change timestamp rules or prematurely stop live hypotheses.
 
 Fourteen CPU tests cover prefill EOS, later EOS, capacity truncation, bucket changes, session
-reuse, lazy/eager construction and unsupported contracts. Four GPU tests are prepared, not yet
-measured: active arithmetic and cache equality, all public/workspace tensors unchanged under the
-guard, then restart repeatedly, with and without CUDA graphs/argmax. Compilation of the uniform
-Gluon early return is still unverified on the installed GPU toolchain.
+reuse, lazy/eager construction and unsupported contracts. Four GPU tests passed on H200 in job2773811: active arithmetic and cache equality, all public/workspace tensors unchanged under the
+guard, then restart repeatedly, with and without CUDA graphs/argmax. The uniform Gluon early return compiled on Triton3.8 and all four contracts passed.
 
 `scripts/profile_finished_skip.pbs` runs those tests first, then independent 1B/102M English73
 and Japanese12 processes. Each uses the same model/engines for alternating nine warmed reference/
@@ -33,5 +31,25 @@ long-form checks compare joined text/segments, not unavailable raw per-window to
 warmed sessions. This is a separate optional verification pass; whole-list p95 is not per-request
 p95. Mixed-duration request percentiles and per-input timing variation must be reported separately.
 
-No measured speed improvement yet. Temporary environments/code/audio/logs stay on node-local
+No broadly validated default speedup claim; see the partial result and remaining checks below. Temporary environments/code/audio/logs stay on node-local
 storage. Only compact results and coarse progress are published to the shared project.
+
+
+## Partial result and diagnostic fix:2773811
+
+The first run passed40 focused tests including all4 Ring GPU contracts and31 naive regressions.
+All1B English73 cases/extras matched; completed Japanese12 ASR cases and translation wall samples
+also matched. English B1 RTFx changed+4.30%/+4.85%/+4.58% (plain/timestamped/translation);
+Japanese completed ASR cases changed+3.87%/+2.47%. These are whole-list p50 ratios from9 alternating
+pairs, not per-request latency claims. English B3 (one guarded B1 tail) was-0.13%.
+Diagnostic call totals stayed1700/1882/1696 for English B1, with93/130/98 already-EOS entries.
+
+The job exited1 during Japanese translation's separate diagnostic capture. Logs show old CUDA
+graph and TensorRT context destruction inside capture, before cudaErrorStreamCaptureInvalidated.
+The instrumented step closure captured its owning session, forming a cycle that could be collected
+inside a later capture. The profiler now captures only its counter/done tensors and explicitly
+releases diagnostic sessions outside capture. Runtime/kernel code is unchanged by this fix.
+Japanese translation diagnostics, Japanese B3 and all102M conditions remain incomplete, so the
+optimization remains opt-in. A rerun adds independent single-request latency measurements.
+[Preserved partial evidence](runtime-finished-skip-partial-2773811.json); full logs remain under
+`outputs/runtime-2773811/`. Long-form extras compare public joined segments only.

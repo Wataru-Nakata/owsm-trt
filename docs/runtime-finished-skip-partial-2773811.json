@@ -1,0 +1,1141 @@
+{
+  "job": "2773811.pbs1",
+  "frozen": "f1e592f",
+  "exit_status": 1,
+  "tests": "40 passed (including four GPU Ring contracts),31 naive passed",
+  "partial_conditions": [
+    {
+      "dataset": "1b_english",
+      "case": "plain_b1",
+      "rtfx_percent": 4.30097725827856,
+      "agreement": {
+        "tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        }
+      },
+      "cold_ms": {
+        "reference": 9528.349342755973,
+        "skip": 8898.262509144843
+      },
+      "timing": {
+        "reference": {
+          "n": 9,
+          "p50": 1517.9647943004966,
+          "p95": 1519.6344444528222,
+          "min": 1514.0813291072845,
+          "max": 1519.8222873732448,
+          "stdev": 1.585933490732321,
+          "rtfx": 316.8946189043
+        },
+        "skip": {
+          "n": 9,
+          "p50": 1455.3696755319834,
+          "p95": 1456.1336763203144,
+          "min": 1453.133026137948,
+          "max": 1456.3127979636192,
+          "stdev": 0.8573449733378168,
+          "rtfx": 330.5241843960825
+        }
+      },
+      "quality": {
+        "reference": {
+          "metric": "WER",
+          "reference_units": 1150,
+          "errors": 45,
+          "rate": 0.0391304347826087,
+          "annotated_utterances": 73,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "skip": {
+          "metric": "WER",
+          "reference_units": 1150,
+          "errors": 45,
+          "rate": 0.0391304347826087,
+          "annotated_utterances": 73,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "dispatch": {
+        "reference": {
+          "(1, 1)": {
+            "calls": {
+              "64": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "128": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "256": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "512": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              }
+            },
+            "skip_finished": false,
+            "call_guards": {
+              "64": false,
+              "128": false,
+              "256": false,
+              "512": false
+            }
+          }
+        },
+        "skip": {
+          "(1, 1)": {
+            "calls": {
+              "64": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "128": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "256": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "512": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              }
+            },
+            "skip_finished": true,
+            "call_guards": {
+              "64": true,
+              "128": true,
+              "256": true,
+              "512": true
+            }
+          }
+        }
+      },
+      "shared_process_peak_cuda_bytes": 6476711424,
+      "diagnostic_calls": {
+        "reference": {
+          "total": 1700,
+          "after_eos": 93
+        },
+        "skip": {
+          "total": 1700,
+          "after_eos": 93
+        }
+      }
+    },
+    {
+      "dataset": "1b_english",
+      "case": "plain_ts_b1",
+      "rtfx_percent": 4.853737242999934,
+      "agreement": {
+        "tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        }
+      },
+      "cold_ms": {
+        "reference": 5761.288625188172,
+        "skip": 5630.601804703474
+      },
+      "timing": {
+        "reference": {
+          "n": 9,
+          "p50": 1647.5350400432944,
+          "p95": 1649.462174065411,
+          "min": 1647.0623379573226,
+          "max": 1649.509903974831,
+          "stdev": 0.9905672863929756,
+          "rtfx": 291.97246996783707
+        },
+        "skip": {
+          "n": 9,
+          "p50": 1571.2697356939316,
+          "p95": 1572.7180881425738,
+          "min": 1569.0051224082708,
+          "max": 1573.1448819860816,
+          "stdev": 1.1018054609063779,
+          "rtfx": 306.14404648197274
+        }
+      },
+      "quality": {
+        "reference": {
+          "metric": "WER",
+          "reference_units": 1150,
+          "errors": 45,
+          "rate": 0.0391304347826087,
+          "annotated_utterances": 73,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "skip": {
+          "metric": "WER",
+          "reference_units": 1150,
+          "errors": 45,
+          "rate": 0.0391304347826087,
+          "annotated_utterances": 73,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "dispatch": {
+        "reference": {
+          "(1, 1)": {
+            "calls": {
+              "64": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "128": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "256": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "512": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              }
+            },
+            "skip_finished": false,
+            "call_guards": {
+              "64": false,
+              "128": false,
+              "256": false,
+              "512": false
+            }
+          }
+        },
+        "skip": {
+          "(1, 1)": {
+            "calls": {
+              "64": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "128": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "256": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "512": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              }
+            },
+            "skip_finished": true,
+            "call_guards": {
+              "64": true,
+              "128": true,
+              "256": true,
+              "512": true
+            }
+          }
+        }
+      },
+      "shared_process_peak_cuda_bytes": 6477127168,
+      "diagnostic_calls": {
+        "reference": {
+          "total": 1882,
+          "after_eos": 130
+        },
+        "skip": {
+          "total": 1882,
+          "after_eos": 130
+        }
+      }
+    },
+    {
+      "dataset": "1b_english",
+      "case": "translation_b1",
+      "rtfx_percent": 4.579587730574408,
+      "agreement": {
+        "tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        }
+      },
+      "cold_ms": {
+        "reference": 5637.8091387450695,
+        "skip": 5597.81461302191
+      },
+      "timing": {
+        "reference": {
+          "n": 9,
+          "p50": 1516.2572152912617,
+          "p95": 1520.7703871652484,
+          "min": 1514.5460879430175,
+          "max": 1522.6473873481154,
+          "stdev": 2.2264753292549666,
+          "rtfx": 317.251499382047
+        },
+        "skip": {
+          "n": 9,
+          "p50": 1449.8596219345927,
+          "p95": 1452.2916626185179,
+          "min": 1448.4614059329033,
+          "max": 1452.8163000941277,
+          "stdev": 1.3520579546686635,
+          "rtfx": 331.78031012281053
+        }
+      },
+      "quality": {
+        "reference": {
+          "unmeasured": "No reference English translations"
+        },
+        "skip": {
+          "unmeasured": "No reference English translations"
+        }
+      },
+      "dispatch": {
+        "reference": {
+          "(1, 1)": {
+            "calls": {
+              "64": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "128": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "256": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "512": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              }
+            },
+            "skip_finished": false,
+            "call_guards": {
+              "64": false,
+              "128": false,
+              "256": false,
+              "512": false
+            }
+          }
+        },
+        "skip": {
+          "(1, 1)": {
+            "calls": {
+              "64": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "128": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "256": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "512": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              }
+            },
+            "skip_finished": true,
+            "call_guards": {
+              "64": true,
+              "128": true,
+              "256": true,
+              "512": true
+            }
+          }
+        }
+      },
+      "shared_process_peak_cuda_bytes": 6342611456,
+      "diagnostic_calls": {
+        "reference": {
+          "total": 1696,
+          "after_eos": 98
+        },
+        "skip": {
+          "total": 1696,
+          "after_eos": 98
+        }
+      }
+    },
+    {
+      "dataset": "1b_english",
+      "case": "translation_b3",
+      "rtfx_percent": -0.1324612578721407,
+      "agreement": {
+        "tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        }
+      },
+      "cold_ms": {
+        "reference": 18386.873912997544,
+        "skip": 8183.453461155295
+      },
+      "timing": {
+        "reference": {
+          "n": 9,
+          "p50": 740.2204610407352,
+          "p95": 742.1454565599561,
+          "min": 735.5639794841409,
+          "max": 742.3505047336221,
+          "stdev": 1.9294526422079032,
+          "rtfx": 649.8535238051574
+        },
+        "skip": {
+          "n": 9,
+          "p50": 741.2022668868303,
+          "p95": 742.7842235192657,
+          "min": 738.3591821417212,
+          "max": 742.9705681279302,
+          "stdev": 1.2531140638470335,
+          "rtfx": 648.9927196531986
+        }
+      },
+      "quality": {
+        "reference": {
+          "unmeasured": "No reference English translations"
+        },
+        "skip": {
+          "unmeasured": "No reference English translations"
+        }
+      },
+      "dispatch": {
+        "reference": {
+          "(3, 1)": {
+            "calls": {
+              "64": {
+                "implementation": "megakernel-gluon",
+                "module": "owsm_trt.megakernel_gluon",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "128": {
+                "implementation": "megakernel-gluon",
+                "module": "owsm_trt.megakernel_gluon",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "256": {
+                "implementation": "megakernel-gluon",
+                "module": "owsm_trt.megakernel_gluon",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "512": {
+                "implementation": "megakernel-gluon",
+                "module": "owsm_trt.megakernel_gluon",
+                "fallback_reason": null,
+                "writes_cache": true
+              }
+            },
+            "skip_finished": false,
+            "call_guards": {
+              "64": false,
+              "128": false,
+              "256": false,
+              "512": false
+            }
+          },
+          "(1, 1)": {
+            "calls": {
+              "64": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "128": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "256": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "512": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              }
+            },
+            "skip_finished": false,
+            "call_guards": {
+              "64": false,
+              "128": false,
+              "256": false,
+              "512": false
+            }
+          }
+        },
+        "skip": {
+          "(3, 1)": {
+            "calls": {
+              "64": {
+                "implementation": "megakernel-gluon",
+                "module": "owsm_trt.megakernel_gluon",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "128": {
+                "implementation": "megakernel-gluon",
+                "module": "owsm_trt.megakernel_gluon",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "256": {
+                "implementation": "megakernel-gluon",
+                "module": "owsm_trt.megakernel_gluon",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "512": {
+                "implementation": "megakernel-gluon",
+                "module": "owsm_trt.megakernel_gluon",
+                "fallback_reason": null,
+                "writes_cache": true
+              }
+            },
+            "skip_finished": false,
+            "call_guards": {
+              "64": false,
+              "128": false,
+              "256": false,
+              "512": false
+            }
+          },
+          "(1, 1)": {
+            "calls": {
+              "64": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "128": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "256": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "512": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              }
+            },
+            "skip_finished": true,
+            "call_guards": {
+              "64": true,
+              "128": true,
+              "256": true,
+              "512": true
+            }
+          }
+        }
+      },
+      "shared_process_peak_cuda_bytes": 6885972992,
+      "diagnostic_calls": {
+        "reference": {
+          "total": 712,
+          "after_eos": 33
+        },
+        "skip": {
+          "total": 712,
+          "after_eos": 33
+        }
+      }
+    },
+    {
+      "dataset": "1b_japanese",
+      "case": "plain_b1",
+      "rtfx_percent": 3.8669834474847065,
+      "agreement": {
+        "tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        }
+      },
+      "cold_ms": {
+        "reference": 2470.9584452211857,
+        "skip": 2426.0951820760965
+      },
+      "timing": {
+        "reference": {
+          "n": 9,
+          "p50": 352.5312840938568,
+          "p95": 353.00358291715384,
+          "min": 351.9300511106849,
+          "max": 353.06689608842134,
+          "stdev": 0.33501234901589927,
+          "rtfx": 446.76886025827906
+        },
+        "skip": {
+          "n": 9,
+          "p50": 339.4064912572503,
+          "p95": 339.8025341331959,
+          "min": 338.96889071911573,
+          "max": 339.9018235504627,
+          "stdev": 0.3000826654687101,
+          "rtfx": 464.0453381329828
+        }
+      },
+      "quality": {
+        "reference": {
+          "metric": "CER",
+          "reference_units": 592,
+          "errors": 29,
+          "rate": 0.048986486486486486,
+          "annotated_utterances": 12,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "skip": {
+          "metric": "CER",
+          "reference_units": 592,
+          "errors": 29,
+          "rate": 0.048986486486486486,
+          "annotated_utterances": 12,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "dispatch": {
+        "reference": {
+          "(1, 1)": {
+            "calls": {
+              "64": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "128": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "256": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "512": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              }
+            },
+            "skip_finished": false,
+            "call_guards": {
+              "64": false,
+              "128": false,
+              "256": false,
+              "512": false
+            }
+          }
+        },
+        "skip": {
+          "(1, 1)": {
+            "calls": {
+              "64": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "128": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "256": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "512": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              }
+            },
+            "skip_finished": true,
+            "call_guards": {
+              "64": true,
+              "128": true,
+              "256": true,
+              "512": true
+            }
+          }
+        }
+      },
+      "shared_process_peak_cuda_bytes": 6201185792,
+      "diagnostic_calls": {
+        "reference": {
+          "total": 428,
+          "after_eos": 22
+        },
+        "skip": {
+          "total": 428,
+          "after_eos": 22
+        }
+      }
+    },
+    {
+      "dataset": "1b_japanese",
+      "case": "plain_ts_b1",
+      "rtfx_percent": 2.4664660816260398,
+      "agreement": {
+        "tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        }
+      },
+      "cold_ms": {
+        "reference": 2274.916183203459,
+        "skip": 2276.6489405184984
+      },
+      "timing": {
+        "reference": {
+          "n": 9,
+          "p50": 365.3392307460308,
+          "p95": 365.5647972598672,
+          "min": 364.9545917287469,
+          "max": 365.59122521430254,
+          "stdev": 0.22043014627221805,
+          "rtfx": 431.1061795317779
+        },
+        "skip": {
+          "n": 9,
+          "p50": 356.54516518116,
+          "p95": 356.8542776629329,
+          "min": 355.8179847896099,
+          "max": 356.94518219679594,
+          "stdev": 0.3027949427837547,
+          "rtfx": 441.7392672257231
+        }
+      },
+      "quality": {
+        "reference": {
+          "metric": "CER",
+          "reference_units": 592,
+          "errors": 29,
+          "rate": 0.048986486486486486,
+          "annotated_utterances": 12,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "skip": {
+          "metric": "CER",
+          "reference_units": 592,
+          "errors": 29,
+          "rate": 0.048986486486486486,
+          "annotated_utterances": 12,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "dispatch": {
+        "reference": {
+          "(1, 1)": {
+            "calls": {
+              "64": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "128": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "256": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "512": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              }
+            },
+            "skip_finished": false,
+            "call_guards": {
+              "64": false,
+              "128": false,
+              "256": false,
+              "512": false
+            }
+          }
+        },
+        "skip": {
+          "(1, 1)": {
+            "calls": {
+              "64": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "128": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "256": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "512": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              }
+            },
+            "skip_finished": true,
+            "call_guards": {
+              "64": true,
+              "128": true,
+              "256": true,
+              "512": true
+            }
+          }
+        }
+      },
+      "shared_process_peak_cuda_bytes": 6268766208,
+      "diagnostic_calls": {
+        "reference": {
+          "total": 445,
+          "after_eos": 15
+        },
+        "skip": {
+          "total": 445,
+          "after_eos": 15
+        }
+      }
+    },
+    {
+      "dataset": "1b_japanese",
+      "case": "translation_b1",
+      "rtfx_percent": 1.9603812528957931,
+      "agreement": {
+        "tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        }
+      },
+      "cold_ms": {
+        "reference": 2200.973220169544,
+        "skip": 2257.8577119857073
+      },
+      "timing": {
+        "reference": {
+          "n": 9,
+          "p50": 335.6681317090988,
+          "p95": 336.4193322136998,
+          "min": 335.17605625092983,
+          "max": 336.5668887272477,
+          "stdev": 0.4725568352056291,
+          "rtfx": 469.21344364169414
+        },
+        "skip": {
+          "n": 9,
+          "p50": 329.2142767459154,
+          "p95": 329.9784526228905,
+          "min": 328.8614619523287,
+          "max": 330.10377921164036,
+          "stdev": 0.42518731627844203,
+          "rtfx": 478.4118160269127
+        }
+      },
+      "quality": {
+        "reference": {
+          "unmeasured": "No reference English translations"
+        },
+        "skip": {
+          "unmeasured": "No reference English translations"
+        }
+      },
+      "dispatch": {
+        "reference": {
+          "(1, 1)": {
+            "calls": {
+              "64": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "128": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "256": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "512": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              }
+            },
+            "skip_finished": false,
+            "call_guards": {
+              "64": false,
+              "128": false,
+              "256": false,
+              "512": false
+            }
+          }
+        },
+        "skip": {
+          "(1, 1)": {
+            "calls": {
+              "64": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "128": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "256": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              },
+              "512": {
+                "implementation": "megakernel-ring",
+                "module": "owsm_trt.megakernel_ring",
+                "fallback_reason": null,
+                "writes_cache": true
+              }
+            },
+            "skip_finished": true,
+            "call_guards": {
+              "64": true,
+              "128": true,
+              "256": true,
+              "512": true
+            }
+          }
+        }
+      },
+      "shared_process_peak_cuda_bytes": 6268099584
+    }
+  ],
+  "decision": "Default remains False pending diagnostic ownership fix and completion of 102M/Japanese validation.",
+  "failure": "During Japanese translation B1 diagnostic graph construction: old CUDAGraph.reset and TensorRT Myelin context destruction reported cudaError900 while stream capturing, then capture invalidated. Observed._steps wrapper captured self, forming a session cycle; remove self capture and collect diagnostic sessions outside graph construction. No kernel failure observed.",
+  "missing": "Japanese translation B1 diagnostic completion, Japanese B3 and all102M conditions. Whole-list timings only; no per-request percentiles yet."
+}

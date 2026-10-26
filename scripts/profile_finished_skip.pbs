@@ -97,7 +97,7 @@ for SIZE in 1b 102m; do
             EXTRA=(--extra-checks --long-audio "$LOCAL/long_110s.wav")
         fi
         timeout 650 "$PY" "$LOCAL/scripts/profile_finished_skip.py" \
-            --model "$MODEL" --manifest "$MANIFEST" --lang "$LANG_ID" --repeat 9 \
+            --model "$MODEL" --manifest "$MANIFEST" --lang "$LANG_ID" --repeat 9 --request-latency \
             "${EXTRA[@]}" --out "$LOCAL/results/${SIZE}_${CORPUS}" \
             > "$LOCAL/results/${SIZE}_${CORPUS}.log" 2>&1
         printf '%s %s finished-stop comparison complete\n' "$SIZE" "$CORPUS" >> "$OUT/progress.log"
