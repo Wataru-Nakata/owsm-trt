@@ -218,6 +218,8 @@ class OWSM:
         self.beam_compact_tail = beam_compact_tail
         self.beam_grouped_cross = beam_grouped_cross
         self._beam_backend = None
+        self.frontend_graph = False
+        self._frontend_replay = None
         self.draft_stats = [0, 0]  # tokens emitted, decoder calls made by drafted decoding
         self.stream_priority = True  # decoder calls go first while the encoder works ahead
         self.dtype = DTYPES[opts.dtype]
@@ -465,6 +467,11 @@ class OWSM:
             if batch.is_cuda and w.device.type == "cpu":
                 w = w.pin_memory()  # a copy from pageable memory would first wait for the stream's work
             row[: w.shape[0]].copy_(w, non_blocking=True)
+        if self.frontend_graph and self.use_cuda_graph and batch.is_cuda and len(waves) == 1:
+            if self._frontend_replay is None:
+                from .frontend_graph import FrontendReplay
+                self._frontend_replay = FrontendReplay(self.frontend)
+            return self._frontend_replay(batch)[:, :frames]
         return self.frontend(batch)[:, :frames]  # [B, frames, n_mels]
 
     def _primer(self, lang: str, task: str, timestamps: bool, prompt: str | None) -> list[int]:

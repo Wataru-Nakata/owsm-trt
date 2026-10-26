@@ -19,3 +19,17 @@ input, clamp boundaries and nonfinite values. Model tests and actual transcripts
 beam eager event sample measured features/H2D0.885 ms, but that instrumented sample is only motivation;
 it is not a greedy bottleneck or speed claim. New frontend events/traces and uninstrumented wall
 measurements will decide adoption. Cold load/JIT/warmup are separated from steady-state samples.
+
+## Prepared B1 frontend graph experiment (not yet measured)
+
+An independent opt-in `model.frontend_graph=True` captures STFT/mel/normalization on a dedicated
+capture stream. Replays serialize frontend workspace use through an event, while encoder/decoder
+work can still overlap. Each result is cloned before graph reuse, so another encoder stream cannot
+observe overwritten features. Shape/mode keys use a bounded32-entry cache; larger batches, CPU or
+grad-enabled paths run eagerly. Saturation falls back eagerly without eviction/recapture. Graph
+inputs/outputs and intermediate private pools add memory, which must be measured before adoption.
+
+The address-lifetime/private-pool contract follows the official
+[PyTorch CUDA graph documentation](https://docs.pytorch.org/docs/stable/notes/cuda.html).
+Tests retain outputs across streams, repeat cache hits, hit the capacity limit, and exercise B>1
+fallback. The first GPU allocation still runs only the separately frozen pointwise experiment.

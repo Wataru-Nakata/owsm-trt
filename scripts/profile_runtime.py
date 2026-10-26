@@ -21,7 +21,7 @@ from owsm_trt import OWSM, hub
 from owsm_trt.audio import load_audio
 from owsm_trt.build import engine_tag
 
-VARIANTS = ('reference', 'power', 'post', 'both')
+VARIANTS = ('reference', 'power', 'post', 'both', 'graph', 'graph_both')
 CASES = {
     'single_greedy': (1, 1, False, True, False, 'asr', None, None),
     'single_ts': (1, 1, True, True, False, 'asr', None, None),
@@ -39,8 +39,9 @@ CASES = {
 
 
 def variant(model, name):
-    model.frontend.fused_power = name in ('power', 'both')
-    model.frontend.fused_logmel = name in ('post', 'both')
+    model.frontend.fused_power = name in ('power', 'both', 'graph_both')
+    model.frontend.fused_logmel = name in ('post', 'both', 'graph_both')
+    model.frontend_graph = name in ('graph', 'graph_both')
 
 
 def captures(model):
@@ -87,7 +88,8 @@ def run_case(model, args, name, items, waves):
     for v in args.variants:
         variant(model, v)
         _, ms = wall(lambda: [call([waves[i] for i in chunk]) for chunk in chunks])
-        cold[v] = {'warmup_ms': ms, 'captures': captures(model), 'dispatch': dispatch(model)}
+        cold[v] = {'warmup_ms': ms, 'captures': captures(model), 'dispatch': dispatch(model),
+                   'frontend_graph': model._frontend_replay.info() if model._frontend_replay else None}
     after_warmup = captures(model)
     for repeat in range(args.repeat):
         for v in (args.variants if repeat % 2 == 0 else args.variants[::-1]):
@@ -146,20 +148,22 @@ def frontend_profile(model, args, waves):
             variant(model, v)
             actual = model._features(ws)
             error = (actual-expected).abs()
-            model.frontend(speech)
+            frontend_call = (model._frontend_replay if model.frontend_graph and b == 1 else model.frontend)
+            frontend_call(speech)
             times, events = [], []
             for _ in range(30):
                 _, ms = wall(lambda: model._features(ws))
                 times.append(ms)
                 a, z = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
                 a.record()
-                model.frontend(speech)
+                frontend_call(speech)
                 z.record()
                 events.append((a, z))
             torch.cuda.synchronize()
             result[b][v] = {'features_wall_ms': stats(times),
                             'frontend_event_ms': stats([a.elapsed_time(z) for a,z in events]),
-                            'features_exact': torch.equal(actual, expected), 'max_abs_error': float(error.max())}
+                            'features_exact': torch.equal(actual, expected), 'max_abs_error': float(error.max()),
+                            'frontend_graph': model._frontend_replay.info() if model._frontend_replay else None}
             if args.trace:
                 with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU,
                                                        torch.profiler.ProfilerActivity.CUDA]) as prof:
@@ -175,7 +179,7 @@ def main():
     ap.add_argument('--manifest', required=True)
     ap.add_argument('--lang', default='eng')
     ap.add_argument('--limit', type=int)
-    ap.add_argument('--variants', nargs='+', choices=VARIANTS, default=list(VARIANTS))
+    ap.add_argument('--variants', nargs='+', choices=VARIANTS, default=['reference', 'power', 'post', 'both'])
     ap.add_argument('--cases', nargs='+', choices=CASES, default=list(CASES))
     ap.add_argument('--repeat', type=int, default=5)
     ap.add_argument('--long-audio')
