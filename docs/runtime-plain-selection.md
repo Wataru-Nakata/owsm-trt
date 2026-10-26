@@ -73,3 +73,9 @@ Eleven alternating repeats independently reproduced RTFx gains:1B English8.89/9.
 All returned tokens/segments match. English drafted streaming B1/B8 changed-0.24/-0.39%, and beam
 changed-0.68%; these untouched paths have no performance improvement claim. They retain exact outputs.
 Artifacts: outputs/runtime-2772119 API1B/API102M, analysis-graph_lazy.json and raw dataset records.
+
+
+On the12-input plain ASR subsets, both timestamp modes retain identical reference-error counts:
+1B English WER10/303(3.30%),1B Japanese CER29/592(4.90%),102M English WER33/303(10.89%).
+These are small-subset checks, not model-wide accuracy estimates. Translation has no matching
+translation reference in this corpus and has no quality score; its baseline output agreement is recorded.
