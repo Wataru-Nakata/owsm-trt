@@ -275,18 +275,20 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   at B=1 / B=3, with exact output agreement; `beam_kernels=False` also disables this path.
   On supported Gluon shapes, beam rows now share encoder cross-KV storage. A further
   [B=1 comparison](docs/beam-cross.md) measured 4.3% more RTFx and cross-KV buffers shrinking from
-  165.4 to 27.6 MB, with identical outputs. B=3/K=5 retains expanded KV with the TensorRT decoder.
+  165.4 to 27.6 MB, with identical outputs. B=3/K=5 retains expanded KV with the TensorRT decoder by default.
   The [combined KV comparison](docs/beam-final.md) measured 9.25% / 8.90% additional RTFx at B=1 / B=3
   against the already fused search path on English 73, and 9.46% / 9.70% on Japanese12, with exact outputs.
   Parent selection, token-history gather and timestamp state now share one kernel for K<=8 and
   capacity<=512. [The next same-engine comparison](docs/beam-state-fusion.md) adds4.30% /4.24% RTFx
   at B=1 / B=3 on English 73, and5.07% /4.02% on Japanese12, with identical outputs and275 GPU tests.
   For further speed, opt into `beam_grouped_cross=True` and `beam_compact_tail=True` in
-  `OWSM.from_pretrained`. [The combined H200/1B comparison](docs/beam-fast.md) measures11.83% /14.70%
-  more RTFx at B=1 / B=3 on English 73 and12.36% /16.29% on Japanese12 versus the pre-state-fusion version.
-  These options remain off by default: English B3 has two20 ms timestamp changes, and silence text
-  can change. Main text/WER/CER match; all293 GPU tests and production-API output checks pass.
-  Tail compaction adds12 graphs at B3 and first-time JIT/capture cost; see the report for cold timings.
+  `OWSM.from_pretrained`. The [guarded H200/1B preset](docs/beam-wider-rows.md#verified-api-preset-2773443)
+  uses grouped Gluon attention at B=2/3. With tail compaction, measured RTFx improves29.43%/32.42%
+  at B=2 (English73/Japanese12), and25.53%/24.31% at B=3 versus the optimized default.
+  These options remain off by default: two English segment ends shift20 ms, and silence text can
+  change. Main text/WER/CER match;63 additional GPU/routing tests and eight production API/dispatch
+  comparisons pass. Tail compaction adds12 graphs at B3; first real-shape setup/JIT/capture took23.40s
+  versus0.63s reference in this run. [Earlier B1 measurements](docs/beam-fast.md) use a different baseline.
 * **Timestamp rules.** Like ESPnet, every search applies its `ScoreFilter`: no timestamps after `<notimestamps>`;
   otherwise the output starts with a timestamp, timestamps come in increasing pairs, and `<eos>` only after a
   complete pair.

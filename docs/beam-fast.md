@@ -23,12 +23,12 @@ results = model.transcribe(
 )
 ```
 
-`beam_grouped_cross` groups sibling queries on the Gluon path for K5. The pending H200/1B preset
+`beam_grouped_cross` groups sibling queries on the Gluon path for K5. The verified H200/1B preset
 extends measured routing to B2/B3 with four/two key slices, retaining eight for B1/prefill and
 compacted tails. Wider routing is guarded by H200132 SM and the tested1B decoder dimensions;
 other models/GPUs retain the previous grouped routing. Default/greedy routing is unchanged.
 The backend has independent dispatch/failure state and shares existing weights/engines.
-[Wider-row results and pending API verification](beam-wider-rows.md).
+[Wider-row results and API verification](beam-wider-rows.md).
 
 `beam_compact_tail` switches to the single remaining utterance's decoder rows at an existing host
 completion check. Selection keeps the original B*K layout and beam width. It adds one graph per
@@ -103,3 +103,10 @@ isolated variant footprints. Coarse whole-job GPU utilization samples are in the
 `outputs/beam-2770624`. All jobs were serial, one rt_HG GPU on gai51740/R9920261300, with fresh
 capacity/queue/duplicate checks. Final submission observed176 allocated +8 eligible queued +1 new
 =185 GPUs; completion observed184 allocated and no queued jobs. No job remains active for this round.
+
+
+The later [guarded wider-row preset](beam-wider-rows.md#verified-api-preset-2773443) also routes
+full B2/B3 groups through Gluon. With tail compaction it measures29.43%/32.42% additional RTFx
+at B2 (English/Japanese) and25.53%/24.31% at B3 versus the optimized default in d75154f. All63
+additional tests and eight production API comparisons pass. The same two English time differences
+remain; defaults stay off. These gains have a different reference from the historical table above.

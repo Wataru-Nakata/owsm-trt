@@ -107,11 +107,50 @@ prefetch. Other shapes keep prior grouped routing; default/greedy dispatch const
 All wrappers share immutable weights but own failure state. Row selection is static at capture,
 with no device-to-host operation or live mutation of the reference kernel.
 
-16 lightweight CPU routing/validation tests pass. Three new GPU graph tests compare the row
-preset against its fixed-slice kernels at B1/B2/B3; public API/token/dispatch validation and a
-combined tail ablation are pending. Existing opt-in numerical caveats remain. No new default.
+16 lightweight CPU routing/validation tests pass. The GPU graph/API checks and combined tail
+ablation are now complete; see2773443 below. Existing opt-in numerical caveats remain. No new default.
 The profiler `--gluon-beam-splits --gluon-max-rows16 --gluon-group-queries --verify-api` compares
 the measured candidate with the independent production factory, including actual dispatch.
 `--extra-batch3` additionally exercises mixed silence/noise, prompt, translation and long-window
 cases at B3; long-form remains a separate single-recording check. All flags use normal CLI spaces
 (e.g. `--gluon-max-rows 16`, `--extra-batch 3`).
+
+## Verified API preset (2773443)
+
+Source d75154f, H200/1B, same checkpoint and engines. All63 tests pass (148.42s), including
+shared-KV, fixed-vs-row-preset graphs, tail strides/state and fallback. Eight public API vs timed
+candidate comparisons match full outputs and actual dispatch, including final partial English
+batches. Seven alternating repetitions per condition; default settings remain unchanged.
+
+|Setting|Inputs|B|p50 before→after (ms)|p95 before→after (ms)|RTFx gain|
+|---|---|---:|---:|---:|---:|
+|wide|English73|2|46.03→38.76|95.48→79.45|+18.19%|
+|wide|English73|3|48.19→41.33|100.36→85.77|+16.21%|
+|wide|Japanese12|2|69.08→58.05|118.50→99.23|+16.81%|
+|wide|Japanese12|3|74.31→63.02|124.73→107.25|+16.91%|
+|wide + tail|English73|2|45.56→34.23|95.58→72.10|+29.43%|
+|wide + tail|English73|3|48.70→40.12|100.64→76.54|+25.53%|
+|wide + tail|Japanese12|2|70.46→53.82|118.53→83.39|+32.42%|
+|wide + tail|Japanese12|3|74.22→58.81|124.79→100.24|+24.31%|
+
+Every paired group improves in all eight comparisons. Combined within-group CV medians are
+0.10–0.33% candidate and0.16–0.69% reference. The wider-only Japanese B2 reference is noisier
+(3.87% CV); all its paired groups still improve. These are batch latency and aggregate RTFx,
+not gains added to earlier reports.
+
+All main text matches, WER45/1150 and CER26/592 unchanged. Full tokens/time/segments match
+71/73 English and12/12 Japanese for every setting. The same endpoints shift10.48→10.50s and
+5.80→5.82s. There are no reference timestamp annotations. The B3 mixed-window no-timestamp,
+translation, long prompt, silence/noise and30s cases plus the B1 110s recording also match the
+baseline and production API exactly. This does not negate the earlier B1 silence difference.
+
+Global decoder-call counts are unchanged. English B3 decoder row-calls fall13270→10210 with
+tail compaction relative to wider-only. Initial English B3 setup/JIT/capture is13.77s wider-only
+and23.40s with tail, compared with0.62/0.63s reference. Extra tail graphs remain a cold-start cost.
+Shared-process candidate peak allocations are10.80/10.83GB respectively; both variants and
+cached workspaces coexist, so these are not isolated-mode memory savings.
+
+The guarded preset is accepted as an N-class opt-in; `beam_grouped_cross` and
+`beam_compact_tail` both remain False by default. Normal routing constants are unchanged.
+[Metrics, cold dispatch, hashes and API evidence](beam-wide-api-results-2773443.json); full
+wall/diagnostic/token/phase artifacts: `outputs/runtime-2773443/`.
