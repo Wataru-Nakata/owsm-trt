@@ -215,7 +215,10 @@ def frontend_profile(model, args, waves):
             error = (actual - expected).abs()
             frontend_call = model._frontend_replay if model.frontend_graph and b == 1 else model.frontend
             if model.frontend_direct and b == 1:
-                frontend_call = lambda x: model._frontend_replay.from_wave(x[0], x.shape[1], x.device)
+
+                def frontend_call(x):
+                    return model._frontend_replay.from_wave(x[0], x.shape[1], x.device)
+
             frontend_call(speech)
             times, events = [], []
             for _ in range(30):
