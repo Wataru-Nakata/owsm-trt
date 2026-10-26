@@ -71,10 +71,39 @@ SMI=$!
 timeout 480 "$PY" -m pytest -q -p no:cacheprovider "$LOCAL/tests/test_beam.py" \
     "$LOCAL/tests/test_beam_kernels.py" \
     "$LOCAL/tests/test_beam_reorder.py" \
+    "$LOCAL/tests/test_beam_profile.py" \
     "$LOCAL/tests/test_model.py" "$LOCAL/tests/test_longform.py" \
     > "$LOCAL/results/tests.log" 2>&1
 echo "beam and model regression tests passed"
 printf '%s\n' 'regression tests passed' >> "$OUT/progress.log"
+if [ "${EXPERIMENT:-stopping}" = decoder ]; then
+    # R=5 uses Gluon; B=3/R=15 is outside the unchanged routing limit.
+    for variant in p128 no_prefetch both; do
+        FLAGS=()
+        [ "$variant" = no_prefetch ] || FLAGS+=(--gluon-programs 128)
+        [ "$variant" = p128 ] || FLAGS+=(--no-gluon-prefetch)
+        timeout 480 "$PY" "$LOCAL/scripts/profile_beam.py" \
+            --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/manifest.json" \
+            --beam 5 --timestamps --batch 1 --chunk 1 --repeat 5 --limit "${PROFILE_LIMIT:-73}" \
+            --upper-bound on --fused-rank --fused-finish --kv-reorder prefix "${FLAGS[@]}" \
+            --baseline-runtime "$LOCAL/baseline_runtime.py" --phases --trace --disk \
+            --extra-checks --long-audio "$LOCAL/long_110s.wav" \
+            --out "$LOCAL/results/${variant}_b1" > "$LOCAL/results/${variant}_b1.log" 2>&1
+        printf 'decoder %s batch 1 complete\n' "$variant" >> "$OUT/progress.log"
+        if [ -n "${EXTRA_MANIFEST:-}" ]; then
+            timeout 360 "$PY" "$LOCAL/scripts/profile_beam.py" \
+                --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/extra_manifest.json" \
+                --lang "${EXTRA_LANG:?set the second manifest language}" \
+                --beam 5 --timestamps --batch 1 --chunk 1 --repeat 3 \
+                --upper-bound on --fused-rank --fused-finish --kv-reorder prefix "${FLAGS[@]}" \
+                --baseline-runtime "$LOCAL/baseline_runtime.py" \
+                --out "$LOCAL/results/${variant}_japanese_b1" \
+                > "$LOCAL/results/${variant}_japanese_b1.log" 2>&1
+            printf 'decoder %s Japanese batch 1 complete\n' "$variant" >> "$OUT/progress.log"
+        fi
+    done
+    exit 0
+fi
 if [ "${EXPERIMENT:-stopping}" = kv ]; then
     for variant in full prefix; do
         for batch in 1 3; do

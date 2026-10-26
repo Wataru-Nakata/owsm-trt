@@ -189,8 +189,37 @@ def make_session(model, cls, batch, beam, chunk, diagnostics=False, graph=True,
                  fused_rank=False, fused_finish=False, kv_reorder="torch"):
     extra = {"diagnostics": diagnostics, "fused_rank": fused_rank,
              "fused_finish": fused_finish, "kv_reorder": kv_reorder} if cls is BeamSession else {}
-    return cls(model.backend, model.cfg, batch, beam, model.opts.capacity, model.tokenizer.eos,
+    backend = getattr(model, "_profile_backend", model.backend) if cls is BeamSession else model.backend
+    return cls(backend, model.cfg, batch, beam, model.opts.capacity, model.tokenizer.eos,
                model.dtype, model.device, use_cuda_graph=graph, chunk=chunk, rules=model.rules, **extra)
+
+
+def configure_gluon(model, programs=None, prefetch=None):
+    """Independent dispatch state, shared immutable weights/engines; baseline closures stay unchanged."""
+    from owsm_trt.megakernel import MegaBackend
+    from owsm_trt.megakernel_gluon import GluonDecoder
+
+    base = model.backend
+    if not isinstance(base, MegaBackend):
+        raise ValueError("Gluon options require a successfully initialized megakernel backend")
+    source = base.rows_kernel[0] if base.rows_kernel is not None else base.kernel
+    if not isinstance(source, GluonDecoder) or id(source) in base.failed:
+        raise ValueError("Gluon options require an available multi-row Gluon decoder")
+    if programs is not None and not 1 <= programs <= torch.cuda.get_device_properties(model.device).multi_processor_count:
+        raise ValueError("program count must fit the GPU's SMs for the persistent grid barrier")
+    kernel = GluonDecoder(source.m, programs=programs or source.P, num_warps=source.nw,
+                          prefetch_attention=source.pfa if prefetch is None else prefetch)
+    backend = MegaBackend(base.inner, base.kernel, base.max_tokens, base.max_rows,
+                          rows_kernel=base.rows_kernel, trial=base.trial)
+    backend.failed = set(base.failed)
+    if base.rows_kernel is None:
+        backend.kernel = kernel
+    else:
+        backend.rows_kernel = (kernel, *base.rows_kernel[1:])
+    model._profile_backend = backend
+    return {"programs": kernel.P, "warps": kernel.nw, "prefetch_attention": kernel.pfa,
+            "reference_programs": source.P, "reference_prefetch_attention": source.pfa,
+            "routing_limits_unchanged": True}
 
 
 def profile_eager(model, args, waves, primer, out):
@@ -206,8 +235,8 @@ def profile_eager(model, args, waves, primer, out):
         setattr(s, attr, events.wrap(name, getattr(s, attr)))
     s._steps = {c: events.wrap("decoder", fn) for c, fn in s._steps.items()}
     # Beam's eager encoder calls backend.encode; isolate its time from cross-KV expansion.
-    original_encode = model.backend.encode
-    model.backend.encode = events.wrap("encoder", original_encode)
+    original_encode = s.backend.encode
+    s.backend.encode = events.wrap("encoder", original_encode)
     try:
         feats = events.wrap("features_h2d", model._features)(waves)
         s.encode(feats)
@@ -219,7 +248,7 @@ def profile_eager(model, args, waves, primer, out):
         else:
             tokens = s.decode(primer, model._max_new())
     finally:
-        model.backend.encode = original_encode
+        s.backend.encode = original_encode
     kernels = kernel_totals(out / "eager_trace.json") if args.trace else None
     return {"mode": "eager, diagnostics enabled; not CUDA graph timing", "phases": events.collect(),
             "warmup_tokens_equal": expected == tokens,
@@ -445,6 +474,9 @@ def main():
     ap.add_argument("--fused-rank", action="store_true", help="opt-in exact candidate-mask kernel")
     ap.add_argument("--fused-finish", action="store_true", help="opt-in exact beam-state kernel")
     ap.add_argument("--kv-reorder", choices=["torch", "full", "prefix"], default="torch")
+    ap.add_argument("--gluon-programs", type=int, help="candidate only: persistent CTA count")
+    ap.add_argument("--gluon-prefetch", action=argparse.BooleanOptionalAction, default=None,
+                    help="candidate only: attention prefetch; keep arithmetic and routing unchanged")
     ap.add_argument("--baseline-runtime", type=Path)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--phases", action="store_true")
@@ -459,6 +491,8 @@ def main():
         ap.error("repeat, chunk and limit must be positive")
     if any(n < 1 for n in args.compare_chunks) or len(set(args.compare_chunks)) != len(args.compare_chunks):
         ap.error("compare-chunks must be distinct positive integers")
+    if (args.gluon_programs is not None or args.gluon_prefetch is not None) and not args.baseline_runtime:
+        ap.error("Gluon ablations require --baseline-runtime for the unchanged decoder")
     if not os.environ.get("PBS_JOBID") and os.uname().nodename.startswith("login"):
         ap.error("audio and inference must run in an allocated compute job")
     args.out.mkdir(parents=True, exist_ok=True)
@@ -485,6 +519,9 @@ def main():
                           decoder_kernel=args.decoder_kernel, ctc_draft=False))
     for name, fn in originals.items():
         setattr(pipeline, name, fn)
+    decoder_options = None
+    if args.gluon_programs is not None or args.gluon_prefetch is not None:
+        decoder_options = configure_gluon(model, args.gluon_programs, args.gluon_prefetch)
     if any(len(w) > model.cfg.num_samples for w in waves):
         ap.error("manifest contains audio longer than a model window; use a separate long-form evaluation")
     files = hub.resolve(args.model)
@@ -516,6 +553,7 @@ def main():
            "cold": {"disk_load_ms": disk_load_ms, "from_pretrained_ms": load_ms,
                     "components_ms": dict(cold), "jit_separate": None,
                     "jit_note": "included in backend/session setup; not independently attributed"},
+           "decoder_options": decoder_options,
            "reference_time_annotations": "not evaluated", "items": items}
     save(args.out / "environment.json", env)
     legacy = None
