@@ -28,6 +28,7 @@ def main():
     ap.add_argument("--repeat", type=int, default=7)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--extra-checks", action="store_true")
+    ap.add_argument("--group-skip", action="store_true", help="compare multi-row group skip; keep adopted B1 guard in both modes")
     ap.add_argument("--request-latency", action="store_true", help="also measure separate B1 requests")
     ap.add_argument("--long-audio", type=Path)
     args = ap.parse_args()
@@ -41,11 +42,21 @@ def main():
     model, load_ms = wall(lambda: OWSM.from_pretrained(args.model, ctc_draft=False))
     if not getattr(model.backend, "supports_finished_stop", False):
         raise RuntimeError("single-row decoder does not support finished-stop; no silent no-op benchmark")
+    if args.group_skip and not all(model.backend.supports_finished_groups(b) for b in (3, 8)):
+        raise RuntimeError("multi-row group skip requires supported actual B3/B8 routes")
+
+    def session_settings(mode):
+        return (dict(skip_finished=True, skip_finished_groups=mode == 'skip') if args.group_skip
+                else dict(skip_finished=mode == 'skip'))
+
+    def expected_guard(mode, batch):
+        return (batch == 1 or mode == 'skip') if args.group_skip else mode == 'skip' and batch == 1
+
     files = hub.resolve(args.model)
     directory = hub.cache_dir() / files.name.replace("/", "--") / engine_tag(model.opts)
     save(args.out / 'environment.json', dict(commit=os.environ.get('OWSM_PROFILE_COMMIT'),
          checkpoint_sha256=sha256(files.checkpoint), engine_sha256={p.name: sha256(p) for p in directory.glob('*.engine')},
-         torch=torch.__version__, cuda=torch.version.cuda, gpu=torch.cuda.get_device_name(),
+         torch=torch.__version__, cuda=torch.version.cuda, gpu=torch.cuda.get_device_name(), group_skip=args.group_skip,
          nvidia_smi=command(['nvidia-smi', '--query-gpu=name,uuid,driver_version', '--format=csv']),
          disk_ms=disk_ms, load_ms=load_ms,
          note='Fixed batches, no CTC drafts; same host polling and graph replay counts. Whole-list warmed wall time. '
@@ -53,6 +64,9 @@ def main():
               'Separate device counters count graph calls and calls entered after EOS; no per-step host reads.'))
     cases = dict(plain_b1=dict(batch_size=1), plain_ts_b1=dict(batch_size=1, timestamps=True),
                  translation_b1=dict(batch_size=1, task='st_eng'), translation_b3=dict(batch_size=3, task='st_eng'))
+    if args.group_skip:
+        cases = dict(plain_b3=dict(batch_size=3), plain_ts_b3=dict(batch_size=3, timestamps=True),
+                     translation_b3=dict(batch_size=3, task='st_eng'), translation_b8=dict(batch_size=8, task='st_eng'))
     summaries = {}
     for case, options in cases.items():
         caches = {mode: OrderedDict() for mode in ('reference', 'skip')}
@@ -62,7 +76,7 @@ def main():
         def call(mode, audio=waves):
             class Session(GreedySession):
                 def __init__(self, *args, **kwargs):
-                    super().__init__(*args, **(kwargs | {'skip_finished': mode == 'skip'}))
+                    super().__init__(*args, **(kwargs | session_settings(mode)))
             model._sessions = caches[mode]
             with patch.object(pipeline, 'GreedySession', Session):
                 return model.transcribe(audio, lang=args.lang, **options)
@@ -110,7 +124,7 @@ def main():
                 call_guards={c: bool(getattr(fn, 'skips_finished', False)) for c, fn in s._steps.items()})
                 for k,s in caches[mode].items()}
             for s in caches[mode].values():
-                expected = mode == 'skip' and s.batch == 1
+                expected = expected_guard(mode, s.batch)
                 assert s.skip_finished is expected
                 assert all(bool(getattr(fn, 'skips_finished', False)) is expected for fn in s._steps.values())
         assert not getattr(model.backend, 'failed', set()), 'decoder trial fallback invalidates ablation'
@@ -124,7 +138,7 @@ def main():
 
             class Observed(GreedySession):
                 def __init__(self, *args, **kwargs):
-                    super().__init__(*args, **(kwargs | {'skip_finished': mode == 'skip'}))
+                    super().__init__(*args, **(kwargs | session_settings(mode)))
                     assert not self._plain_ready, 'counter instrumentation requires lazy plain construction'
                     self.counts = torch.zeros(2, dtype=torch.int32, device=self.device)
 
@@ -186,13 +200,16 @@ def main():
                   ('lookahead', waves[:3], dict(task='st_eng'), False)]
         if args.long_audio:
             checks.append(('long_audio', [load_audio(args.long_audio)], {}, False))
+        if args.group_skip:
+            checks = [(name, audio if name == 'long_audio' else audio + waves[:max(0, (4 if name == 'lookahead' else 3)-len(audio))],
+                       dict(batch_size=3) | options, drafted) for name,audio,options,drafted in checks]
         extra = {}
         for name, audio, options, drafted in checks:
             extra[name] = {}
             for mode in ('reference', 'skip'):
                 class Session(GreedySession):
                     def __init__(self, *args, **kwargs):
-                        super().__init__(*args, **(kwargs | {'skip_finished': mode == 'skip'}))
+                        super().__init__(*args, **(kwargs | session_settings(mode)))
                 model._sessions = OrderedDict()
                 model.ctc_draft = drafted
                 model._encoder_lookahead = name == 'lookahead'

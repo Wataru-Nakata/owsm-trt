@@ -127,3 +127,11 @@ def test_gluon_partial_full_done_and_restart_exact(rows, graphs):
         for left, right in zip(actual, reference):
             torch.testing.assert_close(left, right, rtol=0, atol=0)
     kernel.check()
+
+
+def test_gluon_rejects_strided_group_flags():
+    kernel = megakernel_gluon.GluonDecoder.__new__(megakernel_gluon.GluonDecoder)
+    kernel.m = SimpleNamespace()
+    with pytest.raises(ValueError, match="finished-group"):
+        kernel.step_fn(torch.zeros(3, 1, dtype=torch.long), None, None, None, None, None, None, None,
+                       stop=torch.zeros(6, dtype=torch.bool)[::2])

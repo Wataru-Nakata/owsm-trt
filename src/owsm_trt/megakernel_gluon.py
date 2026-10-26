@@ -981,7 +981,7 @@ class GluonDecoder:
     def step_fn(self, tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv, kind="decode", stop=None):
         m = self.m
         R, S = tokens.shape
-        if stop is not None and (R < 2 or S != 1 or stop.numel() != R
+        if stop is not None and (R < 2 or S != 1 or stop.numel() != R or not stop.is_contiguous()
                                  or stop.dtype != torch.bool or stop.device != tokens.device):
             raise ValueError("finished-group stop requires multiple rows/S1 and one boolean per row on the decoder device")
         cr = cross_k.shape[1]
