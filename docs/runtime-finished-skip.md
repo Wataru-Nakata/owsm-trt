@@ -96,3 +96,7 @@ memory comparisons. Cold observations share compiler caches/order and establish 
 [Complete results](runtime-finished-skip-results-2773841.json); raw artifacts under
 `outputs/runtime-2773841/`. Reproducer: `scripts/profile_finished_skip.pbs`, oneH200, immutable
 snapshot, node-local env/models/audio; public factory adoption follows the measured low-level path.
+
+Whole-job `nvidia-smi` sampling every5s recorded147 samples: mean utilization49.7%,
+median35%, range0–99%; maximum process-independent device memory12955MiB.
+This includes load/JIT/tests/diagnostics/all variants and does not establish a per-variant utilization gain.

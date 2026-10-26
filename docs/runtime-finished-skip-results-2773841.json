@@ -1693,5 +1693,17 @@
   "note": "Whole-list and optional separate single-request measurements. Single-request percentiles pool mixed durations/repeats. English B3 includes one B1 tail; capable B1 tail may be guarded. Diagnostic runs are separate from wall. Long form compares public joined text/segments, not unavailable raw tokens. No reference translation/times. Cold compiler caches and shared-process peak prevent isolated cold/memory comparisons.",
   "frozen_commit": "64cfddf",
   "decision": "Adopt guard for capable B1 plain sessions through greedy_kernels=True. Low-level defaultFalse; B>1/other kernels/verification unchanged. Public-factory GPU wiring check pending.",
-  "tests": "40 focused +31 naive; all16 full outputs and both English extras exact"
+  "tests": "40 focused +31 naive; all16 full outputs and both English extras exact",
+  "gpu_utilization": {
+    "samples": 147,
+    "interval_seconds": 5,
+    "utilization_percent": {
+      "mean": 49.69387755102041,
+      "median": 35,
+      "min": 0,
+      "max": 99
+    },
+    "maximum_nvidia_smi_memory_mib": 12955,
+    "scope": "Whole job, including model load, JIT/capture, tests, all variants and diagnostics. Not a steady-state or per-variant utilization comparison."
+  }
 }
