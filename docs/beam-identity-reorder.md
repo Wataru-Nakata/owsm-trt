@@ -33,3 +33,32 @@ pre-identity runtime64cfddf as baseline, same checkpoint/engine, beam5/timestamp
 Japanese12 and11 alternating repeats on both models. All shapes are warmed; wall and diagnostic
 sessions are separate. Full outputs, decoder-call counts and extra cases must match. Low-level
 identity-counter reset/selection-count consistency also passed two tiny CPU synthetic decodes.
+
+
+## First measurement:2773900; prefix default retained
+
+Job2773900 (frozend94138a) passed281 focused tests plus31 naive regressions. All8 model/corpus/B
+conditions, extra outputs and decoder-call counts match exactly; every diagnostic reorder count
+matches its selection count. Both models also passed the adopted finished-stop public API check.
+
+| Model/corpus/B | RTFx change | Paired group median | Unchanged rows | Prefix-weighted unchanged |
+|---|---:|---:|---:|---:|
+|1B English B1|+0.472%|+0.661%|72.10%|79.37%|
+|1B English B3|+0.902%|+0.505%|55.23%|50.14%|
+|1B Japanese B1|+0.899%|+0.680%|78.47%|85.41%|
+|1B Japanese B3|+0.979%|+0.698%|61.47%|56.25%|
+|102M English B1|+0.292%|+0.106%|71.13%|76.58%|
+|102M English B3|+0.128%|+0.058%|54.16%|48.21%|
+|102M Japanese B1|+0.028%|-0.059%|67.66%|73.68%|
+|102M Japanese B3|+0.480%|+0.303%|52.89%|48.47%|
+
+All11 repeat-total comparisons improved for1B B3 (English+0.469..+1.482%, Japanese+0.422..+1.865%).
+However1B English B1 had a-2.626% repeat despite its positive paired median;102M changes are small
+and mixed relative to per-group CV. No broad default change is justified yet. Independent1B B3
+replication is the next bounded check. Large identity fractions do not imply equal speedups: tail
+zeroing, decoder compute and the extra branch remain. No extra persistent cache/graph is required,
+but allocator peaks were measured with both variants in the same process, not isolated deployment.
+
+[Timing, counter, output and API evidence](beam-identity-results-2773900.json).
+Raw logs and frozen source metadata: `outputs/runtime-2773900/`. No reference timestamp annotation;
+110s extras compare joined public segments, not unavailable per-window token sequences.

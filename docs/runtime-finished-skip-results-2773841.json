@@ -1692,7 +1692,7 @@
   ],
   "note": "Whole-list and optional separate single-request measurements. Single-request percentiles pool mixed durations/repeats. English B3 includes one B1 tail; capable B1 tail may be guarded. Diagnostic runs are separate from wall. Long form compares public joined text/segments, not unavailable raw tokens. No reference translation/times. Cold compiler caches and shared-process peak prevent isolated cold/memory comparisons.",
   "frozen_commit": "64cfddf",
-  "decision": "Adopt guard for capable B1 plain sessions through greedy_kernels=True. Low-level defaultFalse; B>1/other kernels/verification unchanged. Public-factory GPU wiring check pending.",
+  "decision": "Adopt guard for capable B1 plain sessions through greedy_kernels=True. Low-level defaultFalse; B>1/other kernels/verification unchanged. Public-factory GPU wiring/rollback check passed for1B/102M in2773900.",
   "tests": "40 focused +31 naive; all16 full outputs and both English extras exact",
   "gpu_utilization": {
     "samples": 147,
@@ -1704,6 +1704,2774 @@
       "max": 99
     },
     "maximum_nvidia_smi_memory_mib": 12955,
-    "scope": "Whole job, including model load, JIT/capture, tests, all variants and diagnostics. Not a steady-state or per-variant utilization comparison."
+    "scope": "Sampled interval after environment/model/audio staging, including model load, JIT/capture, tests, all variants and diagnostics. Not steady-state or per-variant utilization."
+  },
+  "public_api_verification": {
+    "job": "2773900.pbs1",
+    "source": "d94138a",
+    "models": {
+      "1b": {
+        "all_equal": true,
+        "lazy_plain": false,
+        "finished_stop": true,
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "gpu": "NVIDIA H200",
+        "commit": "d94138ac281e9d0f7aeb5ba485a44879b52abe96",
+        "modes": {
+          "serial": {
+            "load_ms": 7857.021264964715,
+            "captures": {
+              "single": {
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 48,
+                  "ready_verify_steps": 48,
+                  "normal_verify_graphs": 48,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "single_ts": {
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 48,
+                  "ready_verify_steps": 48,
+                  "normal_verify_graphs": 48,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "stream": {
+                "(1, 1)": {
+                  "encode": 4,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 48,
+                  "ready_verify_steps": 48,
+                  "normal_verify_graphs": 48,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "stream_ts": {
+                "(1, 1)": {
+                  "encode": 4,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 48,
+                  "ready_verify_steps": 48,
+                  "normal_verify_graphs": 48,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(2, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 24,
+                  "ready_verify_steps": 24,
+                  "normal_verify_graphs": 24,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "prompt": {
+                "(2, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 24,
+                  "ready_verify_steps": 24,
+                  "normal_verify_graphs": 24,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 1)": {
+                  "encode": 4,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 48,
+                  "ready_verify_steps": 48,
+                  "normal_verify_graphs": 48,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "plain_decoder": {
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "translation": {
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 48,
+                  "ready_verify_steps": 48,
+                  "normal_verify_graphs": 48,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "beam_ts": {
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 48,
+                  "ready_verify_steps": 48,
+                  "normal_verify_graphs": 48,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 5)": {
+                  "encode": 1,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": null,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "single_ts_again": {
+                "(1, 5)": {
+                  "encode": 1,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": null,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 48,
+                  "ready_verify_steps": 48,
+                  "normal_verify_graphs": 48,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              }
+            },
+            "outputs": {
+              "single": {
+                "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  32000,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687
+                ],
+                "segments": []
+              },
+              "single_ts": {
+                "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  182,
+                  32000,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687,
+                  475
+                ],
+                "segments": [
+                  {
+                    "start": 0.0,
+                    "end": 5.86,
+                    "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+                  }
+                ]
+              },
+              "stream": [
+                {
+                  "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                  "tokens": [
+                    32000,
+                    8948,
+                    1865,
+                    2169,
+                    1702,
+                    1686,
+                    28716,
+                    1692,
+                    1686,
+                    4583,
+                    7818,
+                    1684,
+                    1689,
+                    1704,
+                    1727,
+                    5159,
+                    1690,
+                    5172,
+                    1748,
+                    20601,
+                    1687
+                  ],
+                  "segments": []
+                },
+                {
+                  "text": "Nor is mister Quilter's manner less interesting than his matter.",
+                  "tokens": [
+                    9430,
+                    1702,
+                    32000,
+                    8948,
+                    1865,
+                    2169,
+                    1691,
+                    1685,
+                    4517,
+                    3062,
+                    3335,
+                    1903,
+                    1748,
+                    2834,
+                    1687
+                  ],
+                  "segments": []
+                },
+                {
+                  "text": "He tells us that, at this festive season of the year, with Christmas and roast beef looming before us, similes drawn from eating, and its results occur most readily to the mind.",
+                  "tokens": [
+                    1873,
+                    10234,
+                    1892,
+                    1694,
+                    1684,
+                    1735,
+                    1713,
+                    6431,
+                    2838,
+                    5588,
+                    1692,
+                    1686,
+                    2155,
+                    1684,
+                    1715,
+                    12205,
+                    1689,
+                    32446,
+                    25872,
+                    1683,
+                    22602,
+                    1737,
+                    1992,
+                    1892,
+                    1684,
+                    1683,
+                    19840,
+                    1742,
+                    9894,
+                    1755,
+                    10086,
+                    1684,
+                    1689,
+                    2059,
+                    3715,
+                    9299,
+                    1985,
+                    22478,
+                    1690,
+                    1686,
+                    2438,
+                    1687
+                  ],
+                  "segments": []
+                }
+              ],
+              "stream_ts": [
+                {
+                  "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                  "tokens": [
+                    182,
+                    32000,
+                    8948,
+                    1865,
+                    2169,
+                    1702,
+                    1686,
+                    28716,
+                    1692,
+                    1686,
+                    4583,
+                    7818,
+                    1684,
+                    1689,
+                    1704,
+                    1727,
+                    5159,
+                    1690,
+                    5172,
+                    1748,
+                    20601,
+                    1687,
+                    475
+                  ],
+                  "segments": [
+                    {
+                      "start": 0.0,
+                      "end": 5.86,
+                      "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+                    }
+                  ]
+                },
+                {
+                  "text": "Nor is mister Quilter's manner less interesting than his matter.",
+                  "tokens": [
+                    182,
+                    9430,
+                    1702,
+                    32000,
+                    8948,
+                    1865,
+                    2169,
+                    1691,
+                    1685,
+                    4517,
+                    3062,
+                    3335,
+                    1903,
+                    1748,
+                    2834,
+                    1687,
+                    423
+                  ],
+                  "segments": [
+                    {
+                      "start": 0.0,
+                      "end": 4.82,
+                      "text": "Nor is mister Quilter's manner less interesting than his matter."
+                    }
+                  ]
+                },
+                {
+                  "text": "He tells us that, at this festive season of the year, with Christmas and roast beef looming before us, similes drawn from eating, and its results occur most readily to the mind.",
+                  "tokens": [
+                    182,
+                    1873,
+                    10234,
+                    1892,
+                    1694,
+                    1684,
+                    1735,
+                    1713,
+                    6431,
+                    2838,
+                    5588,
+                    1692,
+                    1686,
+                    2155,
+                    1684,
+                    1715,
+                    12205,
+                    1689,
+                    32446,
+                    25872,
+                    1683,
+                    22602,
+                    1737,
+                    1992,
+                    1892,
+                    1684,
+                    1683,
+                    19840,
+                    1742,
+                    9894,
+                    1755,
+                    10086,
+                    1684,
+                    1689,
+                    2059,
+                    3715,
+                    9299,
+                    1985,
+                    22478,
+                    1690,
+                    1686,
+                    2438,
+                    1687,
+                    806
+                  ],
+                  "segments": [
+                    {
+                      "start": 0.0,
+                      "end": 12.48,
+                      "text": "He tells us that, at this festive season of the year, with Christmas and roast beef looming before us, similes drawn from eating, and its results occur most readily to the mind."
+                    }
+                  ]
+                }
+              ],
+              "prompt": {
+                "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  182,
+                  32000,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687,
+                  475
+                ],
+                "segments": [
+                  {
+                    "start": 0.0,
+                    "end": 5.86,
+                    "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+                  }
+                ]
+              },
+              "plain_decoder": {
+                "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  182,
+                  32000,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687,
+                  475
+                ],
+                "segments": [
+                  {
+                    "start": 0.0,
+                    "end": 5.86,
+                    "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+                  }
+                ]
+              },
+              "translation": {
+                "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  32000,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687
+                ],
+                "segments": []
+              },
+              "beam_ts": {
+                "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  182,
+                  32000,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687,
+                  475
+                ],
+                "segments": [
+                  {
+                    "start": 0.0,
+                    "end": 5.86,
+                    "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+                  }
+                ]
+              },
+              "single_ts_again": {
+                "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  182,
+                  32000,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687,
+                  475
+                ],
+                "segments": [
+                  {
+                    "start": 0.0,
+                    "end": 5.86,
+                    "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+                  }
+                ]
+              },
+              "lid": [
+                [
+                  "eng",
+                  0.9991208910942078
+                ],
+                [
+                  "spa",
+                  6.54209143249318e-05
+                ],
+                [
+                  "zho",
+                  5.0553364417282864e-05
+                ],
+                [
+                  "jpn",
+                  4.7862962674116716e-05
+                ],
+                [
+                  "por",
+                  3.501729224808514e-05
+                ]
+              ]
+            }
+          },
+          "default": {
+            "load_ms": 2295.230399002321,
+            "captures": {
+              "single": {
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 48,
+                  "ready_verify_steps": 1,
+                  "normal_verify_graphs": 1,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "single_ts": {
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 48,
+                  "ready_verify_steps": 2,
+                  "normal_verify_graphs": 2,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "stream": {
+                "(1, 1)": {
+                  "encode": 4,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 48,
+                  "ready_verify_steps": 4,
+                  "normal_verify_graphs": 4,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "stream_ts": {
+                "(1, 1)": {
+                  "encode": 4,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 48,
+                  "ready_verify_steps": 4,
+                  "normal_verify_graphs": 4,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                },
+                "(2, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 3,
+                  "normal_verify_graphs": 3,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "prompt": {
+                "(2, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 3,
+                  "normal_verify_graphs": 3,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                },
+                "(1, 1)": {
+                  "encode": 4,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 48,
+                  "ready_verify_steps": 6,
+                  "normal_verify_graphs": 6,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "plain_decoder": {
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "translation": {
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "beam_ts": {
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 5)": {
+                  "encode": 1,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": null,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "single_ts_again": {
+                "(1, 5)": {
+                  "encode": 1,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": null,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 48,
+                  "ready_verify_steps": 2,
+                  "normal_verify_graphs": 2,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            },
+            "outputs": {
+              "single": {
+                "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  32000,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687
+                ],
+                "segments": []
+              },
+              "single_ts": {
+                "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  182,
+                  32000,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687,
+                  475
+                ],
+                "segments": [
+                  {
+                    "start": 0.0,
+                    "end": 5.86,
+                    "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+                  }
+                ]
+              },
+              "stream": [
+                {
+                  "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                  "tokens": [
+                    32000,
+                    8948,
+                    1865,
+                    2169,
+                    1702,
+                    1686,
+                    28716,
+                    1692,
+                    1686,
+                    4583,
+                    7818,
+                    1684,
+                    1689,
+                    1704,
+                    1727,
+                    5159,
+                    1690,
+                    5172,
+                    1748,
+                    20601,
+                    1687
+                  ],
+                  "segments": []
+                },
+                {
+                  "text": "Nor is mister Quilter's manner less interesting than his matter.",
+                  "tokens": [
+                    9430,
+                    1702,
+                    32000,
+                    8948,
+                    1865,
+                    2169,
+                    1691,
+                    1685,
+                    4517,
+                    3062,
+                    3335,
+                    1903,
+                    1748,
+                    2834,
+                    1687
+                  ],
+                  "segments": []
+                },
+                {
+                  "text": "He tells us that, at this festive season of the year, with Christmas and roast beef looming before us, similes drawn from eating, and its results occur most readily to the mind.",
+                  "tokens": [
+                    1873,
+                    10234,
+                    1892,
+                    1694,
+                    1684,
+                    1735,
+                    1713,
+                    6431,
+                    2838,
+                    5588,
+                    1692,
+                    1686,
+                    2155,
+                    1684,
+                    1715,
+                    12205,
+                    1689,
+                    32446,
+                    25872,
+                    1683,
+                    22602,
+                    1737,
+                    1992,
+                    1892,
+                    1684,
+                    1683,
+                    19840,
+                    1742,
+                    9894,
+                    1755,
+                    10086,
+                    1684,
+                    1689,
+                    2059,
+                    3715,
+                    9299,
+                    1985,
+                    22478,
+                    1690,
+                    1686,
+                    2438,
+                    1687
+                  ],
+                  "segments": []
+                }
+              ],
+              "stream_ts": [
+                {
+                  "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                  "tokens": [
+                    182,
+                    32000,
+                    8948,
+                    1865,
+                    2169,
+                    1702,
+                    1686,
+                    28716,
+                    1692,
+                    1686,
+                    4583,
+                    7818,
+                    1684,
+                    1689,
+                    1704,
+                    1727,
+                    5159,
+                    1690,
+                    5172,
+                    1748,
+                    20601,
+                    1687,
+                    475
+                  ],
+                  "segments": [
+                    {
+                      "start": 0.0,
+                      "end": 5.86,
+                      "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+                    }
+                  ]
+                },
+                {
+                  "text": "Nor is mister Quilter's manner less interesting than his matter.",
+                  "tokens": [
+                    182,
+                    9430,
+                    1702,
+                    32000,
+                    8948,
+                    1865,
+                    2169,
+                    1691,
+                    1685,
+                    4517,
+                    3062,
+                    3335,
+                    1903,
+                    1748,
+                    2834,
+                    1687,
+                    423
+                  ],
+                  "segments": [
+                    {
+                      "start": 0.0,
+                      "end": 4.82,
+                      "text": "Nor is mister Quilter's manner less interesting than his matter."
+                    }
+                  ]
+                },
+                {
+                  "text": "He tells us that, at this festive season of the year, with Christmas and roast beef looming before us, similes drawn from eating, and its results occur most readily to the mind.",
+                  "tokens": [
+                    182,
+                    1873,
+                    10234,
+                    1892,
+                    1694,
+                    1684,
+                    1735,
+                    1713,
+                    6431,
+                    2838,
+                    5588,
+                    1692,
+                    1686,
+                    2155,
+                    1684,
+                    1715,
+                    12205,
+                    1689,
+                    32446,
+                    25872,
+                    1683,
+                    22602,
+                    1737,
+                    1992,
+                    1892,
+                    1684,
+                    1683,
+                    19840,
+                    1742,
+                    9894,
+                    1755,
+                    10086,
+                    1684,
+                    1689,
+                    2059,
+                    3715,
+                    9299,
+                    1985,
+                    22478,
+                    1690,
+                    1686,
+                    2438,
+                    1687,
+                    806
+                  ],
+                  "segments": [
+                    {
+                      "start": 0.0,
+                      "end": 12.48,
+                      "text": "He tells us that, at this festive season of the year, with Christmas and roast beef looming before us, similes drawn from eating, and its results occur most readily to the mind."
+                    }
+                  ]
+                }
+              ],
+              "prompt": {
+                "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  182,
+                  32000,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687,
+                  475
+                ],
+                "segments": [
+                  {
+                    "start": 0.0,
+                    "end": 5.86,
+                    "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+                  }
+                ]
+              },
+              "plain_decoder": {
+                "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  182,
+                  32000,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687,
+                  475
+                ],
+                "segments": [
+                  {
+                    "start": 0.0,
+                    "end": 5.86,
+                    "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+                  }
+                ]
+              },
+              "translation": {
+                "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  32000,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687
+                ],
+                "segments": []
+              },
+              "beam_ts": {
+                "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  182,
+                  32000,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687,
+                  475
+                ],
+                "segments": [
+                  {
+                    "start": 0.0,
+                    "end": 5.86,
+                    "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+                  }
+                ]
+              },
+              "single_ts_again": {
+                "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  182,
+                  32000,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687,
+                  475
+                ],
+                "segments": [
+                  {
+                    "start": 0.0,
+                    "end": 5.86,
+                    "text": "mister Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+                  }
+                ]
+              },
+              "lid": [
+                [
+                  "eng",
+                  0.9991208910942078
+                ],
+                [
+                  "spa",
+                  6.54209143249318e-05
+                ],
+                [
+                  "zho",
+                  5.0553364417282864e-05
+                ],
+                [
+                  "jpn",
+                  4.7862962674116716e-05
+                ],
+                [
+                  "por",
+                  3.501729224808514e-05
+                ]
+              ]
+            }
+          }
+        },
+        "note": "Functional public-option/session-reuse regression; no steady-state timing claim."
+      },
+      "102m": {
+        "all_equal": true,
+        "lazy_plain": false,
+        "finished_stop": true,
+        "checkpoint_sha256": "4702713d44ab3e239101f09182903cd28f7b51e565bb632008af12beefb37752",
+        "engine_sha256": {
+          "encoder.engine": "f3da9563c8ef41b6252388c18d89fac46cc5781cfa505d6750837e0c12e0f481",
+          "decoder.engine": "b6065937220853d65633f6f59ce0edab80270717b8971c8afa53baf9a2bf5f72",
+          "verify.engine": "34a912836635a2c6928abef52e6ea5140c5215bc8fa178ee8b1af07bd5458dcb"
+        },
+        "gpu": "NVIDIA H200",
+        "commit": "d94138ac281e9d0f7aeb5ba485a44879b52abe96",
+        "modes": {
+          "serial": {
+            "load_ms": 3914.9923929944634,
+            "captures": {
+              "single": {
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 48,
+                  "ready_verify_steps": 48,
+                  "normal_verify_graphs": 48,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "single_ts": {
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 48,
+                  "ready_verify_steps": 48,
+                  "normal_verify_graphs": 48,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "stream": {
+                "(1, 1)": {
+                  "encode": 4,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 48,
+                  "ready_verify_steps": 48,
+                  "normal_verify_graphs": 48,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "stream_ts": {
+                "(1, 1)": {
+                  "encode": 4,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 48,
+                  "ready_verify_steps": 48,
+                  "normal_verify_graphs": 48,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(2, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 24,
+                  "ready_verify_steps": 24,
+                  "normal_verify_graphs": 24,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "prompt": {
+                "(2, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 24,
+                  "ready_verify_steps": 24,
+                  "normal_verify_graphs": 24,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 1)": {
+                  "encode": 4,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 48,
+                  "ready_verify_steps": 48,
+                  "normal_verify_graphs": 48,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "plain_decoder": {
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "translation": {
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 48,
+                  "ready_verify_steps": 48,
+                  "normal_verify_graphs": 48,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "beam_ts": {
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 48,
+                  "ready_verify_steps": 48,
+                  "normal_verify_graphs": 48,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 5)": {
+                  "encode": 1,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": null,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "single_ts_again": {
+                "(1, 5)": {
+                  "encode": 1,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": null,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 48,
+                  "ready_verify_steps": 48,
+                  "normal_verify_graphs": 48,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              }
+            },
+            "outputs": {
+              "single": {
+                "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  2406,
+                  1687,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687
+                ],
+                "segments": []
+              },
+              "single_ts": {
+                "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  182,
+                  2406,
+                  1687,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687,
+                  475
+                ],
+                "segments": [
+                  {
+                    "start": 0.0,
+                    "end": 5.86,
+                    "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+                  }
+                ]
+              },
+              "stream": [
+                {
+                  "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                  "tokens": [
+                    2406,
+                    1687,
+                    8948,
+                    1865,
+                    2169,
+                    1702,
+                    1686,
+                    28716,
+                    1692,
+                    1686,
+                    4583,
+                    7818,
+                    1684,
+                    1689,
+                    1704,
+                    1727,
+                    5159,
+                    1690,
+                    5172,
+                    1748,
+                    20601,
+                    1687
+                  ],
+                  "segments": []
+                },
+                {
+                  "text": "Nor is Mr. Croulter's manner less interesting than his matter.",
+                  "tokens": [
+                    9430,
+                    1702,
+                    2406,
+                    1687,
+                    19641,
+                    7396,
+                    1723,
+                    1691,
+                    1685,
+                    4517,
+                    3062,
+                    3335,
+                    1903,
+                    1748,
+                    2834,
+                    1687
+                  ],
+                  "segments": []
+                },
+                {
+                  "text": "He tells us that, at this festive season of the year, with Christmas and Rose beef looming before us, similes drawn from eating and its results occur most readily to the mind.",
+                  "tokens": [
+                    1873,
+                    10234,
+                    1892,
+                    1694,
+                    1684,
+                    1735,
+                    1713,
+                    6431,
+                    2838,
+                    5588,
+                    1692,
+                    1686,
+                    2155,
+                    1684,
+                    1715,
+                    12205,
+                    1689,
+                    15143,
+                    25872,
+                    1683,
+                    22602,
+                    1737,
+                    1992,
+                    1892,
+                    1684,
+                    1683,
+                    19840,
+                    1742,
+                    9894,
+                    1755,
+                    10086,
+                    1689,
+                    2059,
+                    3715,
+                    9299,
+                    1985,
+                    22478,
+                    1690,
+                    1686,
+                    2438,
+                    1687
+                  ],
+                  "segments": []
+                }
+              ],
+              "stream_ts": [
+                {
+                  "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                  "tokens": [
+                    182,
+                    2406,
+                    1687,
+                    8948,
+                    1865,
+                    2169,
+                    1702,
+                    1686,
+                    28716,
+                    1692,
+                    1686,
+                    4583,
+                    7818,
+                    1684,
+                    1689,
+                    1704,
+                    1727,
+                    5159,
+                    1690,
+                    5172,
+                    1748,
+                    20601,
+                    1687,
+                    475
+                  ],
+                  "segments": [
+                    {
+                      "start": 0.0,
+                      "end": 5.86,
+                      "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+                    }
+                  ]
+                },
+                {
+                  "text": "Nor is Mr. Croulter's manner less interesting than his matter.",
+                  "tokens": [
+                    182,
+                    9430,
+                    1702,
+                    2406,
+                    1687,
+                    19641,
+                    7396,
+                    1723,
+                    1691,
+                    1685,
+                    4517,
+                    3062,
+                    3335,
+                    1903,
+                    1748,
+                    2834,
+                    1687,
+                    423
+                  ],
+                  "segments": [
+                    {
+                      "start": 0.0,
+                      "end": 4.82,
+                      "text": "Nor is Mr. Croulter's manner less interesting than his matter."
+                    }
+                  ]
+                },
+                {
+                  "text": "He tells us that, at this festive season of the year, with Christmas and Rose beef looming before us, similes drawn from eating and its results occur most readily to the mind.",
+                  "tokens": [
+                    182,
+                    1873,
+                    10234,
+                    1892,
+                    1694,
+                    1684,
+                    1735,
+                    1713,
+                    6431,
+                    2838,
+                    5588,
+                    1692,
+                    1686,
+                    2155,
+                    1684,
+                    1715,
+                    12205,
+                    1689,
+                    15143,
+                    25872,
+                    1683,
+                    22602,
+                    1737,
+                    1992,
+                    1892,
+                    1684,
+                    1683,
+                    19840,
+                    1742,
+                    9894,
+                    1755,
+                    10086,
+                    1689,
+                    2059,
+                    3715,
+                    9299,
+                    1985,
+                    22478,
+                    1690,
+                    1686,
+                    2438,
+                    1687,
+                    806
+                  ],
+                  "segments": [
+                    {
+                      "start": 0.0,
+                      "end": 12.48,
+                      "text": "He tells us that, at this festive season of the year, with Christmas and Rose beef looming before us, similes drawn from eating and its results occur most readily to the mind."
+                    }
+                  ]
+                }
+              ],
+              "prompt": {
+                "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  182,
+                  2406,
+                  1687,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687,
+                  475
+                ],
+                "segments": [
+                  {
+                    "start": 0.0,
+                    "end": 5.86,
+                    "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+                  }
+                ]
+              },
+              "plain_decoder": {
+                "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  182,
+                  2406,
+                  1687,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687,
+                  475
+                ],
+                "segments": [
+                  {
+                    "start": 0.0,
+                    "end": 5.86,
+                    "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+                  }
+                ]
+              },
+              "translation": {
+                "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  2406,
+                  1687,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687
+                ],
+                "segments": []
+              },
+              "beam_ts": {
+                "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  182,
+                  2406,
+                  1687,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687,
+                  475
+                ],
+                "segments": [
+                  {
+                    "start": 0.0,
+                    "end": 5.86,
+                    "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+                  }
+                ]
+              },
+              "single_ts_again": {
+                "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  182,
+                  2406,
+                  1687,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687,
+                  475
+                ],
+                "segments": [
+                  {
+                    "start": 0.0,
+                    "end": 5.86,
+                    "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+                  }
+                ]
+              },
+              "lid": [
+                [
+                  "eng",
+                  0.9988817572593689
+                ],
+                [
+                  "rus",
+                  0.00012423863518051803
+                ],
+                [
+                  "spa",
+                  8.538788097212091e-05
+                ],
+                [
+                  "jpn",
+                  6.345489236991853e-05
+                ],
+                [
+                  "cat",
+                  5.961034548818134e-05
+                ]
+              ]
+            }
+          },
+          "default": {
+            "load_ms": 560.6836369843222,
+            "captures": {
+              "single": {
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 48,
+                  "ready_verify_steps": 1,
+                  "normal_verify_graphs": 1,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "single_ts": {
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 48,
+                  "ready_verify_steps": 2,
+                  "normal_verify_graphs": 2,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "stream": {
+                "(1, 1)": {
+                  "encode": 4,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 48,
+                  "ready_verify_steps": 5,
+                  "normal_verify_graphs": 5,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "stream_ts": {
+                "(1, 1)": {
+                  "encode": 4,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 48,
+                  "ready_verify_steps": 5,
+                  "normal_verify_graphs": 5,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                },
+                "(2, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 3,
+                  "normal_verify_graphs": 3,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "prompt": {
+                "(2, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 3,
+                  "normal_verify_graphs": 3,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                },
+                "(1, 1)": {
+                  "encode": 4,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 48,
+                  "ready_verify_steps": 7,
+                  "normal_verify_graphs": 7,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "plain_decoder": {
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "translation": {
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "beam_ts": {
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 5)": {
+                  "encode": 1,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": null,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "single_ts_again": {
+                "(1, 5)": {
+                  "encode": 1,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": null,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 48,
+                  "ready_verify_steps": 2,
+                  "normal_verify_graphs": 2,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            },
+            "outputs": {
+              "single": {
+                "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  2406,
+                  1687,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687
+                ],
+                "segments": []
+              },
+              "single_ts": {
+                "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  182,
+                  2406,
+                  1687,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687,
+                  475
+                ],
+                "segments": [
+                  {
+                    "start": 0.0,
+                    "end": 5.86,
+                    "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+                  }
+                ]
+              },
+              "stream": [
+                {
+                  "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                  "tokens": [
+                    2406,
+                    1687,
+                    8948,
+                    1865,
+                    2169,
+                    1702,
+                    1686,
+                    28716,
+                    1692,
+                    1686,
+                    4583,
+                    7818,
+                    1684,
+                    1689,
+                    1704,
+                    1727,
+                    5159,
+                    1690,
+                    5172,
+                    1748,
+                    20601,
+                    1687
+                  ],
+                  "segments": []
+                },
+                {
+                  "text": "Nor is Mr. Croulter's manner less interesting than his matter.",
+                  "tokens": [
+                    9430,
+                    1702,
+                    2406,
+                    1687,
+                    19641,
+                    7396,
+                    1723,
+                    1691,
+                    1685,
+                    4517,
+                    3062,
+                    3335,
+                    1903,
+                    1748,
+                    2834,
+                    1687
+                  ],
+                  "segments": []
+                },
+                {
+                  "text": "He tells us that, at this festive season of the year, with Christmas and Rose beef looming before us, similes drawn from eating and its results occur most readily to the mind.",
+                  "tokens": [
+                    1873,
+                    10234,
+                    1892,
+                    1694,
+                    1684,
+                    1735,
+                    1713,
+                    6431,
+                    2838,
+                    5588,
+                    1692,
+                    1686,
+                    2155,
+                    1684,
+                    1715,
+                    12205,
+                    1689,
+                    15143,
+                    25872,
+                    1683,
+                    22602,
+                    1737,
+                    1992,
+                    1892,
+                    1684,
+                    1683,
+                    19840,
+                    1742,
+                    9894,
+                    1755,
+                    10086,
+                    1689,
+                    2059,
+                    3715,
+                    9299,
+                    1985,
+                    22478,
+                    1690,
+                    1686,
+                    2438,
+                    1687
+                  ],
+                  "segments": []
+                }
+              ],
+              "stream_ts": [
+                {
+                  "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                  "tokens": [
+                    182,
+                    2406,
+                    1687,
+                    8948,
+                    1865,
+                    2169,
+                    1702,
+                    1686,
+                    28716,
+                    1692,
+                    1686,
+                    4583,
+                    7818,
+                    1684,
+                    1689,
+                    1704,
+                    1727,
+                    5159,
+                    1690,
+                    5172,
+                    1748,
+                    20601,
+                    1687,
+                    475
+                  ],
+                  "segments": [
+                    {
+                      "start": 0.0,
+                      "end": 5.86,
+                      "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+                    }
+                  ]
+                },
+                {
+                  "text": "Nor is Mr. Croulter's manner less interesting than his matter.",
+                  "tokens": [
+                    182,
+                    9430,
+                    1702,
+                    2406,
+                    1687,
+                    19641,
+                    7396,
+                    1723,
+                    1691,
+                    1685,
+                    4517,
+                    3062,
+                    3335,
+                    1903,
+                    1748,
+                    2834,
+                    1687,
+                    423
+                  ],
+                  "segments": [
+                    {
+                      "start": 0.0,
+                      "end": 4.82,
+                      "text": "Nor is Mr. Croulter's manner less interesting than his matter."
+                    }
+                  ]
+                },
+                {
+                  "text": "He tells us that, at this festive season of the year, with Christmas and Rose beef looming before us, similes drawn from eating and its results occur most readily to the mind.",
+                  "tokens": [
+                    182,
+                    1873,
+                    10234,
+                    1892,
+                    1694,
+                    1684,
+                    1735,
+                    1713,
+                    6431,
+                    2838,
+                    5588,
+                    1692,
+                    1686,
+                    2155,
+                    1684,
+                    1715,
+                    12205,
+                    1689,
+                    15143,
+                    25872,
+                    1683,
+                    22602,
+                    1737,
+                    1992,
+                    1892,
+                    1684,
+                    1683,
+                    19840,
+                    1742,
+                    9894,
+                    1755,
+                    10086,
+                    1689,
+                    2059,
+                    3715,
+                    9299,
+                    1985,
+                    22478,
+                    1690,
+                    1686,
+                    2438,
+                    1687,
+                    806
+                  ],
+                  "segments": [
+                    {
+                      "start": 0.0,
+                      "end": 12.48,
+                      "text": "He tells us that, at this festive season of the year, with Christmas and Rose beef looming before us, similes drawn from eating and its results occur most readily to the mind."
+                    }
+                  ]
+                }
+              ],
+              "prompt": {
+                "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  182,
+                  2406,
+                  1687,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687,
+                  475
+                ],
+                "segments": [
+                  {
+                    "start": 0.0,
+                    "end": 5.86,
+                    "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+                  }
+                ]
+              },
+              "plain_decoder": {
+                "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  182,
+                  2406,
+                  1687,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687,
+                  475
+                ],
+                "segments": [
+                  {
+                    "start": 0.0,
+                    "end": 5.86,
+                    "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+                  }
+                ]
+              },
+              "translation": {
+                "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  2406,
+                  1687,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687
+                ],
+                "segments": []
+              },
+              "beam_ts": {
+                "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  182,
+                  2406,
+                  1687,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687,
+                  475
+                ],
+                "segments": [
+                  {
+                    "start": 0.0,
+                    "end": 5.86,
+                    "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+                  }
+                ]
+              },
+              "single_ts_again": {
+                "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+                "tokens": [
+                  182,
+                  2406,
+                  1687,
+                  8948,
+                  1865,
+                  2169,
+                  1702,
+                  1686,
+                  28716,
+                  1692,
+                  1686,
+                  4583,
+                  7818,
+                  1684,
+                  1689,
+                  1704,
+                  1727,
+                  5159,
+                  1690,
+                  5172,
+                  1748,
+                  20601,
+                  1687,
+                  475
+                ],
+                "segments": [
+                  {
+                    "start": 0.0,
+                    "end": 5.86,
+                    "text": "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+                  }
+                ]
+              },
+              "lid": [
+                [
+                  "eng",
+                  0.9988817572593689
+                ],
+                [
+                  "rus",
+                  0.00012423863518051803
+                ],
+                [
+                  "spa",
+                  8.538788097212091e-05
+                ],
+                [
+                  "jpn",
+                  6.345489236991853e-05
+                ],
+                [
+                  "cat",
+                  5.961034548818134e-05
+                ]
+              ]
+            }
+          }
+        },
+        "note": "Functional public-option/session-reuse regression; no steady-state timing claim."
+      }
+    }
   }
 }

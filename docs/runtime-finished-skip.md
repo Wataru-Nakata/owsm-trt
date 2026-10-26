@@ -65,7 +65,9 @@ replay/EOS counts match. The diagnostic ownership fix completed without capture 
 12 B1 conditions improved whole-list RTFx in all nine alternating pairs. Adopt the unchanged guard
 through the public factory when greedy kernels are enabled; unsupported kernels and B>1 sessions
 remain unguarded. Low-level defaultFalse remains available for isolated ablations. Public-factory
-routing/rollback GPU verification is prepared in `validate_greedy_api.py --finished-stop`.
+routing/rollback GPU verification passed on1B/102M in job2773900 with
+`validate_greedy_api.py --finished-stop`: all10 public outputs per model, including language ID,
+matched the serial rollback, and actual guard dispatch matched the option.
 
 | Model/corpus | Plain B1 RTFx | Timestamp B1 RTFx | Translation B1 RTFx |
 |---|---:|---:|---:|
@@ -97,6 +99,6 @@ memory comparisons. Cold observations share compiler caches/order and establish 
 `outputs/runtime-2773841/`. Reproducer: `scripts/profile_finished_skip.pbs`, oneH200, immutable
 snapshot, node-local env/models/audio; public factory adoption follows the measured low-level path.
 
-Whole-job `nvidia-smi` sampling every5s recorded147 samples: mean utilization49.7%,
+Post-staging `nvidia-smi` sampling every5s recorded147 samples: mean utilization49.7%,
 median35%, range0–99%; maximum process-independent device memory12955MiB.
 This includes load/JIT/tests/diagnostics/all variants and does not establish a per-variant utilization gain.
