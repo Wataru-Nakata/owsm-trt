@@ -33,3 +33,18 @@ The address-lifetime/private-pool contract follows the official
 [PyTorch CUDA graph documentation](https://docs.pytorch.org/docs/stable/notes/cuda.html).
 Tests retain outputs across streams, repeat cache hits, hit the capacity limit, and exercise B>1
 fallback. The first GPU allocation still runs only the separately frozen pointwise experiment.
+
+## First allocation: partial result, 2770849
+
+98 GPU tests passed; B1/B8 features matched exactly for all four pointwise modes. All tokens,
+timestamp tokens, text and segments matched across eleven completed English cases. The profiler
+then passed an unsupported `prompt` argument to `transcribe_long`; this is fixed for the next run.
+Long-form and Japanese were not measured in this allocation.
+
+B8 frontend-event median was 0.2744 ms reference versus 0.1980 ms fused; feature/H2D wall median
+was 0.7111 versus 0.5442 ms. Most whole-runtime RTFx differences were within roughly one percent;
+pointwise fusion is not adopted as a default. B1 streaming showed 3.3–3.4% with individual fusion
+components but only 1.0% combined, requiring replication before attribution. These partial results
+are in `outputs/runtime-2770849/english`, including all alternating samples and token outputs.
+The follow-up separates frontend graph alone from graph plus fusion, adds whole-runtime traces,
+and includes the cached 102M checkpoint without an engine rebuild.

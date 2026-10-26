@@ -72,7 +72,7 @@ def test_frontend_exact_graph_and_independent_streams(normalize, variant):
         with torch.cuda.stream(stream):
             frontend(w)
             g = torch.cuda.CUDAGraph()
-            with torch.cuda.graph(g):
+            with torch.cuda.graph(g, stream=stream):
                 value = frontend(w)
         graphs.append(g)
         values.append(value)

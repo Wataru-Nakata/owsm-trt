@@ -81,7 +81,7 @@ def run_case(model, args, name, items, waves):
     kw = dict(lang=args.lang, task=task, beam_size=beam, batch_size=batch, prompt=prompt)
     def call(ws):
         if name == 'long_greedy':
-            return model.transcribe_long(ws, **kw)
+            return model.transcribe_long(ws, lang=args.lang, task=task, beam_size=beam, batch_size=batch)
         return model.transcribe(ws, timestamps=timestamps, **kw)
     path = args.out / name
     cold, records, samples = {}, {v: {} for v in args.variants}, []
@@ -91,6 +91,7 @@ def run_case(model, args, name, items, waves):
         cold[v] = {'warmup_ms': ms, 'captures': captures(model), 'dispatch': dispatch(model),
                    'frontend_graph': model._frontend_replay.info() if model._frontend_replay else None}
     after_warmup = captures(model)
+    frontend_captures = len(model._frontend_replay.entries) if model._frontend_replay else 0
     for repeat in range(args.repeat):
         for v in (args.variants if repeat % 2 == 0 else args.variants[::-1]):
             variant(model, v)
@@ -99,7 +100,8 @@ def run_case(model, args, name, items, waves):
                 start_calls = model.draft_stats[1]
                 torch.cuda.reset_peak_memory_stats()
                 results, ms = wall(lambda: call(group))
-                if captures(model) != after_warmup:
+                current_frontend_captures = len(model._frontend_replay.entries) if model._frontend_replay else 0
+                if captures(model) != after_warmup or current_frontend_captures != frontend_captures:
                     raise RuntimeError(f'new session/capture in steady-state {name}/{v}')
                 samples.append({'variant': v, 'repeat': repeat, 'ids': [items[i]['id'] for i in chunk],
                                 'wall_ms': ms, 'audio_seconds': sum(len(w) for w in group)/model.cfg.sample_rate,
@@ -120,6 +122,20 @@ def run_case(model, args, name, items, waves):
                       'draft_decoder_calls': sum(r['draft_decoder_calls'] for r in rows),
                       'agreement': comparison(records['reference'], records[v]),
                       'quality': quality(items, records[v], args.lang) if task == 'asr' else None}
+    if args.trace and name in ('single_greedy', 'stream_greedy_b8', 'long_greedy'):
+        for v in args.variants:
+            variant(model, v)
+            group = [waves[i] for i in chunks[0]]
+            with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU,
+                                                   torch.profiler.ProfilerActivity.CUDA]) as prof:
+                call(group)
+                torch.cuda.synchronize()
+            path.mkdir(parents=True, exist_ok=True)
+            prof.export_chrome_trace(str(path/f'trace_{v}.json'))
+            save(path/f'operators_{v}.json', [dict(name=e.key, calls=e.count,
+                 cpu_total_us=e.cpu_time_total, self_cpu_us=e.self_cpu_time_total,
+                 device_total_us=e.device_time_total, self_device_us=e.self_device_time_total)
+                 for e in prof.key_averages()])
     save(path/'summary.json', summary)
     save(path/'wall.json', samples)
     save(path/'tokens.json', records)
