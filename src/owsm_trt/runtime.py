@@ -1577,6 +1577,7 @@ class BeamSession(_Session):
         compact_tail: bool = False,
         local_topk: bool = False,
         prefill_shared: bool = False,
+        kv_clear_once: bool = False,
     ):
         # H200/1B, beam 5 with bound stopping: every-step checks help batch 1, but hurt batch 3.
         # Explicit intervals stay fixed when set_upper_bound toggles the device flag for ablations.
@@ -1586,6 +1587,8 @@ class BeamSession(_Session):
             raise ValueError("beam completion-check interval must be positive")
         if kv_reorder not in ("torch", "full", "prefix", "identity"):
             raise ValueError("kv_reorder must be torch, full, prefix or identity")
+        if kv_clear_once and kv_reorder not in ("prefix", "identity"):
+            raise ValueError("kv_clear_once requires prefix or identity KV reorder")
         n = batch * beam
         supports_shared = getattr(backend, "supports_shared_cross", lambda _: False)
         self.share_cross_kv = share_cross_kv and supports_shared(n)
@@ -1625,6 +1628,7 @@ class BeamSession(_Session):
                                      torch.empty(n, dtype=torch.long, **dev),
                                      torch.empty(n, dtype=torch.bool, **dev))
         self.kv_reorder = kv_reorder if kernels.available(device) else "torch"
+        self.kv_clear_once = kv_clear_once and self.kv_reorder != "torch"
         self._kv_scratch = None
         if self.kv_reorder != "torch":
             self._kv_scratch = torch.empty(2 * L * n * H * max(self.buckets) * dk, **self.kw)
@@ -1668,6 +1672,21 @@ class BeamSession(_Session):
         self._feed(c)
         self.step += 1
         self._select(c)
+
+    def _prefill(self, primer: torch.Tensor, cross_k: torch.Tensor, cross_v: torch.Tensor):
+        if self.kv_clear_once:
+            # Old requests/capture trials may have touched any slot. Clear before prefill too:
+            # masked attention can still multiply a zero weight by an unused NaN value.
+            for cache in self.caches[self._bucket(primer.shape[1] + 1)]:
+                cache.zero_()
+        return super()._prefill(primer, cross_k, cross_v)
+
+    def _grow(self, c: int, slots: int) -> int:
+        bigger = super()._grow(c, slots)
+        if self.kv_clear_once:
+            for cache in self.caches[bigger]:
+                cache[:, :, :, c:].zero_()
+        return bigger
 
     def _select(self, c: int, prefill_logits: torch.Tensor | None = None) -> None:
         if self.fused_state:
@@ -1754,7 +1773,7 @@ class BeamSession(_Session):
         else:
             beam_kernels.reorder_kv(*self.caches[c], self._kv_scratch, parent, self.pos,
                                    prefix=self.kv_reorder in ("prefix", "identity"),
-                                   skip_identity=self.kv_reorder == "identity")
+                                   skip_identity=self.kv_reorder == "identity", clear_tail=not self.kv_clear_once)
 
     def _finish(self, token: torch.Tensor, valid: torch.Tensor) -> None:
         if self.fused_finish:

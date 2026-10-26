@@ -62,18 +62,24 @@ def test_tail_unsupported_backend_is_explicit():
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason='compute allocation required')
 @pytest.mark.parametrize('last_group', [0, 1, 2])
+@pytest.mark.parametrize('clear_once', [False, True])
 @torch.inference_mode()
-def test_tail_graph_replay_reset_and_bucket_growth(last_group):
+def test_tail_graph_replay_reset_and_bucket_growth(last_group, clear_once):
     device = torch.device('cuda')
     args = (GroupBackend(), CFG, 3, 3, 32, 0, torch.float32, device)
     ref = BeamSession(*args, buckets=[4, 8, 16, 32], diagnostics=True)
-    fast = BeamSession(*args, buckets=[4, 8, 16, 32], diagnostics=True, compact_tail=True)
+    fast = BeamSession(*args, buckets=[4, 8, 16, 32], diagnostics=True, compact_tail=True,
+                       kv_clear_once=clear_once)
     for targets in ([4, 5, 27], [20, 7, 6], [5, 5, 5]):
         targets[last_group], targets[2] = targets[2], targets[last_group]
         for s in (ref, fast):
             for b, target in enumerate(targets):
                 s.cross_kb[:, b].fill_(target)
             s._expand_cross()
+        if clear_once:
+            for pair in fast.caches.values():
+                for cache in pair:
+                    cache.fill_(torch.nan)
         primer = torch.full((3, 3), 2, device=device)
         assert fast.decode(primer, 29) == ref.decode(primer, 29)
         torch.testing.assert_close(fast.best_score, ref.best_score, rtol=0, atol=0)
