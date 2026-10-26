@@ -227,6 +227,7 @@ class OWSM:
         self.beam_compact_tail = beam_compact_tail
         self.beam_grouped_cross = beam_grouped_cross
         self._beam_backend = None
+        self._encoder_lookahead = False  # Private throughput experiment; no staging resources until enabled.
         self.frontend_graph = frontend_graph
         self.greedy_fused_select = greedy_kernels
         self.greedy_split_choose = greedy_kernels
@@ -621,6 +622,13 @@ class OWSM:
         # A batch decodes until its longest member finishes, so batch utterances of similar duration.
         order = sorted(range(len(items)), key=lambda i: duration(items[i], sr or self.cfg.sample_rate))
         results: list[Result | None] = [None] * len(items)
+        if (self._encoder_lookahead and self.device.type == "cuda" and len(items) > bs
+                and (beam_size > 1 or task != "asr" or not self.ctc_draft)):
+            chunks = [order[i:i + bs] for i in range(0, len(order), bs)]
+            outs = self._decode_lookahead(items, chunks, primer, beam_size, sr)
+            for j, ids in zip(order, outs):
+                results[j] = self._result(ids, offset=0.0)
+            return results
         for i in range(0, len(order), bs):
             idx = order[i : i + bs]
             waves = [self._wave(items[j], sr) for j in idx]
@@ -641,6 +649,71 @@ class OWSM:
             self.draft_stats[1] += calls
             return outs
         return sess.decode(torch.tensor(primers, device=self.device), self._max_new())
+
+    def _decode_lookahead(self, items, chunks, primer, beam: int, sr: int | None) -> list[list[int]]:
+        """Fixed batches, one encoder ahead. Batch/primer/decoder shapes match sequential decode."""
+        sessions = {b: self._session(b, beam) for b in sorted({len(c) for c in chunks})}
+        main = torch.cuda.current_stream(self.device)
+        side = torch.cuda.Stream(device=self.device)
+        dec = torch.cuda.Stream(device=self.device, priority=-1) if self.stream_priority else main
+        side.wait_stream(main)
+        dec.wait_stream(main)
+        ready = [torch.cuda.Event() for _ in range(2)]
+        copied = [torch.cuda.Event() for _ in range(2)]
+        staged = [None, None]
+        outs = []
+        # Prepare lazy decoder graphs before any asynchronous encoder work. Encoder graphs have
+        # their own capture stream/cuBLAS workspace; lane1 keeps TRT scratch isolated as well.
+        with torch.cuda.stream(dec):
+            for sess in sessions.values():
+                if isinstance(sess, GreedySession):
+                    sess._prepare_plain()
+
+        def targets(sess):
+            return ((sess.cross_kb, sess.cross_vb) if isinstance(sess, BeamSession)
+                    else (sess.cross_k, sess.cross_v)) + (sess.ctc_ids,)
+
+        def launch(index):
+            slot = index % 2
+            chunk = chunks[index]
+            sess = sessions[len(chunk)]
+            with torch.cuda.stream(side):
+                side.wait_event(copied[slot])
+                waves = [self._wave(items[j], sr) for j in chunk]
+                feats = self._features(waves)
+                if not hasattr(sess, "_lookahead_stage"):
+                    sess._lookahead_stage = {}
+                if slot not in sess._lookahead_stage:
+                    sess._lookahead_stage[slot] = tuple(torch.empty_like(t) for t in targets(sess))
+                bufs = sess._lookahead_stage[slot]
+                sess._encoder(feats, *bufs, lane=1)
+                staged[slot] = (sess, bufs)
+                ready[slot].record(side)
+
+        try:
+            launch(0)
+            for index in range(len(chunks)):
+                slot = index % 2
+                sess, bufs = staged[slot]
+                with torch.cuda.stream(dec):
+                    dec.wait_event(ready[slot])
+                    # [L,B,H,T,D] remains utterance-sized; expand only where the decoder requires it.
+                    for target, source in zip(targets(sess), bufs):
+                        target.copy_(source)
+                    if isinstance(sess, BeamSession):
+                        sess._expand_cross()
+                    copied[slot].record(dec)
+                if index + 1 < len(chunks):
+                    launch(index + 1)
+                with torch.cuda.stream(dec):
+                    tokens = torch.tensor([primer] * len(chunks[index]), device=self.device)
+                    outs.extend(sess.decode(tokens, self._max_new()))
+        finally:
+            # Also join a prelaunched encoder on exceptions. Persistent staging owns all addresses
+            # referenced by cached graphs; callers may safely reuse ordinary sessions afterwards.
+            main.wait_stream(side)
+            main.wait_stream(dec)
+        return outs
 
     def _ctc_draft(self, best_path: list[int]) -> list[int]:
         return ctc_collapse(best_path, self.tokenizer.blank)
