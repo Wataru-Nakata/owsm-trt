@@ -1380,6 +1380,7 @@ class BeamSession(_Session):
         kv_reorder: str = "prefix",
         share_cross_kv: bool = True,
         fused_state: bool = True,
+        compact_tail: bool = False,
     ):
         # H200/1B, beam 5 with bound stopping: every-step checks help batch 1, but hurt batch 3.
         # Explicit intervals stay fixed when set_upper_bound toggles the device flag for ablations.
@@ -1441,7 +1442,29 @@ class BeamSession(_Session):
                 "state": torch.zeros(capacity, batch, 9, dtype=torch.long, **dev),
             }
         self._host_checks: list[int] = []
+        # Only the single remaining utterance is compacted. Selection retains its original B*K
+        # layout and global top-K; switching decoder shape is an explicitly opt-in N change.
+        self.compact_tail = compact_tail and batch > 1 and supports_shared(beam)
+        self.compact_tail_fallback = ("single-group decoder lacks shared cross KV or batch is one"
+                                      if compact_tail and not self.compact_tail else None)
+        self._tail_group = None
+        self._tail_started = None
+        self._tail_steps, self._tail_graphs = {}, {}
+        if self.compact_tail:
+            self._tail_kv = torch.zeros(L, 2, beam, H, 1, dk, **self.kw)
+            for c, (k, v) in self.caches.items():
+                for b in range(batch):
+                    rows = slice(b * beam, (b + 1) * beam)
+                    self._tail_steps[c, b] = backend.step_fn(
+                        self.tok[rows], self.offs[rows], k[:, rows], v[:, rows],
+                        self.cross_kb[:, b:b + 1], self.cross_vb[:, b:b + 1],
+                        self.logits[rows], self._tail_kv)
         self._capture_all()
+        if self.compact_tail and self.use_cuda_graph:
+            for c, b in self._tail_steps:
+                self.pos.zero_()
+                self.step.zero_()
+                self._tail_graphs[c, b] = capture_graph(lambda c=c, b=b: self._tail_body(c, b))
 
     def _body(self, c: int) -> None:
         self._feed(c)
@@ -1458,6 +1481,27 @@ class BeamSession(_Session):
         top, parent, token, valid = self._rank()
         self._reorder(c, top, parent, token)
         self._finish(token, valid)
+
+    def _tail_body(self, c: int, b: int) -> None:
+        rows = slice(b * self.beam, (b + 1) * self.beam)
+        self.offs.copy_(self.pos.expand(self.rows))
+        run = self._tail_steps[c, b]
+        run()
+        if not getattr(run, "writes_cache", False):
+            k, v = self.caches[c]
+            k[:, rows].index_copy_(3, self.pos, self._tail_kv[:, 0])
+            v[:, rows].index_copy_(3, self.pos, self._tail_kv[:, 1])
+        self.pos += 1
+        self.step += 1
+        self._select(c)
+
+    def _all_done(self, done: torch.Tensor) -> bool:
+        if not self.compact_tail:
+            return super()._all_done(done)
+        # Replace the existing host synchronization with one bulk read, at the same interval.
+        remaining = [b for b, ended in enumerate(done.tolist()) if not ended]
+        self._tail_group = remaining[0] if len(remaining) == 1 else None
+        return not remaining
 
     def _prepare_state(self, top: torch.Tensor, indices: torch.Tensor):
         return beam_kernels.reorder_state(self, top, indices)
@@ -1564,20 +1608,29 @@ class BeamSession(_Session):
         self.upper_bound.fill_(enabled)
 
     def _run(self, c: int, pos: int, steps: int, done: torch.Tensor) -> None:
-        if not self.diagnostics:
+        if not self.diagnostics and not self.compact_tail:
             return super()._run(c, pos, steps, done)
         executed = 0
         while steps > 0:
             if pos >= c:
                 c = self._grow(c, pos + 1)
             n = min(self.chunk, steps, c - pos)
+            group = self._tail_group
+            if group is not None and self._tail_started is None:
+                self._tail_started = (group, executed)
             for _ in range(n):
-                self.graphs[c].replay() if self.graphs else self._body(c)
+                if group is None:
+                    self.graphs[c].replay() if self.graphs else self._body(c)
+                elif self._tail_graphs:
+                    self._tail_graphs[c, group].replay()
+                else:
+                    self._tail_body(c, group)
             steps -= n
             pos += n
             executed += n
             all_done = self._all_done(done)
-            self._host_checks.append(executed)
+            if self.diagnostics:
+                self._host_checks.append(executed)
             if all_done:
                 break
 
@@ -1624,6 +1677,10 @@ class BeamSession(_Session):
         return {
             "prefill_calls": 1, "prefill_selections": 1, "decoder_calls": steps - 1,
             "selection_calls": steps, "host_check_steps": self._host_checks.copy(),
+            "compact_tail": self.compact_tail, "compact_started": self._tail_started,
+            "decoder_row_calls": ((steps - 1) * self.rows if self._tail_started is None else
+                                  self._tail_started[1] * self.rows +
+                                  (steps - 1 - self._tail_started[1]) * self.beam),
             "utterances": utterances,
         }
 
@@ -1639,14 +1696,13 @@ class BeamSession(_Session):
             raise RuntimeError(f"beam search: no valid finished hypothesis for utterances {rows}")
 
     def _expand_cross(self) -> None:
-        if self.share_cross_kv:
-            for step in self._steps.values():
-                prepare = getattr(step, "prepare_cross", None)
-                if prepare is not None:
-                    prepare()
-            return
-        self.cross_k.copy_(self.cross_kb.repeat_interleave(self.beam, dim=1))
-        self.cross_v.copy_(self.cross_vb.repeat_interleave(self.beam, dim=1))
+        if not self.share_cross_kv:
+            self.cross_k.copy_(self.cross_kb.repeat_interleave(self.beam, dim=1))
+            self.cross_v.copy_(self.cross_vb.repeat_interleave(self.beam, dim=1))
+        for step in (*self._steps.values(), *self._tail_steps.values()):
+            prepare = getattr(step, "prepare_cross", None)
+            if prepare is not None:
+                prepare()
 
     def encode(self, feats: torch.Tensor) -> torch.Tensor:
         return self._encoder(feats, self.cross_kb, self.cross_vb, self.ctc_ids, after=self._expand_cross)
@@ -1683,6 +1739,7 @@ class BeamSession(_Session):
         self.pos.fill_(p)
         if self.diagnostics:
             self._host_checks.clear()
+        self._tail_group = self._tail_started = None
         self._select(c)
         self._run(c, p, max_new_tokens - 1, self.done)
 

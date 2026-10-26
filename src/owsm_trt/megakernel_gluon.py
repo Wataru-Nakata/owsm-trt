@@ -328,7 +328,7 @@ if gluon is not None:
     @gluon.jit
     def _self_attn_g(pid, P, R, S, layer, qkv, offs, OSTR, kc, vc, C, new_kv, o, D: gl.constexpr, H: gl.constexpr,
                      DK: gl.constexpr, SP: gl.constexpr, BT: gl.constexpr, NW: gl.constexpr, tsp=None,
-                     TS: gl.constexpr = False):  # fmt: skip
+                     TS: gl.constexpr = False, KLS: gl.constexpr = None):  # fmt: skip
         """Per (row, head): the queries attend to the row's cache slots < offset and causally to its new keys
         (from registers); then the new keys/values go into the cache at the offset and to new_kv."""
         mma2: gl.constexpr = gl.NVMMADistributedLayout(
@@ -358,7 +358,8 @@ if gluon is not None:
             qa = gl.convert_layout((q.to(gl.float32) * (DK**-0.5)).to(gl.float16), la)
             if TS:
                 gl.store(tsp + 2, _now())
-            cb = ((layer * R + b) * H + h).to(gl.int64) * C * DK
+            stride = R * H * C * DK if KLS is None else KLS
+            cb = layer.to(gl.int64) * stride + (b * H + h).to(gl.int64) * C * DK
             m_i = gl.full([SP], float("-inf"), gl.float32, layout=gl.SliceLayout(1, mma2))
             l_i = gl.zeros([SP], gl.float32, layout=gl.SliceLayout(1, mma2))
             acc = gl.zeros([SP, DK], gl.float32, layout=mma2)
@@ -392,7 +393,8 @@ if gluon is not None:
     @gluon.jit
     def _cross_attn_g(pid, P, R, S, layer, q2, ck, cv, T, o, xp, xml, xcnt, D: gl.constexpr, H: gl.constexpr,
                       DK: gl.constexpr, SP: gl.constexpr, BT: gl.constexpr, NS: gl.constexpr, NW: gl.constexpr,
-                      tsp=None, TS: gl.constexpr = False, CR: gl.constexpr = None, CG: gl.constexpr = 1):  # fmt: skip
+                      tsp=None, TS: gl.constexpr = False, CR: gl.constexpr = None, CG: gl.constexpr = 1,
+                      CLS: gl.constexpr = None):  # fmt: skip
         """Per (row, head, slice of the T keys); with NS > 1 slices every slice stores its partial softmax
         (running max, sum, output) in xml / xp and the last one of a (row, head) combines them."""
         mma2: gl.constexpr = gl.NVMMADistributedLayout(
@@ -423,10 +425,8 @@ if gluon is not None:
             qa = gl.convert_layout((q.to(gl.float32) * (DK**-0.5)).to(gl.float16), la)
             if TS:
                 gl.store(tsp + 2, _now())
-            if CG == 1:
-                cb = ((layer * R + b) * H + h).to(gl.int64) * T * DK
-            else:
-                cb = ((layer * CR + b // CG) * H + h).to(gl.int64) * T * DK
+            stride = (R if CR is None else CR) * H * T * DK if CLS is None else CLS
+            cb = layer.to(gl.int64) * stride + ((b // CG) * H + h).to(gl.int64) * T * DK
             t_lo = sp * tch
             t_hi = gl.minimum(T, t_lo + tch)
             m_i = gl.full([SP], float("-inf"), gl.float32, layout=gl.SliceLayout(1, mma2))
@@ -599,7 +599,7 @@ if gluon is not None:
         BNQ: gl.constexpr, LBNQ: gl.constexpr, BNF: gl.constexpr, LBNF: gl.constexpr, PART: gl.constexpr,
         LPART: gl.constexpr, SP: gl.constexpr, BT: gl.constexpr, NS: gl.constexpr, NW: gl.constexpr,
         MAXS: gl.constexpr, PFA: gl.constexpr, F2S: gl.constexpr, CR: gl.constexpr, CG: gl.constexpr,
-        GQ: gl.constexpr, CSP: gl.constexpr, TS: gl.constexpr = False,
+        GQ: gl.constexpr, CSP: gl.constexpr, KLS: gl.constexpr, CLS: gl.constexpr, TS: gl.constexpr = False,
     ):  # fmt: skip
         """A decoder call: embedding, L layers (LN1+QKV, self-attention, out-projection, LN2+cross-Q,
         cross-attention, cross-out, LN3+FFN1, FFN2), final LN + output layer, a grid barrier between stages.
@@ -695,7 +695,7 @@ if gluon is not None:
             _issue_w(dcq, layer * D + npt_z, 0, mb.index(0), w0, PART, D, has_p)
             if PFA:
                 if pid_z < R * H:
-                    cb = ((layer * R + pid_z // H) * H + pid_z % H).to(gl.int64) * C * DK
+                    cb = layer.to(gl.int64) * KLS + pid_z.to(gl.int64) * C * DK
                     off = gl.load(offs_z + (pid_z // H) * OSTR)
                     _prefetch_rows(kc_z + cb, off, 128, NW)
                     _prefetch_rows(vc_z + cb, off, 128, NW)
@@ -724,6 +724,7 @@ if gluon is not None:
                 SP,
                 BT,
                 NW,
+                KLS=KLS,
             )
             if TS:
                 gl.store(ts + (g * P + pid_z) * 8 + 5, _now())
@@ -769,12 +770,8 @@ if gluon is not None:
                     tch = ((T + NS - 1) // NS + 15) // 16 * 16
                     t_lo = sp * tch
                     nk = gl.minimum(T, t_lo + tch) - t_lo
-                    if GQ:
-                        cb = ((layer * CR + bh // H) * H + bh % H).to(gl.int64) * T * DK + t_lo * DK
-                    elif CG == 1:
-                        cb = ((layer * R + bh // H) * H + bh % H).to(gl.int64) * T * DK + t_lo * DK
-                    else:
-                        cb = ((layer * CR + (bh // H) // CG) * H + bh % H).to(gl.int64) * T * DK + t_lo * DK
+                    row = bh // H if GQ else (bh // H) // CG
+                    cb = layer.to(gl.int64) * CLS + (row * H + bh % H).to(gl.int64) * T * DK + t_lo * DK
                     _prefetch_rows(ck_z + cb, nk, 128, NW)
                     _prefetch_rows(cv_z + cb, nk, 128, NW)
             _gwait(bar, err, g * P, MAXS)
@@ -809,6 +806,7 @@ if gluon is not None:
                 NW,
                 CR=CR,
                 CG=1 if GQ else CG,
+                CLS=CLS,
             )
             if TS:
                 gl.store(ts + (g * P + pid_z) * 8 + 5, _now())
@@ -970,6 +968,10 @@ class GluonDecoder:
         cr = cross_k.shape[1]
         if cr < 1 or R % cr or cross_v.shape != cross_k.shape:
             raise ValueError("cross KV rows must divide decoder rows into equal utterance-major groups")
+        # Row-group views may retain a larger layer stride; each layer itself stays contiguous.
+        for key, value in ((self_k, self_v), (cross_k, cross_v)):
+            if key.stride() != value.stride() or not key[0].is_contiguous():
+                raise ValueError("KV requires matching strides and contiguous rows within each layer")
         M = R * S
         if M > MAX_TOKENS:
             raise ValueError(f"the Gluon decoder kernel takes up to {MAX_TOKENS} tokens per call, not {M}")
@@ -1007,7 +1009,7 @@ class GluonDecoder:
             D=D, H=H, DK=D // H, F=F, LF=_log2(F), MT=mt, LMT=_log2(mt), HL=hl, MTF=mtf, LMTF=_log2(mtf), BNQ=self.bnq,
             LBNQ=_log2(self.bnq), BNF=self.bnf, LBNF=_log2(self.bnf), PART=self.part, LPART=_log2(self.part),
             SP=max(16, _pow2(S)), BT=64, NS=ns, NW=self.nw, MAXS=self.maxs, PFA=self.pfa, F2S=mt <= 8,
-            CR=cr, CG=R // cr,
+            CR=cr, CG=R // cr, KLS=self_k.stride(0), CLS=cross_k.stride(0),
             GQ=self.group_cross_queries,
             CSP=max(16, _pow2(S * (R // cr if self.group_cross_queries else 1))),
             TS=bool(self.opts["TS"]),

@@ -89,14 +89,18 @@ def wall(fn):
 
 
 def dispatch(session):
+    steps = dict(session._steps)
+    steps.update({f"tail/group={b}/cache={c}": fn for (c, b), fn in getattr(session, "_tail_steps", {}).items()})
     return {c: {"implementation": getattr(fn, "dispatch", fn.__qualname__),
                 "module": fn.__module__, "fallback_reason": getattr(fn, "fallback_reason", None),
                 "writes_cache": getattr(fn, "writes_cache", False)}
-            for c, fn in session._steps.items()}
+            for c, fn in steps.items()}
 
 
 def capture_shapes(session):
     return {"decoder": {f"rows={session.rows},cache={c}": 1 for c in session.graphs},
+            "tail_decoder": {f"rows={session.beam},group={b},cache={c}": 1
+                             for c, b in getattr(session, "_tail_graphs", {})},
             "encoder": {str(key[1:]): 1 for key in session._enc_graphs}}
 
 
@@ -186,9 +190,9 @@ def quality(items, records, lang):
 
 
 def make_session(model, cls, batch, beam, chunk, diagnostics=False, graph=True,
-                 fused_rank=False, fused_finish=False, kv_reorder="torch", share_cross_kv=False, fused_state=False):
+                 fused_rank=False, fused_finish=False, kv_reorder="torch", share_cross_kv=False, fused_state=False, compact_tail=False):
     extra = {"diagnostics": diagnostics, "fused_rank": fused_rank,
-             "fused_finish": fused_finish, "kv_reorder": kv_reorder, "share_cross_kv": share_cross_kv, "fused_state": fused_state} if cls is BeamSession else {}
+             "fused_finish": fused_finish, "kv_reorder": kv_reorder, "share_cross_kv": share_cross_kv, "fused_state": fused_state, "compact_tail": compact_tail} if cls is BeamSession else {}
     backend = getattr(model, "_profile_backend", model.backend) if cls is BeamSession else model.backend
     return cls(backend, model.cfg, batch, beam, model.opts.capacity, model.tokenizer.eos,
                model.dtype, model.device, use_cuda_graph=graph, chunk=chunk, rules=model.rules, **extra)
@@ -226,7 +230,7 @@ def configure_gluon(model, programs=None, prefetch=None, group_queries=False, cr
 
 def profile_eager(model, args, waves, primer, out):
     s = make_session(model, BeamSession, len(waves), args.beam, args.chunk, diagnostics=True, graph=False,
-                     fused_rank=args.fused_rank, fused_finish=args.fused_finish, kv_reorder=args.kv_reorder, share_cross_kv=args.share_cross_kv, fused_state=args.fused_state)
+                     fused_rank=args.fused_rank, fused_finish=args.fused_finish, kv_reorder=args.kv_reorder, share_cross_kv=args.share_cross_kv, fused_state=args.fused_state, compact_tail=args.compact_tail)
     s.set_upper_bound(args.upper_bound != "off")
     s.encode(model._features(waves))
     expected = s.decode(primer, model._max_new())  # warm up this shape before attaching events
@@ -238,6 +242,7 @@ def profile_eager(model, args, waves, primer, out):
     for name, attr in phases:
         setattr(s, attr, events.wrap(name, getattr(s, attr)))
     s._steps = {c: events.wrap("decoder", fn) for c, fn in s._steps.items()}
+    s._tail_steps = {key: events.wrap("decoder", fn) for key, fn in s._tail_steps.items()}
     # Beam's eager encoder calls backend.encode; isolate its time from cross-KV expansion.
     original_encode = s.backend.encode
     s.backend.encode = events.wrap("encoder", original_encode)
@@ -279,7 +284,7 @@ def run_batch(model, args, items, waves, batch, legacy):
             continue
         for b in sizes:
             s, ms = wall(lambda: make_session(model, cls, b, args.beam, args.chunk,
-                        fused_rank=args.fused_rank, fused_finish=args.fused_finish, kv_reorder=args.kv_reorder, share_cross_kv=args.share_cross_kv, fused_state=args.fused_state))
+                        fused_rank=args.fused_rank, fused_finish=args.fused_finish, kv_reorder=args.kv_reorder, share_cross_kv=args.share_cross_kv, fused_state=args.fused_state, compact_tail=args.compact_tail))
             sessions[kind, b] = s
             cross = {id(t): t for t in (s.cross_k, s.cross_v, s.cross_kb, s.cross_vb)}
             cross_bytes = sum(t.numel() * t.element_size() for t in cross.values())
@@ -291,6 +296,8 @@ def run_batch(model, args, items, waves, batch, legacy):
                                                        "kv_reorder": getattr(s, "kv_reorder", "torch"),
                                                        "share_cross_kv": getattr(s, "share_cross_kv", False),
                                                        "state": getattr(s, "fused_state", False),
+                                                       "compact_tail": getattr(s, "compact_tail", False),
+                                                       "compact_tail_fallback": getattr(s, "compact_tail_fallback", None),
                                                        "cross_kv_fallback": getattr(s, "cross_kv_fallback", None),
                                                        "cross_kv_bytes": cross_bytes}}
     kw = dict(lang=args.lang, task=args.task, timestamps=args.timestamps, prompt=args.prompt,
@@ -386,7 +393,7 @@ def run_batch(model, args, items, waves, batch, legacy):
     diag = {}
     for b in sizes:
         s = make_session(model, BeamSession, b, args.beam, args.chunk, diagnostics=True,
-                         fused_rank=args.fused_rank, fused_finish=args.fused_finish, kv_reorder=args.kv_reorder, share_cross_kv=args.share_cross_kv, fused_state=args.fused_state)
+                         fused_rank=args.fused_rank, fused_finish=args.fused_finish, kv_reorder=args.kv_reorder, share_cross_kv=args.share_cross_kv, fused_state=args.fused_state, compact_tail=args.compact_tail)
         for mode in [m for m in modes if m != "baseline"]:
             s.set_upper_bound(mode != "off")
             s.chunk = int(mode.removeprefix("on_chunk")) if mode.startswith("on_chunk") else args.chunk
@@ -433,7 +440,7 @@ def extra_checks(model, args, waves, legacy):
                 cls = legacy if mode == "baseline" else BeamSession
                 cache[key] = make_session(model, cls, batch, beam, args.chunk,
                                          fused_rank=args.fused_rank, fused_finish=args.fused_finish,
-                                         kv_reorder=args.kv_reorder, share_cross_kv=args.share_cross_kv, fused_state=args.fused_state)
+                                         kv_reorder=args.kv_reorder, share_cross_kv=args.share_cross_kv, fused_state=args.fused_state, compact_tail=args.compact_tail)
                 if mode != "baseline":
                     cache[key].set_upper_bound(mode == "on")
             return cache[key]
@@ -482,6 +489,7 @@ def main():
     ap.add_argument("--compare-chunks", type=int, nargs="*", default=[],
                     help="additional upper-bound ON host-check frequencies, on the same graphs")
     ap.add_argument("--upper-bound", choices=["off", "on", "both"], default="both")
+    ap.add_argument("--compact-tail", action="store_true", help="opt-in N: decode only the final active utterance group")
     ap.add_argument("--fused-state", action="store_true", help="candidate only: fuse beam parent/token/history updates")
     ap.add_argument("--fused-rank", action="store_true", help="opt-in exact candidate-mask kernel")
     ap.add_argument("--fused-finish", action="store_true", help="opt-in exact beam-state kernel")

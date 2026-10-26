@@ -76,6 +76,43 @@ timeout 480 "$PY" -m pytest -q -p no:cacheprovider "$LOCAL/tests/test_beam.py" \
     > "$LOCAL/results/tests.log" 2>&1
 echo "beam and model regression tests passed"
 printf '%s\n' 'regression tests passed' >> "$OUT/progress.log"
+if [ "${EXPERIMENT:-stopping}" = tail ]; then
+    timeout 900 "$PY" -m pytest -q -p no:cacheprovider "$LOCAL/tests/test_beam_cross.py" \
+        "$LOCAL/tests/test_beam_state.py" "$LOCAL/tests/test_beam_tail.py" \
+        "$LOCAL/tests/test_megakernel.py::test_ring_solo_is_bitwise_the_same" \
+        "$LOCAL/tests/test_megakernel.py::test_backend_trial_falls_back" \
+        > "$LOCAL/results/tail_tests.log" 2>&1
+    printf '%s\n' 'tail and shared decoder regression tests passed' >> "$OUT/progress.log"
+    for variant in tail grouped8; do
+        batch=3
+        interval=4
+        FLAGS=(--compact-tail)
+        if [ "$variant" = grouped8 ]; then
+            batch=1
+            interval=1
+            FLAGS=(--gluon-group-queries --gluon-cross-splits 8)
+        fi
+        timeout 600 "$PY" "$LOCAL/scripts/profile_beam.py" \
+            --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/manifest.json" \
+            --beam 5 --timestamps --batch "$batch" --chunk "$interval" --repeat 5 --limit "${PROFILE_LIMIT:-73}" \
+            --upper-bound on --fused-rank --fused-finish --fused-state --kv-reorder prefix --share-cross-kv \
+            "${FLAGS[@]}" --baseline-runtime "$LOCAL/baseline_runtime.py" --phases --trace --disk \
+            --extra-checks --long-audio "$LOCAL/long_110s.wav" \
+            --out "$LOCAL/results/${variant}_b${batch}" > "$LOCAL/results/${variant}_b${batch}.log" 2>&1
+        printf '%s English complete\n' "$variant" >> "$OUT/progress.log"
+        if [ -n "${EXTRA_MANIFEST:-}" ]; then
+            timeout 480 "$PY" "$LOCAL/scripts/profile_beam.py" \
+                --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/extra_manifest.json" \
+                --lang "${EXTRA_LANG:?set second manifest language}" \
+                --beam 5 --timestamps --batch "$batch" --chunk "$interval" --repeat 3 \
+                --upper-bound on --fused-rank --fused-finish --fused-state --kv-reorder prefix --share-cross-kv \
+                "${FLAGS[@]}" --baseline-runtime "$LOCAL/baseline_runtime.py" \
+                --out "$LOCAL/results/${variant}_japanese_b${batch}" > "$LOCAL/results/${variant}_japanese_b${batch}.log" 2>&1
+            printf '%s Japanese complete\n' "$variant" >> "$OUT/progress.log"
+        fi
+    done
+    exit 0
+fi
 if [ "${EXPERIMENT:-stopping}" = splits ]; then
     timeout 900 "$PY" -m pytest -q -p no:cacheprovider "$LOCAL/tests/test_beam_cross.py" \
         "$LOCAL/tests/test_megakernel.py::test_ring_solo_is_bitwise_the_same" \
