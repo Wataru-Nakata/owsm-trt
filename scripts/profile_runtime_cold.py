@@ -63,6 +63,8 @@ def main():
                 torch.cuda.reset_peak_memory_stats()
                 before = torch.cuda.memory_allocated()
                 result, ms = wall(lambda: call(task))
+                if getattr(model.backend, "failed", set()):
+                    raise RuntimeError("decoder trial failed; refusing fallback cold timing")
                 row = dict(
                     repeat=repeat,
                     task=task,
