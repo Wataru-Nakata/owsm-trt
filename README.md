@@ -235,7 +235,7 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   Completed multi-row Gluon groups also skip the call when every row has ended; partial groups
   run the full decoder. On1B/H200, English B3/B8 whole-list RTFx improved1.92–3.66% with exact
   outputs; Japanese B8 was within noise. The102M multi-row TensorRT route is unchanged.
-  [Group measurements and pending public-path verification](docs/runtime-finished-groups.md).
+  [Group measurements and public-path verification](docs/runtime-finished-groups.md).
 * **Cached-engine model loading.** Frontend/decoder helpers privately map supported ZIP checkpoints
   and read only needed tensors. On H200 with node-local files and warmed OS/JIT caches, fresh-process
   load medians fell from6.75 to4.61 s for1B and1.87 to1.61 s for102M (five alternating pairs, exact

@@ -1,12 +1,12 @@
-# Skip completed multi-row plain decoder groups (experiment)
+# Skip completed multi-row plain decoder groups
 
 The measured single-row Ring guard does not skip multi-row decoder calls. In job2773841, English
 translationB3 still entered33/712 already-EOS calls on1B and45/712 on102M; Japanese had3/176 and
 5/818. These are measured calls, not a predicted speedup. The completed 1B subset of job2773955 measures the group guard below.
 
 `GreedySession(skip_finished_groups=True)` retains its low-level defaultFalse. The public factory
-now enables it with `greedy_kernels=True`, subject to actual backend capability; public GPU
-verification and an independent timing repeat are prepared in the next job.
+enables it with `greedy_kernels=True`, subject to actual backend capability. Public GPU
+verification and an independent timing repeat passed in job2774007.
 It is eligible only when the actual multi-row backend route supports it (currently Gluon within
 its existing token/row limits). `greedy_kernels=False` disables both single-row and multi-row guards. Route limits do not change.
 It passes the session's per-row EOS flags to the kernel. Every CTA reduces the same immutable
@@ -54,3 +54,26 @@ The follow-up runner validates the public factory and rollback on1B and102M, inc
 B3 timestamps and translation B8. It repeats the eight1B timing conditions, tests all eligible
 R2..8 GPU flag/restart contracts, and completes the previously unexecuted independent KV
 replication. The102M comparison is functional fallback coverage, not a group-guard speed test.
+
+
+## Independent replication and public adoption:2774007
+
+Frozen d16a15f passed86 focused tests (all R2..8 graph/eager flag/reset contracts included) and31
+naive regressions. Both1B and102M public-default/rollback checks matched all12 request cases;
+actual guard dispatch matched capability. The102M TensorRT row fallback remains unguarded.
+The same engines/checkpoints as2773955 produced exact full outputs/steps in all eight1B conditions,
+with unchanged English extras. No engine rebuild or different precision is involved.
+
+| 1B case | English RTFx change | Japanese RTFx change |
+|---|---:|---:|
+| plain B3 | +3.35% | +4.54% |
+| timestamp B3 | +3.46% | +2.58% |
+| translation B3 | +3.53% | +1.61% |
+| translation B8 | +1.78% | +1.47% |
+
+Nine alternating whole-list pairs were positive for every condition except Japanese B8
+(-0.98% to+2.15%, also mixed in the first job). This group guard is adopted through the existing
+`greedy_kernels` option; no speed claim is made for every individual input, Japanese B8,102M
+multi-row TRT, other GPUs or drafted verification. The host still makes the same replay checks.
+See [replication evidence](runtime-finished-groups-results-2774007.json) and
+`outputs/runtime-2774007/`. Shared-process VRAM/cold observations are not isolated improvements.

@@ -1,0 +1,328 @@
+{
+  "english": {
+    "summary": {
+      "baseline": {
+        "transcribe_ms": {
+          "n": 375,
+          "p50": 48.103912035003304,
+          "p95": 100.46757191885263,
+          "min": 30.840446997899562,
+          "max": 166.67258698726073,
+          "stdev": 27.94231952163176
+        },
+        "decode_ms": {
+          "n": 375,
+          "p50": 40.59169301763177,
+          "p95": 92.32829960528761,
+          "min": 19.71050997963175,
+          "max": 156.3327310141176,
+          "stdev": 27.443710474013507
+        },
+        "decoder_calls": {
+          "n": 375,
+          "p50": 28.0,
+          "p95": 65.0,
+          "min": 16,
+          "max": 109,
+          "stdev": 19.160208767129863
+        },
+        "decode_ms_per_selection": {
+          "n": 375,
+          "p50": 1.397524207653799,
+          "p95": 1.4174998683772762,
+          "min": 0.9385957133157977,
+          "max": 1.4310933526276666,
+          "stdev": 0.08983790470045072
+        },
+        "rtfx": 323.95102469265254,
+        "peak_allocated_bytes": 11239073280,
+        "quality": {
+          "metric": "WER",
+          "reference_units": 1150,
+          "errors": 45,
+          "rate": 0.0391304347826087,
+          "annotated_utterances": 73,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "agreement": {
+          "tokens": {
+            "equal": 73,
+            "total": 73,
+            "different_ids": []
+          },
+          "timestamp_tokens": {
+            "equal": 73,
+            "total": 73,
+            "different_ids": []
+          },
+          "segments": {
+            "equal": 73,
+            "total": 73,
+            "different_ids": []
+          },
+          "text": {
+            "equal": 73,
+            "total": 73,
+            "different_ids": []
+          }
+        }
+      },
+      "on": {
+        "transcribe_ms": {
+          "n": 375,
+          "p50": 47.913584974594414,
+          "p95": 99.50719259213656,
+          "min": 30.57843103306368,
+          "max": 163.04371098522097,
+          "stdev": 27.38371662179103
+        },
+        "decode_ms": {
+          "n": 375,
+          "p50": 40.42825900251046,
+          "p95": 91.32714230800048,
+          "min": 19.76160699268803,
+          "max": 153.4885650034994,
+          "stdev": 26.807668544175502
+        },
+        "decoder_calls": {
+          "n": 375,
+          "p50": 28.0,
+          "p95": 65.0,
+          "min": 16,
+          "max": 109,
+          "stdev": 19.160208767129863
+        },
+        "decode_ms_per_selection": {
+          "n": 375,
+          "p50": 1.3889492075922418,
+          "p95": 1.407304792531899,
+          "min": 0.9410289044137157,
+          "max": 1.430105116656598,
+          "stdev": 0.08839845251531274
+        },
+        "rtfx": 326.1311596424275,
+        "peak_allocated_bytes": 11239072768,
+        "quality": {
+          "metric": "WER",
+          "reference_units": 1150,
+          "errors": 45,
+          "rate": 0.0391304347826087,
+          "annotated_utterances": 73,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "agreement": {
+          "tokens": {
+            "equal": 73,
+            "total": 73,
+            "different_ids": []
+          },
+          "timestamp_tokens": {
+            "equal": 73,
+            "total": 73,
+            "different_ids": []
+          },
+          "segments": {
+            "equal": 73,
+            "total": 73,
+            "different_ids": []
+          },
+          "text": {
+            "equal": 73,
+            "total": 73,
+            "different_ids": []
+          }
+        }
+      }
+    },
+    "rtfx_change_percent": 0.6729828843243801,
+    "paired_median_percent": 0.5170726290424366,
+    "positive_groups": 24,
+    "groups": 25,
+    "repeat_total_changes_percent": [
+      1.011408372326783,
+      0.7006135925601287,
+      0.8696362104468447,
+      0.7958846137391173,
+      0.8877833539736368,
+      0.6497518065551766,
+      0.6867172413280498,
+      0.5233020599777038,
+      0.6487861850466681,
+      0.7539970724479872,
+      0.6663666136172086,
+      0.7182134511642513,
+      -0.20659767842177157,
+      0.7609644790254277,
+      0.6240984023422103
+    ],
+    "identity_rows_percent": 55.232856618995235,
+    "identity_prefix_percent": 50.137666821033136,
+    "same_outputs": true,
+    "same_decoder_calls": true
+  },
+  "japanese": {
+    "summary": {
+      "baseline": {
+        "transcribe_ms": {
+          "n": 60,
+          "p50": 72.11319552152418,
+          "p95": 124.71294960705563,
+          "min": 50.04534299951047,
+          "max": 125.34177396446466,
+          "stdev": 28.06267195223476
+        },
+        "decode_ms": {
+          "n": 60,
+          "p50": 62.50466400524601,
+          "p95": 115.35513291601092,
+          "min": 42.40441898582503,
+          "max": 115.60617503710091,
+          "stdev": 27.371204913102957
+        },
+        "decoder_calls": {
+          "n": 60,
+          "p50": 46.0,
+          "p95": 81.0,
+          "min": 32,
+          "max": 81,
+          "stdev": 19.434183800715687
+        },
+        "decode_ms_per_selection": {
+          "n": 60,
+          "p50": 1.3949719161197,
+          "p95": 1.4067699136098892,
+          "min": 1.2840521235933953,
+          "max": 1.4098314028914745,
+          "stdev": 0.027906790224969738
+        },
+        "rtfx": 485.00822028462994,
+        "peak_allocated_bytes": 10013696000,
+        "quality": {
+          "metric": "CER",
+          "reference_units": 592,
+          "errors": 26,
+          "rate": 0.04391891891891892,
+          "annotated_utterances": 12,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "agreement": {
+          "tokens": {
+            "equal": 12,
+            "total": 12,
+            "different_ids": []
+          },
+          "timestamp_tokens": {
+            "equal": 12,
+            "total": 12,
+            "different_ids": []
+          },
+          "segments": {
+            "equal": 12,
+            "total": 12,
+            "different_ids": []
+          },
+          "text": {
+            "equal": 12,
+            "total": 12,
+            "different_ids": []
+          }
+        }
+      },
+      "on": {
+        "transcribe_ms": {
+          "n": 60,
+          "p50": 73.23188299778849,
+          "p95": 122.78807639377192,
+          "min": 53.273819969035685,
+          "max": 122.85854195943102,
+          "stdev": 27.531134118917283
+        },
+        "decode_ms": {
+          "n": 60,
+          "p50": 64.85437747323886,
+          "p95": 113.44060673145577,
+          "min": 45.59182497905567,
+          "max": 113.51495701819658,
+          "stdev": 26.84387796789956
+        },
+        "decoder_calls": {
+          "n": 60,
+          "p50": 46.0,
+          "p95": 81.0,
+          "min": 32,
+          "max": 81,
+          "stdev": 19.434183800715687
+        },
+        "decode_ms_per_selection": {
+          "n": 60,
+          "p50": 1.3829173659337912,
+          "p95": 1.3864938535720503,
+          "min": 1.3759723678639715,
+          "max": 1.3910523936801562,
+          "stdev": 0.0030483830036097705
+        },
+        "rtfx": 488.4527777771326,
+        "peak_allocated_bytes": 10013696000,
+        "quality": {
+          "metric": "CER",
+          "reference_units": 592,
+          "errors": 26,
+          "rate": 0.04391891891891892,
+          "annotated_utterances": 12,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "agreement": {
+          "tokens": {
+            "equal": 12,
+            "total": 12,
+            "different_ids": []
+          },
+          "timestamp_tokens": {
+            "equal": 12,
+            "total": 12,
+            "different_ids": []
+          },
+          "segments": {
+            "equal": 12,
+            "total": 12,
+            "different_ids": []
+          },
+          "text": {
+            "equal": 12,
+            "total": 12,
+            "different_ids": []
+          }
+        }
+      }
+    },
+    "rtfx_change_percent": 0.7102060023809864,
+    "paired_median_percent": 0.8067787143006822,
+    "positive_groups": 4,
+    "groups": 4,
+    "repeat_total_changes_percent": [
+      1.9056333740330444,
+      1.012566137708415,
+      1.0783195160832593,
+      1.0426358348019082,
+      1.0914491388756886,
+      0.9171554854173314,
+      1.0654992342876923,
+      1.1751735039166933,
+      1.275515632983848,
+      1.0654561582736921,
+      -5.352414190549915,
+      1.0059672479063808,
+      1.1649587525941696,
+      1.0866420316305136,
+      1.115820157303271
+    ],
+    "identity_rows_percent": 61.46730462519936,
+    "identity_prefix_percent": 56.252102503215596,
+    "same_outputs": true,
+    "same_decoder_calls": true
+  }
+}

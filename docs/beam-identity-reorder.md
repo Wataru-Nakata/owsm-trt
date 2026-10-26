@@ -1,4 +1,4 @@
-# Candidate16: skip unchanged-parent KV copies (unverified experiment)
+# Candidate16: skip unchanged-parent KV copies (measured opt-in)
 
 The existing H200/1B B3 trace in `outputs/runtime-2773582/lookahead_overlap.json` assigns11.56ms
 of271.61ms of decoder-stream kernel sums to `_reorder_kv` (about4.3%). These are kernel sums,
@@ -11,12 +11,12 @@ including stale NaNs; full-mode kernel tests also check no-op identity rows. Oth
 may read that same identity row safely: all parent reads precede the separate copy-back launch.
 Duplicate parents and permutation cycles continue through the original scratch path. No host
 read, new graph, persistent buffer, cache-layout change or decoder arithmetic change is added.
-The default remains `prefix`; this is not yet adopted or GPU timed.
+The default remains `prefix`; GPU measurements below do not justify broad adoption.
 
 Twelve small CPU Triton-interpreter cases passed (mixed identity/duplicate/cyclic parents,
 written lengths0/1/7/8, full/prefix behavior). The GPU suite extends all existing fp16/fp32 cases,
 tile boundaries/workspace reuse, and real-decoder graph bucket/repeated-request tests. These
-extended GPU cases are prepared, not yet executed.
+extended GPU cases passed in job2773900.
 
 `profile_beam.py --kv-reorder identity --kv-identity-stats` enables separate diagnostic counters
 for unchanged rows and prefix-position-weighted unchanged rows. Those counters exist only in a
@@ -62,3 +62,14 @@ but allocator peaks were measured with both variants in the same process, not is
 [Timing, counter, output and API evidence](beam-identity-results-2773900.json).
 Raw logs and frozen source metadata: `outputs/runtime-2773900/`. No reference timestamp annotation;
 110s extras compare joined public segments, not unavailable per-window token sequences.
+
+
+## Independent1B B3 replication:2774007; default remains prefix
+
+Fifteen alternating same-engine pairs matched full outputs and decoder calls. English RTFx was
++0.673% (paired-group median+0.517%, repeat totals-0.207..+1.011%); Japanese was+0.710%
+(paired-group median+0.807%, repeat totals-5.352..+1.906%). Thus the first all-positive repeat
+result did not reproduce across every pair. The effect is small and102M was already mixed.
+Keep the existing prefix default and retain identity skipping as a low-level opt-in; no automatic
+model-specific route is introduced for this small gain. A separate tail-initialization experiment
+now targets the still-repeated tail stores without combining gains. [Replication data](beam-identity-replication-2774007.json).
