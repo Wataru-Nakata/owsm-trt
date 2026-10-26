@@ -500,13 +500,14 @@ if gluon is not None:
             gl.store(pred + t, bi.to(gl.int64))
 
     @gluon.jit
-    def _stage_end(bar, err, g, P, pid, ts, MAXS: gl.constexpr, TS: gl.constexpr):
+    def _stage_end(bar, err, g, P, pid, ts, MAXS: gl.constexpr, TS: gl.constexpr,
+                   RELAXED_POLL: gl.constexpr):
         """Arrive at the grid barrier that ends stage g - 1 and wait for the others (stamps: arrival of stage
         g - 1, its release, the start of stage g)."""
         if TS:
             gl.store(ts + ((g - 1) * P + pid) * 8 + 5, _now())
         _garrive(bar)
-        _gwait(bar, err, g * P, MAXS)
+        _gwait(bar, err, g * P, MAXS, RELAXED_POLL)
         if TS:
             gl.store(ts + ((g - 1) * P + pid) * 8 + 1, _now())
             gl.store(ts + (g * P + pid) * 8, _now())
@@ -519,7 +520,8 @@ if gluon is not None:
                   MTP: gl.constexpr, LMTP: gl.constexpr, HL: gl.constexpr, NL: gl.constexpr, LNL: gl.constexpr,
                   N1: gl.constexpr, LN1: gl.constexpr, SP: gl.constexpr, BT: gl.constexpr, NS: gl.constexpr,
                   NW: gl.constexpr, NSLOT: gl.constexpr, LNS: gl.constexpr, CK: gl.constexpr, MAXS: gl.constexpr, PFA: gl.constexpr,
-                  TS: gl.constexpr, ARGMAX: gl.constexpr, BM: gl.constexpr, NOTIME: gl.constexpr):  # fmt: skip
+                  TS: gl.constexpr, ARGMAX: gl.constexpr, BM: gl.constexpr, NOTIME: gl.constexpr,
+                  RELAXED_POLL: gl.constexpr):  # fmt: skip
         """The consumer warps: embedding, L layers of 8 stages, the output layer; a grid barrier between
         stages."""
         M = R * S
@@ -531,7 +533,7 @@ if gluon is not None:
         for nu in range(pid, NPART, P):  # parts of BM features
             _embed_g(nu, M, S, tok, offs, TSTR, OSTR, emb, pe, xscale, V, x, x2, st, D, BM, NPART, MTP, NW)
         g = 1
-        _stage_end(bar, err, g, P, pid, ts, MAXS, TS)
+        _stage_end(bar, err, g, P, pid, ts, MAXS, TS, RELAXED_POLL)
         c = 0
         for layer in range(L):
             z = _opaque0() * 128  # (see _opaque0; a multiple of 128 keeps the alignment the compiler knows)
@@ -568,7 +570,7 @@ if gluon is not None:
                     off = gl.load(offs_z + (pid_z // H) * OSTR)
                     _prefetch_rows(kc_z + cb, off, 128, NW)
                     _prefetch_rows(vc_z + cb, off, 128, NW)
-            _gwait(bar, err, g * P, MAXS)
+            _gwait(bar, err, g * P, MAXS, RELAXED_POLL)
             if TS:
                 gl.store(ts + ((g - 1) * P + pid_z) * 8 + 1, _now())
                 gl.store(ts + (g * P + pid_z) * 8, _now())
@@ -597,13 +599,13 @@ if gluon is not None:
                 TS,
             )
             g += 1
-            _stage_end(bar, err, g, P, pid_z, ts, MAXS, TS)
+            _stage_end(bar, err, g, P, pid_z, ts, MAXS, TS, RELAXED_POLL)
             # out-projection + residual
             c = _gemm_r(ob_z, D, 0, M, ring, full, empty, c, xbuf, scratch, bo + layer * D, bo, st_z, eps, x_z, x2_z, x_z, D,
                         pid_z, P, D // BM, ts + (g * P + pid_z) * 8, NKC, N1, LN1, MTP, LMTP, 1, False, False, True, D,
                         NPART, NW, NSLOT, LNS, CK, TS, BM)  # fmt: skip
             g += 1
-            _stage_end(bar, err, g, P, pid_z, ts, MAXS, TS)
+            _stage_end(bar, err, g, P, pid_z, ts, MAXS, TS, RELAXED_POLL)
             # LN2 + cross-Q -> q2; meanwhile the cross-attention's keys/values into L2
             c = _gemm_r(x2_z, 2 * D, D, M, ring, full, empty, c, xbuf, scratch, bcq + layer * D, ccq + layer * D, st_z,
                         eps, x_z, x2_z, q2_z, D, pid_z, P, D // BM, ts + (g * P + pid_z) * 8, NKC, NL, LNL, MTP, LMTP, HL, True,
@@ -622,7 +624,7 @@ if gluon is not None:
                     cb = ((layer * R + bh // H) * H + bh % H).to(gl.int64) * T * DK + t_lo * DK
                     _prefetch_rows(ck_z + cb, nk, 128, NW)
                     _prefetch_rows(cv_z + cb, nk, 128, NW)
-            _gwait(bar, err, g * P, MAXS)
+            _gwait(bar, err, g * P, MAXS, RELAXED_POLL)
             if TS:
                 gl.store(ts + ((g - 1) * P + pid_z) * 8 + 1, _now())
                 gl.store(ts + (g * P + pid_z) * 8, _now())
@@ -652,29 +654,29 @@ if gluon is not None:
                 TS,
             )
             g += 1
-            _stage_end(bar, err, g, P, pid_z, ts, MAXS, TS)
+            _stage_end(bar, err, g, P, pid_z, ts, MAXS, TS, RELAXED_POLL)
             # cross-out + residual
             c = _gemm_r(ob_z, D, 0, M, ring, full, empty, c, xbuf, scratch, bco + layer * D, bco, st_z, eps, x_z, x2_z, x_z, D,
                         pid_z, P, D // BM, ts + (g * P + pid_z) * 8, NKC, N1, LN1, MTP, LMTP, 1, False, False, True, D,
                         NPART, NW, NSLOT, LNS, CK, TS, BM)  # fmt: skip
             g += 1
-            _stage_end(bar, err, g, P, pid_z, ts, MAXS, TS)
+            _stage_end(bar, err, g, P, pid_z, ts, MAXS, TS, RELAXED_POLL)
             # LN3 + FFN1 + ReLU -> hb
             c = _gemm_r(x2_z, 2 * D, D, M, ring, full, empty, c, xbuf, scratch, b1 + layer * F, c1 + layer * F, st_z,
                         eps, x_z, x2_z, hb_z, F, pid_z, P, F // BM, ts + (g * P + pid_z) * 8, NKC, NL, LNL, MTP, LMTP, HL, True,
                         True, False, D, NPART, NW, NSLOT, LNS, CK, TS, BM)  # fmt: skip
             g += 1
-            _stage_end(bar, err, g, P, pid_z, ts, MAXS, TS)
+            _stage_end(bar, err, g, P, pid_z, ts, MAXS, TS, RELAXED_POLL)
             # FFN2 + residual (split-K)
             c = _ffn2_r(hb_z, M, ring, full, empty, c, xbuf, scratch, b2 + layer * D, x_z, x2_z, st_z, part_z, cnt2_z, pid_z, P,
                         ts + (g * P + pid_z) * 8, D, F, LKS, N1, LN1, MTP, LMTP, NPART, NW, NSLOT, LNS, CK, TS, BM)  # fmt: skip
             g += 1
-            _stage_end(bar, err, g, P, pid_z, ts, MAXS, TS)
+            _stage_end(bar, err, g, P, pid_z, ts, MAXS, TS, RELAXED_POLL)
         _out_r(x2, M, ring, full, empty, c, xbuf, scratch, st, eps, bout, cout, logits, amax, aidx, ntm, FT, LT, S, V,
                nrb, pid, P, D, N1, MTP, LMTP, NPART, NW, NSLOT, LNS, CK, ARGMAX, BM, NOTIME)  # fmt: skip
         if ARGMAX:  # the argmax over the output blocks' partials
             g += 1
-            _stage_end(bar, err, g, P, pid, ts, MAXS, TS)
+            _stage_end(bar, err, g, P, pid, ts, MAXS, TS, RELAXED_POLL)
             _argmax_r(amax, aidx, pred, M, nrb, pid, P, MTP, NW)
         if TS:
             gl.store(ts + (g * P + pid) * 8 + 5, _now())
@@ -694,7 +696,7 @@ if gluon is not None:
         NW: gl.constexpr, NSLOT: gl.constexpr, LNS: gl.constexpr, CK: gl.constexpr, MAXS: gl.constexpr, PFA: gl.constexpr,
         AHEAD: gl.constexpr = 0, TS: gl.constexpr = False, ARGMAX: gl.constexpr = False, PW: gl.constexpr = 1,
         NOTIME: gl.constexpr = False,
-        BM: gl.constexpr = 64,
+        BM: gl.constexpr = 64, RELAXED_POLL: gl.constexpr = False,
     ):  # fmt: skip
         """A decoder call (see the module docstring): shared memory, then the consumer warps and the producer
         warp."""
@@ -719,7 +721,7 @@ if gluon is not None:
                              C, ck, cv, T, logits, new_kv, x, x2, qkv, ob, q2, hb, st, part, cnt2, xp, xml, xcnt, bar,
                              err, done, ts, amax, aidx, pred, ntm, FT, LT, R, S, L, V, eps, ring, full, empty, xbuf, scratch, pid, P,
                              D, H, DK, F, LKS, MTP, LMTP, HL, NL, LNL, N1, LN1, SP, BT, NS, NW, NSLOT, LNS, CK, MAXS, PFA,
-                             TS, ARGMAX, BM, NOTIME)),
+                             TS, ARGMAX, BM, NOTIME, RELAXED_POLL)),
                 (_producer, (dqkv, do_, dcq, dco, d1, d2, dout, wqkv, wo, wcq, wco, w1, w2, ring, full, empty, pid, P,
                              L, nrb, D, F, LKS, NSLOT, LNS, CK, AHEAD, BM)),
             ],
@@ -753,7 +755,7 @@ class RingDecoder:
     def __init__(self, mega, programs: int | None = None, row_programs: int | None = None,
                  solo_programs: int | None = None, num_warps: int = 4, chunk: int = 2, ring_kb: int = 128,
                  maxs: int = 1 << 24, ts: bool = False, prefetch_attention: bool = True, ahead: int = 0,
-                 exclusive: bool = False):  # fmt: skip
+                 exclusive: bool = False, relaxed_poll: bool = False):  # fmt: skip
         self.m = mega
         d, f = mega.D, mega.F
         dev = mega.device
@@ -773,6 +775,7 @@ class RingDecoder:
         self.slots = 1 << (ring_kb // (bm // 8 * self.ck)).bit_length() - 1  # a power of 2
         self.pw = 4 if exclusive else 1
         self.ahead = ahead
+        self.relaxed_poll = relaxed_poll
         self.nw, self.maxs, self.pfa = num_warps, maxs, prefetch_attention
         self.descs = tuple(
             weight_desc(w, bm) for w in (mega.wqkv, mega.wo, mega.wcq, mega.wco, mega.w1, mega.w2, mega.wout)
@@ -846,7 +849,7 @@ class RingDecoder:
         const = dict(
             D=D, H=H, DK=D // H, F=F, LKS=_log2(F // D), MTP=mtp, LMTP=_log2(mtp), HL=hl, NL=nl, LNL=_log2(nl), N1=n1,
             LN1=_log2(n1), SP=max(16, _pow2(S)), BT=64, NS=ns, NW=self.nw, NSLOT=self.slots, LNS=_log2(self.slots), CK=self.ck,
-            MAXS=self.maxs, PFA=self.pfa, AHEAD=self.ahead, TS=bool(self.opts["TS"]), ARGMAX=argmax, PW=self.pw, BM=bm, NOTIME=argmax and notime is not None,
+            MAXS=self.maxs, PFA=self.pfa, AHEAD=self.ahead, RELAXED_POLL=self.relaxed_poll, TS=bool(self.opts["TS"]), ARGMAX=argmax, PW=self.pw, BM=bm, NOTIME=argmax and notime is not None,
         )  # fmt: skip
 
         def run() -> None:

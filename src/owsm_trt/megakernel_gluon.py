@@ -94,18 +94,28 @@ if gluon is not None:
         )
 
     @gluon.jit
+    def _ld_relaxed(p):
+        return gl.inline_asm_elementwise(
+            "ld.global.relaxed.gpu.b32 $0, [$1];", "=r,l", [p], dtype=gl.int32, is_pure=False, pack=1
+        )
+
+    @gluon.jit
     def _garrive(bar):
         gl.barrier()
         gl.atomic_add(bar, 1, sem="release", scope="gpu")
 
     @gluon.jit
-    def _gwait(bar, err, target, MAXS: gl.constexpr):
+    def _gwait(bar, err, target, MAXS: gl.constexpr, RELAXED_POLL: gl.constexpr = False):
         e = gl.load(err, volatile=True)
-        v = _ld_acquire(bar)
+        v = _ld_relaxed(bar) if RELAXED_POLL else _ld_acquire(bar)
         n = 0
         while (v < target) & (n < MAXS) & (e == 0):
-            v = _ld_acquire(bar)
+            v = _ld_relaxed(bar) if RELAXED_POLL else _ld_acquire(bar)
             n += 1
+        if RELAXED_POLL:
+            # PTX acquire pattern: a strong read observing the release sequence, followed by an
+            # acquire on the same location. The side-effecting asm is retained even without its value.
+            _ld_acquire(bar)
         if (v < target) & (e == 0):
             gl.atomic_xchg(err, 1, sem="relaxed", scope="gpu")
         gl.barrier()
