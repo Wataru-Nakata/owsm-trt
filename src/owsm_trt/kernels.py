@@ -113,6 +113,87 @@ if triton is not None:
         tl.store(res + r * 2 + 1, last)
 
     @triton.jit
+    def _greedy_rank(
+        logits,
+        tok,
+        notime,
+        first,
+        count,
+        last,
+        scores,
+        indices,
+        V,
+        PARTS: tl.constexpr,
+        RULES: tl.constexpr,
+        ft,
+        lt,
+        eos,
+        BV: tl.constexpr,
+    ):
+        r, p = tl.program_id(0), tl.program_id(1)
+        v = p * BV + tl.arange(0, BV)
+        x = tl.load(logits + r.to(tl.int64) * V + v, v < V, other=float("-inf"))
+        if RULES:
+            previous = tl.load(tok + r)
+            end = tl.load(last + r)
+            time = (v >= ft) & (v <= lt)
+            open_pair = (v == eos) | (time & (v <= end))
+            after_end = ((v < end) | (v > lt)) & (v != eos)
+            bad = tl.where((previous >= ft) & (previous <= lt), after_end, True)
+            bad = tl.where(tl.load(count + r) % 2 == 1, open_pair, bad)
+            bad = tl.where(tl.load(first + r), ~time, bad)
+            bad = tl.where(tl.load(notime + r), time, bad)
+            x = tl.where(bad, float("-inf"), x)
+        # PyTorch argmax prefers the first NaN, then the first maximal value. This is deliberately
+        # separate from drafted choose's existing NaN behavior. Masked-out NaNs are already -inf.
+        nan = x != x
+        nan_index = tl.min(tl.where(nan, v, 2147483647), 0)
+        best = tl.max(tl.where(nan, float("-inf"), x), 0)
+        index = tl.min(tl.where(x == best, v, 2147483647), 0)
+        index = tl.where(nan_index < V, nan_index, index)
+        tl.store(scores + r * PARTS + p, tl.where(nan_index < V, float("nan"), best))
+        tl.store(indices + r * PARTS + p, index.to(tl.int64))
+
+    @triton.jit
+    def _greedy_finish(
+        scores,
+        indices,
+        tok,
+        done,
+        seq,
+        pos,
+        first,
+        count,
+        last,
+        PARTS: tl.constexpr,
+        BP: tl.constexpr,
+        C: tl.constexpr,
+        RULES: tl.constexpr,
+        ft,
+        lt,
+        eos,
+    ):
+        r = tl.program_id(0)
+        p = tl.arange(0, BP)
+        val = tl.load(scores + r * PARTS + p, p < PARTS, other=float("-inf"))
+        idx = tl.load(indices + r * PARTS + p, p < PARTS, other=2147483647)
+        nan = val != val
+        nan_index = tl.min(tl.where(nan, idx, 2147483647), 0)
+        best = tl.max(tl.where(nan, float("-inf"), val), 0)
+        chosen = tl.min(tl.where(val == best, idx, 2147483647), 0)
+        chosen = tl.where(nan_index < 2147483647, nan_index, chosen)
+        was_done = tl.load(done + r)
+        nxt = tl.where(was_done, eos, chosen)
+        tl.store(done + r, was_done | (nxt == eos))
+        tl.store(seq + r.to(tl.int64) * C + tl.load(pos), nxt)
+        tl.store(tok + r, nxt)
+        if RULES:
+            is_time = (nxt >= ft) & (nxt <= lt)
+            tl.store(count + r, tl.load(count + r) + is_time.to(tl.int64))
+            tl.store(last + r, tl.where(is_time, nxt, tl.load(last + r)))
+            tl.store(first + r, False)
+
+    @triton.jit
     def _write_kv(new_kv, k, v, offs, R, S, C, H: tl.constexpr, D: tl.constexpr, BS: tl.constexpr):
         """new_kv [L, 2, R, H, S, D] -> k, v [L, R, H, C, D] at slots offs[r] .. offs[r] + S - 1."""
         p = tl.program_id(0)  # (layer, row, head)
@@ -202,3 +283,46 @@ def accept(pred: torch.Tensor, inp: torch.Tensor, res: torch.Tensor, eos: int) -
     """``res`` [R, 2] = runtime._Verify.accept() for the argmax ``pred`` [R, W] of a call on ``inp``."""
     R, W = pred.shape
     _accept[(R,)](pred, inp, res, eos, W=W, BW=triton.next_power_of_2(max(W, 2)), num_warps=1)
+
+
+def greedy_select(logits, tok, done, seq, pos, notime, first, count, last, rules, eos, workspace):
+    """Plain greedy mask/argmax and state advance; logits[R,1,V] -> tok[R,1]/seq[R,C]."""
+    rows, _, vocab = logits.shape
+    scores, indices = workspace
+    parts = scores.shape[-1]
+    args = (rules.first_time, rules.last_time, rules.eos) if rules is not None else (0, -1, -1)
+    _greedy_rank[(rows, parts)](
+        logits,
+        tok,
+        notime,
+        first,
+        count,
+        last,
+        scores,
+        indices,
+        vocab,
+        parts,
+        rules is not None,
+        *args,
+        BV=2048,
+        num_warps=4,
+    )
+    _greedy_finish[(rows,)](
+        scores,
+        indices,
+        tok,
+        done,
+        seq,
+        pos,
+        first,
+        count,
+        last,
+        parts,
+        triton.next_power_of_2(parts),
+        seq.shape[1],
+        rules is not None,
+        args[0],
+        args[1],
+        eos,
+        num_warps=1,
+    )

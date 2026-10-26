@@ -227,6 +227,7 @@ class OWSM:
         self.beam_grouped_cross = beam_grouped_cross
         self._beam_backend = None
         self.frontend_graph = frontend_graph
+        self.greedy_fused_select = False
         self.greedy_split_choose = greedy_kernels
         self.greedy_fuse_accept = greedy_kernels
         self.greedy_reuse_notime = False
@@ -458,7 +459,7 @@ class OWSM:
                     punctuation=t.punctuation | times, lazy_drafts=self.lazy_drafts,
                     split_choose=self.greedy_split_choose, fuse_accept=self.greedy_fuse_accept,
                     reuse_notime=self.greedy_reuse_notime, cache_draft_flags=self.greedy_cache_draft_flags,
-                    lazy_verify_graphs=self.greedy_lazy_verify_graphs,
+                    lazy_verify_graphs=self.greedy_lazy_verify_graphs, fused_select=self.greedy_fused_select,
                 )  # fmt: skip
             else:
                 backend = self.backend

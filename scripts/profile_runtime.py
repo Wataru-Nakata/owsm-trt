@@ -35,6 +35,7 @@ VARIANTS = (
     "graph_cached",
     "graph_flags",
     "graph_lazy",
+    "graph_plain",
 )
 CASES = {
     "single_greedy": (1, 1, False, True, False, "asr", None, None),
@@ -100,6 +101,7 @@ def variant(model, name):
         "graph_cached",
         "graph_flags",
         "graph_lazy",
+        "graph_plain",
     )
     model.greedy_split_choose = name in (
         "graph_split",
@@ -108,6 +110,7 @@ def variant(model, name):
         "graph_cached",
         "graph_flags",
         "graph_lazy",
+        "graph_plain",
     )
     model.greedy_fuse_accept = name in (
         "graph_fused",
@@ -115,16 +118,19 @@ def variant(model, name):
         "graph_cached",
         "graph_flags",
         "graph_lazy",
+        "graph_plain",
     )
     model.greedy_reuse_notime = name in ("graph_notime", "graph_cached")
-    model.greedy_cache_draft_flags = name in ("graph_cached", "graph_flags", "graph_lazy")
-    model.greedy_lazy_verify_graphs = name == "graph_lazy"
+    model.greedy_cache_draft_flags = name in ("graph_cached", "graph_flags", "graph_lazy", "graph_plain")
+    model.greedy_lazy_verify_graphs = name in ("graph_lazy", "graph_plain")
+    model.greedy_fused_select = name == "graph_plain"
 
 
 def captures(model):
     return {
         str(key): {
             "encode": len(getattr(s, "_enc_graphs", {})),
+            "plain_select_fused": getattr(s, "select_workspace", None) is not None,
             "ctc": len(getattr(s, "_runs", {})),
             "decode": len(getattr(s, "graphs", {})),
             "verify": len(getattr(s, "_verify", {})) + len(getattr(s, "_verify_solo", {})),
@@ -210,6 +216,7 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
             "cached": OrderedDict(),
             "flags": OrderedDict(),
             "lazy": OrderedDict(),
+            "plain": OrderedDict(),
         }
     )
 
@@ -225,6 +232,7 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
             "graph_cached": "cached",
             "graph_flags": "flags",
             "graph_lazy": "lazy",
+            "graph_plain": "plain",
         }
         model._sessions = pools[v if configure is not None else modes.get(v, "serial")]
 
@@ -317,6 +325,7 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
                         "graph_cached",
                         "graph_flags",
                         "graph_lazy",
+                        "graph_plain",
                     )
                 )
                 else "shared sessions and all frontend variants resident"

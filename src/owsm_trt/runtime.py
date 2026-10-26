@@ -737,6 +737,7 @@ class GreedySession(_Session):
         reuse_notime: bool = False,
         cache_draft_flags: bool = False,
         lazy_verify_graphs: bool = False,
+        fused_select: bool = False,
     ):
         super().__init__(
             backend, cfg, batch, capacity, eos, dtype, device, use_cuda_graph, chunk, buckets, rules
@@ -754,6 +755,11 @@ class GreedySession(_Session):
         self.done = torch.zeros(batch, dtype=torch.bool, device=device)
         self.ctc_ids = torch.zeros(batch, ctc_columns(cfg), dtype=torch.int32, device=device)
         self._eos = torch.full((batch,), eos, dtype=torch.long, device=device)
+        self.select_workspace = (
+            kernels.choose_workspace(batch, 1, cfg.vocab_size, device)
+            if fused_select and self.logits.dtype == torch.float32 and kernels.available(device)
+            else None
+        )
         self._capture_all()
 
         self.windows = sorted(set(draft_windows) | {1}) if draft_windows else []
@@ -841,6 +847,12 @@ class GreedySession(_Session):
         return self.caches[self.buckets[-1]][1]
 
     def _select(self, c: int) -> None:
+        if self.select_workspace is not None:
+            kernels.greedy_select(
+                self.logits, self.tok, self.done, self.seq, self.pos, self.t_notime,
+                self.t_first, self.t_count, self.t_last, self.rules, self.eos, self.select_workspace,
+            )
+            return
         nxt = torch.where(self.done, self._eos, self._rules_mask(self.logits[:, -1]).argmax(-1))  # [B]
         self.done |= nxt == self._eos
         self.seq.index_copy_(1, self.pos, nxt.unsqueeze(1))
