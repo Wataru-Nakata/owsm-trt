@@ -43,17 +43,23 @@ def main():
         ap.error("fused acceptance requires split selection")
     if not os.environ.get("PBS_JOBID") and os.uname().nodename.startswith("login"):
         ap.error("audio/model work requires a compute allocation")
-    model, load_ms = wall(lambda: OWSM.from_pretrained(args.model))
+    # Keep the polling baseline explicit if auto routing later adopts a different default.
+    model, load_ms = wall(
+        lambda: OWSM.from_pretrained(args.model, decoder_kernel="ring" if args.sweep == "poll" else "auto")
+    )
     base = model.backend
     if not isinstance(base, megakernel.MegaBackend) or not isinstance(
         base.kernel, megakernel_ring.RingDecoder
     ):
         raise RuntimeError("experiment requires existing Hopper ring backend")
     original = base.kernel
-    if original.P != 32 or original.P_solo != 64 or original.nw != 4:
-        raise RuntimeError("experiment targets the 1B default ring32/solo64 shape")
-    if torch.cuda.get_device_properties(model.device).multi_processor_count < 96:
-        raise RuntimeError("cannot keep96 persistent CTAs resident on this GPU")
+    if args.sweep != "poll" and (original.P != 32 or original.P_solo != 64 or original.nw != 4):
+        raise RuntimeError("program/prefetch sweeps target the 1B default ring32/solo64 shape")
+    if args.sweep == "poll" and original.relaxed_poll:
+        raise RuntimeError("polling reference must retain acquire-on-every-poll")
+    required_sms = 96 if args.sweep == "programs" else max(original.P, original.P_solo, original.P_rows)
+    if torch.cuda.get_device_properties(model.device).multi_processor_count < required_sms:
+        raise RuntimeError("cannot keep all persistent CTAs resident on this GPU")
     files = hub.resolve(args.model)
     decoder = _load_decoder(model.cfg, files.checkpoint)
     settings = (
@@ -61,7 +67,7 @@ def main():
         if args.sweep == "programs"
         else {"reference": (32, 64, 0), "ahead1": (32, 64, 1), "ahead2": (32, 64, 2)}
         if args.sweep == "prefetch"
-        else {"reference": (32, 64, 0), "relaxed_poll": (32, 64, 0)}
+        else {"reference": (original.P, original.P_solo, 0), "relaxed_poll": (original.P, original.P_solo, 0)}
     )
     args.variants = list(settings)
     backends, checks = {"reference": base}, {}
@@ -97,6 +103,9 @@ def main():
             solo_window32_check_ms=solo_ms if args.sweep in ("prefetch", "poll") else None,
             rows=1,
             window=8,
+            programs=kernel.P,
+            solo_programs=kernel.P_solo,
+            relaxed_poll=kernel.relaxed_poll,
             criterion="existing fp32 check: max relative error<0.02, argmax>=0.5",
         )
         if name != "reference":
