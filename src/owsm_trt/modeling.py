@@ -14,6 +14,9 @@ control flow on tensor values) so the same code serves the eager path and the Te
 """
 
 import math
+import mmap
+import os
+import zipfile
 
 import torch
 import torch.nn.functional as F
@@ -707,9 +710,22 @@ def convert_espnet_state_dict(sd: dict[str, torch.Tensor]) -> dict[str, torch.Te
     return out
 
 
-def load_checkpoint(path: str) -> dict[str, torch.Tensor]:
-    """``torch.load`` of an ESPnet checkpoint (tensors only)."""
-    return torch.load(path, map_location="cpu", weights_only=True)
+def load_checkpoint(path: str, *, memory_map: bool = False) -> dict[str, torch.Tensor]:
+    """Load tensors on CPU; optionally fault in only the accessed parts of a ZIP checkpoint.
+
+    Private mappings preserve tensor writes without modifying the checkpoint. Legacy formats,
+    file-like inputs and shared-mapping configurations keep ordinary storage loading.
+    """
+    options = {}
+    if memory_map:
+        private = getattr(mmap, "MAP_PRIVATE", None)
+        options["mmap"] = (
+            private is not None
+            and torch.serialization.get_default_mmap_options() == private
+            and isinstance(path, (str, os.PathLike))
+            and zipfile.is_zipfile(path)
+        )
+    return torch.load(path, map_location="cpu", weights_only=True, **options)
 
 
 def load_model(
