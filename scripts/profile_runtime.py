@@ -21,7 +21,7 @@ from owsm_trt import OWSM, hub
 from owsm_trt.audio import load_audio
 from owsm_trt.build import engine_tag
 
-VARIANTS = ("reference", "power", "post", "both", "graph", "graph_both")
+VARIANTS = ("reference", "power", "post", "both", "graph", "graph_both", "graph_direct")
 CASES = {
     "single_greedy": (1, 1, False, True, False, "asr", None, None),
     "single_ts": (1, 1, True, True, False, "asr", None, None),
@@ -41,7 +41,8 @@ CASES = {
 def variant(model, name):
     model.frontend.fused_power = name in ("power", "both", "graph_both")
     model.frontend.fused_logmel = name in ("post", "both", "graph_both")
-    model.frontend_graph = name in ("graph", "graph_both")
+    model.frontend_graph = name in ("graph", "graph_both", "graph_direct")
+    model.frontend_direct = name == "graph_direct"
 
 
 def captures(model):
@@ -213,6 +214,8 @@ def frontend_profile(model, args, waves):
             actual = model._features(ws)
             error = (actual - expected).abs()
             frontend_call = model._frontend_replay if model.frontend_graph and b == 1 else model.frontend
+            if model.frontend_direct and b == 1:
+                frontend_call = lambda x: model._frontend_replay.from_wave(x[0], x.shape[1], x.device)
             frontend_call(speech)
             times, events = [], []
             for _ in range(30):
@@ -227,6 +230,7 @@ def frontend_profile(model, args, waves):
             result[b][v] = {
                 "features_wall_ms": stats(times),
                 "frontend_event_ms": stats([a.elapsed_time(z) for a, z in events]),
+                "frontend_event_scope": "GPU input; includes graph copy/clone. H2D only in features_wall_ms.",
                 "features_exact": torch.equal(actual, expected),
                 "max_abs_error": float(error.max()),
                 "frontend_graph": model._frontend_replay.info() if model._frontend_replay else None,

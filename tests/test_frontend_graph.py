@@ -69,3 +69,52 @@ def test_autocast_uses_eager_frontend_after_fp32_capture(fused):
             torch.testing.assert_close(replay(speech), amp_expected, rtol=0, atol=0)
     torch.testing.assert_close(replay(speech), expected, rtol=0, atol=0)
     assert replay.info()["captures"] == 1
+
+
+def test_direct_input_cpu_padding_and_trim():
+    replay = FrontendReplay(lambda x: x.clone())
+    wave = torch.tensor([1.0, 2.0, 3.0], dtype=torch.float64)
+    torch.testing.assert_close(
+        replay.from_wave(wave, 5, torch.device("cpu")), torch.tensor([[1.0, 2.0, 3.0, 0.0, 0.0]])
+    )
+    torch.testing.assert_close(replay.from_wave(wave, 2, torch.device("cpu")), torch.tensor([[1.0, 2.0]]))
+    assert replay.info()["captures"] == 0
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="compute allocation required")
+@pytest.mark.parametrize("normalize", ["global_mvn", "utterance_mvn"])
+@pytest.mark.parametrize("source", ["cpu", "cuda"])
+@torch.inference_mode()
+def test_direct_input_matches_padded_graph_and_retains_outputs(normalize, source):
+    frontend = Frontend(replace(TINY, normalize=normalize)).eval().cuda()
+    frontend.melmat.uniform_(0, 1)
+    replay = FrontendReplay(frontend, max_entries=2)
+    streams = [torch.cuda.Stream(), torch.cuda.Stream()]
+    specs = [(1601, 700), (3200, 4001), (1601, 0), (2401, 1601), (3200, 400)]
+    waves = [torch.randn(n * 2, device=source)[::2] for _, n in specs]
+    expected = []
+    for (length, _), wave in zip(specs, waves):
+        padded = torch.zeros(1, length, device="cuda")
+        padded[0, : min(length, len(wave))].copy_(wave[:length])
+        expected.append(frontend(padded))
+    padded = torch.zeros(1, 1601, device="cuda")
+    padded[0, :700].copy_(waves[0])
+    torch.testing.assert_close(replay(padded), expected[0], rtol=0, atol=0)
+    torch.cuda.synchronize()
+    actual = []
+    for _ in range(3):
+        for i, ((length, _), wave) in enumerate(zip(specs, waves)):
+            with torch.cuda.stream(streams[i % 2]):
+                actual.append(replay.from_wave(wave, length, torch.device("cuda")))
+    torch.cuda.synchronize()
+    for i, out in enumerate(actual):
+        torch.testing.assert_close(out, expected[i % len(waves)], rtol=0, atol=0)
+    assert replay.info()["captures"] == 2 and replay.fallbacks == 3
+    assert len({out.data_ptr() for out in actual}) == len(actual)
+    # The eager AMP fallback still applies when populating the input directly.
+    padded = torch.zeros(1, 1601, device="cuda")
+    padded[0, :700].copy_(waves[0])
+    with torch.autocast("cuda", dtype=torch.float16):
+        torch.testing.assert_close(
+            replay.from_wave(waves[0], 1601, torch.device("cuda")), frontend(padded), rtol=0, atol=0
+        )

@@ -14,36 +14,29 @@ class FrontendReplay:
         self.ready = None
         self.fallbacks = 0
 
-    def __call__(self, speech: torch.Tensor) -> torch.Tensor:
+    def _entry(self, shape: tuple, dtype: torch.dtype, device: torch.device):
+        if device.type == "cuda" and device.index is None:
+            device = torch.device("cuda", torch.cuda.current_device())
         if (
-            speech.device.type != "cuda"
-            or speech.shape[0] != 1
+            device.type != "cuda"
+            or shape[0] != 1
             or torch.is_grad_enabled()
             or torch.is_autocast_enabled("cuda")
         ):
-            return self.frontend(speech)
-        key = (
-            tuple(speech.shape),
-            speech.dtype,
-            speech.device,
-            self.frontend.fused_power,
-            self.frontend.fused_logmel,
-        )
+            return None
+        key = (shape, dtype, device, self.frontend.fused_power, self.frontend.fused_logmel)
         if key not in self.entries:
             if len(self.entries) == self.max_entries:
                 self.fallbacks += 1
-                return self.frontend(speech)
-            # All captured frontend GEMMs use their own capture stream/workspace. They must not
-            # overlap each other, or share the encoder/decoder's captured cuBLAS workspace.
+                return None
             from .runtime import capture_graph
 
             if self.capture_stream is None:
-                self.capture_stream = torch.cuda.Stream(device=speech.device)
+                self.capture_stream = torch.cuda.Stream(device=device)
                 self.ready = torch.cuda.Event()
             else:
-                self.ready.synchronize()  # cold-only; previous graph buffers/workspace are idle
-            inp = torch.empty_like(speech)
-            inp.copy_(speech)
+                self.ready.synchronize()  # cold-only; prior workspace users are idle
+            inp = torch.zeros(shape, dtype=dtype, device=device)
             out = None
 
             def body():
@@ -52,14 +45,41 @@ class FrontendReplay:
 
             graph = capture_graph(body, self.capture_stream)
             self.entries[key] = (inp, out, graph)
-        inp, out, graph = self.entries[key]
-        stream = torch.cuda.current_stream(speech.device)
-        stream.wait_event(self.ready)
-        inp.copy_(speech)
+        # Graphs on this capture stream share cuBLAS workspace and must never overlap.
+        torch.cuda.current_stream(device).wait_event(self.ready)
+        return self.entries[key]
+
+    def _replay(self, entry) -> torch.Tensor:
+        inp, out, graph = entry
         graph.replay()
-        result = out.clone()  # the consumer may run after another stream reuses this graph
-        self.ready.record(stream)
+        result = out.clone()  # an encoder on another stream may consume this after the next replay
+        self.ready.record(torch.cuda.current_stream(inp.device))
         return result
+
+    def __call__(self, speech: torch.Tensor) -> torch.Tensor:
+        entry = self._entry(tuple(speech.shape), speech.dtype, speech.device)
+        if entry is None:
+            return self.frontend(speech)
+        entry[0].copy_(speech)
+        return self._replay(entry)
+
+    def from_wave(self, wave: torch.Tensor, length: int, device: torch.device) -> torch.Tensor:
+        """Load one unpadded waveform directly into static [1,length] fp32 graph input."""
+        entry = self._entry((1, length), torch.float32, device)
+        inp = entry[0] if entry is not None else torch.empty((1, length), device=device)
+        wave = wave[:length]
+        if wave.device.type == "cpu" and inp.is_cuda:
+            wave = wave.pin_memory()
+        elif (
+            wave.device == inp.device
+            and wave.untyped_storage().data_ptr() == inp.untyped_storage().data_ptr()
+        ):
+            wave = wave.clone()  # zeroing the padding must not erase a caller's aliased source
+        # Every prefix element is overwritten by the copy; only padding needs initialization.
+        if wave.shape[0] < length:
+            inp[0, wave.shape[0] :].zero_()
+        inp[0, : wave.shape[0]].copy_(wave, non_blocking=True)
+        return self._replay(entry) if entry is not None else self.frontend(inp)
 
     def info(self) -> dict:
         return {
