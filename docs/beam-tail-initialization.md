@@ -23,3 +23,10 @@ GPU tests are prepared for duplicate/identity/cyclic parent mappings, tile bound
 workspace, real-decoder graph/eager parity, poisoned caches before repeated requests, exact prompt
 bucket boundaries/capacity limits, and compacted-tail growth. They have not run yet. Same-engine
 alternating latency and complete token/time/segment/step comparisons are required before adoption.
+
+Prepared runner: `scripts/profile_kv_tail_init.pbs`, beam5/timestamps B1/B3,1B/102M,
+English73/Japanese12, eleven alternating pairs against frozen prefix-default runtime d16a15f.
+The initial ablation changes only tail initialization; identity skipping stays disabled. Separate
+GPU/graph/NaN tests precede model work. Full outputs, decoder counts and long/prompt/noise extras
+must match. One1B B3 eager trace is kept separate from warmed graph wall timings; it cannot
+attribute graph node times or establish isolated baseline/candidate kernel speedups.
