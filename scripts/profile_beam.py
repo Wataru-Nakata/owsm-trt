@@ -198,7 +198,7 @@ def make_session(model, cls, batch, beam, chunk, diagnostics=False, graph=True,
                model.dtype, model.device, use_cuda_graph=graph, chunk=chunk, rules=model.rules, **extra)
 
 
-def configure_gluon(model, programs=None, prefetch=None, group_queries=False, cross_splits=None):
+def configure_gluon(model, programs=None, prefetch=None, group_queries=False, cross_splits=None, max_rows=None):
     """Independent dispatch state, shared immutable weights/engines; baseline closures stay unchanged."""
     from owsm_trt.megakernel import MegaBackend
     from owsm_trt.megakernel_gluon import GluonDecoder
@@ -211,6 +211,8 @@ def configure_gluon(model, programs=None, prefetch=None, group_queries=False, cr
         raise ValueError("Gluon options require an available multi-row Gluon decoder")
     if programs is not None and not 1 <= programs <= torch.cuda.get_device_properties(model.device).multi_processor_count:
         raise ValueError("program count must fit the GPU's SMs for the persistent grid barrier")
+    if max_rows is not None and max_rows not in (8, 16):
+        raise ValueError("experimental row limit must be8 or16; token capacity stays unchanged")
     kernel = GluonDecoder(source.m, programs=programs or source.P, num_warps=source.nw,
                           prefetch_attention=source.pfa if prefetch is None else prefetch,
                           group_cross_queries=group_queries, cross_splits=cross_splits)
@@ -219,12 +221,15 @@ def configure_gluon(model, programs=None, prefetch=None, group_queries=False, cr
     backend.failed = set(base.failed)
     if base.rows_kernel is None:
         backend.kernel = kernel
+        if max_rows is not None:
+            backend.max_rows = max_rows
     else:
-        backend.rows_kernel = (kernel, *base.rows_kernel[1:])
+        backend.rows_kernel = (kernel, base.rows_kernel[1], max_rows or base.rows_kernel[2])
     model._profile_backend = backend
     return {"programs": kernel.P, "warps": kernel.nw, "prefetch_attention": kernel.pfa,
             "reference_programs": source.P, "reference_prefetch_attention": source.pfa,
-            "routing_limits_unchanged": True, "group_cross_queries": group_queries,
+            "routing_limits_unchanged": max_rows is None, "max_rows_override": max_rows,
+            "group_cross_queries": group_queries,
             "cross_splits": cross_splits}
 
 
@@ -300,6 +305,8 @@ def run_batch(model, args, items, waves, batch, legacy):
                                                        "compact_tail_fallback": getattr(s, "compact_tail_fallback", None),
                                                        "cross_kv_fallback": getattr(s, "cross_kv_fallback", None),
                                                        "cross_kv_bytes": cross_bytes}}
+    if getattr(getattr(model, "_profile_backend", None), "failed", set()):
+        raise RuntimeError("candidate trial failed before timing; requested dispatch unavailable")
     kw = dict(lang=args.lang, task=args.task, timestamps=args.timestamps, prompt=args.prompt,
               batch_size=batch, beam_size=args.beam)
 
@@ -517,6 +524,8 @@ def main():
                     help="candidate only: group beam queries sharing cross KV in one attention tile")
     ap.add_argument("--gluon-cross-splits", type=int, choices=[1, 2, 4, 8],
                     help="candidate only: key slices per cross-attention head (changes FP reduction order)")
+    ap.add_argument("--gluon-max-rows", type=int, choices=[8, 16],
+                    help="experimental N-class multi-row routing, existing token/tile capacity unchanged")
     ap.add_argument("--gluon-programs", type=int, help="candidate only: persistent CTA count")
     ap.add_argument("--gluon-prefetch", action=argparse.BooleanOptionalAction, default=None,
                     help="candidate only: attention prefetch; keep arithmetic and routing unchanged")
@@ -536,7 +545,7 @@ def main():
     if any(n < 1 for n in args.compare_chunks) or len(set(args.compare_chunks)) != len(args.compare_chunks):
         ap.error("compare-chunks must be distinct positive integers")
     tuning = (args.gluon_programs is not None or args.gluon_prefetch is not None or args.gluon_group_queries
-              or args.gluon_cross_splits is not None)
+              or args.gluon_cross_splits is not None or args.gluon_max_rows is not None)
     if tuning and not args.baseline_runtime:
         ap.error("Gluon ablations require --baseline-runtime for the unchanged decoder")
     if args.verify_api and not (args.beam == 5 and args.upper_bound == "on" and args.fused_state
@@ -573,7 +582,21 @@ def main():
     decoder_options = None
     if tuning:
         decoder_options = configure_gluon(model, args.gluon_programs, args.gluon_prefetch,
-                                          args.gluon_group_queries, args.gluon_cross_splits)
+                                          args.gluon_group_queries, args.gluon_cross_splits, args.gluon_max_rows)
+        if args.gluon_max_rows is not None:
+            # Shape-specific numeric checks precede real search; synthetic shared-KV/cache tests
+            # are run separately by the PBS driver. No public dispatch limits are changed.
+            from owsm_trt.pipeline import _check_kernel, _load_decoder
+
+            kernel = (model._profile_backend.rows_kernel or (model._profile_backend.kernel,))[0]
+            decoder = _load_decoder(model.cfg, hub.resolve(args.model).checkpoint)
+            checks = {}
+            for rows in sorted({b * args.beam for b in args.batch}):
+                _, ms = wall(lambda: _check_kernel(kernel, decoder, model.device, rows, 1))
+                checks[rows] = {"passed": True, "check_ms": ms, "window": 1,
+                                "criterion": "max relative logits error<0.02, argmax>=0.5 vs fp32 CPU"}
+            del decoder
+            save(args.out / "shape_checks.json", checks)
     if any(len(w) > model.cfg.num_samples for w in waves):
         ap.error("manifest contains audio longer than a model window; use a separate long-form evaluation")
     files = hub.resolve(args.model)
@@ -624,6 +647,8 @@ def main():
         torch.cuda.empty_cache()
     if args.extra_checks:
         extra_checks(model, args, waves, legacy)
+    if tuning and model._profile_backend.failed:
+        raise RuntimeError("candidate decoder trial failed; comparison is not the requested dispatch")
 
 
 if __name__ == "__main__":

@@ -36,6 +36,12 @@ def test_gluon_options_keep_reference_dispatch_and_weights(monkeypatch):
         assert not base.failed
         with pytest.raises(ValueError, match="SMs"):
             profile_beam.configure_gluon(model, programs=133)
+        profile_beam.configure_gluon(model, max_rows=16)
+        wider = model._profile_backend
+        assert (wider.rows_kernel[1:] if multi else (wider.max_tokens, wider.max_rows)) == (16, 16)
+        assert (base.rows_kernel[1:] if multi else (base.max_tokens, base.max_rows)) == (16, 8)
+        with pytest.raises(ValueError, match="row limit"):
+            profile_beam.configure_gluon(model, max_rows=32)
 
 
 def test_public_beam_options_are_scoped_and_preserve_reference(monkeypatch):

@@ -32,7 +32,8 @@ def worker(args):
 
     def selected(path, **kwargs):
         # Force the ablation even when production helpers explicitly request mapping.
-        kwargs["memory_map"] = args.worker_mode == "mapped"
+        if args.worker_mode != "production":
+            kwargs["memory_map"] = args.worker_mode == "mapped"
         return original_checkpoint(path, **kwargs)
     phases = []
     load_calls = []
@@ -140,7 +141,9 @@ def main():
     ap.add_argument("--extra-manifest")
     ap.add_argument("--repeat", type=int, default=5)
     ap.add_argument("--out", type=Path, required=True)
-    ap.add_argument("--worker-mode", choices=("eager", "mapped"), help=argparse.SUPPRESS)
+    ap.add_argument("--worker-mode", choices=("eager", "mapped", "production"), help=argparse.SUPPRESS)
+    ap.add_argument("--verify-production", action="store_true",
+                    help="also validate an instrumented worker using unmodified production load settings")
     ap.add_argument("--instrument", action="store_true", help=argparse.SUPPRESS)
     args = ap.parse_args()
     if not os.environ.get("PBS_JOBID") and os.uname().nodename.startswith("login"):
@@ -152,9 +155,11 @@ def main():
         return
     args.out.mkdir(parents=True, exist_ok=True)
     records, first, detail, expected, hashes = [], [], [], None, None
-    for repeat in range(-1, args.repeat + 1):
-        instrumented = repeat == args.repeat
-        for mode in ("eager", "mapped") if repeat % 2 == 0 else ("mapped", "eager"):
+    for repeat in range(-1, args.repeat + 1 + int(args.verify_production)):
+        instrumented = repeat >= args.repeat
+        modes = (("production",) if repeat > args.repeat else
+                 ("eager", "mapped") if repeat % 2 == 0 else ("mapped", "eager"))
+        for mode in modes:
             cmd = [
                 sys.executable,
                 __file__,

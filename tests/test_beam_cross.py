@@ -64,7 +64,7 @@ gluon_only = pytest.mark.skipif(
 
 
 @gluon_only
-@pytest.mark.parametrize("batch,beam", [(1, 5), (2, 3)])
+@pytest.mark.parametrize("batch,beam", [(1, 5), (2, 3), (2, 5), (3, 5)])
 @pytest.mark.parametrize("prefetch", [False, True])
 @pytest.mark.parametrize("group_queries", [False, True])
 @torch.inference_mode()
@@ -75,13 +75,18 @@ def test_shared_gluon_logits_kv_and_graph_replay(batch, beam, prefetch, group_qu
     model = _model(cfg)
     kernel = megakernel_gluon.GluonDecoder(megakernel.MegaDecoder(model.decoder, dev),
                                          prefetch_attention=prefetch, group_cross_queries=group_queries)
-    rows, c = batch * beam, 64
+    rows, c = batch * beam, 128
     shape = (cfg.dec_layers, rows, cfg.dec_heads, c, cfg.d_model // cfg.dec_heads)
     k, v = [torch.randn(shape, device=dev, dtype=torch.float16) for _ in range(2)]
     cross_shape = (cfg.dec_layers, batch, cfg.dec_heads, cfg.enc_frames, cfg.d_model // cfg.dec_heads)
     ck, cv = [torch.randn(cross_shape, device=dev, dtype=torch.float16) for _ in range(2)]
     tokens = torch.randint(0, cfg.vocab_size, (rows, 1), device=dev)
     offsets = torch.arange(rows, device=dev) * 5
+    reference, reference_kv = model.decoder.step(
+        tokens, offsets, list(k.float()), list(v.float()),
+        list(ck.repeat_interleave(beam, dim=1).float()),
+        list(cv.repeat_interleave(beam, dim=1).float()),
+    )
     outputs, graphs, inputs = [], [], []
     for shared in (False, True):
         cross = (ck, cv) if shared else tuple(t.repeat_interleave(beam, dim=1) for t in (ck, cv))
@@ -93,6 +98,8 @@ def test_shared_gluon_logits_kv_and_graph_replay(batch, beam, prefetch, group_qu
         run()
         torch.cuda.synchronize()
         kernel.check()
+        assert (logits - reference).abs().max() < .02 * reference.abs().max()
+        torch.testing.assert_close(new.float(), reference_kv, rtol=.02, atol=.05)
         graph = torch.cuda.CUDAGraph()
         with torch.cuda.graph(graph):
             run()
