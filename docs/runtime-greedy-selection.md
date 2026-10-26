@@ -22,4 +22,18 @@ against the existing kernel, not newly specified as a numerical policy.
 from model latency. `profile_runtime.py --variants reference graph graph_split` compares selection
 on the same checkpoint/engine with separate captured sessions and alternating warmed trials.
 Compare `graph_split` with `graph` for the incremental selection effect; `reference` is eager frontend.
-No GPU result exists yet for this candidate. No performance or compatibility claim is made.
+Job2771592 passed109 GPU tests and17 runtime cases (English8,Japanese5,102M4), with all
+sampled tokens/timestamp tokens/text/segments matching. Long-form token IDs remain unavailable.
+Against graph/serial selection, timestamped single-request RTFx improved4.18% English,4.47% Japanese
+on1B and10.03% on102M; the110s recording improved6.13%. Timestamped B8 improved0.78% English and
+1.64% Japanese on1B,4.96% on102M. Plain B1 streaming changed-0.60%/-0.31%/-0.86% respectively;
+the extra launch on rows whose prediction was already computed warrants a fused follow-up.
+These are7 alternating repeats on H200, not other-GPU claims. English single-TS p50 went6.328 to6.080ms,
+Japanese7.960 to7.605ms,102M2.515 to2.314ms; long-form74.696 to70.438ms (resident model/audio).
+
+Synthetic event time at R1W1 went44.68 to5.01us (8.91x kernel-only), R1W16 46.30 to9.38us,
+R1W64 49.13 to24.71us, R8W16 47.49 to35.07us. This factor must not be reported as whole-runtime
+speedup. Workspace300bytes atR1W1,4800bytes atR1W16,76800bytes atR16W16. Runtime comparisons keep
+both session pools resident, so their peak VRAM is not standalone deployment memory. Cold captures
+and all samples are retained in `outputs/runtime-2771592`, especially `selection.json` and
+`analysis-graph.json`. The default remains unchanged while fusion/acceptance is verified.
