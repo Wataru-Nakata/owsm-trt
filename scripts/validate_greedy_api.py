@@ -49,11 +49,17 @@ def main():
             ("beam_ts", {"beam_size": 5, "timestamps": True}),
             ("single_ts_again", {"timestamps": True}),
         ):
-            model.ctc_draft = name != "plain_decoder"
+            enabled = name != "plain_decoder"
+            if model.ctc_draft != enabled:
+                # Construction options bind session windows; rebuild only when this test changes them.
+                model._sessions.clear()
+            model.ctc_draft = enabled
             source = waves if name.startswith("stream") else waves[0]
             out = model.transcribe(source, lang=args.lang, **kwargs)
             results[name] = [asdict(x) for x in out] if isinstance(out, list) else asdict(out)
             dispatch[name] = captures(model)
+            if name == "plain_decoder" and model._session(1).windows:
+                raise RuntimeError("plain decoder check accidentally used drafted decoding")
             if name == "single_ts":
                 windows = [v.bufs for sess in model._sessions.values() for v in sess._verify.values()]
                 active = any(w.fuse_accept and w.choose_workspace is not None for w in windows)
