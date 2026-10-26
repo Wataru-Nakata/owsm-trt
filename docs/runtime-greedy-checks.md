@@ -18,3 +18,7 @@ The batch's excess is actual decoder calls minus its last row's first EOS index;
 request with no EOS has no excess claim. GPU state is copied only after each diagnostic request,
 never added to the timed per-token loop. Artificial CPU checks cover prefill EOS, later EOS and
 length-limit accounting. GPU speed and output agreement are unmeasured until the job completes.
+
+The same allocated job optionally collects Ring warp-stall/source counters after the speech runs,
+using the unchanged warmed kernel. This follows2772119's low eligible-warp/issue-rate observations.
+The optional profiler status is recorded separately and cannot be treated as request timing.

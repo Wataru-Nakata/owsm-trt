@@ -84,3 +84,27 @@ timeout 900 "$PY" "$LOCAL/scripts/profile_greedy_checks.py" \
     --model "$LOCAL/owsm_v4_base_102M" --manifest "$LOCAL/manifest.json" \
     --repeat 11 --out "$LOCAL/results/base102m" > "$LOCAL/results/base102m.log" 2>&1
 printf '%s\n' '102M greedy completion interval comparison complete' >> "$OUT/progress.log"
+NCU=/apps/cuda/13.0.1/bin/ncu
+export XDG_DATA_HOME="$LOCAL/nvidia-data"
+if [ -x "$NCU" ]; then
+    set +e
+    timeout 500 "$NCU" --profile-from-start off --clock-control none --cache-control none \
+        --section-folder /apps/cuda/13.0.1/nsight-compute-2025.3.1/sections \
+        --section WarpStateStats --section SourceCounters --section MemoryWorkloadAnalysis_Tables \
+        --kernel-name 'regex:_decoder_kernel_r' --launch-count 2 \
+        --export "$LOCAL/results/ring_stalls" \
+        "$PY" "$LOCAL/scripts/profile_ring_stages.py" --ncu --cases plain verify8_solo \
+        --model "$LOCAL/owsm_v4_medium_1B" --out "$LOCAL/results/ring_stall_ncu" \
+        > "$LOCAL/results/ring_stall_ncu.log" 2>&1
+    NCU_STATUS=$?
+    set -e
+    printf '%s\n' "$NCU_STATUS" > "$LOCAL/results/ring_stall_ncu_exit_status.txt"
+    # Counter access may be restricted. Keep the log/status; never change profiler permissions.
+    if [ "$NCU_STATUS" = 0 ] && [ -f "$LOCAL/results/ring_stalls.ncu-rep" ]; then
+        "$NCU" --import "$LOCAL/results/ring_stalls.ncu-rep" --csv --page raw \
+            > "$LOCAL/results/ring_stalls.csv" 2> "$LOCAL/results/ring_stalls_export.log" || true
+    fi
+else
+    printf '%s\n' 'unavailable: ncu not installed at expected toolkit path' > "$LOCAL/results/ring_stall_ncu.log"
+fi
+printf '%s\n' 'optional Nsight attempt complete' >> "$OUT/progress.log"

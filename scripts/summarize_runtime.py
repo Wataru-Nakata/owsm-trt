@@ -24,6 +24,8 @@ def main():
         if not (root / "summary.json").is_file() or not (root / "environment.json").is_file():
             continue
         summaries = json.loads((root / "summary.json").read_text())
+        if not any(args.reference in entry for entry in summaries.values()):
+            continue  # adjacent synthetic kernel diagnostics have their own summary schema
         result = {
             "environment": json.loads((root / "environment.json").read_text()),
             "frontend": (

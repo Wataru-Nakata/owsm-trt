@@ -60,3 +60,16 @@ against the same engine, not timestamp accuracy against a human reference.
 Artifacts: outputs/runtime-2772077/{analysis-graph_lazy.json,selection.json,tests.log,api1b/public_api.json},
 plus english/japanese/base102m case wall/token/cold/dispatch JSON. The checkpoint and engine hashes,
 software versions and GPU details are in each dataset's environment.json.
+
+
+## Independent replication and public default validation:2772119
+
+Source43183c0 validated the adopted public default against greedy_kernels=False on both1B and102M:
+all10 requests per model matched, including plain/translation, drafted/streaming, beam, long prompt,
+language identification and session reuse. The test asserts the expected plain-selection workspace.
+
+Eleven alternating repeats independently reproduced RTFx gains:1B English8.89/9.05/8.88%,1B Japanese
+9.30/8.92/8.67%,102M English26.41/26.78/26.93% (plain/timestamped plain/translation respectively).
+All returned tokens/segments match. English drafted streaming B1/B8 changed-0.24/-0.39%, and beam
+changed-0.68%; these untouched paths have no performance improvement claim. They retain exact outputs.
+Artifacts: outputs/runtime-2772119 API1B/API102M, analysis-graph_lazy.json and raw dataset records.
