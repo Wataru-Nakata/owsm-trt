@@ -226,7 +226,6 @@ class OWSM:
         self.beam_grouped_cross = beam_grouped_cross
         self._beam_backend = None
         self.frontend_graph = frontend_graph
-        self.frontend_direct = False
         self.greedy_split_choose = False
         self._frontend_replay = None
         self.draft_stats = [0, 0]  # tokens emitted, decoder calls made by drafted decoding
@@ -494,12 +493,6 @@ class OWSM:
         # the padding after them is not transformed (the same frames: the reflection at the end of the
         # shorter input is past them).
         length = min(n, (frames - 1) * self.cfg.hop_length + self.cfg.n_fft // 2 + 1)
-        if (self.frontend_direct and self.frontend_graph and self.use_cuda_graph
-                and self.device.type == "cuda" and len(waves) == 1):
-            if self._frontend_replay is None:
-                from .frontend_graph import FrontendReplay
-                self._frontend_replay = FrontendReplay(self.frontend)
-            return self._frontend_replay.from_wave(waves[0], length, self.device)[:, :frames]
         batch = torch.zeros(len(waves), length, device=self.device)  # pad on the device: copy only the audio
         for row, w in zip(batch, waves):
             w = w[:length]
