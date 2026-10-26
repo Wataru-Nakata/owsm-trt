@@ -72,3 +72,13 @@ python scripts/profile_model_load.py --model /local/owsm_v4_medium_1B \
 The commit enables mapping only in the two selective helpers. Full model loading is unchanged.
 Private mappings preserve source bytes and aliasing; malformed/restricted payload errors still
 propagate. The profiler retains an ordinary-load comparison after adoption.
+
+## Independent replication and production route:2773135
+
+Three additional alternating pairs/model reproduce shorter cached-engine loading:1B7.049→4.297s,
+102M1.870→1.587s median. Each model has11 fresh workers (six timed, two first, three instrumented),
+including a worker with unmodified production settings. All26 API calls per worker match exactly.
+The production worker records `mmap=True`, CPU and `weights_only=True` for both selective helper
+loads. GPU peak is unchanged and CPU peak reductions reproduce the first run. Raw results live
+in `outputs/runtime-2773135/{load1b,load102m}/model_load.json`. This validates the adopted helper
+route; full Torch loading/builds remain unchanged.

@@ -1,0 +1,3535 @@
+{
+  "job": "2773135.pbs1",
+  "source_commit": "9ad235c1ea41f5e49ba8696ece9b81af146b237b",
+  "tests": "======================== 39 passed in 122.12s (0:02:02) ========================",
+  "runs": {
+    "independent_english/b2": {
+      "rtfx_change": 0.05854138879968285,
+      "paired_median": 0.05562656580626091,
+      "paired_min": 0.004228408478024193,
+      "paired_max": 0.06264246645392313,
+      "improved_groups": 37,
+      "groups": 37,
+      "exact_token_groups": 35,
+      "exact_group_paired_median": 0.05562656580626091,
+      "cv_median": {
+        "baseline": 0.0055047601950212475,
+        "on": 0.005281551050747161
+      },
+      "same_decoder_calls": true,
+      "baseline_equal_across_variants": true,
+      "summary": {
+        "baseline": {
+          "transcribe_ms": {
+            "n": 259,
+            "p50": 45.839697995688766,
+            "p95": 95.88830088614486,
+            "min": 23.94342003390193,
+            "max": 159.93371600052342,
+            "stdev": 24.253471086618227
+          },
+          "decode_ms": {
+            "n": 259,
+            "p50": 39.442166045773774,
+            "p95": 89.01115380576812,
+            "min": 18.095748033374548,
+            "max": 151.04225900722668,
+            "stdev": 23.88989426056447
+          },
+          "decoder_calls": {
+            "n": 259,
+            "p50": 28.0,
+            "p95": 65.0,
+            "min": 12,
+            "max": 109,
+            "stdev": 17.4117413346245
+          },
+          "decode_ms_per_selection": {
+            "n": 259,
+            "p50": 1.365902239922434,
+            "p95": 1.3928926743956143,
+            "min": 0.9486700956975775,
+            "max": 1.4793240740645404,
+            "stdev": 0.0686335925664227
+          },
+          "rtfx": 247.5469446267811,
+          "peak_allocated_bytes": 9519648256,
+          "quality": {
+            "metric": "WER",
+            "reference_units": 1150,
+            "errors": 45,
+            "rate": 0.0391304347826087,
+            "annotated_utterances": 73,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          }
+        },
+        "on": {
+          "transcribe_ms": {
+            "n": 259,
+            "p50": 43.239317019470036,
+            "p95": 90.86005957215093,
+            "min": 22.76266401167959,
+            "max": 152.8877429664135,
+            "stdev": 22.906168775844925
+          },
+          "decode_ms": {
+            "n": 259,
+            "p50": 37.40769997239113,
+            "p95": 84.6832676208578,
+            "min": 17.191050050314516,
+            "max": 145.70096199167892,
+            "stdev": 22.890544661215046
+          },
+          "decoder_calls": {
+            "n": 259,
+            "p50": 28.0,
+            "p95": 65.0,
+            "min": 12,
+            "max": 109,
+            "stdev": 17.4117413346245
+          },
+          "decode_ms_per_selection": {
+            "n": 259,
+            "p50": 1.2962754000909626,
+            "p95": 1.3246514389066044,
+            "min": 0.9459512380306565,
+            "max": 1.3678779986758645,
+            "stdev": 0.05782877529219432
+          },
+          "rtfx": 262.03868655835106,
+          "peak_allocated_bytes": 9519405568,
+          "quality": {
+            "metric": "WER",
+            "reference_units": 1150,
+            "errors": 45,
+            "rate": 0.0391304347826087,
+            "annotated_utterances": 73,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 71,
+              "total": 73,
+              "different_ids": [
+                "1272-128104-0004",
+                "1272-141231-0005"
+              ]
+            },
+            "timestamp_tokens": {
+              "equal": 71,
+              "total": 73,
+              "different_ids": [
+                "1272-128104-0004",
+                "1272-141231-0005"
+              ]
+            },
+            "segments": {
+              "equal": 71,
+              "total": 73,
+              "different_ids": [
+                "1272-128104-0004",
+                "1272-141231-0005"
+              ]
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          }
+        }
+      },
+      "dispatch": {
+        "fixed/b1": {
+          "64": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "128": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "256": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "512": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          }
+        },
+        "fixed/b2": {
+          "64": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "128": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "256": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "512": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          }
+        },
+        "baseline/b1": {
+          "64": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "128": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "256": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "512": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          }
+        },
+        "baseline/b2": {
+          "64": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "128": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "256": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "512": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          }
+        }
+      },
+      "cross_kv_bytes": {
+        "fixed/b1": 27574272,
+        "fixed/b2": 55148544,
+        "baseline/b1": 27574272,
+        "baseline/b2": 330891264
+      },
+      "environment": {
+        "git_commit": "9ad235c1ea41f5e49ba8696ece9b81af146b237b",
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106",
+          "numpy": "2.5.4",
+          "sentencepiece": "0.2.2"
+        },
+        "gpu": "NVIDIA H200",
+        "cuda": "13.0",
+        "sm_count": 132,
+        "decoder_options": {
+          "programs": 132,
+          "warps": 4,
+          "prefetch_attention": true,
+          "reference_programs": 132,
+          "reference_prefetch_attention": true,
+          "routing_limits_unchanged": false,
+          "max_rows_override": 16,
+          "group_cross_queries": false,
+          "cross_splits": null
+        }
+      },
+      "timestamp_differences": {
+        "1272-128104-0004": {
+          "reference": [
+            {
+              "start": 0.0,
+              "end": 10.48,
+              "text": "Linnell's pictures are a sort of up guards and atom paintings, and Mason's exquisite idyls are as national as a jingo poem."
+            },
+            {
+              "start": 10.92,
+              "end": 29.4,
+              "text": "Mister Birkett Foster's landscapes smile at one much in the same way that Mister Carker used to flash his teeth, and Mister John Collier gives his sitter a cheerful slap in the back before he says, \"Like a shampooer in a Turkish bath, next man.\""
+            }
+          ],
+          "candidate": [
+            {
+              "start": 0.0,
+              "end": 10.5,
+              "text": "Linnell's pictures are a sort of up guards and atom paintings, and Mason's exquisite idyls are as national as a jingo poem."
+            },
+            {
+              "start": 10.92,
+              "end": 29.4,
+              "text": "Mister Birkett Foster's landscapes smile at one much in the same way that Mister Carker used to flash his teeth, and Mister John Collier gives his sitter a cheerful slap in the back before he says, \"Like a shampooer in a Turkish bath, next man.\""
+            }
+          ]
+        },
+        "1272-141231-0005": {
+          "reference": [
+            {
+              "start": 0.0,
+              "end": 5.8,
+              "text": "A minute is not a very large measure of time, and his body needed every fraction of it."
+            }
+          ],
+          "candidate": [
+            {
+              "start": 0.0,
+              "end": 5.82,
+              "text": "A minute is not a very large measure of time, and his body needed every fraction of it."
+            }
+          ]
+        }
+      }
+    },
+    "independent_english/b3": {
+      "rtfx_change": 0.035532959170733625,
+      "paired_median": 0.041637487714997645,
+      "paired_min": 0.0012308793058231071,
+      "paired_max": 0.0485913738505892,
+      "improved_groups": 25,
+      "groups": 25,
+      "exact_token_groups": 23,
+      "exact_group_paired_median": 0.041637487714997645,
+      "cv_median": {
+        "baseline": 0.0035549695389187667,
+        "on": 0.003111514923102084
+      },
+      "same_decoder_calls": true,
+      "baseline_equal_across_variants": true,
+      "summary": {
+        "baseline": {
+          "transcribe_ms": {
+            "n": 175,
+            "p50": 48.1608469854109,
+            "p95": 100.47892981092446,
+            "min": 29.253432992845774,
+            "max": 171.62690497934818,
+            "stdev": 28.142265382086954
+          },
+          "decode_ms": {
+            "n": 175,
+            "p50": 40.63335701357573,
+            "p95": 92.34931468963623,
+            "min": 19.781578972470015,
+            "max": 156.66959201917052,
+            "stdev": 27.461659970425877
+          },
+          "decoder_calls": {
+            "n": 175,
+            "p50": 28.0,
+            "p95": 65.0,
+            "min": 16,
+            "max": 109,
+            "stdev": 19.160208767129863
+          },
+          "decode_ms_per_selection": {
+            "n": 175,
+            "p50": 1.399656213804713,
+            "p95": 1.420637290893038,
+            "min": 0.9419799510700008,
+            "max": 1.4297342961927986,
+            "stdev": 0.09038311847039869
+          },
+          "rtfx": 323.6445224749192,
+          "peak_allocated_bytes": 10827726848,
+          "quality": {
+            "metric": "WER",
+            "reference_units": 1150,
+            "errors": 45,
+            "rate": 0.0391304347826087,
+            "annotated_utterances": 73,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          }
+        },
+        "on": {
+          "transcribe_ms": {
+            "n": 175,
+            "p50": 46.16616002749652,
+            "p95": 97.11290980922058,
+            "min": 29.591519036330283,
+            "max": 162.56432502996176,
+            "stdev": 27.434704803515544
+          },
+          "decode_ms": {
+            "n": 175,
+            "p50": 39.252351969480515,
+            "p95": 89.6218653768301,
+            "min": 19.94883397128433,
+            "max": 153.61595002468675,
+            "stdev": 26.93242030631086
+          },
+          "decoder_calls": {
+            "n": 175,
+            "p50": 28.0,
+            "p95": 65.0,
+            "min": 16,
+            "max": 109,
+            "stdev": 19.160208767129863
+          },
+          "decode_ms_per_selection": {
+            "n": 175,
+            "p50": 1.3527371814813127,
+            "p95": 1.3839287991525933,
+            "min": 0.9499444748230633,
+            "max": 1.3999410000339638,
+            "stdev": 0.07968891082194228
+          },
+          "rtfx": 335.1445700778521,
+          "peak_allocated_bytes": 10827726336,
+          "quality": {
+            "metric": "WER",
+            "reference_units": 1150,
+            "errors": 45,
+            "rate": 0.0391304347826087,
+            "annotated_utterances": 73,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 71,
+              "total": 73,
+              "different_ids": [
+                "1272-128104-0004",
+                "1272-141231-0005"
+              ]
+            },
+            "timestamp_tokens": {
+              "equal": 71,
+              "total": 73,
+              "different_ids": [
+                "1272-128104-0004",
+                "1272-141231-0005"
+              ]
+            },
+            "segments": {
+              "equal": 71,
+              "total": 73,
+              "different_ids": [
+                "1272-128104-0004",
+                "1272-141231-0005"
+              ]
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          }
+        }
+      },
+      "dispatch": {
+        "fixed/b1": {
+          "64": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "128": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "256": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "512": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          }
+        },
+        "fixed/b3": {
+          "64": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "128": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "256": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "512": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          }
+        },
+        "baseline/b1": {
+          "64": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "128": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "256": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "512": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          }
+        },
+        "baseline/b3": {
+          "64": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "128": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "256": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "512": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          }
+        }
+      },
+      "cross_kv_bytes": {
+        "fixed/b1": 27574272,
+        "fixed/b3": 82722816,
+        "baseline/b1": 27574272,
+        "baseline/b3": 496336896
+      },
+      "environment": {
+        "git_commit": "9ad235c1ea41f5e49ba8696ece9b81af146b237b",
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106",
+          "numpy": "2.5.4",
+          "sentencepiece": "0.2.2"
+        },
+        "gpu": "NVIDIA H200",
+        "cuda": "13.0",
+        "sm_count": 132,
+        "decoder_options": {
+          "programs": 132,
+          "warps": 4,
+          "prefetch_attention": true,
+          "reference_programs": 132,
+          "reference_prefetch_attention": true,
+          "routing_limits_unchanged": false,
+          "max_rows_override": 16,
+          "group_cross_queries": false,
+          "cross_splits": null
+        }
+      },
+      "timestamp_differences": {
+        "1272-128104-0004": {
+          "reference": [
+            {
+              "start": 0.0,
+              "end": 10.48,
+              "text": "Linnell's pictures are a sort of up guards and atom paintings, and Mason's exquisite idyls are as national as a jingo poem."
+            },
+            {
+              "start": 10.92,
+              "end": 29.4,
+              "text": "Mister Birkett Foster's landscapes smile at one much in the same way that Mister Carker used to flash his teeth, and Mister John Collier gives his sitter a cheerful slap in the back before he says, \"Like a shampooer in a Turkish bath, next man.\""
+            }
+          ],
+          "candidate": [
+            {
+              "start": 0.0,
+              "end": 10.5,
+              "text": "Linnell's pictures are a sort of up guards and atom paintings, and Mason's exquisite idyls are as national as a jingo poem."
+            },
+            {
+              "start": 10.92,
+              "end": 29.4,
+              "text": "Mister Birkett Foster's landscapes smile at one much in the same way that Mister Carker used to flash his teeth, and Mister John Collier gives his sitter a cheerful slap in the back before he says, \"Like a shampooer in a Turkish bath, next man.\""
+            }
+          ]
+        },
+        "1272-141231-0005": {
+          "reference": [
+            {
+              "start": 0.0,
+              "end": 5.8,
+              "text": "A minute is not a very large measure of time, and his body needed every fraction of it."
+            }
+          ],
+          "candidate": [
+            {
+              "start": 0.0,
+              "end": 5.82,
+              "text": "A minute is not a very large measure of time, and his body needed every fraction of it."
+            }
+          ]
+        }
+      }
+    },
+    "independent_japanese/b2": {
+      "rtfx_change": 0.05741546258969277,
+      "paired_median": 0.05879516648335026,
+      "paired_min": 0.0504156026981859,
+      "paired_max": 0.060517249163861475,
+      "improved_groups": 6,
+      "groups": 6,
+      "exact_token_groups": 6,
+      "exact_group_paired_median": 0.05879516648335026,
+      "cv_median": {
+        "baseline": 0.002513694730554872,
+        "on": 0.0020968594001108077
+      },
+      "same_decoder_calls": true,
+      "baseline_equal_across_variants": true,
+      "summary": {
+        "baseline": {
+          "transcribe_ms": {
+            "n": 42,
+            "p50": 70.41149600991048,
+            "p95": 118.61972256447189,
+            "min": 45.28825299348682,
+            "max": 119.06868498772383,
+            "stdev": 25.716869316556483
+          },
+          "decode_ms": {
+            "n": 42,
+            "p50": 63.39953851420432,
+            "p95": 111.06013537209947,
+            "min": 39.171514043118805,
+            "max": 111.18783999700099,
+            "stdev": 25.252983881698693
+          },
+          "decoder_calls": {
+            "n": 42,
+            "p50": 46.0,
+            "p95": 81.0,
+            "min": 28,
+            "max": 81,
+            "stdev": 18.676336780952404
+          },
+          "decode_ms_per_selection": {
+            "n": 42,
+            "p50": 1.3511572310923423,
+            "p95": 1.356847069310506,
+            "min": 1.3444327020184381,
+            "max": 1.3585564828927403,
+            "stdev": 0.004015216577728015
+          },
+          "rtfx": 354.38608174393505,
+          "peak_allocated_bytes": 8293171200,
+          "quality": {
+            "metric": "CER",
+            "reference_units": 592,
+            "errors": 26,
+            "rate": 0.04391891891891892,
+            "annotated_utterances": 12,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            }
+          }
+        },
+        "on": {
+          "transcribe_ms": {
+            "n": 42,
+            "p50": 66.21089397231117,
+            "p95": 112.98213239060715,
+            "min": 42.69872501026839,
+            "max": 113.11595496954396,
+            "stdev": 24.544094973812165
+          },
+          "decode_ms": {
+            "n": 42,
+            "p50": 59.964808489894494,
+            "p95": 105.95659400278237,
+            "min": 37.085546005982906,
+            "max": 106.26365896314383,
+            "stdev": 24.133136168902354
+          },
+          "decoder_calls": {
+            "n": 42,
+            "p50": 46.0,
+            "p95": 81.0,
+            "min": 28,
+            "max": 81,
+            "stdev": 18.676336780952404
+          },
+          "decode_ms_per_selection": {
+            "n": 42,
+            "p50": 1.2776742354783721,
+            "p95": 1.292153585399785,
+            "min": 1.2708092299213662,
+            "max": 1.2958982800383394,
+            "stdev": 0.006548653456145415
+          },
+          "rtfx": 374.73332256261176,
+          "peak_allocated_bytes": 8293171200,
+          "quality": {
+            "metric": "CER",
+            "reference_units": 592,
+            "errors": 26,
+            "rate": 0.04391891891891892,
+            "annotated_utterances": 12,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            }
+          }
+        }
+      },
+      "dispatch": {
+        "fixed/b2": {
+          "64": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "128": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "256": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "512": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          }
+        },
+        "baseline/b2": {
+          "64": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "128": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "256": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "512": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          }
+        }
+      },
+      "cross_kv_bytes": {
+        "fixed/b2": 55148544,
+        "baseline/b2": 330891264
+      },
+      "environment": {
+        "git_commit": "9ad235c1ea41f5e49ba8696ece9b81af146b237b",
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106",
+          "numpy": "2.5.4",
+          "sentencepiece": "0.2.2"
+        },
+        "gpu": "NVIDIA H200",
+        "cuda": "13.0",
+        "sm_count": 132,
+        "decoder_options": {
+          "programs": 132,
+          "warps": 4,
+          "prefetch_attention": true,
+          "reference_programs": 132,
+          "reference_prefetch_attention": true,
+          "routing_limits_unchanged": false,
+          "max_rows_override": 16,
+          "group_cross_queries": false,
+          "cross_splits": null
+        }
+      },
+      "timestamp_differences": {}
+    },
+    "independent_japanese/b3": {
+      "rtfx_change": 0.036572433083319256,
+      "paired_median": 0.040232585784641506,
+      "paired_min": 0.02748263328296585,
+      "paired_max": 0.04298794844941045,
+      "improved_groups": 4,
+      "groups": 4,
+      "exact_token_groups": 4,
+      "exact_group_paired_median": 0.040232585784641506,
+      "cv_median": {
+        "baseline": 0.003657766214739192,
+        "on": 0.0012581874496050784
+      },
+      "same_decoder_calls": true,
+      "baseline_equal_across_variants": true,
+      "summary": {
+        "baseline": {
+          "transcribe_ms": {
+            "n": 28,
+            "p50": 74.26666747778654,
+            "p95": 125.17248468648177,
+            "min": 53.69846400571987,
+            "max": 125.24821300758049,
+            "stdev": 28.204951733710377
+          },
+          "decode_ms": {
+            "n": 28,
+            "p50": 65.54941349895671,
+            "p95": 115.61956162622664,
+            "min": 45.93755101086572,
+            "max": 115.83935102680698,
+            "stdev": 27.52750629444376
+          },
+          "decoder_calls": {
+            "n": 28,
+            "p50": 46.0,
+            "p95": 81.0,
+            "min": 32,
+            "max": 81,
+            "stdev": 19.434183800715687
+          },
+          "decode_ms_per_selection": {
+            "n": 28,
+            "p50": 1.395426367480654,
+            "p95": 1.4099946539783736,
+            "min": 1.3911535967500848,
+            "max": 1.4126750125220364,
+            "stdev": 0.006878255861515259
+          },
+          "rtfx": 481.5573811254451,
+          "peak_allocated_bytes": 9602349568,
+          "quality": {
+            "metric": "CER",
+            "reference_units": 592,
+            "errors": 26,
+            "rate": 0.04391891891891892,
+            "annotated_utterances": 12,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            }
+          }
+        },
+        "on": {
+          "transcribe_ms": {
+            "n": 28,
+            "p50": 71.12209298065864,
+            "p95": 121.55247917107772,
+            "min": 51.550726988352835,
+            "max": 121.73790100496262,
+            "stdev": 27.68709572158505
+          },
+          "decode_ms": {
+            "n": 28,
+            "p50": 63.41232900740579,
+            "p95": 112.88075016636867,
+            "min": 44.443225022405386,
+            "max": 112.99325700383633,
+            "stdev": 27.048253355820986
+          },
+          "decoder_calls": {
+            "n": 28,
+            "p50": 46.0,
+            "p95": 81.0,
+            "min": 32,
+            "max": 81,
+            "stdev": 19.434183800715687
+          },
+          "decode_ms_per_selection": {
+            "n": 28,
+            "p50": 1.348892747156435,
+            "p95": 1.3765945142240084,
+            "min": 1.3442064330258683,
+            "max": 1.3779665488272723,
+            "stdev": 0.011833943976812247
+          },
+          "rtfx": 499.16910622243387,
+          "peak_allocated_bytes": 9602349568,
+          "quality": {
+            "metric": "CER",
+            "reference_units": 592,
+            "errors": 26,
+            "rate": 0.04391891891891892,
+            "annotated_utterances": 12,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            }
+          }
+        }
+      },
+      "dispatch": {
+        "fixed/b3": {
+          "64": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "128": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "256": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "512": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          }
+        },
+        "baseline/b3": {
+          "64": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "128": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "256": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "512": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          }
+        }
+      },
+      "cross_kv_bytes": {
+        "fixed/b3": 82722816,
+        "baseline/b3": 496336896
+      },
+      "environment": {
+        "git_commit": "9ad235c1ea41f5e49ba8696ece9b81af146b237b",
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106",
+          "numpy": "2.5.4",
+          "sentencepiece": "0.2.2"
+        },
+        "gpu": "NVIDIA H200",
+        "cuda": "13.0",
+        "sm_count": 132,
+        "decoder_options": {
+          "programs": 132,
+          "warps": 4,
+          "prefetch_attention": true,
+          "reference_programs": 132,
+          "reference_prefetch_attention": true,
+          "routing_limits_unchanged": false,
+          "max_rows_override": 16,
+          "group_cross_queries": false,
+          "cross_splits": null
+        }
+      },
+      "timestamp_differences": {}
+    },
+    "grouped4_english/b2": {
+      "rtfx_change": 0.19163641261921938,
+      "paired_median": 0.19265105163921858,
+      "paired_min": 0.015827363290593865,
+      "paired_max": 0.2061044213615406,
+      "improved_groups": 37,
+      "groups": 37,
+      "exact_token_groups": 35,
+      "exact_group_paired_median": 0.19289172729916815,
+      "cv_median": {
+        "baseline": 0.004015954880753738,
+        "on": 0.0024789229905989754
+      },
+      "same_decoder_calls": true,
+      "baseline_equal_across_variants": true,
+      "summary": {
+        "baseline": {
+          "transcribe_ms": {
+            "n": 259,
+            "p50": 45.37735099438578,
+            "p95": 95.427654980449,
+            "min": 23.816638975404203,
+            "max": 158.74018799513578,
+            "stdev": 23.877472085053995
+          },
+          "decode_ms": {
+            "n": 259,
+            "p50": 39.21554400585592,
+            "p95": 88.94030009978451,
+            "min": 18.03592301439494,
+            "max": 150.94606095226482,
+            "stdev": 23.78133834262464
+          },
+          "decoder_calls": {
+            "n": 259,
+            "p50": 28.0,
+            "p95": 65.0,
+            "min": 12,
+            "max": 109,
+            "stdev": 17.4117413346245
+          },
+          "decode_ms_per_selection": {
+            "n": 259,
+            "p50": 1.3564825593493879,
+            "p95": 1.3797391049990415,
+            "min": 0.9443320006886053,
+            "max": 1.4467549223739367,
+            "stdev": 0.0674442181627265
+          },
+          "rtfx": 250.7069550532196,
+          "peak_allocated_bytes": 9520406016,
+          "quality": {
+            "metric": "WER",
+            "reference_units": 1150,
+            "errors": 45,
+            "rate": 0.0391304347826087,
+            "annotated_utterances": 73,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          }
+        },
+        "on": {
+          "transcribe_ms": {
+            "n": 259,
+            "p50": 38.04158099228516,
+            "p95": 79.40336210886016,
+            "min": 20.477209996897727,
+            "max": 132.83277302980423,
+            "stdev": 19.768323594063865
+          },
+          "decode_ms": {
+            "n": 259,
+            "p50": 32.330408052075654,
+            "p95": 73.24265810311772,
+            "min": 15.009624999947846,
+            "max": 125.57971297064796,
+            "stdev": 19.66062538631622
+          },
+          "decoder_calls": {
+            "n": 259,
+            "p50": 28.0,
+            "p95": 65.0,
+            "min": 12,
+            "max": 109,
+            "stdev": 17.4117413346245
+          },
+          "decode_ms_per_selection": {
+            "n": 259,
+            "p50": 1.1179554135667096,
+            "p95": 1.1441736533443498,
+            "min": 0.9063030953430349,
+            "max": 1.1701776126686196,
+            "stdev": 0.036146982817434975
+          },
+          "rtfx": 298.7515365383065,
+          "peak_allocated_bytes": 9520163328,
+          "quality": {
+            "metric": "WER",
+            "reference_units": 1150,
+            "errors": 45,
+            "rate": 0.0391304347826087,
+            "annotated_utterances": 73,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 71,
+              "total": 73,
+              "different_ids": [
+                "1272-128104-0004",
+                "1272-141231-0005"
+              ]
+            },
+            "timestamp_tokens": {
+              "equal": 71,
+              "total": 73,
+              "different_ids": [
+                "1272-128104-0004",
+                "1272-141231-0005"
+              ]
+            },
+            "segments": {
+              "equal": 71,
+              "total": 73,
+              "different_ids": [
+                "1272-128104-0004",
+                "1272-141231-0005"
+              ]
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          }
+        }
+      },
+      "dispatch": {
+        "fixed/b1": {
+          "64": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "128": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "256": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "512": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          }
+        },
+        "fixed/b2": {
+          "64": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "128": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "256": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "512": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          }
+        },
+        "baseline/b1": {
+          "64": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "128": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "256": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "512": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          }
+        },
+        "baseline/b2": {
+          "64": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "128": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "256": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "512": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          }
+        }
+      },
+      "cross_kv_bytes": {
+        "fixed/b1": 27574272,
+        "fixed/b2": 55148544,
+        "baseline/b1": 27574272,
+        "baseline/b2": 330891264
+      },
+      "environment": {
+        "git_commit": "9ad235c1ea41f5e49ba8696ece9b81af146b237b",
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106",
+          "numpy": "2.5.4",
+          "sentencepiece": "0.2.2"
+        },
+        "gpu": "NVIDIA H200",
+        "cuda": "13.0",
+        "sm_count": 132,
+        "decoder_options": {
+          "programs": 132,
+          "warps": 4,
+          "prefetch_attention": true,
+          "reference_programs": 132,
+          "reference_prefetch_attention": true,
+          "routing_limits_unchanged": false,
+          "max_rows_override": 16,
+          "group_cross_queries": true,
+          "cross_splits": 4
+        }
+      },
+      "timestamp_differences": {
+        "1272-128104-0004": {
+          "reference": [
+            {
+              "start": 0.0,
+              "end": 10.48,
+              "text": "Linnell's pictures are a sort of up guards and atom paintings, and Mason's exquisite idyls are as national as a jingo poem."
+            },
+            {
+              "start": 10.92,
+              "end": 29.4,
+              "text": "Mister Birkett Foster's landscapes smile at one much in the same way that Mister Carker used to flash his teeth, and Mister John Collier gives his sitter a cheerful slap in the back before he says, \"Like a shampooer in a Turkish bath, next man.\""
+            }
+          ],
+          "candidate": [
+            {
+              "start": 0.0,
+              "end": 10.5,
+              "text": "Linnell's pictures are a sort of up guards and atom paintings, and Mason's exquisite idyls are as national as a jingo poem."
+            },
+            {
+              "start": 10.92,
+              "end": 29.4,
+              "text": "Mister Birkett Foster's landscapes smile at one much in the same way that Mister Carker used to flash his teeth, and Mister John Collier gives his sitter a cheerful slap in the back before he says, \"Like a shampooer in a Turkish bath, next man.\""
+            }
+          ]
+        },
+        "1272-141231-0005": {
+          "reference": [
+            {
+              "start": 0.0,
+              "end": 5.8,
+              "text": "A minute is not a very large measure of time, and his body needed every fraction of it."
+            }
+          ],
+          "candidate": [
+            {
+              "start": 0.0,
+              "end": 5.82,
+              "text": "A minute is not a very large measure of time, and his body needed every fraction of it."
+            }
+          ]
+        }
+      }
+    },
+    "grouped4_english/b3": {
+      "rtfx_change": 0.10907000561134117,
+      "paired_median": 0.11493562106463373,
+      "paired_min": 0.03140506360375883,
+      "paired_max": 0.1176528452195249,
+      "improved_groups": 25,
+      "groups": 25,
+      "exact_token_groups": 23,
+      "exact_group_paired_median": 0.11542441223272215,
+      "cv_median": {
+        "baseline": 0.0013704861062554558,
+        "on": 0.0010601547791285028
+      },
+      "same_decoder_calls": true,
+      "baseline_equal_across_variants": true,
+      "summary": {
+        "baseline": {
+          "transcribe_ms": {
+            "n": 175,
+            "p50": 48.0523890000768,
+            "p95": 100.2795736596454,
+            "min": 31.05982596753165,
+            "max": 166.56828101258725,
+            "stdev": 27.890380900917666
+          },
+          "decode_ms": {
+            "n": 175,
+            "p50": 40.55814602179453,
+            "p95": 92.29358570300974,
+            "min": 19.873438985086977,
+            "max": 156.33705299114808,
+            "stdev": 27.42698121828665
+          },
+          "decoder_calls": {
+            "n": 175,
+            "p50": 28.0,
+            "p95": 65.0,
+            "min": 16,
+            "max": 109,
+            "stdev": 19.160208767129863
+          },
+          "decode_ms_per_selection": {
+            "n": 175,
+            "p50": 1.3975766547634427,
+            "p95": 1.4177787579897354,
+            "min": 0.9463542373850942,
+            "max": 1.4225679436041152,
+            "stdev": 0.08942105841969483
+          },
+          "rtfx": 324.0893491188235,
+          "peak_allocated_bytes": 10828738560,
+          "quality": {
+            "metric": "WER",
+            "reference_units": 1150,
+            "errors": 45,
+            "rate": 0.0391304347826087,
+            "annotated_utterances": 73,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          }
+        },
+        "on": {
+          "transcribe_ms": {
+            "n": 175,
+            "p50": 43.03646401967853,
+            "p95": 89.99588862643577,
+            "min": 27.934791054576635,
+            "max": 150.73796000797302,
+            "stdev": 25.289100602556044
+          },
+          "decode_ms": {
+            "n": 175,
+            "p50": 36.21873800875619,
+            "p95": 82.52864690730348,
+            "min": 19.177186011802405,
+            "max": 142.01479603070766,
+            "stdev": 24.811928529002476
+          },
+          "decoder_calls": {
+            "n": 175,
+            "p50": 28.0,
+            "p95": 65.0,
+            "min": 16,
+            "max": 109,
+            "stdev": 19.160208767129863
+          },
+          "decode_ms_per_selection": {
+            "n": 175,
+            "p50": 1.2481526897192514,
+            "p95": 1.2709878782248674,
+            "min": 0.9131993338953526,
+            "max": 1.2910436002791605,
+            "stdev": 0.0662773950498285
+          },
+          "rtfx": 359.4377762457895,
+          "peak_allocated_bytes": 10828738048,
+          "quality": {
+            "metric": "WER",
+            "reference_units": 1150,
+            "errors": 45,
+            "rate": 0.0391304347826087,
+            "annotated_utterances": 73,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 71,
+              "total": 73,
+              "different_ids": [
+                "1272-128104-0004",
+                "1272-141231-0005"
+              ]
+            },
+            "timestamp_tokens": {
+              "equal": 71,
+              "total": 73,
+              "different_ids": [
+                "1272-128104-0004",
+                "1272-141231-0005"
+              ]
+            },
+            "segments": {
+              "equal": 71,
+              "total": 73,
+              "different_ids": [
+                "1272-128104-0004",
+                "1272-141231-0005"
+              ]
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          }
+        }
+      },
+      "dispatch": {
+        "fixed/b1": {
+          "64": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "128": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "256": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "512": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          }
+        },
+        "fixed/b3": {
+          "64": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "128": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "256": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "512": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          }
+        },
+        "baseline/b1": {
+          "64": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "128": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "256": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "512": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          }
+        },
+        "baseline/b3": {
+          "64": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "128": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "256": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "512": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          }
+        }
+      },
+      "cross_kv_bytes": {
+        "fixed/b1": 27574272,
+        "fixed/b3": 82722816,
+        "baseline/b1": 27574272,
+        "baseline/b3": 496336896
+      },
+      "environment": {
+        "git_commit": "9ad235c1ea41f5e49ba8696ece9b81af146b237b",
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106",
+          "numpy": "2.5.4",
+          "sentencepiece": "0.2.2"
+        },
+        "gpu": "NVIDIA H200",
+        "cuda": "13.0",
+        "sm_count": 132,
+        "decoder_options": {
+          "programs": 132,
+          "warps": 4,
+          "prefetch_attention": true,
+          "reference_programs": 132,
+          "reference_prefetch_attention": true,
+          "routing_limits_unchanged": false,
+          "max_rows_override": 16,
+          "group_cross_queries": true,
+          "cross_splits": 4
+        }
+      },
+      "timestamp_differences": {
+        "1272-128104-0004": {
+          "reference": [
+            {
+              "start": 0.0,
+              "end": 10.48,
+              "text": "Linnell's pictures are a sort of up guards and atom paintings, and Mason's exquisite idyls are as national as a jingo poem."
+            },
+            {
+              "start": 10.92,
+              "end": 29.4,
+              "text": "Mister Birkett Foster's landscapes smile at one much in the same way that Mister Carker used to flash his teeth, and Mister John Collier gives his sitter a cheerful slap in the back before he says, \"Like a shampooer in a Turkish bath, next man.\""
+            }
+          ],
+          "candidate": [
+            {
+              "start": 0.0,
+              "end": 10.5,
+              "text": "Linnell's pictures are a sort of up guards and atom paintings, and Mason's exquisite idyls are as national as a jingo poem."
+            },
+            {
+              "start": 10.92,
+              "end": 29.4,
+              "text": "Mister Birkett Foster's landscapes smile at one much in the same way that Mister Carker used to flash his teeth, and Mister John Collier gives his sitter a cheerful slap in the back before he says, \"Like a shampooer in a Turkish bath, next man.\""
+            }
+          ]
+        },
+        "1272-141231-0005": {
+          "reference": [
+            {
+              "start": 0.0,
+              "end": 5.8,
+              "text": "A minute is not a very large measure of time, and his body needed every fraction of it."
+            }
+          ],
+          "candidate": [
+            {
+              "start": 0.0,
+              "end": 5.82,
+              "text": "A minute is not a very large measure of time, and his body needed every fraction of it."
+            }
+          ]
+        }
+      }
+    },
+    "grouped4_japanese/b2": {
+      "rtfx_change": 0.19985797515765036,
+      "paired_median": 0.19874376073513045,
+      "paired_min": 0.19120522580097155,
+      "paired_max": 0.2067721074311324,
+      "improved_groups": 6,
+      "groups": 6,
+      "exact_token_groups": 6,
+      "exact_group_paired_median": 0.19874376073513045,
+      "cv_median": {
+        "baseline": 0.0038237353374104763,
+        "on": 0.002664664627138062
+      },
+      "same_decoder_calls": true,
+      "baseline_equal_across_variants": true,
+      "summary": {
+        "baseline": {
+          "transcribe_ms": {
+            "n": 42,
+            "p50": 70.49244150402956,
+            "p95": 118.59895112283994,
+            "min": 45.26482697110623,
+            "max": 118.84034099057317,
+            "stdev": 25.68257556794331
+          },
+          "decode_ms": {
+            "n": 42,
+            "p50": 63.397687510587275,
+            "p95": 111.24611095583532,
+            "min": 39.153693011030555,
+            "max": 111.56120500527322,
+            "stdev": 25.28366932694405
+          },
+          "decoder_calls": {
+            "n": 42,
+            "p50": 46.0,
+            "p95": 81.0,
+            "min": 28,
+            "max": 81,
+            "stdev": 18.676336780952404
+          },
+          "decode_ms_per_selection": {
+            "n": 42,
+            "p50": 1.3502941894393157,
+            "p95": 1.3604162508455406,
+            "min": 1.34218531206525,
+            "max": 1.362925551928066,
+            "stdev": 0.00545680901231267
+          },
+          "rtfx": 354.646385675293,
+          "peak_allocated_bytes": 8293677056,
+          "quality": {
+            "metric": "CER",
+            "reference_units": 592,
+            "errors": 26,
+            "rate": 0.04391891891891892,
+            "annotated_utterances": 12,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            }
+          }
+        },
+        "on": {
+          "transcribe_ms": {
+            "n": 42,
+            "p50": 58.36075101979077,
+            "p95": 99.11912117677275,
+            "min": 37.94876195024699,
+            "max": 99.40037998603657,
+            "stdev": 21.381628215725534
+          },
+          "decode_ms": {
+            "n": 42,
+            "p50": 52.033371495781466,
+            "p95": 92.16484437929466,
+            "min": 32.18156204093248,
+            "max": 92.25324500584975,
+            "stdev": 20.96546241035922
+          },
+          "decoder_calls": {
+            "n": 42,
+            "p50": 46.0,
+            "p95": 81.0,
+            "min": 28,
+            "max": 81,
+            "stdev": 18.676336780952404
+          },
+          "decode_ms_per_selection": {
+            "n": 42,
+            "p50": 1.1102533813487143,
+            "p95": 1.1239615168206667,
+            "min": 1.101968000160955,
+            "max": 1.1250395732420702,
+            "stdev": 0.006807592747521958
+          },
+          "rtfx": 425.5252942133362,
+          "peak_allocated_bytes": 8293677056,
+          "quality": {
+            "metric": "CER",
+            "reference_units": 592,
+            "errors": 26,
+            "rate": 0.04391891891891892,
+            "annotated_utterances": 12,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            }
+          }
+        }
+      },
+      "dispatch": {
+        "fixed/b2": {
+          "64": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "128": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "256": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "512": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          }
+        },
+        "baseline/b2": {
+          "64": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "128": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "256": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "512": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          }
+        }
+      },
+      "cross_kv_bytes": {
+        "fixed/b2": 55148544,
+        "baseline/b2": 330891264
+      },
+      "environment": {
+        "git_commit": "9ad235c1ea41f5e49ba8696ece9b81af146b237b",
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106",
+          "numpy": "2.5.4",
+          "sentencepiece": "0.2.2"
+        },
+        "gpu": "NVIDIA H200",
+        "cuda": "13.0",
+        "sm_count": 132,
+        "decoder_options": {
+          "programs": 132,
+          "warps": 4,
+          "prefetch_attention": true,
+          "reference_programs": 132,
+          "reference_prefetch_attention": true,
+          "routing_limits_unchanged": false,
+          "max_rows_override": 16,
+          "group_cross_queries": true,
+          "cross_splits": 4
+        }
+      },
+      "timestamp_differences": {}
+    },
+    "grouped4_japanese/b3": {
+      "rtfx_change": 0.11156548714692449,
+      "paired_median": 0.11325104039334477,
+      "paired_min": 0.10515198502783485,
+      "paired_max": 0.11476131453523886,
+      "improved_groups": 4,
+      "groups": 4,
+      "exact_token_groups": 4,
+      "exact_group_paired_median": 0.11325104039334477,
+      "cv_median": {
+        "baseline": 0.004623961769918338,
+        "on": 0.002860593709743223
+      },
+      "same_decoder_calls": true,
+      "baseline_equal_across_variants": true,
+      "summary": {
+        "baseline": {
+          "transcribe_ms": {
+            "n": 28,
+            "p50": 75.17404248937964,
+            "p95": 125.73365349962842,
+            "min": 54.39267202746123,
+            "max": 126.04116398142651,
+            "stdev": 28.208616871454378
+          },
+          "decode_ms": {
+            "n": 28,
+            "p50": 65.99865350290202,
+            "p95": 116.24155974714085,
+            "min": 46.30284500308335,
+            "max": 116.51548300869763,
+            "stdev": 27.52618542370925
+          },
+          "decoder_calls": {
+            "n": 28,
+            "p50": 46.0,
+            "p95": 81.0,
+            "min": 32,
+            "max": 81,
+            "stdev": 19.434183800715687
+          },
+          "decode_ms_per_selection": {
+            "n": 28,
+            "p50": 1.4118959792470782,
+            "p95": 1.4219307767559244,
+            "min": 1.3969408944575934,
+            "max": 1.425480029094174,
+            "stdev": 0.007212497013764472
+          },
+          "rtfx": 477.41962167963754,
+          "peak_allocated_bytes": 9603109376,
+          "quality": {
+            "metric": "CER",
+            "reference_units": 592,
+            "errors": 26,
+            "rate": 0.04391891891891892,
+            "annotated_utterances": 12,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            }
+          }
+        },
+        "on": {
+          "transcribe_ms": {
+            "n": 28,
+            "p50": 67.0456225052476,
+            "p95": 113.80483785178512,
+            "min": 48.763445985969156,
+            "max": 114.11158804548904,
+            "stdev": 25.696699504070516
+          },
+          "decode_ms": {
+            "n": 28,
+            "p50": 59.03523453162052,
+            "p95": 104.73961555981077,
+            "min": 41.385936026927084,
+            "max": 104.94797403225675,
+            "stdev": 24.99757009309002
+          },
+          "decoder_calls": {
+            "n": 28,
+            "p50": 46.0,
+            "p95": 81.0,
+            "min": 32,
+            "max": 81,
+            "stdev": 19.434183800715687
+          },
+          "decode_ms_per_selection": {
+            "n": 28,
+            "p50": 1.2585505966781367,
+            "p95": 1.277312384875741,
+            "min": 1.2489403689917373,
+            "max": 1.2798533418567897,
+            "stdev": 0.010399943660522387
+          },
+          "rtfx": 530.6831743458267,
+          "peak_allocated_bytes": 9603109376,
+          "quality": {
+            "metric": "CER",
+            "reference_units": 592,
+            "errors": 26,
+            "rate": 0.04391891891891892,
+            "annotated_utterances": 12,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            }
+          }
+        }
+      },
+      "dispatch": {
+        "fixed/b3": {
+          "64": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "128": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "256": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "512": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          }
+        },
+        "baseline/b3": {
+          "64": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "128": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "256": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "512": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          }
+        }
+      },
+      "cross_kv_bytes": {
+        "fixed/b3": 82722816,
+        "baseline/b3": 496336896
+      },
+      "environment": {
+        "git_commit": "9ad235c1ea41f5e49ba8696ece9b81af146b237b",
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106",
+          "numpy": "2.5.4",
+          "sentencepiece": "0.2.2"
+        },
+        "gpu": "NVIDIA H200",
+        "cuda": "13.0",
+        "sm_count": 132,
+        "decoder_options": {
+          "programs": 132,
+          "warps": 4,
+          "prefetch_attention": true,
+          "reference_programs": 132,
+          "reference_prefetch_attention": true,
+          "routing_limits_unchanged": false,
+          "max_rows_override": 16,
+          "group_cross_queries": true,
+          "cross_splits": 4
+        }
+      },
+      "timestamp_differences": {}
+    },
+    "grouped8_english/b2": {
+      "rtfx_change": 0.1356439817992081,
+      "paired_median": 0.13594161627839152,
+      "paired_min": 0.039010075214649165,
+      "paired_max": 0.14633051387557772,
+      "improved_groups": 37,
+      "groups": 37,
+      "exact_token_groups": 35,
+      "exact_group_paired_median": 0.13722229706026323,
+      "cv_median": {
+        "baseline": 0.006100572830677922,
+        "on": 0.007252942928364771
+      },
+      "same_decoder_calls": true,
+      "baseline_equal_across_variants": true,
+      "summary": {
+        "baseline": {
+          "transcribe_ms": {
+            "n": 259,
+            "p50": 45.55371304741129,
+            "p95": 95.62303209677339,
+            "min": 23.901280015707016,
+            "max": 159.7506669932045,
+            "stdev": 23.91541199873482
+          },
+          "decode_ms": {
+            "n": 259,
+            "p50": 39.229062967933714,
+            "p95": 89.04205710277893,
+            "min": 18.05687102023512,
+            "max": 150.6364700035192,
+            "stdev": 23.79647639030198
+          },
+          "decoder_calls": {
+            "n": 259,
+            "p50": 28.0,
+            "p95": 65.0,
+            "min": 12,
+            "max": 109,
+            "stdev": 17.4117413346245
+          },
+          "decode_ms_per_selection": {
+            "n": 259,
+            "p50": 1.358498676013,
+            "p95": 1.387970998111008,
+            "min": 0.9438789039406748,
+            "max": 1.4655217707443695,
+            "stdev": 0.06751009944598987
+          },
+          "rtfx": 250.13201047944995,
+          "peak_allocated_bytes": 9521419776,
+          "quality": {
+            "metric": "WER",
+            "reference_units": 1150,
+            "errors": 45,
+            "rate": 0.0391304347826087,
+            "annotated_utterances": 73,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          }
+        },
+        "on": {
+          "transcribe_ms": {
+            "n": 259,
+            "p50": 39.957148022949696,
+            "p95": 83.54363446123898,
+            "min": 21.30141801899299,
+            "max": 140.29595500323921,
+            "stdev": 20.96427420422845
+          },
+          "decode_ms": {
+            "n": 259,
+            "p50": 34.098485950380564,
+            "p95": 77.35899699036963,
+            "min": 15.779053035657853,
+            "max": 133.0256800283678,
+            "stdev": 20.883488626014806
+          },
+          "decoder_calls": {
+            "n": 259,
+            "p50": 28.0,
+            "p95": 65.0,
+            "min": 12,
+            "max": 109,
+            "stdev": 17.4117413346245
+          },
+          "decode_ms_per_selection": {
+            "n": 259,
+            "p50": 1.1822115210816264,
+            "p95": 1.2117654103648794,
+            "min": 0.8703760935791901,
+            "max": 1.2686320786507657,
+            "stdev": 0.05185709775249858
+          },
+          "rtfx": 284.0609123563238,
+          "peak_allocated_bytes": 9521177088,
+          "quality": {
+            "metric": "WER",
+            "reference_units": 1150,
+            "errors": 45,
+            "rate": 0.0391304347826087,
+            "annotated_utterances": 73,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 71,
+              "total": 73,
+              "different_ids": [
+                "1272-128104-0004",
+                "1272-141231-0005"
+              ]
+            },
+            "timestamp_tokens": {
+              "equal": 71,
+              "total": 73,
+              "different_ids": [
+                "1272-128104-0004",
+                "1272-141231-0005"
+              ]
+            },
+            "segments": {
+              "equal": 71,
+              "total": 73,
+              "different_ids": [
+                "1272-128104-0004",
+                "1272-141231-0005"
+              ]
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          }
+        }
+      },
+      "dispatch": {
+        "fixed/b1": {
+          "64": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "128": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "256": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "512": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          }
+        },
+        "fixed/b2": {
+          "64": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "128": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "256": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "512": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          }
+        },
+        "baseline/b1": {
+          "64": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "128": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "256": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "512": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          }
+        },
+        "baseline/b2": {
+          "64": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "128": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "256": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "512": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          }
+        }
+      },
+      "cross_kv_bytes": {
+        "fixed/b1": 27574272,
+        "fixed/b2": 55148544,
+        "baseline/b1": 27574272,
+        "baseline/b2": 330891264
+      },
+      "environment": {
+        "git_commit": "9ad235c1ea41f5e49ba8696ece9b81af146b237b",
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106",
+          "numpy": "2.5.4",
+          "sentencepiece": "0.2.2"
+        },
+        "gpu": "NVIDIA H200",
+        "cuda": "13.0",
+        "sm_count": 132,
+        "decoder_options": {
+          "programs": 132,
+          "warps": 4,
+          "prefetch_attention": true,
+          "reference_programs": 132,
+          "reference_prefetch_attention": true,
+          "routing_limits_unchanged": false,
+          "max_rows_override": 16,
+          "group_cross_queries": true,
+          "cross_splits": 8
+        }
+      },
+      "timestamp_differences": {
+        "1272-128104-0004": {
+          "reference": [
+            {
+              "start": 0.0,
+              "end": 10.48,
+              "text": "Linnell's pictures are a sort of up guards and atom paintings, and Mason's exquisite idyls are as national as a jingo poem."
+            },
+            {
+              "start": 10.92,
+              "end": 29.4,
+              "text": "Mister Birkett Foster's landscapes smile at one much in the same way that Mister Carker used to flash his teeth, and Mister John Collier gives his sitter a cheerful slap in the back before he says, \"Like a shampooer in a Turkish bath, next man.\""
+            }
+          ],
+          "candidate": [
+            {
+              "start": 0.0,
+              "end": 10.5,
+              "text": "Linnell's pictures are a sort of up guards and atom paintings, and Mason's exquisite idyls are as national as a jingo poem."
+            },
+            {
+              "start": 10.92,
+              "end": 29.4,
+              "text": "Mister Birkett Foster's landscapes smile at one much in the same way that Mister Carker used to flash his teeth, and Mister John Collier gives his sitter a cheerful slap in the back before he says, \"Like a shampooer in a Turkish bath, next man.\""
+            }
+          ]
+        },
+        "1272-141231-0005": {
+          "reference": [
+            {
+              "start": 0.0,
+              "end": 5.8,
+              "text": "A minute is not a very large measure of time, and his body needed every fraction of it."
+            }
+          ],
+          "candidate": [
+            {
+              "start": 0.0,
+              "end": 5.82,
+              "text": "A minute is not a very large measure of time, and his body needed every fraction of it."
+            }
+          ]
+        }
+      }
+    },
+    "grouped8_english/b3": {
+      "rtfx_change": 0.07575172314899503,
+      "paired_median": 0.07906342706743219,
+      "paired_min": 0.05937147657066144,
+      "paired_max": 0.08109014226489952,
+      "improved_groups": 25,
+      "groups": 25,
+      "exact_token_groups": 23,
+      "exact_group_paired_median": 0.07906342706743219,
+      "cv_median": {
+        "baseline": 0.0014713197395828624,
+        "on": 0.002059388359724353
+      },
+      "same_decoder_calls": true,
+      "baseline_equal_across_variants": true,
+      "summary": {
+        "baseline": {
+          "transcribe_ms": {
+            "n": 175,
+            "p50": 48.0903519783169,
+            "p95": 100.33404491259716,
+            "min": 31.03300998918712,
+            "max": 166.6398160159588,
+            "stdev": 27.974227970697235
+          },
+          "decode_ms": {
+            "n": 175,
+            "p50": 40.56445701280609,
+            "p95": 92.2952187131159,
+            "min": 19.920258957426995,
+            "max": 156.23315703123808,
+            "stdev": 27.451109514939848
+          },
+          "decoder_calls": {
+            "n": 175,
+            "p50": 28.0,
+            "p95": 65.0,
+            "min": 16,
+            "max": 109,
+            "stdev": 19.160208767129863
+          },
+          "decode_ms_per_selection": {
+            "n": 175,
+            "p50": 1.3973563106666351,
+            "p95": 1.4175480702938015,
+            "min": 0.948583759877476,
+            "max": 1.4284797053893699,
+            "stdev": 0.0878555261919017
+          },
+          "rtfx": 323.18685568392465,
+          "peak_allocated_bytes": 10830090240,
+          "quality": {
+            "metric": "WER",
+            "reference_units": 1150,
+            "errors": 45,
+            "rate": 0.0391304347826087,
+            "annotated_utterances": 73,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          }
+        },
+        "on": {
+          "transcribe_ms": {
+            "n": 175,
+            "p50": 44.56973896594718,
+            "p95": 93.37680368334986,
+            "min": 28.70538004208356,
+            "max": 156.23726596822962,
+            "stdev": 26.309835843173797
+          },
+          "decode_ms": {
+            "n": 175,
+            "p50": 37.711407989263535,
+            "p95": 85.89137397939339,
+            "min": 18.41735898051411,
+            "max": 147.37039699684829,
+            "stdev": 25.83589599293348
+          },
+          "decoder_calls": {
+            "n": 175,
+            "p50": 28.0,
+            "p95": 65.0,
+            "min": 16,
+            "max": 109,
+            "stdev": 19.160208767129863
+          },
+          "decode_ms_per_selection": {
+            "n": 175,
+            "p50": 1.2983319508593256,
+            "p95": 1.3201741357881793,
+            "min": 0.8770170943101957,
+            "max": 1.33973088178953,
+            "stdev": 0.08342361926724241
+          },
+          "rtfx": 347.66881690108755,
+          "peak_allocated_bytes": 10830089728,
+          "quality": {
+            "metric": "WER",
+            "reference_units": 1150,
+            "errors": 45,
+            "rate": 0.0391304347826087,
+            "annotated_utterances": 73,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 71,
+              "total": 73,
+              "different_ids": [
+                "1272-128104-0004",
+                "1272-141231-0005"
+              ]
+            },
+            "timestamp_tokens": {
+              "equal": 71,
+              "total": 73,
+              "different_ids": [
+                "1272-128104-0004",
+                "1272-141231-0005"
+              ]
+            },
+            "segments": {
+              "equal": 71,
+              "total": 73,
+              "different_ids": [
+                "1272-128104-0004",
+                "1272-141231-0005"
+              ]
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          }
+        }
+      },
+      "dispatch": {
+        "fixed/b1": {
+          "64": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "128": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "256": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "512": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          }
+        },
+        "fixed/b3": {
+          "64": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "128": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "256": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "512": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          }
+        },
+        "baseline/b1": {
+          "64": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "128": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "256": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "512": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          }
+        },
+        "baseline/b3": {
+          "64": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "128": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "256": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "512": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          }
+        }
+      },
+      "cross_kv_bytes": {
+        "fixed/b1": 27574272,
+        "fixed/b3": 82722816,
+        "baseline/b1": 27574272,
+        "baseline/b3": 496336896
+      },
+      "environment": {
+        "git_commit": "9ad235c1ea41f5e49ba8696ece9b81af146b237b",
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106",
+          "numpy": "2.5.4",
+          "sentencepiece": "0.2.2"
+        },
+        "gpu": "NVIDIA H200",
+        "cuda": "13.0",
+        "sm_count": 132,
+        "decoder_options": {
+          "programs": 132,
+          "warps": 4,
+          "prefetch_attention": true,
+          "reference_programs": 132,
+          "reference_prefetch_attention": true,
+          "routing_limits_unchanged": false,
+          "max_rows_override": 16,
+          "group_cross_queries": true,
+          "cross_splits": 8
+        }
+      },
+      "timestamp_differences": {
+        "1272-128104-0004": {
+          "reference": [
+            {
+              "start": 0.0,
+              "end": 10.48,
+              "text": "Linnell's pictures are a sort of up guards and atom paintings, and Mason's exquisite idyls are as national as a jingo poem."
+            },
+            {
+              "start": 10.92,
+              "end": 29.4,
+              "text": "Mister Birkett Foster's landscapes smile at one much in the same way that Mister Carker used to flash his teeth, and Mister John Collier gives his sitter a cheerful slap in the back before he says, \"Like a shampooer in a Turkish bath, next man.\""
+            }
+          ],
+          "candidate": [
+            {
+              "start": 0.0,
+              "end": 10.5,
+              "text": "Linnell's pictures are a sort of up guards and atom paintings, and Mason's exquisite idyls are as national as a jingo poem."
+            },
+            {
+              "start": 10.92,
+              "end": 29.4,
+              "text": "Mister Birkett Foster's landscapes smile at one much in the same way that Mister Carker used to flash his teeth, and Mister John Collier gives his sitter a cheerful slap in the back before he says, \"Like a shampooer in a Turkish bath, next man.\""
+            }
+          ]
+        },
+        "1272-141231-0005": {
+          "reference": [
+            {
+              "start": 0.0,
+              "end": 5.8,
+              "text": "A minute is not a very large measure of time, and his body needed every fraction of it."
+            }
+          ],
+          "candidate": [
+            {
+              "start": 0.0,
+              "end": 5.82,
+              "text": "A minute is not a very large measure of time, and his body needed every fraction of it."
+            }
+          ]
+        }
+      }
+    },
+    "grouped8_japanese/b2": {
+      "rtfx_change": 0.14435613828349148,
+      "paired_median": 0.14268928676546144,
+      "paired_min": 0.13924650080593381,
+      "paired_max": 0.14735637513077737,
+      "improved_groups": 6,
+      "groups": 6,
+      "exact_token_groups": 6,
+      "exact_group_paired_median": 0.14268928676546144,
+      "cv_median": {
+        "baseline": 0.0036196959903181595,
+        "on": 0.0013226590511364734
+      },
+      "same_decoder_calls": true,
+      "baseline_equal_across_variants": true,
+      "summary": {
+        "baseline": {
+          "transcribe_ms": {
+            "n": 42,
+            "p50": 70.36115750088356,
+            "p95": 118.3219051832566,
+            "min": 45.284599997103214,
+            "max": 118.52921103127301,
+            "stdev": 25.64612005150321
+          },
+          "decode_ms": {
+            "n": 42,
+            "p50": 63.29013948561624,
+            "p95": 110.99176266579889,
+            "min": 39.148124982602894,
+            "max": 111.03610700229183,
+            "stdev": 25.23073576367792
+          },
+          "decoder_calls": {
+            "n": 42,
+            "p50": 46.0,
+            "p95": 81.0,
+            "min": 28,
+            "max": 81,
+            "stdev": 18.676336780952404
+          },
+          "decode_ms_per_selection": {
+            "n": 42,
+            "p50": 1.3490895604869972,
+            "p95": 1.3540925174366345,
+            "min": 1.3429013283190425,
+            "max": 1.3623256898677811,
+            "stdev": 0.004220408554555369
+          },
+          "rtfx": 354.96429989677785,
+          "peak_allocated_bytes": 8294352896,
+          "quality": {
+            "metric": "CER",
+            "reference_units": 592,
+            "errors": 26,
+            "rate": 0.04391891891891892,
+            "annotated_utterances": 12,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            }
+          }
+        },
+        "on": {
+          "transcribe_ms": {
+            "n": 42,
+            "p50": 61.073754011886194,
+            "p95": 103.8516150409123,
+            "min": 39.666453027166426,
+            "max": 103.9989409619011,
+            "stdev": 22.46635854087133
+          },
+          "decode_ms": {
+            "n": 42,
+            "p50": 54.769597976701334,
+            "p95": 96.86685798224062,
+            "min": 33.95093698054552,
+            "max": 96.96410602191463,
+            "stdev": 22.053090819076726
+          },
+          "decoder_calls": {
+            "n": 42,
+            "p50": 46.0,
+            "p95": 81.0,
+            "min": 28,
+            "max": 81,
+            "stdev": 18.676336780952404
+          },
+          "decode_ms_per_selection": {
+            "n": 42,
+            "p50": 1.1685361258129974,
+            "p95": 1.1813031461248855,
+            "min": 1.1627059470731438,
+            "max": 1.1824890978282272,
+            "stdev": 0.006097525612492492
+          },
+          "rtfx": 406.2055754583799,
+          "peak_allocated_bytes": 8294352896,
+          "quality": {
+            "metric": "CER",
+            "reference_units": 592,
+            "errors": 26,
+            "rate": 0.04391891891891892,
+            "annotated_utterances": 12,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            }
+          }
+        }
+      },
+      "dispatch": {
+        "fixed/b2": {
+          "64": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "128": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "256": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "512": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          }
+        },
+        "baseline/b2": {
+          "64": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "128": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "256": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "512": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          }
+        }
+      },
+      "cross_kv_bytes": {
+        "fixed/b2": 55148544,
+        "baseline/b2": 330891264
+      },
+      "environment": {
+        "git_commit": "9ad235c1ea41f5e49ba8696ece9b81af146b237b",
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106",
+          "numpy": "2.5.4",
+          "sentencepiece": "0.2.2"
+        },
+        "gpu": "NVIDIA H200",
+        "cuda": "13.0",
+        "sm_count": 132,
+        "decoder_options": {
+          "programs": 132,
+          "warps": 4,
+          "prefetch_attention": true,
+          "reference_programs": 132,
+          "reference_prefetch_attention": true,
+          "routing_limits_unchanged": false,
+          "max_rows_override": 16,
+          "group_cross_queries": true,
+          "cross_splits": 8
+        }
+      },
+      "timestamp_differences": {}
+    },
+    "grouped8_japanese/b3": {
+      "rtfx_change": 0.0807395703056697,
+      "paired_median": 0.08356501309046849,
+      "paired_min": 0.07352626144817909,
+      "paired_max": 0.08394191753338709,
+      "improved_groups": 4,
+      "groups": 4,
+      "exact_token_groups": 4,
+      "exact_group_paired_median": 0.08356501309046849,
+      "cv_median": {
+        "baseline": 0.004269417778543003,
+        "on": 0.0013355465389953249
+      },
+      "same_decoder_calls": true,
+      "baseline_equal_across_variants": true,
+      "summary": {
+        "baseline": {
+          "transcribe_ms": {
+            "n": 28,
+            "p50": 74.2414775013458,
+            "p95": 124.83317852311302,
+            "min": 53.604153043124825,
+            "max": 124.91721496917307,
+            "stdev": 28.170087937051523
+          },
+          "decode_ms": {
+            "n": 28,
+            "p50": 65.48168900189921,
+            "p95": 115.50195149611682,
+            "min": 45.94931099563837,
+            "max": 115.57119799545035,
+            "stdev": 27.518886610753892
+          },
+          "decoder_calls": {
+            "n": 28,
+            "p50": 46.0,
+            "p95": 81.0,
+            "min": 32,
+            "max": 81,
+            "stdev": 19.434183800715687
+          },
+          "decode_ms_per_selection": {
+            "n": 28,
+            "p50": 1.3951598208479243,
+            "p95": 1.4085603840989855,
+            "min": 1.3912585083999784,
+            "max": 1.409404853603053,
+            "stdev": 0.0062214733920439485
+          },
+          "rtfx": 482.388030520634,
+          "peak_allocated_bytes": 9604123136,
+          "quality": {
+            "metric": "CER",
+            "reference_units": 592,
+            "errors": 26,
+            "rate": 0.04391891891891892,
+            "annotated_utterances": 12,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            }
+          }
+        },
+        "on": {
+          "transcribe_ms": {
+            "n": 28,
+            "p50": 68.32406049943529,
+            "p95": 116.23437219241168,
+            "min": 49.405499012209475,
+            "max": 116.4151220000349,
+            "stdev": 26.42996725843492
+          },
+          "decode_ms": {
+            "n": 28,
+            "p50": 60.4895134747494,
+            "p95": 107.69058594305534,
+            "min": 42.414071038365364,
+            "max": 107.79593099141493,
+            "stdev": 25.78861826912101
+          },
+          "decoder_calls": {
+            "n": 28,
+            "p50": 46.0,
+            "p95": 81.0,
+            "min": 32,
+            "max": 81,
+            "stdev": 19.434183800715687
+          },
+          "decode_ms_per_selection": {
+            "n": 28,
+            "p50": 1.2889758941265894,
+            "p95": 1.3132998285738455,
+            "min": 1.2825335410574603,
+            "max": 1.314584524285548,
+            "stdev": 0.010734292638293204
+          },
+          "rtfx": 521.3358328254683,
+          "peak_allocated_bytes": 9604123136,
+          "quality": {
+            "metric": "CER",
+            "reference_units": 592,
+            "errors": 26,
+            "rate": 0.04391891891891892,
+            "annotated_utterances": 12,
+            "reference_timestamp_error": null,
+            "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 12,
+              "total": 12,
+              "different_ids": []
+            }
+          }
+        }
+      },
+      "dispatch": {
+        "fixed/b3": {
+          "64": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "128": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "256": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          },
+          "512": {
+            "implementation": "megakernel-gluon",
+            "module": "owsm_trt.megakernel_gluon",
+            "fallback_reason": null,
+            "writes_cache": true
+          }
+        },
+        "baseline/b3": {
+          "64": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "128": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "256": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          },
+          "512": {
+            "implementation": "tensorrt",
+            "module": "owsm_trt.runtime",
+            "fallback_reason": "shape limit",
+            "writes_cache": false
+          }
+        }
+      },
+      "cross_kv_bytes": {
+        "fixed/b3": 82722816,
+        "baseline/b3": 496336896
+      },
+      "environment": {
+        "git_commit": "9ad235c1ea41f5e49ba8696ece9b81af146b237b",
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106",
+          "numpy": "2.5.4",
+          "sentencepiece": "0.2.2"
+        },
+        "gpu": "NVIDIA H200",
+        "cuda": "13.0",
+        "sm_count": 132,
+        "decoder_options": {
+          "programs": 132,
+          "warps": 4,
+          "prefetch_attention": true,
+          "reference_programs": 132,
+          "reference_prefetch_attention": true,
+          "routing_limits_unchanged": false,
+          "max_rows_override": 16,
+          "group_cross_queries": true,
+          "cross_splits": 8
+        }
+      },
+      "timestamp_differences": {}
+    }
+  }
+}
