@@ -709,6 +709,37 @@ class MegaBackend:
     def _kernels(self):
         return [k for k in (self.kernel, (self.rows_kernel or (None,))[0]) if k is not None]
 
+    def supports_shared_cross(self, rows: int) -> bool:
+        kernel, tokens, limit = self.kernel, self.max_tokens, self.max_rows
+        if rows > 1 and self.rows_kernel is not None:
+            kernel, tokens, limit = self.rows_kernel
+        return (bool(getattr(kernel, "shared_cross_kv", False)) and id(kernel) not in self.failed
+                and (tokens is None or rows <= tokens) and (limit is None or rows <= limit))
+
+    def _inner_step(self, args, kind, reason):
+        # If a shared-KV kernel's trial failed, retain correct TRT fallback. The session refreshes
+        # these expanded buffers after each encode, outside the per-token decoder loop.
+        rows, cross_rows = args[0].shape[0], args[4].shape[1]
+        prepare = None
+        if rows != cross_rows:
+            if cross_rows < 1 or rows % cross_rows:
+                raise ValueError("cross KV rows must divide decoder rows")
+            sources = args[4:6]
+            expanded = [torch.empty(t.shape[0], rows, *t.shape[2:], dtype=t.dtype, device=t.device)
+                        for t in sources]
+
+            def prepare():
+                for target, source in zip(expanded, sources):
+                    target.copy_(source.repeat_interleave(rows // cross_rows, dim=1))
+
+            prepare()
+            args = (*args[:4], *expanded, *args[6:])
+            reason += "; shared cross KV expanded after encode"
+        run = self.inner.step_fn(*args, kind=kind)
+        run.dispatch, run.fallback_reason = self.inner.name, reason
+        run.prepare_cross = prepare
+        return run
+
     @property
     def argmax(self) -> bool:
         """Whether step_fn takes ``pred``: calls on a kernel that can then write the logits' argmax there too
@@ -734,12 +765,12 @@ class MegaBackend:
         big = (max_tokens is not None and tokens.numel() > max_tokens) or (
             max_rows is not None and tokens.shape[0] > max_rows
         )
-        if kind == "prefill" or big or kernel is None or id(kernel) in self.failed:
-            run = self.inner.step_fn(*args, kind=kind)
-            run.dispatch = self.inner.name
-            run.fallback_reason = ("prefill" if kind == "prefill" else "shape limit" if big
-                                   else "no kernel for rows" if kernel is None else "kernel trial failed")
-            return run
+        unsupported_cross = cross_k.shape[1] != tokens.shape[0] and not getattr(kernel, "shared_cross_kv", False)
+        if kind == "prefill" or big or kernel is None or id(kernel) in self.failed or unsupported_cross:
+            reason = ("prefill" if kind == "prefill" else "shape limit" if big
+                      else "no kernel for rows" if kernel is None else "kernel trial failed"
+                      if id(kernel) in self.failed else "kernel lacks shared cross KV")
+            return self._inner_step(args, kind, reason)
         kw = {"pred": pred, "notime": notime} if pred is not None and getattr(kernel, "argmax", False) else {}
         if solo and getattr(kernel, "solo_differs", False):
             kw["solo"] = True
@@ -767,10 +798,7 @@ class MegaBackend:
             log.warning(
                 "decoder megakernel %s failed (%s: %s); TensorRT instead", kernel.name, type(e).__name__, e
             )
-            run = self.inner.step_fn(*args, kind=kind)
-            run.dispatch = self.inner.name
-            run.fallback_reason = f"{kernel.name} trial: {type(e).__name__}: {e}"
-            return run
+            return self._inner_step(args, kind, f"{kernel.name} trial: {type(e).__name__}: {e}")
 
     def check(self) -> None:
         self.kernel.check()

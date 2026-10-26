@@ -520,6 +520,7 @@ class _Session:
         chunk: int,
         buckets: list[int] | None,
         rules: TimestampRules | None,
+        cross_rows: int | None = None,
     ):
         self.backend, self.cfg, self.rows, self.capacity = backend, cfg, rows, capacity
         self.rules = rules
@@ -539,8 +540,8 @@ class _Session:
             c: (torch.zeros(L, rows, H, c, dk, **self.kw), torch.zeros(L, rows, H, c, dk, **self.kw))
             for c in self.buckets
         }
-        self.cross_k = torch.zeros(L, rows, H, cfg.enc_frames, dk, **self.kw)
-        self.cross_v = torch.zeros(L, rows, H, cfg.enc_frames, dk, **self.kw)
+        self.cross_k = torch.zeros(L, cross_rows or rows, H, cfg.enc_frames, dk, **self.kw)
+        self.cross_v = torch.zeros(L, cross_rows or rows, H, cfg.enc_frames, dk, **self.kw)
         self.logits = torch.zeros(rows, 1, cfg.vocab_size, device=device)
         self.new_kv = torch.zeros(L, 2, rows, H, 1, dk, **self.kw)
         self.tok = torch.zeros(rows, 1, dtype=torch.long, device=device)
@@ -1377,6 +1378,7 @@ class BeamSession(_Session):
         fused_rank: bool = True,
         fused_finish: bool = True,
         kv_reorder: str = "prefix",
+        share_cross_kv: bool = False,
     ):
         # H200/1B, beam 5 with bound stopping: every-step checks help batch 1, but hurt batch 3.
         # Explicit intervals stay fixed when set_upper_bound toggles the device flag for ablations.
@@ -1387,13 +1389,18 @@ class BeamSession(_Session):
         if kv_reorder not in ("torch", "full", "prefix"):
             raise ValueError("kv_reorder must be torch, full or prefix")
         n = batch * beam
-        super().__init__(backend, cfg, n, capacity, eos, dtype, device, use_cuda_graph, chunk, buckets, rules)
+        supports_shared = getattr(backend, "supports_shared_cross", lambda _: False)
+        self.share_cross_kv = share_cross_kv and supports_shared(n)
+        self.cross_kv_fallback = ("decoder does not support shared cross KV at this row count"
+                                 if share_cross_kv and not self.share_cross_kv else None)
+        super().__init__(backend, cfg, n, capacity, eos, dtype, device, use_cuda_graph, chunk, buckets, rules,
+                         cross_rows=batch if self.share_cross_kv else None)
         self.batch, self.beam = batch, beam
         L, H, dk = cfg.dec_layers, cfg.dec_heads, cfg.d_model // cfg.dec_heads
         dev = {"device": device}
         # one row per utterance for the encoder and the primer; copied to every beam slot afterwards
-        self.cross_kb = torch.zeros(L, batch, H, cfg.enc_frames, dk, **self.kw)
-        self.cross_vb = torch.zeros(L, batch, H, cfg.enc_frames, dk, **self.kw)
+        self.cross_kb = self.cross_k if self.share_cross_kv else torch.zeros(L, batch, H, cfg.enc_frames, dk, **self.kw)
+        self.cross_vb = self.cross_v if self.share_cross_kv else torch.zeros(L, batch, H, cfg.enc_frames, dk, **self.kw)
         self.ctc_ids = torch.zeros(batch, ctc_columns(cfg), dtype=torch.int32, **dev)
         self.score = torch.zeros(n, **dev)
         self.active = torch.zeros(n, dtype=torch.bool, **dev)
@@ -1612,6 +1619,12 @@ class BeamSession(_Session):
             raise RuntimeError(f"beam search: no valid finished hypothesis for utterances {rows}")
 
     def _expand_cross(self) -> None:
+        if self.share_cross_kv:
+            for step in self._steps.values():
+                prepare = getattr(step, "prepare_cross", None)
+                if prepare is not None:
+                    prepare()
+            return
         self.cross_k.copy_(self.cross_kb.repeat_interleave(self.beam, dim=1))
         self.cross_v.copy_(self.cross_vb.repeat_interleave(self.beam, dim=1))
 

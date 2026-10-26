@@ -76,6 +76,39 @@ timeout 480 "$PY" -m pytest -q -p no:cacheprovider "$LOCAL/tests/test_beam.py" \
     > "$LOCAL/results/tests.log" 2>&1
 echo "beam and model regression tests passed"
 printf '%s\n' 'regression tests passed' >> "$OUT/progress.log"
+if [ "${EXPERIMENT:-stopping}" = cross ]; then
+    timeout 900 "$PY" -m pytest -q -p no:cacheprovider "$LOCAL/tests/test_beam_cross.py" \
+        "$LOCAL/tests/test_megakernel.py::test_ring_solo_is_bitwise_the_same" \
+        "$LOCAL/tests/test_megakernel.py::test_backend_trial_falls_back" \
+        > "$LOCAL/results/cross_tests.log" 2>&1
+    printf '%s\n' 'shared cross KV and decoder regression tests passed' >> "$OUT/progress.log"
+    for batch in 1 3; do
+        interval=4
+        [ "$batch" != 1 ] || interval=1
+        DETAIL=(--phases --trace --disk)
+        [ "$batch" != 1 ] || DETAIL+=(--extra-checks --long-audio "$LOCAL/long_110s.wav")
+        timeout 480 "$PY" "$LOCAL/scripts/profile_beam.py" \
+            --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/manifest.json" \
+            --beam 5 --timestamps --batch "$batch" --chunk "$interval" --repeat 5 \
+            --limit "${PROFILE_LIMIT:-73}" --upper-bound on --fused-rank --fused-finish \
+            --kv-reorder prefix --share-cross-kv --baseline-runtime "$LOCAL/baseline_runtime.py" \
+            "${DETAIL[@]}" --out "$LOCAL/results/cross_b${batch}" \
+            > "$LOCAL/results/cross_b${batch}.log" 2>&1
+        printf 'shared cross KV batch %s complete\n' "$batch" >> "$OUT/progress.log"
+        if [ -n "${EXTRA_MANIFEST:-}" ]; then
+            timeout 360 "$PY" "$LOCAL/scripts/profile_beam.py" \
+                --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/extra_manifest.json" \
+                --lang "${EXTRA_LANG:?set the second manifest language}" \
+                --beam 5 --timestamps --batch "$batch" --chunk "$interval" --repeat 3 \
+                --upper-bound on --fused-rank --fused-finish --kv-reorder prefix --share-cross-kv \
+                --baseline-runtime "$LOCAL/baseline_runtime.py" \
+                --out "$LOCAL/results/cross_japanese_b${batch}" \
+                > "$LOCAL/results/cross_japanese_b${batch}.log" 2>&1
+            printf 'shared cross KV Japanese batch %s complete\n' "$batch" >> "$OUT/progress.log"
+        fi
+    done
+    exit 0
+fi
 if [ "${EXPERIMENT:-stopping}" = decoder ]; then
     # R=5 uses Gluon; B=3/R=15 is outside the unchanged routing limit.
     for variant in p128 no_prefetch both; do

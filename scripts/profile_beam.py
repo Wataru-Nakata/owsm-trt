@@ -186,9 +186,9 @@ def quality(items, records, lang):
 
 
 def make_session(model, cls, batch, beam, chunk, diagnostics=False, graph=True,
-                 fused_rank=False, fused_finish=False, kv_reorder="torch"):
+                 fused_rank=False, fused_finish=False, kv_reorder="torch", share_cross_kv=False):
     extra = {"diagnostics": diagnostics, "fused_rank": fused_rank,
-             "fused_finish": fused_finish, "kv_reorder": kv_reorder} if cls is BeamSession else {}
+             "fused_finish": fused_finish, "kv_reorder": kv_reorder, "share_cross_kv": share_cross_kv} if cls is BeamSession else {}
     backend = getattr(model, "_profile_backend", model.backend) if cls is BeamSession else model.backend
     return cls(backend, model.cfg, batch, beam, model.opts.capacity, model.tokenizer.eos,
                model.dtype, model.device, use_cuda_graph=graph, chunk=chunk, rules=model.rules, **extra)
@@ -224,7 +224,7 @@ def configure_gluon(model, programs=None, prefetch=None):
 
 def profile_eager(model, args, waves, primer, out):
     s = make_session(model, BeamSession, len(waves), args.beam, args.chunk, diagnostics=True, graph=False,
-                     fused_rank=args.fused_rank, fused_finish=args.fused_finish, kv_reorder=args.kv_reorder)
+                     fused_rank=args.fused_rank, fused_finish=args.fused_finish, kv_reorder=args.kv_reorder, share_cross_kv=args.share_cross_kv)
     s.set_upper_bound(args.upper_bound != "off")
     s.encode(model._features(waves))
     expected = s.decode(primer, model._max_new())  # warm up this shape before attaching events
@@ -275,13 +275,17 @@ def run_batch(model, args, items, waves, batch, legacy):
             continue
         for b in sizes:
             s, ms = wall(lambda: make_session(model, cls, b, args.beam, args.chunk,
-                        fused_rank=args.fused_rank, fused_finish=args.fused_finish, kv_reorder=args.kv_reorder))
+                        fused_rank=args.fused_rank, fused_finish=args.fused_finish, kv_reorder=args.kv_reorder, share_cross_kv=args.share_cross_kv))
             sessions[kind, b] = s
             cold[f"{kind}/b{b}"] = {"session_create_jit_capture_ms": ms,
                                     "dispatch": dispatch(s),
                                     "search_kernels": {"rank": getattr(s, "fused_rank", False),
                                                        "finish": getattr(s, "fused_finish", False),
-                                                       "kv_reorder": getattr(s, "kv_reorder", "torch")}}
+                                                       "kv_reorder": getattr(s, "kv_reorder", "torch"),
+                                                       "share_cross_kv": getattr(s, "share_cross_kv", False),
+                                                       "cross_kv_fallback": getattr(s, "cross_kv_fallback", None),
+                                                       "cross_kv_bytes": sum(t.numel() * t.element_size() for t in
+                                                           {id(t): t for t in (s.cross_k, s.cross_v, s.cross_kb, s.cross_vb)}.values())}}
     kw = dict(lang=args.lang, task=args.task, timestamps=args.timestamps, prompt=args.prompt,
               batch_size=batch, beam_size=args.beam)
 
@@ -375,7 +379,7 @@ def run_batch(model, args, items, waves, batch, legacy):
     diag = {}
     for b in sizes:
         s = make_session(model, BeamSession, b, args.beam, args.chunk, diagnostics=True,
-                         fused_rank=args.fused_rank, fused_finish=args.fused_finish, kv_reorder=args.kv_reorder)
+                         fused_rank=args.fused_rank, fused_finish=args.fused_finish, kv_reorder=args.kv_reorder, share_cross_kv=args.share_cross_kv)
         for mode in [m for m in modes if m != "baseline"]:
             s.set_upper_bound(mode != "off")
             s.chunk = int(mode.removeprefix("on_chunk")) if mode.startswith("on_chunk") else args.chunk
@@ -422,7 +426,7 @@ def extra_checks(model, args, waves, legacy):
                 cls = legacy if mode == "baseline" else BeamSession
                 cache[key] = make_session(model, cls, batch, beam, args.chunk,
                                          fused_rank=args.fused_rank, fused_finish=args.fused_finish,
-                                         kv_reorder=args.kv_reorder)
+                                         kv_reorder=args.kv_reorder, share_cross_kv=args.share_cross_kv)
                 if mode != "baseline":
                     cache[key].set_upper_bound(mode == "on")
             return cache[key]
@@ -474,6 +478,7 @@ def main():
     ap.add_argument("--fused-rank", action="store_true", help="opt-in exact candidate-mask kernel")
     ap.add_argument("--fused-finish", action="store_true", help="opt-in exact beam-state kernel")
     ap.add_argument("--kv-reorder", choices=["torch", "full", "prefix"], default="torch")
+    ap.add_argument("--share-cross-kv", action="store_true")
     ap.add_argument("--gluon-programs", type=int, help="candidate only: persistent CTA count")
     ap.add_argument("--gluon-prefetch", action=argparse.BooleanOptionalAction, default=None,
                     help="candidate only: attention prefetch; keep arithmetic and routing unchanged")

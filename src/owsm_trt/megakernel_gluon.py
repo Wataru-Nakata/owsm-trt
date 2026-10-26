@@ -392,7 +392,7 @@ if gluon is not None:
     @gluon.jit
     def _cross_attn_g(pid, P, R, S, layer, q2, ck, cv, T, o, xp, xml, xcnt, D: gl.constexpr, H: gl.constexpr,
                       DK: gl.constexpr, SP: gl.constexpr, BT: gl.constexpr, NS: gl.constexpr, NW: gl.constexpr,
-                      tsp=None, TS: gl.constexpr = False):  # fmt: skip
+                      tsp=None, TS: gl.constexpr = False, CR: gl.constexpr = None, CG: gl.constexpr = 1):  # fmt: skip
         """Per (row, head, slice of the T keys); with NS > 1 slices every slice stores its partial softmax
         (running max, sum, output) in xml / xp and the last one of a (row, head) combines them."""
         mma2: gl.constexpr = gl.NVMMADistributedLayout(
@@ -423,7 +423,10 @@ if gluon is not None:
             qa = gl.convert_layout((q.to(gl.float32) * (DK**-0.5)).to(gl.float16), la)
             if TS:
                 gl.store(tsp + 2, _now())
-            cb = ((layer * R + b) * H + h).to(gl.int64) * T * DK
+            if CG == 1:
+                cb = ((layer * R + b) * H + h).to(gl.int64) * T * DK
+            else:
+                cb = ((layer * CR + b // CG) * H + h).to(gl.int64) * T * DK
             t_lo = sp * tch
             t_hi = gl.minimum(T, t_lo + tch)
             m_i = gl.full([SP], float("-inf"), gl.float32, layout=gl.SliceLayout(1, mma2))
@@ -595,7 +598,8 @@ if gluon is not None:
         MT: gl.constexpr, LMT: gl.constexpr, HL: gl.constexpr, MTF: gl.constexpr, LMTF: gl.constexpr,
         BNQ: gl.constexpr, LBNQ: gl.constexpr, BNF: gl.constexpr, LBNF: gl.constexpr, PART: gl.constexpr,
         LPART: gl.constexpr, SP: gl.constexpr, BT: gl.constexpr, NS: gl.constexpr, NW: gl.constexpr,
-        MAXS: gl.constexpr, PFA: gl.constexpr, F2S: gl.constexpr, TS: gl.constexpr = False,
+        MAXS: gl.constexpr, PFA: gl.constexpr, F2S: gl.constexpr, CR: gl.constexpr, CG: gl.constexpr,
+        TS: gl.constexpr = False,
     ):  # fmt: skip
         """A decoder call: embedding, L layers (LN1+QKV, self-attention, out-projection, LN2+cross-Q,
         cross-attention, cross-out, LN3+FFN1, FFN2), final LN + output layer, a grid barrier between stages.
@@ -764,7 +768,10 @@ if gluon is not None:
                     tch = ((T + NS - 1) // NS + 15) // 16 * 16
                     t_lo = sp * tch
                     nk = gl.minimum(T, t_lo + tch) - t_lo
-                    cb = ((layer * R + bh // H) * H + bh % H).to(gl.int64) * T * DK + t_lo * DK
+                    if CG == 1:
+                        cb = ((layer * R + bh // H) * H + bh % H).to(gl.int64) * T * DK + t_lo * DK
+                    else:
+                        cb = ((layer * CR + (bh // H) // CG) * H + bh % H).to(gl.int64) * T * DK + t_lo * DK
                     _prefetch_rows(ck_z + cb, nk, 128, NW)
                     _prefetch_rows(cv_z + cb, nk, 128, NW)
             _gwait(bar, err, g * P, MAXS)
@@ -793,6 +800,8 @@ if gluon is not None:
                 BT,
                 NS,
                 NW,
+                CR=CR,
+                CG=CG,
             )
             if TS:
                 gl.store(ts + (g * P + pid_z) * 8 + 5, _now())
@@ -914,6 +923,7 @@ class GluonDecoder:
     the weights :class:`owsm_trt.megakernel.MegaDecoder` prepares (LayerNorms folded in)."""
 
     name = "megakernel-gluon"
+    shared_cross_kv = True
 
     def __init__(self, mega, programs: int | None = None, num_warps: int = 4, maxs: int = 1 << 24, ts: bool = False,
                  prefetch_attention: bool = True):  # fmt: skip
@@ -945,6 +955,9 @@ class GluonDecoder:
     def step_fn(self, tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv, kind="decode"):
         m = self.m
         R, S = tokens.shape
+        cr = cross_k.shape[1]
+        if cr < 1 or R % cr or cross_v.shape != cross_k.shape:
+            raise ValueError("cross KV rows must divide decoder rows into equal utterance-major groups")
         M = R * S
         if M > MAX_TOKENS:
             raise ValueError(f"the Gluon decoder kernel takes up to {MAX_TOKENS} tokens per call, not {M}")
@@ -982,6 +995,7 @@ class GluonDecoder:
             D=D, H=H, DK=D // H, F=F, LF=_log2(F), MT=mt, LMT=_log2(mt), HL=hl, MTF=mtf, LMTF=_log2(mtf), BNQ=self.bnq,
             LBNQ=_log2(self.bnq), BNF=self.bnf, LBNF=_log2(self.bnf), PART=self.part, LPART=_log2(self.part),
             SP=max(16, _pow2(S)), BT=64, NS=ns, NW=self.nw, MAXS=self.maxs, PFA=self.pfa, F2S=mt <= 8,
+            CR=cr, CG=R // cr,
             TS=bool(self.opts["TS"]),
         )  # fmt: skip
 
