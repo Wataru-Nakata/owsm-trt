@@ -117,8 +117,9 @@ def test_attention_kernels_match_reference(shape):
 
 @pytest.mark.parametrize("shape", [(1, 1, 2051), (1, 16, 51865), (3, 8, 50003), (8, 4, 3000)])
 @pytest.mark.parametrize("skip", [False, True])
+@pytest.mark.parametrize("fused", [False, True])
 @torch.inference_mode()
-def test_split_choose_edges_graph_and_nonfinite(shape, skip):
+def test_split_choose_edges_graph_and_nonfinite(shape, skip, fused):
     R, W, V = shape
     rules = TimestampRules(50, 100, 200, 2, V, torch.device("cuda"))
     cfg = dataclasses.replace(TINY, vocab_size=V)
@@ -140,7 +141,22 @@ def test_split_choose_edges_graph_and_nonfinite(shape, skip):
     expected = torch.empty_like(bufs.pred)
 
     def call():
-        kernels.choose(bufs.logits, bufs.inp, notime, bufs.pred, rules, skip, workspace=bufs.choose_workspace)
+        if fused:
+            kernels.choose_accept(
+                bufs.logits,
+                bufs.inp,
+                notime,
+                bufs.pred,
+                rules,
+                bufs.res,
+                2,
+                bufs.choose_workspace,
+                skip_notime=skip,
+            )
+        else:
+            kernels.choose(
+                bufs.logits, bufs.inp, notime, bufs.pred, rules, skip, workspace=bufs.choose_workspace
+            )
 
     call()  # JIT outside capture
     graph = torch.cuda.CUDAGraph()
@@ -179,3 +195,37 @@ def test_split_choose_edges_graph_and_nonfinite(shape, skip):
         kernels.choose(bufs.logits, bufs.inp, notime, expected, rules, skip)
         graph.replay()
         assert torch.equal(bufs.pred, expected), mode
+        if fused:
+            assert torch.equal(bufs.res, bufs.accept()), mode
+
+
+@pytest.mark.parametrize("W", [1, 5, 32])
+@torch.inference_mode()
+def test_fused_choose_accepts_runs_and_eos(W):
+    R, eos, V = 7, 3, 2053
+    cfg = dataclasses.replace(TINY, vocab_size=V)
+    notime = torch.zeros(R, dtype=torch.bool, device="cuda")
+    b = _Verify(
+        cfg,
+        R,
+        W,
+        {"device": torch.device("cuda"), "dtype": torch.float16},
+        None,
+        notime,
+        eos,
+        split_choose=True,
+    )
+    tok = torch.full((R, W), 5, device="cuda", dtype=torch.long)
+    tok[1, W // 2] = eos
+    first = torch.arange(R, device="cuda").remainder(W).unsqueeze(1)
+    b.inp.copy_(
+        torch.cat([tok, torch.zeros_like(first), torch.zeros_like(first), -torch.ones_like(first), first], 1)
+    )
+    b.pred.copy_(tok.roll(-1, 1))
+    b.pred[2, W // 2] = 8
+    b.logits.fill_(-10)
+    b.logits.scatter_(-1, b.pred.unsqueeze(-1), 10)
+    expected = b.accept().clone()
+    kernels.choose_accept(b.logits, b.inp, notime, b.pred, None, b.res, eos, b.choose_workspace)
+    assert torch.equal(b.res, expected)
+    assert W < 5 or expected[:, 0].max() > 1

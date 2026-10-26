@@ -18,6 +18,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", type=Path, required=True)
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--fused", action="store_true", help="Include accept in all variants; add fusion")
     args = ap.parse_args()
     if not os.environ.get("PBS_JOBID") and os.uname().nodename.startswith("login"):
         ap.error("GPU profiling requires a compute allocation")
@@ -41,11 +42,18 @@ def main():
         pred = torch.zeros(rows, window, device="cuda", dtype=torch.long)
         scratch = kernels.choose_workspace(rows, window, vocab, "cuda")
         graphs, cold, output = {}, {}, {}
-        for mode in ("serial", "split"):
-            workspace = scratch if mode == "split" else None
+        modes = ("serial", "split", "fused") if args.fused else ("serial", "split")
+        res = torch.zeros(rows, 2, device="cuda", dtype=torch.long)
+        for mode in modes:
+            workspace = scratch if mode != "serial" else None
 
             def body():
-                kernels.choose(logits, inp, notime, pred, rules, workspace=workspace)
+                if mode == "fused":
+                    kernels.choose_accept(logits, inp, notime, pred, rules, res, 2, workspace)
+                else:
+                    kernels.choose(logits, inp, notime, pred, rules, workspace=workspace)
+                    if args.fused:
+                        kernels.accept(pred, inp, res, 2)
 
             torch.cuda.synchronize()
             start = time.perf_counter()
@@ -53,11 +61,12 @@ def main():
             torch.cuda.synchronize()
             cold[mode] = (time.perf_counter() - start) * 1000
             graphs[mode].replay()
-            output[mode] = pred.clone()
-        assert torch.equal(output["serial"], output["split"])
-        samples = {"serial": [], "split": []}
+            output[mode] = (pred.clone(), res.clone())
+        for mode in modes:
+            assert all(torch.equal(a, b) for a, b in zip(output["serial"], output[mode]))
+        samples = {mode: [] for mode in modes}
         for rep in range(15):
-            for mode in ("serial", "split") if rep % 2 == 0 else ("split", "serial"):
+            for mode in modes if rep % 2 == 0 else modes[::-1]:
                 a, z = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
                 a.record()
                 for _ in range(100):
@@ -71,7 +80,8 @@ def main():
             "cold_capture_ms": cold,
             "exact_tokens": True,
             "workspace_bytes": sum(x.numel() * x.element_size() for x in scratch),
-            "scope": "CUDA event per graph replay; excludes audio/model/host decode loop",
+            "scope": ("choose+accept" if args.fused else "choose only")
+            + "; CUDA event per graph replay; excludes host decode loop",
         }
     save(args.out, result)
     print(json.dumps({k: v["event_ms"] for k, v in result["cases"].items()}))

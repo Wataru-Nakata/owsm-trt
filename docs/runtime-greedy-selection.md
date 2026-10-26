@@ -37,3 +37,14 @@ speedup. Workspace300bytes atR1W1,4800bytes atR1W16,76800bytes atR16W16. Runtime
 both session pools resident, so their peak VRAM is not standalone deployment memory. Cold captures
 and all samples are retained in `outputs/runtime-2771592`, especially `selection.json` and
 `analysis-graph.json`. The default remains unchanged while fusion/acceptance is verified.
+
+## Fused follow-up (pending)
+
+A second candidate combines block-max reduction with draft acceptance. It still writes every `pred`
+for diagnostics, preserves the existing decoder predictions of skipped notime rows, and returns the
+same accepted-count/next-token pair. This removes the extra reduction launch introduced by split
+selection: serial choose+accept and fused partial-choose+reduce-accept both have two launches.
+`GreedySession(fuse_accept=True, split_choose=True)` is experimental; the normal default is unchanged.
+The follow-up includes exact acceptance runs, intermediate EOS, irregular window sizes, graph reuse,
+and the same timestamp/nonfinite cases. `profile_greedy_choose.py --fused` times choose+accept for all
+three modes, rather than mixing a choose-only baseline with acceptance-inclusive candidates.

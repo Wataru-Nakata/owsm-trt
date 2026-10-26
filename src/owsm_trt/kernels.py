@@ -87,6 +87,32 @@ if triton is not None:
         tl.store(pred + r * W + i, tl.where(best > float("-inf"), idx, 0))
 
     @triton.jit
+    def _choose_accept(scores, indices, notime, pred, inp, res, eos, W: tl.constexpr,
+                       PARTS: tl.constexpr, BW: tl.constexpr, BP: tl.constexpr,
+                       SKIP_NOTIME: tl.constexpr):  # fmt: skip
+        r = tl.program_id(0)
+        w, p = tl.arange(0, BW), tl.arange(0, BP)
+        skip = tl.load(notime + r) != 0 if SKIP_NOTIME else False
+        if skip:
+            chosen = tl.load(pred + r * W + w, w < W, other=0)
+        else:
+            at = (r * W + w[:, None]) * PARTS + p[None, :]
+            val = tl.load(scores + at, (w < W)[:, None] & (p < PARTS)[None, :], other=float("-inf"))
+            best = tl.max(val, 1)
+            part = tl.min(tl.where((p < PARTS)[None, :] & (val == best[:, None]), p[None, :], BP), 1)
+            chosen = tl.load(indices + (r * W + w) * PARTS + part, (w < W) & (part < PARTS), other=0)
+            chosen = tl.where(best > float("-inf"), chosen, 0)
+            tl.store(pred + r * W + w, chosen, w < W)
+        row = inp + r * (W + 4)
+        first = tl.maximum(tl.load(row + W + 3), 0)
+        nxt = tl.load(row + w + 1, w < W - 1, other=0)
+        ok = ((w < W - 1) & (chosen == nxt) & (nxt != eos)) | (w < first)
+        end = tl.min(tl.where(ok, BW, w), 0)
+        last = tl.sum(tl.where(w == end, chosen, 0), 0)
+        tl.store(res + r * 2, end - first)
+        tl.store(res + r * 2 + 1, last)
+
+    @triton.jit
     def _write_kv(new_kv, k, v, offs, R, S, C, H: tl.constexpr, D: tl.constexpr, BS: tl.constexpr):
         """new_kv [L, 2, R, H, S, D] -> k, v [L, R, H, C, D] at slots offs[r] .. offs[r] + S - 1."""
         p = tl.program_id(0)  # (layer, row, head)
@@ -138,6 +164,21 @@ def choose(logits: torch.Tensor, inp: torch.Tensor, notime: torch.Tensor, pred: 
                               skip_notime, num_warps=1)  # fmt: skip
     elif workspace is not None:
         raise ValueError("choose workspace requires at least two vocabulary blocks")
+
+
+def choose_accept(logits: torch.Tensor, inp: torch.Tensor, notime: torch.Tensor,
+                  pred: torch.Tensor, rules, res: torch.Tensor, eos: int,
+                  workspace: tuple, skip_notime: bool = False) -> None:  # fmt: skip
+    """Block selection followed by one combined argmax/accept kernel; preserves pred for diagnostics."""
+    R, W, V = logits.shape
+    scores, indices = workspace
+    parts = scores.shape[-1]
+    args = (rules.first_time, rules.last_time, rules.eos) if rules is not None else (0, -1, -1)
+    _choose[(R, W, parts)](logits, inp, notime, indices, scores, V, W, rules is not None, *args,
+                          BV=2048, SKIP_NOTIME=skip_notime, PARTS=parts, num_warps=4)  # fmt: skip
+    _choose_accept[(R,)](scores, indices, notime, pred, inp, res, eos, W, parts,
+                        triton.next_power_of_2(max(W, 2)), triton.next_power_of_2(parts),
+                        skip_notime, num_warps=4)  # fmt: skip
 
 
 def choose_workspace(rows: int, window: int, vocab: int, device) -> tuple | None:

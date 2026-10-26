@@ -732,11 +732,13 @@ class GreedySession(_Session):
         punctuation: frozenset[int] = frozenset(),
         lazy_drafts: bool = False,
         split_choose: bool = False,
+        fuse_accept: bool = False,
     ):
         super().__init__(
             backend, cfg, batch, capacity, eos, dtype, device, use_cuda_graph, chunk, buckets, rules
         )
         self.split_choose = split_choose
+        self.fuse_accept = fuse_accept
         self.punctuation = punctuation  # see _resync
         self.batch = batch
         self.seq = torch.zeros(batch, capacity + 1, dtype=torch.long, device=device)
@@ -764,6 +766,7 @@ class GreedySession(_Session):
         solo = batch == 1 and getattr(backend, "solo_differs", False)
         for w in self.windows:
             bufs = _Verify(cfg, batch, w, self.kw, rules, self.t_notime, eos, self.split_choose)
+            bufs.fuse_accept = self.fuse_accept
             for c, (k, v) in self.caches.items():
                 kind = "verify" if w > 1 else "decode"
                 # a decoder megakernel can do the argmax itself: plain, or with <notimestamps> (no timestamp
@@ -1268,6 +1271,7 @@ class _Verify:
         self.ar = torch.arange(w, **dev)
         self.fast = kernels.available(kw["device"])  # Triton kernels for the work around the decoder call
 
+        self.fuse_accept = False
         self.choose_workspace = (
             kernels.choose_workspace(rows, w, cfg.vocab_size, kw["device"])
             if split_choose and self.fast
@@ -1326,13 +1330,20 @@ class _Bound:
         if b.fast:
             if not written:
                 kernels.write_kv(b.new_kv, self.k, self.v, b.offs)
-            if not getattr(self.step, "writes_pred", False):
-                kernels.choose(b.logits, b.inp, b.notime, b.pred, b.rules, workspace=b.choose_workspace)
-            elif b.rules is not None:  # (the kernel's argmax holds for the rows with <notimestamps>)
-                kernels.choose(
-                    b.logits, b.inp, b.notime, b.pred, b.rules, skip_notime=True, workspace=b.choose_workspace
+            writes_pred = getattr(self.step, "writes_pred", False)
+            needs_choose = not writes_pred or b.rules is not None
+            if needs_choose and b.fuse_accept and b.choose_workspace is not None:
+                kernels.choose_accept(
+                    b.logits, b.inp, b.notime, b.pred, b.rules, b.res, b.eos,
+                    b.choose_workspace, skip_notime=writes_pred,
                 )
-            kernels.accept(b.pred, b.inp, b.res, b.eos)
+            else:
+                if needs_choose:
+                    kernels.choose(
+                        b.logits, b.inp, b.notime, b.pred, b.rules,
+                        skip_notime=writes_pred, workspace=b.choose_workspace,
+                    )
+                kernels.accept(b.pred, b.inp, b.res, b.eos)
         else:
             if not written:
                 L, _, r, H, w, dk = b.new_kv.shape

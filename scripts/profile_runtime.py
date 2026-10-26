@@ -22,7 +22,7 @@ from owsm_trt import OWSM, hub
 from owsm_trt.audio import load_audio
 from owsm_trt.build import engine_tag
 
-VARIANTS = ("reference", "power", "post", "both", "graph", "graph_both", "graph_split")
+VARIANTS = ("reference", "power", "post", "both", "graph", "graph_both", "graph_split", "graph_fused")
 CASES = {
     "single_greedy": (1, 1, False, True, False, "asr", None, None),
     "single_ts": (1, 1, True, True, False, "asr", None, None),
@@ -42,8 +42,9 @@ CASES = {
 def variant(model, name):
     model.frontend.fused_power = name in ("power", "both", "graph_both")
     model.frontend.fused_logmel = name in ("post", "both", "graph_both")
-    model.frontend_graph = name in ("graph", "graph_both", "graph_split")
-    model.greedy_split_choose = name == "graph_split"
+    model.frontend_graph = name in ("graph", "graph_both", "graph_split", "graph_fused")
+    model.greedy_split_choose = name in ("graph_split", "graph_fused")
+    model.greedy_fuse_accept = name == "graph_fused"
 
 
 def captures(model):
@@ -53,6 +54,13 @@ def captures(model):
             "ctc": len(getattr(s, "_runs", {})),
             "decode": len(getattr(s, "graphs", {})),
             "verify": len(getattr(s, "_verify", {})) + len(getattr(s, "_verify_solo", {})),
+            "selection_fused_windows": len(
+                {
+                    id(v.bufs)
+                    for v in getattr(s, "_verify", {}).values()
+                    if getattr(v.bufs, "fuse_accept", False)
+                }
+            ),
             "selection_split_windows": len(
                 {
                     id(v.bufs)
@@ -81,7 +89,7 @@ def dispatch(model):
     return result
 
 
-def run_case(model, args, name, items, waves):
+def run_case(model, args, name, items, waves, configure=None):
     batch, beam, timestamps, draft, stream, task, prompt, limit = CASES[name]
     model.ctc_draft = draft
     model._sessions.clear()
@@ -102,11 +110,19 @@ def run_case(model, args, name, items, waves):
         return model.transcribe(ws, timestamps=timestamps, **kw)
 
     # Decoder graphs bind selection at capture: modes need separate sessions, same engine/checkpoint.
-    pools = {False: model._sessions, True: OrderedDict()}
+    pools = (
+        {v: OrderedDict() for v in args.variants}
+        if configure is not None
+        else {"serial": model._sessions, "split": OrderedDict(), "fused": OrderedDict()}
+    )
 
     def activate(v):
-        variant(model, v)
-        model._sessions = pools[model.greedy_split_choose]
+        if configure is not None:
+            configure(model, v)
+        else:
+            variant(model, v)
+        mode = "fused" if model.greedy_fuse_accept else "split" if model.greedy_split_choose else "serial"
+        model._sessions = pools[v if configure is not None else mode]
 
     path = args.out / name
     cold, records, samples = {}, {v: {} for v in args.variants}, []
@@ -114,6 +130,8 @@ def run_case(model, args, name, items, waves):
         activate(v)
         before_allocated, before_reserved = torch.cuda.memory_allocated(), torch.cuda.memory_reserved()
         _, ms = wall(lambda: [call([waves[i] for i in chunk]) for chunk in chunks])
+        if configure is not None and getattr(model.backend, "failed", set()):
+            raise RuntimeError(f"kernel failed during warmup: {name}/{v}; refusing fallback timing")
         cold[v] = {
             "warmup_ms": ms,
             "captures": captures(model),
@@ -168,8 +186,8 @@ def run_case(model, args, name, items, waves):
             "rtfx": sum(r["audio_seconds"] for r in rows) * 1000 / sum(r["wall_ms"] for r in rows),
             "peak_allocated_bytes": max(r["peak_allocated_bytes"] for r in rows),
             "memory_scope": (
-                "both selection session pools resident; not standalone deployment peak"
-                if "graph_split" in args.variants
+                "all variant session pools resident; not standalone deployment peak"
+                if configure is not None or any(v in args.variants for v in ("graph_split", "graph_fused"))
                 else "shared sessions and all frontend variants resident"
             ),
             "draft_decoder_calls": sum(r["draft_decoder_calls"] for r in rows),
