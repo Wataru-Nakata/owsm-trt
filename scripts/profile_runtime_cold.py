@@ -22,8 +22,11 @@ def main():
     ap.add_argument("--model", required=True)
     ap.add_argument("--manifest", required=True)
     ap.add_argument("--repeat", type=int, default=3)
+    ap.add_argument("--limit", type=int, default=3)
     ap.add_argument("--mode", choices=("drafts", "verify"), default="drafts")
-    ap.add_argument("--cases", nargs="+", choices=("translation", "lid", "asr", "prompt", "stream"))
+    ap.add_argument(
+        "--cases", nargs="+", choices=("translation", "lid", "asr", "prompt", "stream", "stream8")
+    )
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
     if not os.environ.get("PBS_JOBID") and os.uname().nodename.startswith("login"):
@@ -31,14 +34,16 @@ def main():
     model, load_ms = wall(lambda: OWSM.from_pretrained(args.model, frontend_graph=False))
     files = hub.resolve(args.model)
     engines = hub.cache_dir() / files.name.replace("/", "--") / engine_tag(model.opts)
-    items = json.loads(Path(args.manifest).read_text())[:3]
+    items = json.loads(Path(args.manifest).read_text())[: args.limit]
+    if args.cases and "stream8" in args.cases and len(items) <= 8:
+        ap.error("stream8 needs at least9 recordings (--limit)")
     waves = [load_audio(it["path"]) for it in items]
 
     def call(task):
         if task == "lid":
             return model.detect_language(waves[0])
-        if task == "stream":
-            result = model.transcribe(waves, batch_size=1)
+        if task in ("stream", "stream8"):
+            result = model.transcribe(waves, batch_size=8 if task == "stream8" else 1)
         else:
             result = [
                 model.transcribe(
