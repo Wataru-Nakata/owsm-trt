@@ -50,8 +50,8 @@ def main():
     ):
         raise RuntimeError("experiment requires existing Hopper ring backend")
     original = base.kernel
-    if original.P != 32 or original.P_solo != 64 or original.nw != 4:
-        raise RuntimeError("experiment targets the 1B default ring32/solo64 shape")
+    if original.P != 32 or original.P_solo != 64 or original.nw != 4 or original.ck != 2:
+        raise RuntimeError("experiment targets the 1B default ring32/solo64, four-warps, chunk2 shape")
     if torch.cuda.get_device_properties(model.device).multi_processor_count < 96:
         raise RuntimeError("cannot keep96 persistent CTAs resident on this GPU")
     files = hub.resolve(args.model)
