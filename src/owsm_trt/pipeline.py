@@ -270,8 +270,9 @@ class OWSM:
         False disables this bound. Bound-enabled batch 1 checks completion every step, other beam
         batches every four steps; see ``BeamSession`` for an explicit interval override.
 
-        ``beam_kernels``: fuse beam candidate masking/scoring, parent/history/timestamp and finished-state updates, and valid-prefix
-        KV reordering with Triton; share cross KV across beam rows when the decoder supports it
+        ``beam_kernels``: fuse beam candidate masking/scoring, parent/history/timestamp and
+        finished-state updates, and valid-prefix KV reordering with Triton; share cross KV across
+        beam rows when the decoder supports it
         (default True on CUDA when Triton is available). Full-vocabulary log-softmax and global top-K
         stay in PyTorch. False selects the reference operations; CPU and missing-Triton paths also
         use them. These kernels do not affect greedy decoding.
@@ -283,7 +284,8 @@ class OWSM:
         ``beam_grouped_cross`` (experimental, default False): for K5 with ``beam_kernels=True``,
         group cross-attention queries and use eight key slices on an available Gluon decoder. This
         changes reduction order and can change tokens (observed on silence). Larger full batches
-        still dispatch to TensorRT; compacted tails can use it. Greedy keeps the original decoder. Measurements currently cover H200/1B only.
+        still dispatch to TensorRT; compacted tails can use it. Greedy keeps the original decoder.
+        Measurements currently cover H200/1B only.
 
         ``fp8_calibration`` (experimental, TensorRT): run the encoder's linear layers and subsampling
         convolutions in FP8, with input ranges measured on these recordings.

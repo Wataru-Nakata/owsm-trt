@@ -237,8 +237,12 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   Parent selection, token-history gather and timestamp state now share one kernel for K<=8 and
   capacity<=512. [The next same-engine comparison](docs/beam-state-fusion.md) adds4.30% /4.24% RTFx
   at B=1 / B=3 on English73, and5.07% /4.02% on Japanese12, with identical outputs and275 GPU tests.
-  The separate [grouped-attention experiment](docs/beam-cross-splits.md) gains about6% at B=1 but changes
-  the silence transcript; it remains opt-in and is not part of these default-path results.
+  For further speed, opt into `beam_grouped_cross=True` and `beam_compact_tail=True` in
+  `OWSM.from_pretrained`. [The combined H200/1B comparison](docs/beam-fast.md) measures11.83% /14.70%
+  more RTFx at B=1 / B=3 on English73 and12.36% /16.29% on Japanese12 versus the pre-state-fusion version.
+  These options remain off by default: English B3 has two20 ms timestamp changes, and silence text
+  can change. Main text/WER/CER match; all293 GPU tests and production-API output checks pass.
+  Tail compaction adds12 graphs at B3 and first-time JIT/capture cost; see the report for cold timings.
 * **Timestamp rules.** Like ESPnet, every search applies its `ScoreFilter`: no timestamps after `<notimestamps>`;
   otherwise the output starts with a timestamp, timestamps come in increasing pairs, and `<eos>` only after a
   complete pair.
