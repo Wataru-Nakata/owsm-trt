@@ -1376,6 +1376,7 @@ class BeamSession(_Session):
         diagnostics: bool = False,
         fused_rank: bool = True,
         fused_finish: bool = True,
+        kv_reorder: str = "torch",
     ):
         # H200/1B, beam 5 with bound stopping: every-step checks help batch 1, but hurt batch 3.
         # Explicit intervals stay fixed when set_upper_bound toggles the device flag for ablations.
@@ -1383,6 +1384,8 @@ class BeamSession(_Session):
             chunk = 1 if upper_bound and batch == 1 else 4
         if chunk < 1:
             raise ValueError("beam completion-check interval must be positive")
+        if kv_reorder not in ("torch", "full", "prefix"):
+            raise ValueError("kv_reorder must be torch, full or prefix")
         n = batch * beam
         super().__init__(backend, cfg, n, capacity, eos, dtype, device, use_cuda_graph, chunk, buckets, rules)
         self.batch, self.beam = batch, beam
@@ -1408,6 +1411,10 @@ class BeamSession(_Session):
         self.upper_bound = torch.tensor(upper_bound, dtype=torch.bool, **dev)
         self.fused_rank = fused_rank and kernels.available(device)
         self.fused_finish = fused_finish and kernels.available(device)
+        self.kv_reorder = kv_reorder if kernels.available(device) else "torch"
+        self._kv_scratch = None
+        if self.kv_reorder != "torch":
+            self._kv_scratch = torch.empty(2 * L * n * H * max(self.buckets) * dk, **self.kw)
         self._candidates = self._bad_blocks = None
         if self.fused_rank:
             self._candidates = torch.empty(n, cfg.vocab_size, **dev)
@@ -1466,8 +1473,12 @@ class BeamSession(_Session):
         self.score.copy_(top.view(-1))
         self.seq.copy_(self.seq.index_select(0, parent))
         self.seq.index_copy_(1, self.pos, token.unsqueeze(1))
-        for buf in self.caches[c]:
-            buf.copy_(buf.index_select(1, parent))
+        if self.kv_reorder == "torch":
+            for buf in self.caches[c]:
+                buf.copy_(buf.index_select(1, parent))
+        else:
+            beam_kernels.reorder_kv(*self.caches[c], self._kv_scratch, parent, self.pos,
+                                   prefix=self.kv_reorder == "prefix")
         self._rules_advance(token, parent)
 
     def _finish(self, token: torch.Tensor, valid: torch.Tensor) -> None:

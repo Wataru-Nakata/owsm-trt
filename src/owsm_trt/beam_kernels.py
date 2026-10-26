@@ -8,6 +8,39 @@ if triton is not None:
     import triton.language as tl
 
     @triton.jit
+    def _reorder_kv(k, v, scratch, parent, pos_ptr, L: tl.constexpr, R: tl.constexpr,
+                    H: tl.constexpr, C: tl.constexpr, D: tl.constexpr, PREFIX: tl.constexpr,
+                    COPY_BACK: tl.constexpr, BLOCK: tl.constexpr):
+        # One contiguous head tile. All parent reads finish before the separate copy-back launch.
+        head_row, tile, kv = tl.program_id(0), tl.program_id(1), tl.program_id(2)
+        i = tile * BLOCK + tl.arange(0, BLOCK)
+        inside = i < C * D
+        written = inside
+        if PREFIX:
+            # pos counts KV entries already written; the token selected at pos has no KV yet.
+            written &= i < tl.load(pos_ptr) * D
+        offset = head_row * C * D + i
+        temporary = scratch + kv * L * R * H * C * D + offset
+        if COPY_BACK:
+            value = tl.load(temporary, written, other=0)
+            # Keep every unwritten V slot finite: some attention paths multiply masked zeros by V.
+            if kv == 0:
+                tl.store(k + offset, value, inside)
+            else:
+                tl.store(v + offset, value, inside)
+        else:
+            row = (head_row // H) % R
+            layer = head_row // (R * H)
+            head = head_row % H
+            src_row = tl.load(parent + row)
+            src = ((layer * R + src_row) * H + head) * C * D + i
+            if kv == 0:
+                value = tl.load(k + src, written, other=0)
+            else:
+                value = tl.load(v + src, written, other=0)
+            tl.store(temporary, value, written)
+
+    @triton.jit
     def _candidates(logits, logp, scores, active, done, notime, first, count, last, prev,
                     candidates, bad_blocks, V: tl.constexpr, K: tl.constexpr, BLOCKS: tl.constexpr,
                     RULES: tl.constexpr, FIRST: tl.constexpr, LAST: tl.constexpr, EOS: tl.constexpr,
@@ -119,6 +152,20 @@ def candidates(session, logp: torch.Tensor) -> torch.Tensor:
     )
     s.numerical_error |= s._bad_blocks.view(s.batch, -1).any(dim=-1)
     return s._candidates
+
+
+def reorder_kv(k: torch.Tensor, v: torch.Tensor, scratch: torch.Tensor, parent: torch.Tensor,
+               pos: torch.Tensor, prefix: bool) -> None:
+    """[L, R, H, C, D] -> parent-gathered caches, using one fixed workspace for all buckets.
+
+    Full mode preserves every slot exactly. Prefix mode preserves slots < pos and zeros the rest.
+    Both launches use fixed addresses and no host read of pos; duplicate parents are safe.
+    """
+    layers, rows, heads, c, d = k.shape
+    grid = (layers * rows * heads, triton.cdiv(c * d, 2048), 2)
+    for copy_back in (False, True):
+        _reorder_kv[grid](k, v, scratch, parent, pos, layers, rows, heads, c, d,
+                         PREFIX=prefix, COPY_BACK=copy_back, BLOCK=2048, num_warps=4)
 
 
 def finish(session, token: torch.Tensor, valid: torch.Tensor, end_detect_m: int, end_detect_d: float) -> None:
