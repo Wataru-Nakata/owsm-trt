@@ -63,3 +63,23 @@ outputs must be exact; any difference aborts. It is not a newly implemented deco
 Synthetic tests compare logits, KV writes, predictions and repeated graph replay at windows1/8/32,
 solo/concurrent shapes and two offsets. Actual end-to-end gain is unmeasured; default stays0.
 Run only if the post-selection profile still identifies the ring decoder as a material component.
+
+## Prefetch measured outcome: retain0
+
+Job2771944 passed all6 exact-logit/KV/graph tests and all real1B concurrentR1W8/soloR1W32 checks.
+English4/Japanese3 runtime cases matched all sampled outputs (long-form text/segments). Seven
+alternating repeats, selection/short-primer optimization fixed across settings:
+
+| Case | ahead1 | ahead2 |
+|---|---:|---:|
+| English single plain | +0.34% | +0.23% |
+| English single timestamp | +0.71% | +0.59% |
+| English B1 streaming | -1.34% | -2.62% |
+| English110s | +0.25% | -0.47% |
+| Japanese single plain | +0.39% | -0.21% |
+| Japanese single timestamp | +0.74% | +0.40% |
+| Japanese B1 streaming | -0.26% | -0.98% |
+
+The small single-request changes do not justify the streaming regressions. Existing default ahead0
+is retained. This is tuning an already implemented parameter, not a new kernel. Results, actual dispatch,
+quality and cold data: `outputs/runtime-2771944/analysis.json` and per-language directories.

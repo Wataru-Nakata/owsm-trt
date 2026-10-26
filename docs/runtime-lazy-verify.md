@@ -23,3 +23,19 @@ execution. Actual inference, tests and cold timing run only in an allocated job.
 resident engine/backend; the first cycle is recorded separately and later cycles warm JIT. It checks
 outputs after both cold calls and reuse across tasks. This measures session-cold costs, not full model
 load/build or steady-state speed. No performance result or adoption is claimed yet.
+
+## First measured result (additional shape/warm checks pending)
+
+Job2771944 passed119 regression tests and18 selected GPU tests (4 deferred-state/capture,8 existing
+mode/cache,6 Ring-prefetch tests). `verify_cold/cold.json` matched all cold and reused-request outputs.
+With resident1B/H200 engines and warmed JIT, three session reconstructions gave median cold latency:
+ASR334.18→218.64ms (-34.6%), long prompt340.61→223.68ms (-34.3%), three-input B1 streaming698.94→587.89ms
+(-15.9%). These are not model-load/build or steady-state gains. Direct ASR retained27.0MiB fewer bytes;
+streaming allocation varied by32MiB across repeats, so the raw samples should be used for memory claims.
+Actual verification graphs were48→1/2/3 for these three initial requests; template count remains48.
+
+The candidate stays opt-in pending B8/102M and warmed runtime checks. `profile_runtime.py graph_lazy`
+records first-use time/counts, then explicitly prepares all potential verification shapes for a separate
+steady-state comparison. The latter tests hot-path overhead and prevents timing a new capture when
+encoder overlap changes solo dispatch; it is not a requirement that deployments prewarm every shape.
+Memory in that multi-variant steady benchmark is not the cold memory saving or deployment peak.

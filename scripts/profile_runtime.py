@@ -34,6 +34,7 @@ VARIANTS = (
     "graph_notime",
     "graph_cached",
     "graph_flags",
+    "graph_lazy",
 )
 CASES = {
     "single_greedy": (1, 1, False, True, False, "asr", None, None),
@@ -98,6 +99,7 @@ def variant(model, name):
         "graph_notime",
         "graph_cached",
         "graph_flags",
+        "graph_lazy",
     )
     model.greedy_split_choose = name in (
         "graph_split",
@@ -105,10 +107,18 @@ def variant(model, name):
         "graph_notime",
         "graph_cached",
         "graph_flags",
+        "graph_lazy",
     )
-    model.greedy_fuse_accept = name in ("graph_fused", "graph_notime", "graph_cached", "graph_flags")
+    model.greedy_fuse_accept = name in (
+        "graph_fused",
+        "graph_notime",
+        "graph_cached",
+        "graph_flags",
+        "graph_lazy",
+    )
     model.greedy_reuse_notime = name in ("graph_notime", "graph_cached")
-    model.greedy_cache_draft_flags = name in ("graph_cached", "graph_flags")
+    model.greedy_cache_draft_flags = name in ("graph_cached", "graph_flags", "graph_lazy")
+    model.greedy_lazy_verify_graphs = name == "graph_lazy"
 
 
 def captures(model):
@@ -199,6 +209,7 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
             "notime": OrderedDict(),
             "cached": OrderedDict(),
             "flags": OrderedDict(),
+            "lazy": OrderedDict(),
         }
     )
 
@@ -213,6 +224,7 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
             "graph_notime": "notime",
             "graph_cached": "cached",
             "graph_flags": "flags",
+            "graph_lazy": "lazy",
         }
         model._sessions = pools[v if configure is not None else modes.get(v, "serial")]
 
@@ -232,6 +244,22 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
             "reserved_delta_bytes": torch.cuda.memory_reserved() - before_reserved,
             "frontend_graph": model._frontend_replay.info() if model._frontend_replay else None,
         }
+    # Lazy setup targets cold latency. For this separate steady-state measurement, warm every
+    # possible decoder shape explicitly: stream overlap can switch solo/concurrent dispatch.
+    # First-use counts/time remain above; this additional preparation is not a deployment requirement.
+    for v in args.variants:
+        activate(v)
+        if any(getattr(s, "lazy_verify_graphs", False) for s in model._sessions.values()):
+
+            def warm_verify():
+                for sess in model._sessions.values():
+                    for label in ("_verify", "_verify_solo"):
+                        for bound in getattr(sess, label, {}).values():
+                            bound._ensure_graph()
+
+            _, ms = wall(warm_verify)
+            cold[v]["full_verify_warmup_ms"] = ms
+            cold[v]["full_verify_warmup_captures"] = captures(model)
     after_warmup = {}
     for v in args.variants:
         activate(v)
@@ -282,7 +310,14 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
                 if configure is not None
                 or any(
                     v in args.variants
-                    for v in ("graph_split", "graph_fused", "graph_notime", "graph_cached", "graph_flags")
+                    for v in (
+                        "graph_split",
+                        "graph_fused",
+                        "graph_notime",
+                        "graph_cached",
+                        "graph_flags",
+                        "graph_lazy",
+                    )
                 )
                 else "shared sessions and all frontend variants resident"
             ),
