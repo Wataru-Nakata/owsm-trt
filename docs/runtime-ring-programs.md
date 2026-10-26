@@ -1,4 +1,4 @@
-# Existing ring SM-budget experiment (prepared, unmeasured)
+# Existing ring execution settings
 
 Job2770946's instrumented110s trace attributes47.57ms to67 ring decoder calls. After the greedy
 selection improvements, the existing ring program budgets are the next measured component to tune.
@@ -24,7 +24,7 @@ outside request latency. Long-form has no public joined token IDs, so its compar
 
 `scripts/profile_ring_programs.pbs` stages the environment, source, model, cached engines and English73/
 Japanese12/110s audio into node-local storage. It uses the established serial1GPU<=1h policy, with fresh
-queue/group/duplicate/account-cap192 checks at submission. No measurement or default adoption yet.
+queue/group/duplicate/account-cap192 checks at submission. The measured outcome is below; no budget change was adopted.
 
 ## Measured outcome: retain32/64
 
@@ -53,3 +53,13 @@ per-case wall/tokens/cold/dispatch, tests.log and edge_recipe.json. The separate
 checks exact fused-selection outputs on silence and noise; it is not an annotated quality score.
 The job exited0 in6m50s and its monitor stopped. Subsequent work continues on the same authorized
 serial1GPU settings with fresh capacity/duplicate checks.
+
+## Weight-prefetch distance (prepared)
+
+The existing `ahead` option prefetches weights for later GEMM stages into L2. An isolated sweep
+(`profile_ring_programs.py --sweep prefetch`) compares distances0/1/2 at fixed32/64 programs,
+warp count, cache layout, attention split count and fp16 arithmetic. This is E intent: all sampled
+outputs must be exact; any difference aborts. It is not a newly implemented decoder kernel.
+Synthetic tests compare logits, KV writes, predictions and repeated graph replay at windows1/8/32,
+solo/concurrent shapes and two offsets. Actual end-to-end gain is unmeasured; default stays0.
+Run only if the post-selection profile still identifies the ring decoder as a material component.

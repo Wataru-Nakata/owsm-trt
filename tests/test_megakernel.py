@@ -488,3 +488,44 @@ def test_notime_reuse_modes_long_prefill_and_graph_lifetimes(model, rows, start_
         else:
             assert outs == reference
         assert not backend.failed
+
+
+@gluon_only
+@pytest.mark.parametrize("window", [1, 8, 32])
+@pytest.mark.parametrize("solo", [False, True])
+def test_ring_prefetch_preserves_logits_and_cache(model, window, solo):
+    """Weight prefetch must leave exact arithmetic, cache writes and repeated graph results intact."""
+    dev = torch.device("cuda")
+    L, H, dk, C, T = CFG.dec_layers, CFG.dec_heads, 64, 128, CFG.enc_frames
+    torch.manual_seed(71 + window)
+    kw = dict(device=dev, dtype=torch.float16)
+    tok = torch.randint(CFG.vocab_size, (1, window), device=dev)
+    off = torch.tensor([7], device=dev)
+    initial = [torch.randn(L, 1, H, C, dk, **kw) for _ in range(2)]
+    ck, cv = [torch.randn(L, 1, H, T, dk, **kw) for _ in range(2)]
+    mega = megakernel.MegaDecoder(model.decoder, dev)
+    expected = None
+    for ahead in (0, 1, 2):
+        ring = megakernel_ring.RingDecoder(mega, ahead=ahead)
+        k, v = [x.clone() for x in initial]
+        logits = torch.zeros(1, window, CFG.vocab_size, device=dev)
+        new = torch.zeros(L, 2, 1, H, window, dk, **kw)
+        pred = torch.full((1, window), -1, dtype=torch.long, device=dev)
+        step = ring.step_fn(tok, off, k, v, ck, cv, logits, new, pred=pred, solo=solo)
+        from owsm_trt.runtime import capture_graph
+
+        graph = capture_graph(step)
+        results = []
+        for offset in (7, 63):
+            off.fill_(offset)
+            k.copy_(initial[0])
+            v.copy_(initial[1])
+            graph.replay()
+            results.append([x.clone() for x in (logits, new, k, v, pred)])
+        ring.check()
+        if expected is None:
+            expected = results
+        else:
+            for actuals, refs in zip(results, expected):
+                for actual, ref in zip(actuals, refs):
+                    assert torch.equal(actual, ref)

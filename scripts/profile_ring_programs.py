@@ -1,4 +1,4 @@
-"""Same-engine N experiment: existing ring SM budgets, separate solo/encoder-overlap controls."""
+"""Same-engine experiments for existing ring SM budgets or weight-prefetch distance."""
 
 import argparse
 import importlib.metadata
@@ -26,6 +26,7 @@ def main():
     ap.add_argument("--manifest", required=True)
     ap.add_argument("--lang", default="eng")
     ap.add_argument("--repeat", type=int, default=7)
+    ap.add_argument("--sweep", choices=("programs", "prefetch"), default="programs")
     ap.add_argument("--long-audio")
     ap.add_argument("--split-choose", action="store_true")
     ap.add_argument("--fuse-accept", action="store_true")
@@ -55,14 +56,18 @@ def main():
         raise RuntimeError("cannot keep96 persistent CTAs resident on this GPU")
     files = hub.resolve(args.model)
     decoder = _load_decoder(model.cfg, files.checkpoint)
-    settings = {"reference": (32, 64), "p16": (16, 64), "p48": (48, 64), "s96": (32, 96)}
+    settings = (
+        {"reference": (32, 64, 0), "p16": (16, 64, 0), "p48": (48, 64, 0), "s96": (32, 96, 0)}
+        if args.sweep == "programs"
+        else {"reference": (32, 64, 0), "ahead1": (32, 64, 1), "ahead2": (32, 64, 2)}
+    )
     args.variants = list(settings)
     backends, checks = {"reference": base}, {}
-    for name, (parallel, solo) in settings.items():
+    for name, (parallel, solo, ahead) in settings.items():
         kernel = (
             original
             if name == "reference"
-            else megakernel_ring.RingDecoder(original.m, programs=parallel, solo_programs=solo)
+            else megakernel_ring.RingDecoder(original.m, programs=parallel, solo_programs=solo, ahead=ahead)
         )
         checked = (
             kernel
@@ -103,7 +108,11 @@ def main():
             engine_sha256={p.name: sha256(p) for p in engines.glob("*.engine")},
             nvidia_smi=command(["nvidia-smi", "--query-gpu=name,driver_version", "--format=csv"]),
             settings=settings,
-            classification="N; P changes cross-attention split count; solo leaves it unchanged",
+            classification=(
+                "N; P changes cross-attention split count; solo leaves it unchanged"
+                if args.sweep == "programs"
+                else "E intent; same program/split count/arithmetic, only existing L2 prefetch distance changes"
+            ),
             reference_time_annotations=False,
         ),
     )
@@ -131,7 +140,9 @@ def main():
         if any(x["equal"] != x["total"] for x in s["agreement"].values())
     ]
     save(args.out / "output_differences.json", differences)
-    # N differences are retained for quality analysis; dispatch failures/nondeterminism are fatal.
+    if args.sweep == "prefetch" and differences:
+        raise RuntimeError(f"prefetch scheduling changed outputs: {differences}")
+    # N program-budget differences are retained for quality analysis; dispatch failures are fatal.
 
 
 if __name__ == "__main__":
