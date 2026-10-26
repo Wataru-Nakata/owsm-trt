@@ -226,6 +226,12 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   26.6–27.1%, with exact tokens/segments (12 inputs per condition,11 alternating repeats,
   versus the previously optimized path). Drafted/beam paths have no corresponding speedup claim.
   [Plain selection measurements and cold costs](docs/runtime-plain-selection.md).
+* **Completed plain decoder calls.** With `greedy_kernels=True`, single-row Ring calls skip decoder
+  computation after EOS while keeping the existing host-check interval and graph replay count.
+  H200/1B and102M English/Japanese B1 throughput improved1.0–5.6% across12 tested conditions,
+  with exact tokens/segments. Some per-input times and102M plain-ASR p95 slightly regressed;
+  B>1, other decoder kernels and drafted verification have no corresponding speedup claim.
+  [Measurements and limitations](docs/runtime-finished-skip.md).
 * **Cached-engine model loading.** Frontend/decoder helpers privately map supported ZIP checkpoints
   and read only needed tensors. On H200 with node-local files and warmed OS/JIT caches, fresh-process
   load medians fell from6.75 to4.61 s for1B and1.87 to1.61 s for102M (five alternating pairs, exact

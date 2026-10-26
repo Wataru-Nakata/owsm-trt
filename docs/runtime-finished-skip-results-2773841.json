@@ -1,0 +1,1697 @@
+{
+  "job": "2773841",
+  "conditions": [
+    {
+      "model": "1b",
+      "corpus": "english",
+      "case": "plain_b1",
+      "reference_p50_ms": 1518.7752980273217,
+      "skip_p50_ms": 1454.4475600123405,
+      "rtfx_percent": 4.42282965598535,
+      "reference_p95_ms": 1519.5734524051659,
+      "skip_p95_ms": 1455.025701993145,
+      "paired_rtfx_percent": {
+        "median": 4.4188748545547,
+        "min": 4.272600602701693,
+        "max": 4.508334200439745,
+        "positive": 9,
+        "n": 9
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        }
+      },
+      "quality": {
+        "reference": {
+          "metric": "WER",
+          "reference_units": 1150,
+          "errors": 45,
+          "rate": 0.0391304347826087,
+          "annotated_utterances": 73,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "skip": {
+          "metric": "WER",
+          "reference_units": 1150,
+          "errors": 45,
+          "rate": 0.0391304347826087,
+          "annotated_utterances": 73,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "diagnostic_calls": {
+        "reference": {
+          "total": 1700,
+          "after_eos": 93
+        },
+        "skip": {
+          "total": 1700,
+          "after_eos": 93
+        }
+      },
+      "timing": {
+        "reference": {
+          "n": 9,
+          "p50": 1518.7752980273217,
+          "p95": 1519.5734524051659,
+          "min": 1515.4006719822064,
+          "max": 1519.9842639849521,
+          "stdev": 1.4755745362722725,
+          "rtfx": 316.72550615275185
+        },
+        "skip": {
+          "n": 9,
+          "p50": 1454.4475600123405,
+          "p95": 1455.025701993145,
+          "min": 1450.43029403314,
+          "max": 1455.0815660040826,
+          "stdev": 1.580583623684709,
+          "rtfx": 330.7337357669455
+        }
+      },
+      "shared_process_peak_cuda_bytes": 6476711424,
+      "full_equal": true,
+      "after_eos_call_percent": 5.470588235294118,
+      "single_request": {
+        "latency": {
+          "reference": {
+            "p50_ms": 18.631203041877598,
+            "p95_ms": 37.89494358934462,
+            "n": 657
+          },
+          "skip": {
+            "p50_ms": 17.977954004891217,
+            "p95_ms": 36.54162141028792,
+            "n": 657
+          }
+        },
+        "per_input_cv_median_percent": {
+          "reference": 0.40358151754707666,
+          "skip": 0.4154540007828376
+        },
+        "per_input_median_rtfx_change_percent": {
+          "median": 3.9252821451676745,
+          "min": -0.12060003841710687,
+          "max": 24.453199081701026,
+          "positive": 68,
+          "total": 73
+        },
+        "aggregate_median_rtfx_change_percent": 4.38130669538046
+      }
+    },
+    {
+      "model": "1b",
+      "corpus": "english",
+      "case": "plain_ts_b1",
+      "reference_p50_ms": 1652.3788889753632,
+      "skip_p50_ms": 1564.7099489578977,
+      "rtfx_percent": 5.602887619897423,
+      "reference_p95_ms": 1653.7313578068279,
+      "skip_p95_ms": 1568.3157368097454,
+      "paired_rtfx_percent": {
+        "median": 5.520833526023594,
+        "min": 5.337441261564568,
+        "max": 5.692661163593837,
+        "positive": 9,
+        "n": 9
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        }
+      },
+      "quality": {
+        "reference": {
+          "metric": "WER",
+          "reference_units": 1150,
+          "errors": 45,
+          "rate": 0.0391304347826087,
+          "annotated_utterances": 73,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "skip": {
+          "metric": "WER",
+          "reference_units": 1150,
+          "errors": 45,
+          "rate": 0.0391304347826087,
+          "annotated_utterances": 73,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "diagnostic_calls": {
+        "reference": {
+          "total": 1882,
+          "after_eos": 130
+        },
+        "skip": {
+          "total": 1882,
+          "after_eos": 130
+        }
+      },
+      "timing": {
+        "reference": {
+          "n": 9,
+          "p50": 1652.3788889753632,
+          "p95": 1653.7313578068279,
+          "min": 1650.5925609963015,
+          "max": 1653.8727370207198,
+          "stdev": 1.2062282091489702,
+          "rtfx": 291.1165703032485
+        },
+        "skip": {
+          "n": 9,
+          "p50": 1564.7099489578977,
+          "p95": 1568.3157368097454,
+          "min": 1563.3809110149741,
+          "max": 1569.2236199975014,
+          "stdev": 1.6601662903409504,
+          "rtfx": 307.42750458023926
+        }
+      },
+      "shared_process_peak_cuda_bytes": 6477127168,
+      "full_equal": true,
+      "after_eos_call_percent": 6.9075451647183845,
+      "single_request": {
+        "latency": {
+          "reference": {
+            "p50_ms": 21.429896994959563,
+            "p95_ms": 38.312927226070315,
+            "n": 657
+          },
+          "skip": {
+            "p50_ms": 19.514243002049625,
+            "p95_ms": 38.22453819448128,
+            "n": 657
+          }
+        },
+        "per_input_cv_median_percent": {
+          "reference": 0.4104426079807839,
+          "skip": 0.42407427193755426
+        },
+        "per_input_median_rtfx_change_percent": {
+          "median": 6.669411919649404,
+          "min": -0.668242006829356,
+          "max": 24.612894761872184,
+          "positive": 66,
+          "total": 73
+        },
+        "aggregate_median_rtfx_change_percent": 5.498368356386041
+      }
+    },
+    {
+      "model": "1b",
+      "corpus": "english",
+      "case": "translation_b1",
+      "reference_p50_ms": 1509.510365955066,
+      "skip_p50_ms": 1451.124333019834,
+      "rtfx_percent": 4.023503128345229,
+      "reference_p95_ms": 1515.384823991917,
+      "skip_p95_ms": 1452.8997869812883,
+      "paired_rtfx_percent": {
+        "median": 4.0306022046145085,
+        "min": 3.9945814019725523,
+        "max": 4.314878078793782,
+        "positive": 9,
+        "n": 9
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        }
+      },
+      "quality": {
+        "reference": {
+          "unmeasured": "No reference English translations"
+        },
+        "skip": {
+          "unmeasured": "No reference English translations"
+        }
+      },
+      "diagnostic_calls": {
+        "reference": {
+          "total": 1696,
+          "after_eos": 98
+        },
+        "skip": {
+          "total": 1696,
+          "after_eos": 98
+        }
+      },
+      "timing": {
+        "reference": {
+          "n": 9,
+          "p50": 1509.510365955066,
+          "p95": 1515.384823991917,
+          "min": 1508.7532050092705,
+          "max": 1516.4603979792446,
+          "stdev": 2.467046825946248,
+          "rtfx": 318.66947445283006
+        },
+        "skip": {
+          "n": 9,
+          "p50": 1451.124333019834,
+          "p95": 1452.8997869812883,
+          "min": 1449.9711759854108,
+          "max": 1453.733566973824,
+          "stdev": 1.0409435790316912,
+          "rtfx": 331.49115072652097
+        }
+      },
+      "shared_process_peak_cuda_bytes": 6342611456,
+      "full_equal": true,
+      "after_eos_call_percent": 5.778301886792453,
+      "single_request": {
+        "latency": {
+          "reference": {
+            "p50_ms": 18.584762001410127,
+            "p95_ms": 37.77078058337793,
+            "n": 657
+          },
+          "skip": {
+            "p50_ms": 18.02932796999812,
+            "p95_ms": 37.371491780504584,
+            "n": 657
+          }
+        },
+        "per_input_cv_median_percent": {
+          "reference": 0.4156412215313104,
+          "skip": 0.45370473785318377
+        },
+        "per_input_median_rtfx_change_percent": {
+          "median": 3.719942605961468,
+          "min": -0.949880662841851,
+          "max": 23.66975066089538,
+          "positive": 57,
+          "total": 73
+        },
+        "aggregate_median_rtfx_change_percent": 3.9888002010373125
+      }
+    },
+    {
+      "model": "1b",
+      "corpus": "english",
+      "case": "translation_b3",
+      "reference_p50_ms": 737.9954449716024,
+      "skip_p50_ms": 740.837057994213,
+      "rtfx_percent": -0.3835678833756129,
+      "reference_p95_ms": 740.3961832053028,
+      "skip_p95_ms": 742.0178625965491,
+      "paired_rtfx_percent": {
+        "median": -0.327282283054553,
+        "min": -0.5835522801633797,
+        "max": 0.01635919459461732,
+        "positive": 1,
+        "n": 9
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        }
+      },
+      "quality": {
+        "reference": {
+          "unmeasured": "No reference English translations"
+        },
+        "skip": {
+          "unmeasured": "No reference English translations"
+        }
+      },
+      "diagnostic_calls": {
+        "reference": {
+          "total": 712,
+          "after_eos": 33
+        },
+        "skip": {
+          "total": 712,
+          "after_eos": 33
+        }
+      },
+      "timing": {
+        "reference": {
+          "n": 9,
+          "p50": 737.9954449716024,
+          "p95": 740.3961832053028,
+          "min": 735.7590890023857,
+          "max": 741.5268259937875,
+          "stdev": 1.459012438748617,
+          "rtfx": 651.8127967829258
+        },
+        "skip": {
+          "n": 9,
+          "p50": 740.837057994213,
+          "p95": 742.0178625965491,
+          "min": 738.1750050117262,
+          "max": 742.0515930280089,
+          "stdev": 1.3509827265299352,
+          "rtfx": 649.3126522347342
+        }
+      },
+      "shared_process_peak_cuda_bytes": 6885972992,
+      "full_equal": true,
+      "after_eos_call_percent": 4.634831460674158
+    },
+    {
+      "model": "1b",
+      "corpus": "japanese",
+      "case": "plain_b1",
+      "reference_p50_ms": 353.9963309885934,
+      "skip_p50_ms": 340.03068902529776,
+      "rtfx_percent": 4.107171033099499,
+      "reference_p95_ms": 354.305140406359,
+      "skip_p95_ms": 340.53960922174156,
+      "paired_rtfx_percent": {
+        "median": 4.047998563969557,
+        "min": 3.8619991040380386,
+        "max": 4.246829503722727,
+        "positive": 9,
+        "n": 9
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        }
+      },
+      "quality": {
+        "reference": {
+          "metric": "CER",
+          "reference_units": 592,
+          "errors": 29,
+          "rate": 0.048986486486486486,
+          "annotated_utterances": 12,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "skip": {
+          "metric": "CER",
+          "reference_units": 592,
+          "errors": 29,
+          "rate": 0.048986486486486486,
+          "annotated_utterances": 12,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "diagnostic_calls": {
+        "reference": {
+          "total": 428,
+          "after_eos": 22
+        },
+        "skip": {
+          "total": 428,
+          "after_eos": 22
+        }
+      },
+      "timing": {
+        "reference": {
+          "n": 9,
+          "p50": 353.9963309885934,
+          "p95": 354.305140406359,
+          "min": 353.16764801973477,
+          "max": 354.38742401311174,
+          "stdev": 0.3377980527583449,
+          "rtfx": 444.9198655820956
+        },
+        "skip": {
+          "n": 9,
+          "p50": 340.03068902529776,
+          "p95": 340.53960922174156,
+          "min": 339.6394929732196,
+          "max": 340.6269820407033,
+          "stdev": 0.28791531229693296,
+          "rtfx": 463.19348542178864
+        }
+      },
+      "shared_process_peak_cuda_bytes": 6201185792,
+      "full_equal": true,
+      "after_eos_call_percent": 5.140186915887851,
+      "single_request": {
+        "latency": {
+          "reference": {
+            "p50_ms": 25.613077013986185,
+            "p95_ms": 60.585550163523294,
+            "n": 108
+          },
+          "skip": {
+            "p50_ms": 24.751013988861814,
+            "p95_ms": 58.77458623435814,
+            "n": 108
+          }
+        },
+        "per_input_cv_median_percent": {
+          "reference": 0.2892723774949543,
+          "skip": 0.3156735349036471
+        },
+        "per_input_median_rtfx_change_percent": {
+          "median": 3.787044271401141,
+          "min": -0.4238715586248887,
+          "max": 11.47890108085068,
+          "positive": 9,
+          "total": 12
+        },
+        "aggregate_median_rtfx_change_percent": 4.085945577600425
+      }
+    },
+    {
+      "model": "1b",
+      "corpus": "japanese",
+      "case": "plain_ts_b1",
+      "reference_p50_ms": 366.4583030040376,
+      "skip_p50_ms": 356.7863059579395,
+      "rtfx_percent": 2.7108655474121113,
+      "reference_p95_ms": 366.7713398230262,
+      "skip_p95_ms": 356.9391458062455,
+      "paired_rtfx_percent": {
+        "median": 2.740560209636822,
+        "min": 2.459353938186837,
+        "max": 2.9610236752789065,
+        "positive": 9,
+        "n": 9
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        }
+      },
+      "quality": {
+        "reference": {
+          "metric": "CER",
+          "reference_units": 592,
+          "errors": 29,
+          "rate": 0.048986486486486486,
+          "annotated_utterances": 12,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "skip": {
+          "metric": "CER",
+          "reference_units": 592,
+          "errors": 29,
+          "rate": 0.048986486486486486,
+          "annotated_utterances": 12,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "diagnostic_calls": {
+        "reference": {
+          "total": 445,
+          "after_eos": 15
+        },
+        "skip": {
+          "total": 445,
+          "after_eos": 15
+        }
+      },
+      "timing": {
+        "reference": {
+          "n": 9,
+          "p50": 366.4583030040376,
+          "p95": 366.7713398230262,
+          "min": 365.76028796844184,
+          "max": 366.8136590276845,
+          "stdev": 0.29667984788229285,
+          "rtfx": 429.7896887828591
+        },
+        "skip": {
+          "n": 9,
+          "p50": 356.7863059579395,
+          "p95": 356.9391458062455,
+          "min": 355.9194440022111,
+          "max": 356.9808650063351,
+          "stdev": 0.31042059697318986,
+          "rtfx": 441.4407093824033
+        }
+      },
+      "shared_process_peak_cuda_bytes": 6268766208,
+      "full_equal": true,
+      "after_eos_call_percent": 3.3707865168539324,
+      "single_request": {
+        "latency": {
+          "reference": {
+            "p50_ms": 27.06596499774605,
+            "p95_ms": 61.5299794182647,
+            "n": 108
+          },
+          "skip": {
+            "p50_ms": 26.24818400363438,
+            "p95_ms": 60.1550858526025,
+            "n": 108
+          }
+        },
+        "per_input_cv_median_percent": {
+          "reference": 0.36803616227280966,
+          "skip": 0.393716496560972
+        },
+        "per_input_median_rtfx_change_percent": {
+          "median": 2.715299854598485,
+          "min": -0.28712026567241367,
+          "max": 7.078514781813006,
+          "positive": 9,
+          "total": 12
+        },
+        "aggregate_median_rtfx_change_percent": 2.6725188084970153
+      }
+    },
+    {
+      "model": "1b",
+      "corpus": "japanese",
+      "case": "translation_b1",
+      "reference_p50_ms": 337.18871197197586,
+      "skip_p50_ms": 329.0959500009194,
+      "rtfx_percent": 2.4590888982480186,
+      "reference_p95_ms": 337.46814421610907,
+      "skip_p95_ms": 329.666375182569,
+      "paired_rtfx_percent": {
+        "median": 2.42861252453479,
+        "min": 2.1496200560143786,
+        "max": 2.7252873110111375,
+        "positive": 9,
+        "n": 9
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        }
+      },
+      "quality": {
+        "reference": {
+          "unmeasured": "No reference English translations"
+        },
+        "skip": {
+          "unmeasured": "No reference English translations"
+        }
+      },
+      "diagnostic_calls": {
+        "reference": {
+          "total": 404,
+          "after_eos": 13
+        },
+        "skip": {
+          "total": 404,
+          "after_eos": 13
+        }
+      },
+      "timing": {
+        "reference": {
+          "n": 9,
+          "p50": 337.18871197197586,
+          "p95": 337.46814421610907,
+          "min": 336.78167703328654,
+          "max": 337.6059010042809,
+          "stdev": 0.23256791080128406,
+          "rtfx": 467.09748697960566
+        },
+        "skip": {
+          "n": 9,
+          "p50": 329.0959500009194,
+          "p95": 329.666375182569,
+          "min": 328.31400900613517,
+          "max": 329.6944979811087,
+          "stdev": 0.41174814814726796,
+          "rtfx": 478.58382942591663
+        }
+      },
+      "shared_process_peak_cuda_bytes": 6268099584,
+      "full_equal": true,
+      "after_eos_call_percent": 3.217821782178218,
+      "single_request": {
+        "latency": {
+          "reference": {
+            "p50_ms": 25.67608151002787,
+            "p95_ms": 63.36019820300862,
+            "n": 108
+          },
+          "skip": {
+            "p50_ms": 25.003041519084945,
+            "p95_ms": 61.47404576768167,
+            "n": 108
+          }
+        },
+        "per_input_cv_median_percent": {
+          "reference": 0.29406970059271775,
+          "skip": 0.3599577298704394
+        },
+        "per_input_median_rtfx_change_percent": {
+          "median": 1.198478968502481,
+          "min": -0.3176542608869126,
+          "max": 11.732795663666407,
+          "positive": 8,
+          "total": 12
+        },
+        "aggregate_median_rtfx_change_percent": 2.534770378730311
+      }
+    },
+    {
+      "model": "1b",
+      "corpus": "japanese",
+      "case": "translation_b3",
+      "reference_p50_ms": 164.5805630250834,
+      "skip_p50_ms": 164.64825201546773,
+      "rtfx_percent": -0.04111127179047269,
+      "reference_p95_ms": 164.72837639739737,
+      "skip_p95_ms": 164.79609399102628,
+      "paired_rtfx_percent": {
+        "median": -0.06306752212003053,
+        "min": -0.3955866529714247,
+        "max": 0.10500789956580103,
+        "positive": 2,
+        "n": 9
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        }
+      },
+      "quality": {
+        "reference": {
+          "unmeasured": "No reference English translations"
+        },
+        "skip": {
+          "unmeasured": "No reference English translations"
+        }
+      },
+      "diagnostic_calls": {
+        "reference": {
+          "total": 176,
+          "after_eos": 3
+        },
+        "skip": {
+          "total": 176,
+          "after_eos": 3
+        }
+      },
+      "timing": {
+        "reference": {
+          "n": 9,
+          "p50": 164.5805630250834,
+          "p95": 164.72837639739737,
+          "min": 164.06856098910794,
+          "max": 164.7343260119669,
+          "stdev": 0.2349415718878067,
+          "rtfx": 956.9781334141853
+        },
+        "skip": {
+          "n": 9,
+          "p50": 164.64825201546773,
+          "p95": 164.79609399102628,
+          "min": 164.24033598741516,
+          "max": 164.79690198320895,
+          "stdev": 0.17306504868053246,
+          "rtfx": 956.5847075327821
+        }
+      },
+      "shared_process_peak_cuda_bytes": 6689173504,
+      "full_equal": true,
+      "after_eos_call_percent": 1.7045454545454546
+    },
+    {
+      "model": "102m",
+      "corpus": "english",
+      "case": "plain_b1",
+      "reference_p50_ms": 520.8329940214753,
+      "skip_p50_ms": 502.5698380195536,
+      "rtfx_percent": 3.6339538548294525,
+      "reference_p95_ms": 522.1016859984957,
+      "skip_p95_ms": 510.05948000820354,
+      "paired_rtfx_percent": {
+        "median": 3.498731653878062,
+        "min": 1.3279135218683624,
+        "max": 3.801828984665301,
+        "positive": 9,
+        "n": 9
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        }
+      },
+      "quality": {
+        "reference": {
+          "metric": "WER",
+          "reference_units": 1150,
+          "errors": 100,
+          "rate": 0.08695652173913043,
+          "annotated_utterances": 73,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "skip": {
+          "metric": "WER",
+          "reference_units": 1150,
+          "errors": 100,
+          "rate": 0.08695652173913043,
+          "annotated_utterances": 73,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "diagnostic_calls": {
+        "reference": {
+          "total": 1680,
+          "after_eos": 97
+        },
+        "skip": {
+          "total": 1680,
+          "after_eos": 97
+        }
+      },
+      "timing": {
+        "reference": {
+          "n": 9,
+          "p50": 520.8329940214753,
+          "p95": 522.1016859984957,
+          "min": 519.5544969756156,
+          "max": 522.6984919863753,
+          "stdev": 0.8943755830117143,
+          "rtfx": 923.5875616976863
+        },
+        "skip": {
+          "n": 9,
+          "p50": 502.5698380195536,
+          "p95": 510.05948000820354,
+          "min": 502.084998995997,
+          "max": 514.0074199880473,
+          "stdev": 3.5997060161162455,
+          "rtfx": 957.1503074987247
+        }
+      },
+      "shared_process_peak_cuda_bytes": 2746973184,
+      "full_equal": true,
+      "after_eos_call_percent": 5.773809523809524,
+      "single_request": {
+        "latency": {
+          "reference": {
+            "p50_ms": 6.4773610210977495,
+            "p95_ms": 13.240811810828745,
+            "n": 657
+          },
+          "skip": {
+            "p50_ms": 6.280082045122981,
+            "p95_ms": 13.291846017818896,
+            "n": 657
+          }
+        },
+        "per_input_cv_median_percent": {
+          "reference": 1.3024007504676562,
+          "skip": 1.2142488550561399
+        },
+        "per_input_median_rtfx_change_percent": {
+          "median": 3.2011282009654973,
+          "min": -3.2018185390859877,
+          "max": 22.64226803028968,
+          "positive": 56,
+          "total": 73
+        },
+        "aggregate_median_rtfx_change_percent": 3.313392953751193
+      }
+    },
+    {
+      "model": "102m",
+      "corpus": "english",
+      "case": "plain_ts_b1",
+      "reference_p50_ms": 565.7429359853268,
+      "skip_p50_ms": 537.6082150032744,
+      "rtfx_percent": 5.23331307016599,
+      "reference_p95_ms": 567.0232744305395,
+      "skip_p95_ms": 540.6617077882402,
+      "paired_rtfx_percent": {
+        "median": 5.290811842986209,
+        "min": 4.461878551271581,
+        "max": 5.464265141825608,
+        "positive": 9,
+        "n": 9
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        }
+      },
+      "quality": {
+        "reference": {
+          "metric": "WER",
+          "reference_units": 1150,
+          "errors": 100,
+          "rate": 0.08695652173913043,
+          "annotated_utterances": 73,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "skip": {
+          "metric": "WER",
+          "reference_units": 1150,
+          "errors": 100,
+          "rate": 0.08695652173913043,
+          "annotated_utterances": 73,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "diagnostic_calls": {
+        "reference": {
+          "total": 1849,
+          "after_eos": 119
+        },
+        "skip": {
+          "total": 1849,
+          "after_eos": 119
+        }
+      },
+      "timing": {
+        "reference": {
+          "n": 9,
+          "p50": 565.7429359853268,
+          "p95": 567.0232744305395,
+          "min": 564.6507019991986,
+          "max": 567.1958720195107,
+          "stdev": 0.8321927863466807,
+          "rtfx": 850.2711114937831
+        },
+        "skip": {
+          "n": 9,
+          "p50": 537.6082150032744,
+          "p95": 540.6617077882402,
+          "min": 536.135206988547,
+          "max": 540.800107002724,
+          "stdev": 1.5393636010795093,
+          "rtfx": 894.7684607034329
+        }
+      },
+      "shared_process_peak_cuda_bytes": 2662554112,
+      "full_equal": true,
+      "after_eos_call_percent": 6.435911303407247,
+      "single_request": {
+        "latency": {
+          "reference": {
+            "p50_ms": 7.491265016142279,
+            "p95_ms": 14.308606612030417,
+            "n": 657
+          },
+          "skip": {
+            "p50_ms": 6.813504965975881,
+            "p95_ms": 13.829529588110743,
+            "n": 657
+          }
+        },
+        "per_input_cv_median_percent": {
+          "reference": 1.1628212593081946,
+          "skip": 1.106067962288946
+        },
+        "per_input_median_rtfx_change_percent": {
+          "median": 5.976346209944472,
+          "min": -5.221429625509599,
+          "max": 16.537032055032185,
+          "positive": 65,
+          "total": 73
+        },
+        "aggregate_median_rtfx_change_percent": 5.129456203500626
+      }
+    },
+    {
+      "model": "102m",
+      "corpus": "english",
+      "case": "translation_b1",
+      "reference_p50_ms": 521.5459230239503,
+      "skip_p50_ms": 496.07737199403346,
+      "rtfx_percent": 5.133987653487071,
+      "reference_p95_ms": 523.8307651947252,
+      "skip_p95_ms": 497.491727815941,
+      "paired_rtfx_percent": {
+        "median": 5.285191880798212,
+        "min": 4.72850278523318,
+        "max": 5.9488568396191654,
+        "positive": 9,
+        "n": 9
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        }
+      },
+      "quality": {
+        "reference": {
+          "unmeasured": "No reference English translations"
+        },
+        "skip": {
+          "unmeasured": "No reference English translations"
+        }
+      },
+      "diagnostic_calls": {
+        "reference": {
+          "total": 1688,
+          "after_eos": 112
+        },
+        "skip": {
+          "total": 1688,
+          "after_eos": 112
+        }
+      },
+      "timing": {
+        "reference": {
+          "n": 9,
+          "p50": 521.5459230239503,
+          "p95": 523.8307651947252,
+          "min": 521.1345790303312,
+          "max": 523.9578179898672,
+          "stdev": 0.993769748847113,
+          "rtfx": 922.3250604873581
+        },
+        "skip": {
+          "n": 9,
+          "p50": 496.07737199403346,
+          "p95": 497.491727815941,
+          "min": 494.23863703850657,
+          "max": 498.08664701413363,
+          "stdev": 1.10922466838619,
+          "rtfx": 969.6771152177963
+        }
+      },
+      "shared_process_peak_cuda_bytes": 2528336384,
+      "full_equal": true,
+      "after_eos_call_percent": 6.6350710900473935,
+      "single_request": {
+        "latency": {
+          "reference": {
+            "p50_ms": 6.521950999740511,
+            "p95_ms": 13.266126997768877,
+            "n": 657
+          },
+          "skip": {
+            "p50_ms": 6.073709984775633,
+            "p95_ms": 13.064396195113655,
+            "n": 657
+          }
+        },
+        "per_input_cv_median_percent": {
+          "reference": 1.3212941288981221,
+          "skip": 1.3758013732764844
+        },
+        "per_input_median_rtfx_change_percent": {
+          "median": 6.026475547843568,
+          "min": -1.1310111556749436,
+          "max": 27.537048044399427,
+          "positive": 64,
+          "total": 73
+        },
+        "aggregate_median_rtfx_change_percent": 5.212239237450489
+      }
+    },
+    {
+      "model": "102m",
+      "corpus": "english",
+      "case": "translation_b3",
+      "reference_p50_ms": 300.5850359913893,
+      "skip_p50_ms": 299.72844902658835,
+      "rtfx_percent": 0.2857876746711341,
+      "reference_p95_ms": 301.42867462709546,
+      "skip_p95_ms": 300.2964473795146,
+      "paired_rtfx_percent": {
+        "median": 0.28507522141907327,
+        "min": 0.16050134437204377,
+        "max": 1.0644272026128387,
+        "positive": 9,
+        "n": 9
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        }
+      },
+      "quality": {
+        "reference": {
+          "unmeasured": "No reference English translations"
+        },
+        "skip": {
+          "unmeasured": "No reference English translations"
+        }
+      },
+      "diagnostic_calls": {
+        "reference": {
+          "total": 712,
+          "after_eos": 45
+        },
+        "skip": {
+          "total": 712,
+          "after_eos": 45
+        }
+      },
+      "timing": {
+        "reference": {
+          "n": 9,
+          "p50": 300.5850359913893,
+          "p95": 301.42867462709546,
+          "min": 299.90693501895294,
+          "max": 301.7482890281826,
+          "stdev": 0.45941619708660913,
+          "rtfx": 1600.3287502767766
+        },
+        "skip": {
+          "n": 9,
+          "p50": 299.72844902658835,
+          "p95": 300.2964473795146,
+          "min": 297.4718249752186,
+          "max": 300.4317809827626,
+          "stdev": 0.8588416261706309,
+          "rtfx": 1604.9022925992865
+        }
+      },
+      "shared_process_peak_cuda_bytes": 2542238720,
+      "full_equal": true,
+      "after_eos_call_percent": 6.320224719101123
+    },
+    {
+      "model": "102m",
+      "corpus": "japanese",
+      "case": "plain_b1",
+      "reference_p50_ms": 118.63272095797583,
+      "skip_p50_ms": 114.71169104333967,
+      "rtfx_percent": 3.4181606765388395,
+      "reference_p95_ms": 120.03805381245911,
+      "skip_p95_ms": 115.14759380370378,
+      "paired_rtfx_percent": {
+        "median": 3.7872819286490333,
+        "min": 2.9496591690530316,
+        "max": 4.9485586786943925,
+        "positive": 9,
+        "n": 9
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        }
+      },
+      "quality": {
+        "reference": {
+          "metric": "CER",
+          "reference_units": 592,
+          "errors": 51,
+          "rate": 0.08614864864864864,
+          "annotated_utterances": 12,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "skip": {
+          "metric": "CER",
+          "reference_units": 592,
+          "errors": 51,
+          "rate": 0.08614864864864864,
+          "annotated_utterances": 12,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "diagnostic_calls": {
+        "reference": {
+          "total": 412,
+          "after_eos": 17
+        },
+        "skip": {
+          "total": 412,
+          "after_eos": 17
+        }
+      },
+      "timing": {
+        "reference": {
+          "n": 9,
+          "p50": 118.63272095797583,
+          "p95": 120.03805381245911,
+          "min": 118.22031601332128,
+          "max": 120.37657503969967,
+          "stdev": 0.6440095285333894,
+          "rtfx": 1327.6269711102084
+        },
+        "skip": {
+          "n": 9,
+          "p50": 114.71169104333967,
+          "p95": 115.14759380370378,
+          "min": 113.90636098803952,
+          "max": 115.2337189996615,
+          "stdev": 0.3614335708365038,
+          "rtfx": 1373.0073941678213
+        }
+      },
+      "shared_process_peak_cuda_bytes": 2470227456,
+      "full_equal": true,
+      "after_eos_call_percent": 4.12621359223301,
+      "single_request": {
+        "latency": {
+          "reference": {
+            "p50_ms": 8.420638012466952,
+            "p95_ms": 20.05027645791415,
+            "n": 108
+          },
+          "skip": {
+            "p50_ms": 8.440722507657483,
+            "p95_ms": 20.098551455885172,
+            "n": 108
+          }
+        },
+        "per_input_cv_median_percent": {
+          "reference": 0.7596733844604404,
+          "skip": 0.8902185026602496
+        },
+        "per_input_median_rtfx_change_percent": {
+          "median": 2.310014510900582,
+          "min": -0.6983941597885401,
+          "max": 11.637052165433648,
+          "positive": 7,
+          "total": 12
+        },
+        "aggregate_median_rtfx_change_percent": 3.141176974973514
+      }
+    },
+    {
+      "model": "102m",
+      "corpus": "japanese",
+      "case": "plain_ts_b1",
+      "reference_p50_ms": 125.80843997420743,
+      "skip_p50_ms": 121.26738601364195,
+      "rtfx_percent": 3.7446621963589166,
+      "reference_p95_ms": 126.78083301289007,
+      "skip_p95_ms": 121.38483456801623,
+      "paired_rtfx_percent": {
+        "median": 3.676657680350104,
+        "min": 3.4550726270635934,
+        "max": 4.519988913932105,
+        "positive": 9,
+        "n": 9
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        }
+      },
+      "quality": {
+        "reference": {
+          "metric": "CER",
+          "reference_units": 592,
+          "errors": 51,
+          "rate": 0.08614864864864864,
+          "annotated_utterances": 12,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "skip": {
+          "metric": "CER",
+          "reference_units": 592,
+          "errors": 51,
+          "rate": 0.08614864864864864,
+          "annotated_utterances": 12,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "diagnostic_calls": {
+        "reference": {
+          "total": 441,
+          "after_eos": 21
+        },
+        "skip": {
+          "total": 441,
+          "after_eos": 21
+        }
+      },
+      "timing": {
+        "reference": {
+          "n": 9,
+          "p50": 125.80843997420743,
+          "p95": 126.78083301289007,
+          "min": 125.3276799689047,
+          "max": 126.87796499812976,
+          "stdev": 0.5207742000261878,
+          "rtfx": 1251.9032906877296
+        },
+        "skip": {
+          "n": 9,
+          "p50": 121.26738601364195,
+          "p95": 121.38483456801623,
+          "min": 120.9156519616954,
+          "max": 121.40191695652902,
+          "stdev": 0.1329933879182207,
+          "rtfx": 1298.7828399490863
+        }
+      },
+      "shared_process_peak_cuda_bytes": 2452921856,
+      "full_equal": true,
+      "after_eos_call_percent": 4.761904761904762,
+      "single_request": {
+        "latency": {
+          "reference": {
+            "p50_ms": 9.35089448466897,
+            "p95_ms": 21.29990531830117,
+            "n": 108
+          },
+          "skip": {
+            "p50_ms": 8.940254978369921,
+            "p95_ms": 21.005410232464783,
+            "n": 108
+          }
+        },
+        "per_input_cv_median_percent": {
+          "reference": 0.8153899885775129,
+          "skip": 0.847809902255775
+        },
+        "per_input_median_rtfx_change_percent": {
+          "median": 3.431280204310583,
+          "min": 1.043430966536718,
+          "max": 8.871789206194801,
+          "positive": 12,
+          "total": 12
+        },
+        "aggregate_median_rtfx_change_percent": 3.530022566387747
+      }
+    },
+    {
+      "model": "102m",
+      "corpus": "japanese",
+      "case": "translation_b1",
+      "reference_p50_ms": 467.34309499152005,
+      "skip_p50_ms": 462.71440404234454,
+      "rtfx_percent": 1.0003343117781727,
+      "reference_p95_ms": 467.6762150018476,
+      "skip_p95_ms": 463.15678163664415,
+      "paired_rtfx_percent": {
+        "median": 0.9966221962017574,
+        "min": 0.8447530546467963,
+        "max": 1.1411075746363908,
+        "positive": 9,
+        "n": 9
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        }
+      },
+      "quality": {
+        "reference": {
+          "unmeasured": "No reference English translations"
+        },
+        "skip": {
+          "unmeasured": "No reference English translations"
+        }
+      },
+      "diagnostic_calls": {
+        "reference": {
+          "total": 1796,
+          "after_eos": 13
+        },
+        "skip": {
+          "total": 1796,
+          "after_eos": 13
+        }
+      },
+      "timing": {
+        "reference": {
+          "n": 9,
+          "p50": 467.34309499152005,
+          "p95": 467.6762150018476,
+          "min": 466.6980670299381,
+          "max": 467.7232410176657,
+          "stdev": 0.2848360598258427,
+          "rtfx": 337.01150543982646
+        },
+        "skip": {
+          "n": 9,
+          "p50": 462.71440404234454,
+          "p95": 463.15678163664415,
+          "min": 462.25449396297336,
+          "max": 463.3261720300652,
+          "stdev": 0.28269536380608307,
+          "rtfx": 340.3827471633813
+        }
+      },
+      "shared_process_peak_cuda_bytes": 2451001856,
+      "full_equal": true,
+      "after_eos_call_percent": 0.7238307349665924,
+      "single_request": {
+        "latency": {
+          "reference": {
+            "p50_ms": 11.789604526711628,
+            "p95_ms": 95.51370188419241,
+            "n": 108
+          },
+          "skip": {
+            "p50_ms": 10.962631000438705,
+            "p95_ms": 95.27726153901313,
+            "n": 108
+          }
+        },
+        "per_input_cv_median_percent": {
+          "reference": 0.5233327014987877,
+          "skip": 0.650615710240114
+        },
+        "per_input_median_rtfx_change_percent": {
+          "median": 2.05409477988423,
+          "min": 0.18267088680561372,
+          "max": 11.557551610367733,
+          "positive": 12,
+          "total": 12
+        },
+        "aggregate_median_rtfx_change_percent": 1.0768669132716457
+      }
+    },
+    {
+      "model": "102m",
+      "corpus": "japanese",
+      "case": "translation_b3",
+      "reference_p50_ms": 307.01587098883465,
+      "skip_p50_ms": 307.93546000495553,
+      "rtfx_percent": -0.2986304390231953,
+      "reference_p95_ms": 307.64996542129666,
+      "skip_p95_ms": 308.1843732041307,
+      "paired_rtfx_percent": {
+        "median": -0.21163134436440467,
+        "min": -0.37801543685860306,
+        "max": -0.12744164927701584,
+        "positive": 0,
+        "n": 9
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        }
+      },
+      "quality": {
+        "reference": {
+          "unmeasured": "No reference English translations"
+        },
+        "skip": {
+          "unmeasured": "No reference English translations"
+        }
+      },
+      "diagnostic_calls": {
+        "reference": {
+          "total": 818,
+          "after_eos": 5
+        },
+        "skip": {
+          "total": 818,
+          "after_eos": 5
+        }
+      },
+      "timing": {
+        "reference": {
+          "n": 9,
+          "p50": 307.01587098883465,
+          "p95": 307.64996542129666,
+          "min": 305.40322000160813,
+          "max": 307.72126105148345,
+          "stdev": 0.6962670015313611,
+          "rtfx": 513.0027952389727
+        },
+        "skip": {
+          "n": 9,
+          "p50": 307.93546000495553,
+          "p95": 308.1843732041307,
+          "min": 306.5620719571598,
+          "max": 308.2090080133639,
+          "stdev": 0.6106975911249709,
+          "rtfx": 511.4708127393493
+        }
+      },
+      "shared_process_peak_cuda_bytes": 2522215936,
+      "full_equal": true,
+      "after_eos_call_percent": 0.6112469437652812
+    }
+  ],
+  "note": "Whole-list and optional separate single-request measurements. Single-request percentiles pool mixed durations/repeats. English B3 includes one B1 tail; capable B1 tail may be guarded. Diagnostic runs are separate from wall. Long form compares public joined text/segments, not unavailable raw tokens. No reference translation/times. Cold compiler caches and shared-process peak prevent isolated cold/memory comparisons.",
+  "frozen_commit": "64cfddf",
+  "decision": "Adopt guard for capable B1 plain sessions through greedy_kernels=True. Low-level defaultFalse; B>1/other kernels/verification unchanged. Public-factory GPU wiring check pending.",
+  "tests": "40 focused +31 naive; all16 full outputs and both English extras exact"
+}

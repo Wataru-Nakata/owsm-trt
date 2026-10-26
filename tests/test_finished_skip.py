@@ -132,3 +132,20 @@ def test_ring_stop_all_ctas_and_restart_exact(argmax, graphs):
         for left, right in zip(buffers[1], expected):
             torch.testing.assert_close(left, right, rtol=0, atol=0)
     ring.check()
+
+
+@pytest.mark.parametrize("enabled", [False, True])
+@pytest.mark.parametrize("batch", [1, 3])
+def test_public_factory_forwards_finished_skip_and_rollback(enabled, batch):
+    from owsm_trt.pipeline import OWSM
+
+    tokenizer = SimpleNamespace(first_time=None, notime=None, eos=0, punctuation=frozenset())
+    model = OWSM(CFG, tokenizer, None, ScriptedStopBackend(2),
+                 SimpleNamespace(dtype="float32", capacity=16), torch.device("cpu"),
+                 use_cuda_graph=False, ctc_draft=False, greedy_kernels=enabled)
+    session = model._session(batch)
+    assert session.skip_finished is (enabled and batch == 1)
+    assert model._session(batch) is session
+    assert session.decode(torch.tensor([[2, 3, 4]] * batch), 10) == [[1, 1]] * batch
+    assert all(bool(getattr(fn, "skips_finished", False)) is (enabled and batch == 1)
+               for fn in session._steps.values())
