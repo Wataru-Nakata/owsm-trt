@@ -41,3 +41,26 @@ CPU/GPU fp32, GPU fp16, Ring and (only at supported encoder shapes) the same Ten
 including per-layer new-KV error and Ring replay determinism. Additional real-audio prefill
 states cover R3/R5/R8. It does not relax the production gate, run performance measurements or
 interpret a numerical diagnosis as adoption. Source/provenance and partial cases are retained.
+
+
+## Numerical diagnosis2774118 and isolated quality experiment
+
+All13 cases completed with finite, repeat-exact Ring output. The original failure was R8 S1,
+T64 (7.443% scaled max logit error, argmax0.875). GPU fp16 also exceeded2% there (2.215%).
+At the actual encoder length374, random R8 S1 errors were Ring3.692%, Torch fp16 2.914%,
+TensorRT39.235%; CPU/GPU fp32 agreed within0.009%. Random R8 S4 also exceeded2% in all three
+fp16 implementations. Errors accumulated through later layers. This is evidence of sensitivity
+of these synthetic states to fp16 arithmetic; it does not prove all Ring differences harmless.
+
+On actual-audio prefill states R3/R5/R8, Ring's scaled max errors were0.179%/0.220%/0.096%, with
+all argmaxes matching CPU fp32. TensorRT errors were0.290%/0.290%/0.239%. These three single-step
+checks do not establish corpus quality. [Complete diagnosis](runtime-ring-numerics-2774118.json).
+
+The new `--row-numerics` profiler-only option enables an explicitly N quality experiment with
+matching checkpoint, engine, runtime/kernel source, GPU and software evidence. It records the
+known R8 random-state gate failure as **failed**, rather than raising only for that exact diagnosed
+value; new numerical values, other shape failures, nonfinite data, barrier failures, source drift
+and failed runtime trials still abort. `_check_kernel` and production defaults remain unchanged.
+`scripts/profile_102m_ring_quality.pbs` now measures full English/Japanese output differences and
+quality; no performance or corpus-quality result is available yet. The previously passed19 GPU
+tests are preserved as prior evidence rather than rerun without a kernel change.

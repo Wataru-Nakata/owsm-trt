@@ -168,3 +168,19 @@ def test_row_route_diagnostics_count_calls_after_output_and_restore_methods(monk
     assert [r['beam'] for r in stats['plain_batches']] == [False, True]
     assert not stats['drafted_calls']
     assert GreedySession.decode is decode and BeamSession.decode is decode
+
+
+
+@pytest.mark.parametrize("message,passed,expected", [
+    ("megakernel-ring: logits off (0.0744 of their range, argmax agreement 0.88)", False, True),
+    ("megakernel-ring: logits off (0.1 of their range, argmax agreement 0.88)", False, False),
+    ("megakernel-ring: logits off (0.0744 of their range, argmax agreement 0.75)", False, False),
+    ("megakernel-ring: logits off (0.0744 of their range, argmax agreement 0.88)", True, False),
+    ("grid barrier timeout", False, False),
+])
+def test_experimental_row_exception_requires_the_diagnosed_failure(message, passed, expected):
+    from profile_ring_programs import diagnosed_row_failure
+
+    evidence = dict(existing_check_pass=passed, max_relative_range=.074428, argmax_agreement=.875)
+    assert diagnosed_row_failure(RuntimeError(message), evidence) is expected
+    assert not diagnosed_row_failure(RuntimeError(message), None)

@@ -3,7 +3,9 @@
 import argparse
 import importlib.metadata
 import json
+import math
 import os
+import re
 from dataclasses import asdict
 from functools import partial
 from pathlib import Path
@@ -37,6 +39,15 @@ def ring_rows_backend(base):
 
 
 
+
+def diagnosed_row_failure(error, evidence):
+    if not evidence or evidence['existing_check_pass']:
+        return False
+    match = re.search(r'logits off \(([0-9.e+-]+) of their range, argmax agreement ([0-9.e+-]+)\)', str(error))
+    return bool(match and math.isclose(float(match[1]), evidence['max_relative_range'], rel_tol=.01)
+                and abs(float(match[2])-evidence['argmax_agreement']) < .01)
+
+
 def count_decoder_dispatch(model, call):
     """Separate diagnostic pass; read positions only after decode's existing output synchronization."""
     plain = []
@@ -64,6 +75,8 @@ def main():
     ap.add_argument("--manifest", required=True)
     ap.add_argument("--lang", default="eng")
     ap.add_argument("--repeat", type=int, default=7)
+    ap.add_argument("--row-numerics", type=Path,
+                    help="explicit N experiment: retain a diagnosed random-KV gate failure with matching evidence")
     ap.add_argument("--sweep", choices=("programs", "prefetch", "attention", "chunk", "rows"), default="programs")
     ap.add_argument("--long-audio")
     ap.add_argument("--split-choose", action="store_true")
@@ -77,6 +90,8 @@ def main():
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
     args.trace = False
+    if args.row_numerics and args.sweep != "rows":
+        ap.error("row-numerics is only for the existing row-route N experiment")
     if args.cases is None:
         args.cases = list(ROW_CASES) if args.sweep == "rows" else [
             "single_greedy", "single_ts", "stream_greedy_b1", "long_greedy"]
@@ -100,6 +115,25 @@ def main():
         raise RuntimeError("cannot keep96 persistent CTAs resident on this GPU")
     files = hub.resolve(args.model)
     decoder = _load_decoder(model.cfg, files.checkpoint, skip_init=args.sweep == "rows")
+    evidence = None
+    if args.row_numerics:
+        evidence = json.loads(args.row_numerics.read_text())
+        engines = hub.cache_dir() / files.name.replace("/", "--") / engine_tag(model.opts)
+        if (evidence['checkpoint_sha256'] != sha256(files.checkpoint)
+                or evidence['engine_sha256'] != {p.name: sha256(p) for p in engines.glob('*.engine')}
+                or evidence['gpu'] != torch.cuda.get_device_name()
+                or evidence['torch'] != torch.__version__ or evidence['cuda'] != torch.version.cuda):
+            raise RuntimeError("row numerical evidence does not match the checkpoint/engines/environment")
+        package = Path(megakernel_ring.__file__).parent
+        if any(sha256(package/name) != digest for name,digest in evidence['source_sha256'].items()):
+            raise RuntimeError("row numerical evidence is for different runtime/kernel source")
+        if len(evidence['cases']) != 13 or any(c['status'] != 'complete' or not c['ring_repeat_exact']
+                or not c['versus_cpu_fp32']['ring']['finite'] for c in evidence['cases'].values()):
+            raise RuntimeError("incomplete/nonfinite/nondeterministic row evidence")
+        for rows in (3, 5, 8):
+            real = evidence['cases'][f'real_prefill_r{rows}_s1']['versus_cpu_fp32']['ring']
+            if not real['existing_check_pass'] or real['argmax_agreement'] != 1:
+                raise RuntimeError("real-prefill numerical evidence did not pass")
     settings = {
         "programs": {
             "reference": {},
@@ -137,11 +171,24 @@ def main():
         row_checks = []
         if args.sweep == "rows" and name == "ring_rows":
             for rows, window in ((3, 1), (5, 1), (8, 1), (8, 4)):
-                _, elapsed = wall(lambda dec=decoder: _check_kernel(kernel, dec, model.device, rows, window))
-                row_checks.append(dict(rows=rows, window=window, passed=True, check_ms=elapsed))
+                value = dict(rows=rows, window=window, passed=False)
+                try:
+                    _, elapsed = wall(lambda dec=decoder: _check_kernel(kernel, dec, model.device, rows, window))
+                    value.update(passed=True, check_ms=elapsed)
+                except RuntimeError as exc:
+                    value['error'] = str(exc)
+                    diagnosed = evidence and evidence['cases'][f'random_t64_r{rows}_s{window}']['versus_cpu_fp32']['ring']
+                    if not diagnosed_row_failure(exc, diagnosed):
+                        save(args.out / 'failed_shape.json', value)
+                        raise
+                    value.update(experimental_numerical_failure=True,
+                                 evidence_sha256=sha256(args.row_numerics), diagnosed=diagnosed)
+                row_checks.append(value)
+                save(args.out / 'row_checks.json', row_checks)
         checks[name] = dict(
             additional_row_checks=row_checks,
-            passed=True,
+            passed=all(value['passed'] for value in row_checks),
+            single_row_checks_passed=True,
             solo=name == "s96",
             check_ms=ms,
             solo_window32_check_ms=solo_ms if args.sweep != "programs" else None,
