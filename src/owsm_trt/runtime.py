@@ -745,7 +745,14 @@ class GreedySession(_Session):
         lazy_verify_graphs: bool = False,
         fused_select: bool = False,
         lazy_plain: bool = False,
+        skip_finished: bool = False,
     ):
+        # Allocate the optional flag before base eager step construction; normal allocation order
+        # is unchanged when disabled. This is also the session's eventual EOS state, not a copy.
+        self._plain_stop = (torch.zeros(1, dtype=torch.bool, device=device)
+                            if skip_finished and batch == 1 and getattr(backend, "supports_finished_stop", False)
+                            else None)
+        self.skip_finished = self._plain_stop is not None
         super().__init__(
             backend, cfg, batch, capacity, eos, dtype, device, use_cuda_graph, chunk, buckets, rules,
             lazy_steps=lazy_plain,
@@ -760,7 +767,7 @@ class GreedySession(_Session):
         self.punctuation = punctuation  # see _resync
         self.batch = batch
         self.seq = torch.zeros(batch, capacity + 1, dtype=torch.long, device=device)
-        self.done = torch.zeros(batch, dtype=torch.bool, device=device)
+        self.done = self._plain_stop if self._plain_stop is not None else torch.zeros(batch, dtype=torch.bool, device=device)
         self.ctc_ids = torch.zeros(batch, ctc_columns(cfg), dtype=torch.int32, device=device)
         self._eos = torch.full((batch,), eos, dtype=torch.long, device=device)
         self.select_workspace = (
@@ -855,6 +862,17 @@ class GreedySession(_Session):
     @property
     def self_v(self) -> torch.Tensor:
         return self.caches[self.buckets[-1]][1]
+
+    def _prepare_steps(self) -> None:
+        if self._plain_stop is None:
+            return super()._prepare_steps()
+        self._steps = {
+            c: self.backend.step_fn(
+                self.tok, self.offs, k, v, self.cross_k, self.cross_v, self.logits, self.new_kv,
+                stop=self._plain_stop,
+            )
+            for c, (k, v) in self.caches.items()
+        }
 
     def _prepare_plain(self) -> None:
         if self._plain_ready:

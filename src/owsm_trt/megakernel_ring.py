@@ -687,17 +687,22 @@ if gluon is not None:
         wqkv, wo, wcq, wco, w1, w2,
         kc, vc, C, ck, cv, T, logits, new_kv,
         x, x2, qkv, ob, q2, hb, st, part, cnt2, xp, xml, xcnt, bar, err, done, ts, amax, aidx, pred, ntm, FT, LT,
-        R, S, L, V, eps,
+        R, S, L, V, eps, stop,
         D: gl.constexpr, H: gl.constexpr, DK: gl.constexpr, F: gl.constexpr, LKS: gl.constexpr,
         MTP: gl.constexpr, LMTP: gl.constexpr, HL: gl.constexpr, NL: gl.constexpr, LNL: gl.constexpr,
         N1: gl.constexpr, LN1: gl.constexpr, SP: gl.constexpr, BT: gl.constexpr, NS: gl.constexpr,
         NW: gl.constexpr, NSLOT: gl.constexpr, LNS: gl.constexpr, CK: gl.constexpr, MAXS: gl.constexpr, PFA: gl.constexpr,
         AHEAD: gl.constexpr = 0, TS: gl.constexpr = False, ARGMAX: gl.constexpr = False, PW: gl.constexpr = 1,
         NOTIME: gl.constexpr = False,
-        BM: gl.constexpr = 64,
+        BM: gl.constexpr = 64, HAS_STOP: gl.constexpr = False,
     ):  # fmt: skip
         """A decoder call (see the module docstring): shared memory, then the consumer warps and the producer
         warp."""
+        if HAS_STOP:
+            # Every CTA reads the same immutable scalar before any producer/barrier starts.
+            # The caller must order flag writes before this launch, never change it in flight.
+            if gl.load(stop):
+                return
         pid = gl.program_id(0)
         P = gl.num_programs(0)
         sl: gl.constexpr = gl.NVMMASharedLayout(swizzle_byte_width=128, element_bitwidth=16, rank=2)
@@ -749,6 +754,7 @@ class RingDecoder:
 
     name = "megakernel-ring"
     argmax = True  # step_fn takes pred
+    supports_finished_stop = True  # One immutable scalar may skip an entire R1/S1 call.
 
     def __init__(self, mega, programs: int | None = None, row_programs: int | None = None,
                  solo_programs: int | None = None, num_warps: int = 4, chunk: int = 2, ring_kb: int = 128,
@@ -792,13 +798,16 @@ class RingDecoder:
         return self.P_solo != self.P
 
     def step_fn(self, tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv, kind="decode", pred=None,
-                solo=False, notime=None):  # fmt: skip
+                solo=False, notime=None, stop=None):  # fmt: skip
         """The call on these buffers (see MegaDecoder.step_fn); with ``pred`` [R, S] (int64) it also writes the
         argmax of the logits there (``run.writes_pred``), with ``notime`` = (flags [R] bool, first timestamp
         token, last one) not over the timestamp tokens in the flagged rows (see MegaBackend.argmax). ``solo``: no
         encoder runs alongside (single-row calls take ``solo_programs`` then)."""
         m = self.m
         R, S = tokens.shape
+        if stop is not None and (R != 1 or S != 1 or stop.numel() != 1
+                                 or stop.dtype != torch.bool or stop.device != tokens.device):
+            raise ValueError("finished-stop requires R1/S1 and one boolean on the decoder device")
         M = R * S
         if M > MAX_TOKENS:
             raise ValueError(f"the ring decoder kernel takes up to {MAX_TOKENS} tokens per call, not {M}")
@@ -841,12 +850,12 @@ class RingDecoder:
             m.cout, m.wqkv, m.wo, m.wcq, m.wco, m.w1, m.w2,
             self_k, self_v, C, cross_k, cross_v, T, logits, new_kv,
             x, x2, qkv, ob, q2, hb, st, part, cnt2, xp, xml, xcnt, bar, self.err, done, self.ts, amax, aidx, pred, ntm, ft, lt,
-            R, S, L, m.V, m.eps,
+            R, S, L, m.V, m.eps, stop if stop is not None else bar,
         )  # fmt: skip
         const = dict(
             D=D, H=H, DK=D // H, F=F, LKS=_log2(F // D), MTP=mtp, LMTP=_log2(mtp), HL=hl, NL=nl, LNL=_log2(nl), N1=n1,
             LN1=_log2(n1), SP=max(16, _pow2(S)), BT=64, NS=ns, NW=self.nw, NSLOT=self.slots, LNS=_log2(self.slots), CK=self.ck,
-            MAXS=self.maxs, PFA=self.pfa, AHEAD=self.ahead, TS=bool(self.opts["TS"]), ARGMAX=argmax, PW=self.pw, BM=bm, NOTIME=argmax and notime is not None,
+            MAXS=self.maxs, PFA=self.pfa, AHEAD=self.ahead, TS=bool(self.opts["TS"]), ARGMAX=argmax, PW=self.pw, BM=bm, NOTIME=argmax and notime is not None, HAS_STOP=stop is not None,
         )  # fmt: skip
 
         def run() -> None:
@@ -856,6 +865,7 @@ class RingDecoder:
         run.const = const
         run.writes_cache = True
         run.writes_pred = argmax
+        run.skips_finished = stop is not None
         run.programs = P
         run.kernel = self  # (profiling: the time stamps in self.ts)
         return run

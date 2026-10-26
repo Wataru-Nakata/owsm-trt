@@ -741,6 +741,11 @@ class MegaBackend:
         return run
 
     @property
+    def supports_finished_stop(self) -> bool:
+        """Whether the single-row kernel can skip a whole completed plain decode call."""
+        return bool(getattr(self.kernel, "supports_finished_stop", False)) and id(self.kernel) not in self.failed
+
+    @property
     def argmax(self) -> bool:
         """Whether step_fn takes ``pred``: calls on a kernel that can then write the logits' argmax there too
         (see writes_pred on the returned function; other calls ignore it). ``notime`` = (flags [R] bool,
@@ -754,7 +759,7 @@ class MegaBackend:
         return getattr(self.kernel, "solo_differs", False) and id(self.kernel) not in self.failed
 
     def step_fn(self, tokens, offset, self_k, self_v, cross_k, cross_v, logits, new_kv, kind="decode", pred=None,
-                solo=False, notime=None, inp=None):  # fmt: skip
+                solo=False, notime=None, inp=None, stop=None):  # fmt: skip
         """``pred`` (and ``notime``): see argmax; ``solo``: nothing runs alongside the call (see solo_differs);
         ``inp`` = (the call's input rows [R, W + 4]: W tokens, offset, ...; W): a kernel reads the tokens and
         offsets there rather than from ``tokens`` / ``offset`` (``run.reads_inp``: no copies needed)."""
@@ -774,6 +779,8 @@ class MegaBackend:
         kw = {"pred": pred, "notime": notime} if pred is not None and getattr(kernel, "argmax", False) else {}
         if solo and getattr(kernel, "solo_differs", False):
             kw["solo"] = True
+        if stop is not None and kind == "decode" and tokens.shape == (1, 1) and getattr(kernel, "supports_finished_stop", False):
+            kw["stop"] = stop
         kargs = args
         if inp is not None:  # (the kernels take strided tokens / offsets)
             rows, w = inp
