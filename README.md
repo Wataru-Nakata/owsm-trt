@@ -95,6 +95,9 @@ It is not the default:
 * On the 1B model one Mandarin utterance falls into a decoder repetition loop under some encoder perturbations, FP8
   among them (CER 12.89 vs 12.65 at batch 1).
 * At batch 1 the 1B model gains nothing from it, being bound by the decoder.
+* A separate H200/1B beam5 timestamp evaluation is nearly neutral in speed. In Japanese translation
+  B8, one of12 inputs repeats to374 tokens and whole-list time rises139→461ms with packaged scales.
+  [Encoder/quality comparison and exact input](docs/runtime-encoder-variants.md).
 
 Other models: `fp8_calibration=[recordings]` measures the scales on your own audio.
 
