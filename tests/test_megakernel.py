@@ -124,7 +124,7 @@ gluon_only = pytest.mark.skipif(
 
 
 @gluon_only
-@pytest.mark.parametrize("rows,window", [(1, 1), (1, 8), (2, 3), (8, 1), (1, 16), (1, 32), (4, 8), (2, 16)])
+@pytest.mark.parametrize("rows,window", [(1, 1), (1, 8), (2, 3), (8, 1), (8, 4), (1, 16), (1, 32), (4, 8), (2, 16)])
 def test_gluon_step_matches_decoder(model, rows, window, kind="gluon", programs=None, chunk=2, warps=4, cfg=CFG,
                                     solo=False):  # fmt: skip
     dec = model.decoder

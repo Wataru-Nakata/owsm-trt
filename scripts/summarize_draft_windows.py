@@ -15,7 +15,7 @@ def main():
             continue
         cases = json.loads((root / "summary.json").read_text())
         for name, modes in cases.items():
-            ref = modes["256"]
+            ref = modes["256"] if "256" in modes else modes["256@16"]
             cold = json.loads((root / name / "cold.json").read_text())
             dispatch = json.loads((root / name / "actual_dispatch.json").read_text())
             wall = json.loads((root / name / "wall.json").read_text())
