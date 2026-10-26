@@ -68,11 +68,36 @@ cp "$LOCAL/baseline_runtime.py" "$LOCAL/results/"
 nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv -l 5 \
     > "$LOCAL/results/gpu_utilization.csv" &
 SMI=$!
+"$PY" - "$LOCAL" <<'PYGEN'
+import json
+import sys
+from pathlib import Path
+import numpy as np
+import soundfile as sf
+p = Path(sys.argv[1])
+rows = []
+rng = np.random.default_rng(17)
+for name, seconds, noise in [("silence_short", 1, False), ("silence_window", 30, False), ("noise_window", 30, True)]:
+    wave = (rng.standard_normal(seconds * 16000).astype(np.float32) * 0.001
+            if noise else np.zeros(seconds * 16000, np.float32))
+    path = p / (name + '.wav')
+    sf.write(path, wave, 16000, subtype='FLOAT')
+    rows.append(dict(id=name, path=str(path)))
+(p / 'edge_manifest.json').write_text(json.dumps(rows))
+(p / 'results/edge_recipe.json').write_text(json.dumps(dict(seed=17, generator='numpy PCG64',
+    numpy=np.__version__, sample_rate=16000, noise_std=0.001, format='float32 WAV',
+    seconds=[1,30,30], reference_annotations=False)))
+PYGEN
 timeout 600 "$PY" -m pytest -q -p no:cacheprovider \
     "$LOCAL/tests/test_megakernel.py" \
     -k 'test_ring_program_budget_matches_decoder or test_ring_solo_is_bitwise_the_same' \
     > "$LOCAL/results/tests.log" 2>&1
 printf '%s\n' 'ring budget regression tests passed' >> "$OUT/progress.log"
+timeout 400 "$PY" "$LOCAL/scripts/profile_runtime.py" \
+    --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/edge_manifest.json" \
+    --repeat 3 --variants reference graph graph_fused --lazy-drafts \
+    --cases single_greedy single_ts stream_ts_b8 beam_ts \
+    --out "$LOCAL/results/edge" > "$LOCAL/results/edge.log" 2>&1
 timeout 1500 "$PY" "$LOCAL/scripts/profile_ring_programs.py" \
     --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/manifest.json" \
     --repeat 7 --split-choose --fuse-accept --long-audio "$LOCAL/long_110s.wav" \
