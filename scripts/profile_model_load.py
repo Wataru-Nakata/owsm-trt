@@ -12,6 +12,7 @@ import statistics
 import subprocess
 import sys
 import time
+import zipfile
 from pathlib import Path
 
 
@@ -29,6 +30,7 @@ def worker(args):
 
     selected = partial(modeling.load_checkpoint, memory_map=args.worker_mode == "mapped")
     phases = []
+    load_calls = []
 
     def instrument(name, fn):
         @wraps(fn)
@@ -41,6 +43,13 @@ def worker(args):
         return measured
 
     if args.instrument:
+        original_load = torch.load
+
+        def traced_load(*a, **kw):
+            load_calls.append({key: kw.get(key) for key in ("mmap", "map_location", "weights_only")})
+            return original_load(*a, **kw)
+
+        torch.load = traced_load
         selected = instrument("load_checkpoint", selected)
         for name in ("_load_frontend", "_load_decoder"):
             setattr(pipeline, name, instrument(name, getattr(pipeline, name)))
@@ -103,6 +112,9 @@ def worker(args):
                 load_peak_rss_kib=peak_rss,
                 load_peak_cuda_bytes=peak_cuda,
                 helper_host_timings=phases,
+                checkpoint_load_calls=load_calls,
+                checkpoint_zip=zipfile.is_zipfile(files.checkpoint),
+                mmap_flags=torch.serialization.get_default_mmap_options(),
                 outputs=outputs,
                 checkpoint_sha256=sha(files.checkpoint),
                 engine_sha256={p.name: sha(p) for p in engines.glob("*.engine")},
