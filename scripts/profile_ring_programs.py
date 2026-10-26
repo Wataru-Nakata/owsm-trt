@@ -8,6 +8,7 @@ from dataclasses import asdict
 from functools import partial
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 import torch
 from profile_beam import command, save, sha256, wall
@@ -17,6 +18,7 @@ from owsm_trt import OWSM, hub, megakernel, megakernel_ring
 from owsm_trt.audio import load_audio
 from owsm_trt.build import engine_tag
 from owsm_trt.pipeline import _check_kernel, _load_decoder
+from owsm_trt.runtime import BeamSession, GreedySession
 
 ROW_CASES = {
     "plain_b3": (3, 1, False, False, True, "asr", None, None),
@@ -32,6 +34,27 @@ def ring_rows_backend(base):
     """Use the existing opt-in ring:rr row route, sharing weights but isolating failure state."""
     return megakernel.MegaBackend(base.inner, base.kernel, base.max_tokens, base.max_rows,
         rows_kernel=(base.kernel, megakernel_ring.ROUTE_TOKENS, megakernel_ring.ROUTE_ROWS), trial=True)
+
+
+
+def count_decoder_dispatch(model, call):
+    """Separate diagnostic pass; read positions only after decode's existing output synchronization."""
+    plain = []
+
+    def observed(original, beam):
+        def decode(session, primer, *args, **kwargs):
+            output = original(session, primer, *args, **kwargs)
+            calls = int(session.step) if beam else int(session.pos) - primer.shape[1]
+            plain.append(dict(beam=beam, rows=session.rows, primer_length=primer.shape[1],
+                              decoder_calls=calls, output_lengths=list(map(len, output))))
+            return output
+        return decode
+
+    with patch.object(GreedySession, 'decode', observed(GreedySession.decode, False)), \
+         patch.object(BeamSession, 'decode', observed(BeamSession.decode, True)):
+        drafted = count_draft_dispatch(model, call)
+    return dict(plain_batches=plain, drafted_calls=drafted,
+                scope='Separate diagnostic pass, not added to warm wall samples; no per-step host reads.')
 
 
 @torch.inference_mode()
@@ -175,8 +198,11 @@ def main():
     summary = {}
     for name in args.cases:
         summary[name] = run_case(
-            model, args, name, items, waves, configure=configure, observe=count_draft_dispatch
+            model, args, name, items, waves, configure=configure,
+            observe=count_decoder_dispatch if args.sweep == "rows" else count_draft_dispatch
         )
+        if any(backend.failed for backend in backends.values()):
+            raise RuntimeError(f"kernel failed during complete warmup/measurement: {name}; refusing fallback timing")
         save(args.out / "summary.json", summary)
         if path := os.environ.get("OWSM_PROFILE_PROGRESS"):
             with Path(path).open('a') as stream:

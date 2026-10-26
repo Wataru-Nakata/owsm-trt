@@ -140,3 +140,31 @@ def test_ring_rows_ablation_preserves_reference_routing_and_weights():
     assert candidate.max_tokens == base.max_tokens and candidate.max_rows == base.max_rows
     candidate.failed.add(id(kernel))
     assert not base.failed
+
+
+
+def test_row_route_diagnostics_count_calls_after_output_and_restore_methods(monkeypatch):
+    import torch
+    from profile_ring_programs import count_decoder_dispatch
+
+    from owsm_trt.runtime import BeamSession, GreedySession
+
+    greedy = SimpleNamespace(pos=torch.tensor([8]), rows=3)
+    beam = SimpleNamespace(step=torch.tensor([6]), rows=5)
+    primer = torch.zeros(1, 4, dtype=torch.long)
+
+    def decode(session, primer):
+        return [[1, 2]]
+
+    monkeypatch.setattr(GreedySession, 'decode', decode)
+    monkeypatch.setattr(BeamSession, 'decode', decode)
+
+    def call():
+        GreedySession.decode(greedy, primer)
+        BeamSession.decode(beam, primer)
+
+    stats = count_decoder_dispatch(SimpleNamespace(_sessions={}), call)
+    assert [r['decoder_calls'] for r in stats['plain_batches']] == [4, 6]
+    assert [r['beam'] for r in stats['plain_batches']] == [False, True]
+    assert not stats['drafted_calls']
+    assert GreedySession.decode is decode and BeamSession.decode is decode

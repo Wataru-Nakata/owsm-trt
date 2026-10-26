@@ -9,7 +9,9 @@ this corpus has not been measured. This is evaluation of an existing route, not 
 separate routing object that shares the existing Ring weights/encoder/TensorRT engines. Only
 the row route changes, within the existing 32-token and 8-row limits. Reference failure/routing
 state stays independent. B1 single-row calls keep the same Ring kernel in both modes. Unsupported
-larger windows still use TensorRT; actual drafted dispatch counts are recorded separately.
+larger windows still use TensorRT. A separate diagnostic pass records actual drafted dispatch
+and plain/beam decoder calls (post-output position/step reads, no per-step host reads). These
+counters are excluded from the warmed wall samples.
 
 This is N: different matrix/attention arithmetic can change logits and near-tie tokens. Outputs
 are recorded without requiring cross-variant equality; repeat nondeterminism, failed kernel
