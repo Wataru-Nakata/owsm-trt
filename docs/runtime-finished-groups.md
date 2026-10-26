@@ -2,7 +2,7 @@
 
 The measured single-row Ring guard does not skip multi-row decoder calls. In job2773841, English
 translationB3 still entered33/712 already-EOS calls on1B and45/712 on102M; Japanese had3/176 and
-5/818. These are measured calls, not a predicted speedup. B8 has not yet been measured for this guard.
+5/818. These are measured calls, not a predicted speedup. The completed 1B subset of job2773955 measures the group guard below.
 
 `GreedySession(skip_finished_groups=True)` is an independent low-level experiment, defaultFalse.
 It is eligible only when the actual multi-row backend route supports it (currently Gluon within
@@ -18,18 +18,31 @@ workspaces untouched and the next request resets flags. No extra normal per-step
 or host read is added. Unsupported TensorRT routes and drafted verification retain their calls.
 Both benchmark modes retain the already-adopted single-row guard, including a B1 tail.
 
-Fourteen CPU tests passed for mixed row EOS lengths, bucket boundaries/length limits, lazy/eager
-construction, repeated requests, actual-route limits and unsupported flag contracts; all18
-single-row CPU regressions also passed. Six GPU tests are prepared for R3/R4/R8 with/without CUDA
-graphs: partial flags must reproduce all active arithmetic/cache outputs, all-ended flags must
-leave every public/workspace tensor unchanged, and resets must resume exactly. GPU compilation
-and performance remain unverified.
+Job2773955 (commit356eb69, H200, same checkpoint/engines) passed64 focused GPU/state tests
+and31 naive beam/greedy/timestamp regressions. All1B English73/Japanese12 outputs matched in
+all eight conditions, including full tokens/timestamp tokens/text/segments and decoder call counts.
+English silence/noise, long prompt, full window, drafted B1/B3, lookahead and110s long form also
+matched (long form exposes joined segments, not raw window tokens). Reference ASR WER/CER is
+unchanged; reference translations/timestamp boundaries are unavailable.
 
-`scripts/profile_finished_groups.pbs` runs these tests and existing greedy/naive regressions,
-then `profile_finished_skip.py --group-skip` for1B/102M English73/Japanese12: plain/TS B3 and
-translationB3/B8, nine alternating same-engine whole-list repeats, exact tokens/segments/steps,
-separate already-EOS counters and English extras. No request-latency claim is made from grouped
-whole-list percentiles. Each profile fails if actual dispatch silently loses the guard. The same
-job independently repeats the previously positive1B B3 identity-KV experiment for15 pairs on
-English/Japanese, in separate processes with no group-skip flag. Both experiments remain off in
-the public defaults; their gains are not added together.
+| 1B case | English RTFx change | Japanese RTFx change |
+|---|---:|---:|
+| plain B3 | +3.47% | +4.61% |
+| timestamp B3 | +3.66% | +2.38% |
+| translation B3 | +3.37% | +1.64% |
+| translation B8 | +1.92% | +0.35% |
+
+These are warmed whole-list median wall comparisons over nine alternating pairs, not request
+latency percentiles. All pairs were positive except Japanese B8 (-1.60% to+3.31%); that condition
+has no repeatable improvement established. Separate counters identify33/38/30/9 new skipped
+multi-row calls on English and9/6/3/3 on Japanese. B1 tails already had the adopted Ring guard
+in both modes and are excluded from these new skip counts. Replay/selection counts stay equal.
+See [raw compact results](runtime-finished-groups-results-2773955.json) and
+`outputs/runtime-2773955/` for timings, quality, environment and full output artifacts.
+
+The job then stopped with exit1 at the102M preflight: its actual B3/B8 route is TensorRT
+(`no kernel for rows`), not Gluon, so this optimization is inapplicable. No102M speed claim is
+made. The later independent identity-KV replication was not reached. Unsupported route coverage,
+public-option wiring and independent replication are the next verification steps; the failed
+job is not reported as an overall success. Both optimizations remain off in public defaults at
+this result commit. Neither speedups nor cold/shared-process memory observations are combined.
