@@ -11,7 +11,7 @@ maximal block, preserving the existing smallest-index tie rule and token0 for al
 `skip_notime` still leaves the decoder's existing prediction untouched. No logits are normalized,
 recomputed, rounded or pruned. Private graph-stable scratch belongs to each verification window;
 small vocabularies retain serial execution. `GreedySession(split_choose=True)` and the internal
-`OWSM.greedy_split_choose` switch are experimental and defaultFalse pending actual verification.
+`OWSM.greedy_split_choose` switch were initially experimental; the accepted public default is described below.
 
 Tests compare serial and split paths on irregular vocabulary lengths, ties across block boundaries,
 near ties, all-invalid logits, infinities/NaNs, first/end timestamp states, skipped rows and graph
@@ -38,7 +38,7 @@ both session pools resident, so their peak VRAM is not standalone deployment mem
 and all samples are retained in `outputs/runtime-2771592`, especially `selection.json` and
 `analysis-graph.json`. The default remains unchanged while fusion/acceptance is verified.
 
-## Fused follow-up (pending)
+## Fused follow-up
 
 A second candidate combines block-max reduction with draft acceptance. It still writes every `pred`
 for diagnostics, preserves the existing decoder predictions of skipped notime rows, and returns the
@@ -59,7 +59,7 @@ Job2771706 additionally passed the synthetic1s/30s silence and30s noise comparis
 its `edge_recipe.json` defines the node-local input generation. These are baseline agreement checks,
 not annotated WER/timestamp accuracy. The normal default is still unchanged.
 
-## Reuse notime prediction (prepared)
+## Reuse notime prediction (measured, experimental)
 
 When every primer contains the same notime token used by `_rules_start` and the backend already
 writes the correctly masked argmax, the extra choose kernel can be omitted entirely. Mixed batches,
@@ -83,3 +83,36 @@ invalidate that cache and still initialize all state. Mixed batches copy their d
 No decoder logits, selection or accepted tokens change by design. Tests include plain-decode
 interposition between identical draft primers to catch stale flag caching. This option remains
 experimental and disabled pending a separate same-engine ablation against notime reuse.
+
+## Accepted default after replication
+
+Job2771808 passed134 regression tests and4 mode/lifetime tests. English73 utterances, Japanese12,
+base102M English73 and the110s recording were measured across17 API/model cases,11 alternating
+repeats per variant. All returned tokens, timestamp tokens, text and segments matched the serial
+baseline; long-form exposes only text/segments. Translation uses12 inputs and long-prompt uses6.
+No reference timestamp annotations are available. All engine/checkpoint hashes, WER/CER, wall samples,
+cold counts and actual dispatch are retained in `outputs/runtime-2771808/analysis-graph.json` and
+its dataset directories. Timings use resident audio/model; disk read and model load are separate.
+
+Against graph/serial selection, fused RTFx changed:
+
+| Case | 1B English | 1B Japanese | 102M English |
+|---|---:|---:|---:|
+| Single, timestamps | +4.29% | +4.82% | +10.55% |
+| Single, plain | -0.08% | -0.27% | -0.21% |
+| Streaming B1, plain | -0.16% | +0.11% | +0.05% |
+| Streaming B8, timestamps | +0.72% | +1.62% | +5.38% |
+| 110s long-form | +5.62% | unmeasured | unmeasured |
+
+This reproduces the timestamp/long-form gains across three jobs; plain-mode changes are small.
+`OWSM.from_pretrained(greedy_kernels=True)` now enables split selection plus fused acceptance by
+default; False restores serial selection. Standalone GreedySession keeps explicit switches. This
+changes the surrounding greedy verification kernels, not the decoder arithmetic, engine or search.
+CPU/missing Triton and vocabularies<=2048 keep the reference path. H200 is the measured GPU.
+
+Notime-only graph reuse did not add a consistent gain: English plain streaming B1 was-0.51% versus
+serial, Japanese B8-0.14%; fused without reuse was-0.16%/+1.27%. Both match tokens. First-use capture
+creates only the requested mode, but switching modes retains another graph set. The extra mode is
+therefore **not** enabled by the accepted default. `reuse_notime` stays experimental.
+Per-case VRAM includes all variant session pools, not standalone deployment usage. Synthetic
+selection workspace remains300bytes atR1W1/76.8KB atR16W16, separate from graph metadata.

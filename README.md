@@ -204,6 +204,13 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   frontend fusion remains disabled. A seven-repeat validation reproduced +5.0%/+12.1%, including lazy
   draft setup. CTC-only v4 1B also improved single-utterance RTFx 4.4% English/5.2% Japanese with exact
   features/output. [Runtime measurements](docs/runtime-results-2771009.md), [CTC measurements](docs/runtime-results-2771126.md).
+* **Greedy vocabulary selection and acceptance.** `greedy_kernels=True` (default) splits vocabulary
+  argmax across blocks and fuses the final reduction with draft acceptance. Against the same engines
+  with frontend graphs already enabled, timestamped single-request RTFx improved 4.3% English/4.8%
+  Japanese on v4 1B and 10.6% on 102M; a 110 s recording improved 5.6% (H200, 11 alternating repeats).
+  All sampled tokens and segments matched. Plain greedy changes were small; these are not speedup
+  claims for every workload/GPU. `greedy_kernels=False` restores serial selection. CPU, missing Triton
+  and small vocabularies retain the reference path. [Measurements and limits](docs/runtime-greedy-selection.md).
 * **Unused draft setup is deferred.** `lazy_drafts=True` (default) creates verification graphs on first
   draft use. With resident engines, session-cold translation/language identification was 33–36% shorter
   on H200/v4 1B and 102M, saving 45.4/26.1 MiB of unused buffers. Warm ASR work is unchanged; long-prompt

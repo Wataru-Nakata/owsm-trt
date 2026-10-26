@@ -212,6 +212,7 @@ class OWSM:
         frontend_graph: bool = True,
         lazy_drafts: bool = True,
         draft_token_budget: int = DRAFT_TOKENS,
+        greedy_kernels: bool = True,
     ):
         if type(draft_token_budget) is not int or draft_token_budget < 1:
             raise ValueError("draft_token_budget must be a positive integer")
@@ -226,8 +227,8 @@ class OWSM:
         self.beam_grouped_cross = beam_grouped_cross
         self._beam_backend = None
         self.frontend_graph = frontend_graph
-        self.greedy_split_choose = False
-        self.greedy_fuse_accept = False
+        self.greedy_split_choose = greedy_kernels
+        self.greedy_fuse_accept = greedy_kernels
         self.greedy_reuse_notime = False
         self.greedy_cache_draft_flags = False
         self._frontend_replay = None
@@ -268,6 +269,7 @@ class OWSM:
         frontend_graph: bool = True,
         lazy_drafts: bool = True,
         draft_token_budget: int = DRAFT_TOKENS,
+        greedy_kernels: bool = True,
         fp8: bool | str = False,
         fp8_margin: float = 1.0,
         fp8_skip: str = "",
@@ -286,6 +288,12 @@ class OWSM:
         returned feature tensor has its own storage. Larger batches, CPU, autocast and cache saturation run
         eagerly. False restores eager frontend execution. Exact features/output verified on H200
         with v4 medium 1B/base 102M; other GPUs/checkpoints are unmeasured.
+
+        ``greedy_kernels`` (default True): split draft-window vocabulary selection across blocks and
+        fuse the final argmax with draft acceptance. The same timestamp rules, smallest-index ties
+        and decoder scores apply. False restores serial selection; CPU, missing Triton and small
+        vocabularies keep the reference path. Exact sampled output and latency checks cover H200,
+        v4 medium 1B/base 102M, English/Japanese. Other GPUs are unmeasured. Beam decoding is independent.
 
         ``lazy_drafts`` (default True): create verification buffers/graphs on first
         draft use. Translation and language identification avoid unused verification setup. This
@@ -383,7 +391,8 @@ class OWSM:
             runner = TorchCTCBackend(net) if cfg.ctc_only else TorchBackend(net)
             return cls(cfg, tok, net.frontend, runner, opts, dev, graphs, ctc_draft,
                        beam_upper_bound, beam_kernels, beam_compact_tail, beam_grouped_cross,
-                       frontend_graph=frontend_graph, lazy_drafts=lazy_drafts, draft_token_budget=draft_token_budget)
+                       frontend_graph=frontend_graph, lazy_drafts=lazy_drafts, draft_token_budget=draft_token_budget,
+                       greedy_kernels=greedy_kernels)
         if backend != "tensorrt":
             raise ValueError(f"unknown backend {backend!r} (use 'tensorrt' or 'torch')")
 
@@ -423,7 +432,8 @@ class OWSM:
                 runner = _decoder_kernel(runner, cfg, files.checkpoint, dev, decoder_kernel)
             return cls(cfg, tok, frontend, runner, opts, dev, use_cuda_graph, ctc_draft,
                        beam_upper_bound, beam_kernels, beam_compact_tail, beam_grouped_cross,
-                       frontend_graph=frontend_graph, lazy_drafts=lazy_drafts, draft_token_budget=draft_token_budget)
+                       frontend_graph=frontend_graph, lazy_drafts=lazy_drafts, draft_token_budget=draft_token_budget,
+                       greedy_kernels=greedy_kernels)
 
     # ------------------------------------------------------------------ helpers
 
