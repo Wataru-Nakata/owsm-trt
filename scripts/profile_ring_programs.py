@@ -1,4 +1,4 @@
-"""Same-engine experiments for ring SM budgets, weight-prefetch distance or barrier polling."""
+"""Same-engine experiments for existing ring SM budgets or weight-prefetch distance."""
 
 import argparse
 import importlib.metadata
@@ -26,7 +26,7 @@ def main():
     ap.add_argument("--manifest", required=True)
     ap.add_argument("--lang", default="eng")
     ap.add_argument("--repeat", type=int, default=7)
-    ap.add_argument("--sweep", choices=("programs", "prefetch", "poll"), default="programs")
+    ap.add_argument("--sweep", choices=("programs", "prefetch"), default="programs")
     ap.add_argument("--long-audio")
     ap.add_argument("--split-choose", action="store_true")
     ap.add_argument("--fuse-accept", action="store_true")
@@ -43,31 +43,23 @@ def main():
         ap.error("fused acceptance requires split selection")
     if not os.environ.get("PBS_JOBID") and os.uname().nodename.startswith("login"):
         ap.error("audio/model work requires a compute allocation")
-    # Keep the polling baseline explicit if auto routing later adopts a different default.
-    model, load_ms = wall(
-        lambda: OWSM.from_pretrained(args.model, decoder_kernel="ring" if args.sweep == "poll" else "auto")
-    )
+    model, load_ms = wall(lambda: OWSM.from_pretrained(args.model))
     base = model.backend
     if not isinstance(base, megakernel.MegaBackend) or not isinstance(
         base.kernel, megakernel_ring.RingDecoder
     ):
         raise RuntimeError("experiment requires existing Hopper ring backend")
     original = base.kernel
-    if args.sweep != "poll" and (original.P != 32 or original.P_solo != 64 or original.nw != 4):
-        raise RuntimeError("program/prefetch sweeps target the 1B default ring32/solo64 shape")
-    if args.sweep == "poll" and original.relaxed_poll:
-        raise RuntimeError("polling reference must retain acquire-on-every-poll")
-    required_sms = 96 if args.sweep == "programs" else max(original.P, original.P_solo, original.P_rows)
-    if torch.cuda.get_device_properties(model.device).multi_processor_count < required_sms:
-        raise RuntimeError("cannot keep all persistent CTAs resident on this GPU")
+    if original.P != 32 or original.P_solo != 64 or original.nw != 4:
+        raise RuntimeError("experiment targets the 1B default ring32/solo64 shape")
+    if torch.cuda.get_device_properties(model.device).multi_processor_count < 96:
+        raise RuntimeError("cannot keep96 persistent CTAs resident on this GPU")
     files = hub.resolve(args.model)
     decoder = _load_decoder(model.cfg, files.checkpoint)
     settings = (
         {"reference": (32, 64, 0), "p16": (16, 64, 0), "p48": (48, 64, 0), "s96": (32, 96, 0)}
         if args.sweep == "programs"
         else {"reference": (32, 64, 0), "ahead1": (32, 64, 1), "ahead2": (32, 64, 2)}
-        if args.sweep == "prefetch"
-        else {"reference": (original.P, original.P_solo, 0), "relaxed_poll": (original.P, original.P_solo, 0)}
     )
     args.variants = list(settings)
     backends, checks = {"reference": base}, {}
@@ -75,13 +67,7 @@ def main():
         kernel = (
             original
             if name == "reference"
-            else megakernel_ring.RingDecoder(
-                original.m,
-                programs=parallel,
-                solo_programs=solo,
-                ahead=ahead,
-                relaxed_poll=name == "relaxed_poll",
-            )
+            else megakernel_ring.RingDecoder(original.m, programs=parallel, solo_programs=solo, ahead=ahead)
         )
         checked = (
             kernel
@@ -91,7 +77,7 @@ def main():
             )
         )
         _, ms = wall(lambda dec=decoder: _check_kernel(checked, dec, model.device, 1, 8))
-        if args.sweep in ("prefetch", "poll"):
+        if args.sweep == "prefetch":
             solo_check = SimpleNamespace(
                 m=kernel.m, name=kernel.name, check=kernel.check, step_fn=partial(kernel.step_fn, solo=True)
             )
@@ -100,12 +86,9 @@ def main():
             passed=True,
             solo=name == "s96",
             check_ms=ms,
-            solo_window32_check_ms=solo_ms if args.sweep in ("prefetch", "poll") else None,
+            solo_window32_check_ms=solo_ms if args.sweep == "prefetch" else None,
             rows=1,
             window=8,
-            programs=kernel.P,
-            solo_programs=kernel.P_solo,
-            relaxed_poll=kernel.relaxed_poll,
             criterion="existing fp32 check: max relative error<0.02, argmax>=0.5",
         )
         if name != "reference":
@@ -135,8 +118,6 @@ def main():
                 "N; P changes cross-attention split count; solo leaves it unchanged"
                 if args.sweep == "programs"
                 else "E intent; same program/split count/arithmetic, only existing L2 prefetch distance changes"
-                if args.sweep == "prefetch"
-                else "E intent; relaxed barrier polls then final acquire; same arithmetic"
             ),
             reference_time_annotations=False,
         ),
@@ -165,8 +146,8 @@ def main():
         if any(x["equal"] != x["total"] for x in s["agreement"].values())
     ]
     save(args.out / "output_differences.json", differences)
-    if args.sweep in ("prefetch", "poll") and differences:
-        raise RuntimeError(f"{args.sweep} scheduling changed outputs: {differences}")
+    if args.sweep == "prefetch" and differences:
+        raise RuntimeError(f"prefetch scheduling changed outputs: {differences}")
     # N program-budget differences are retained for quality analysis; dispatch failures are fatal.
 
 
