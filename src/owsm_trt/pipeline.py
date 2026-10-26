@@ -263,7 +263,8 @@ class OWSM:
         False disables this bound. Bound-enabled batch 1 checks completion every step, other beam
         batches every four steps; see ``BeamSession`` for an explicit interval override.
 
-        ``beam_kernels``: fuse beam candidate masking/scoring and finished-state updates with Triton
+        ``beam_kernels``: fuse beam candidate masking/scoring, finished-state updates and valid-prefix
+        KV reordering with Triton
         (default True on CUDA when Triton is available). Full-vocabulary log-softmax and global top-K
         stay in PyTorch. False selects the reference operations; CPU and missing-Triton paths also
         use them. These kernels do not affect greedy decoding.
@@ -394,6 +395,7 @@ class OWSM:
                     self.backend, self.cfg, batch, beam, *args, rules=self.rules,
                     upper_bound=self.beam_upper_bound,
                     fused_rank=self.beam_kernels, fused_finish=self.beam_kernels,
+                    kv_reorder="prefix" if self.beam_kernels else "torch",
                 )
         self._sessions.move_to_end(key)
         return self._sessions[key]

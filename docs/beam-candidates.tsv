@@ -12,7 +12,7 @@ id	priority	class	candidate	existing_relation	status	reason	target_shape	measure
 11	P1	E,N	First selection on B-row prefill logits	B prefill then logits repeated K times	Unverified	One-off cost; rank ties and timestamp rules must match	B=1/3 K=5	none; unmeasured
 12	P2	E,N	Small timestamp-only selection domain	Full mask and vocabulary selection	Unverified	Full-vocabulary LSE still required	Timestamp-only steps	none; unmeasured
 13	P2	E,N	Reuse score/index/state buffers	fp32 scores, int64 state/index	Unverified	Avoid changing near-tie ordering; profile temporary storage	R=5/15	none; unmeasured
-14	P1	E	Reorder only valid KV prefix	Whole bucket index_select then copy	Unverified optimization; grouped reorder measured	All reorder kernels 1.77 ms B1, 8.14 ms B3; KV-only cost unavailable; decoder remains dominant	Cache=64/128/256/512	outputs/beam-2765885/profile/analysis.json
+14	P1	E	Reorder only valid KV prefix	Whole bucket index_select then copy	Adopted; default CUDA prefix gather	220 GPU tests pass; isolated RTFx gain3.91% B1 /8.71% B3 over fused reference; English73/Japanese12 all tokens/time/segments/calls equal; zero unused tail	B=1/3 K=5; cache64/128/256/512	docs/beam-results-2768878.json
 15	P1	E	Ping-pong KV reorder	Copy back into fixed graph buffers	Not selected for this iteration	Additional buffer/graph complexity; grouped reorder below decoder cost in eager profile	Cache=64/128/256/512	outputs/beam-2765885/profile/analysis.json
 16	P2	E	Skip identity-parent cache copies	Copies all rows	Unverified	Measure identity rate; in-place duplicate parents unsafe	R=5/15	none; unmeasured
 17	P3	E,N,R	Paged KV or copy-on-write prefix sharing	Dense caches	Deferred	Large cache/attention redesign; short-prefix benefit unknown	Unspecified	none; unmeasured

@@ -1376,7 +1376,7 @@ class BeamSession(_Session):
         diagnostics: bool = False,
         fused_rank: bool = True,
         fused_finish: bool = True,
-        kv_reorder: str = "torch",
+        kv_reorder: str = "prefix",
     ):
         # H200/1B, beam 5 with bound stopping: every-step checks help batch 1, but hurt batch 3.
         # Explicit intervals stay fixed when set_upper_bound toggles the device flag for ablations.

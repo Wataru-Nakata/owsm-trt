@@ -226,6 +226,9 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   operations, also used on CPU or without Triton. Against the already optimized stopping path,
   [same-engine H200/1B measurements](docs/beam-fusion.md) show an additional 20.3% RTFx at B=1 and 14.2%
   at B=3 on 73 English inputs, with identical tokens, timestamps, segments and decoder call counts.
+  KV reordering now gathers the written prefix through fixed scratch storage in two launches, clearing
+  the unused tail. [Further same-engine measurements](docs/beam-kv.md) show 3.9% / 8.7% additional RTFx
+  at B=1 / B=3, with exact output agreement; `beam_kernels=False` also disables this path.
 * **Timestamp rules.** Like ESPnet, every search applies its `ScoreFilter`: no timestamps after `<notimestamps>`;
   otherwise the output starts with a timestamp, timestamps come in increasing pairs, and `<eos>` only after a
   complete pair.
