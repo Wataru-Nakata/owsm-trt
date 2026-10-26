@@ -23,3 +23,21 @@ English run has separate eager profiling and six additional compatibility cases.
 node-local until final publication, except coarse phase updates. Standing one-GPU authorization
 and a fresh successful <=192 GPU admission audit remain required. No new GPU measurement or
 runtime-default change is claimed by this preparation.
+
+## Result: retain existing settings
+
+Job `2768958.pbs1` passed 221 tests and completed all six comparisons. Every bucket dispatched to
+Gluon, without fallback. English73/Japanese12 tokens, timestamps, segments and decoder call counts
+all match; the six additional English cases match in every variant. WER/CER remain unchanged.
+
+| Candidate | English RTFx change | Japanese RTFx change |
+|---|---:|---:|
+| 128 CTAs (reference132) | -0.17% | -0.33% |
+| attention prefetch off | -1.71% | -1.70% |
+| both | -1.79% | -1.84% |
+
+There is no demonstrated gain to adopt. Defaults remain 132 CTAs on H200, attention prefetch on.
+No routing expansion or precision change was attempted. The admission check counted176 allocated,
+0 queued +1 new =177 <=192. [Complete statistics](beam-results-2768958.json) and raw artifacts
+`outputs/beam-2768958/` preserve the negative result. The next experiment targets cross-KV storage
+and reads shared across beam rows, rather than retuning these settings.
