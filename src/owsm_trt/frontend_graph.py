@@ -15,7 +15,12 @@ class FrontendReplay:
         self.fallbacks = 0
 
     def __call__(self, speech: torch.Tensor) -> torch.Tensor:
-        if speech.device.type != "cuda" or speech.shape[0] != 1 or torch.is_grad_enabled():
+        if (
+            speech.device.type != "cuda"
+            or speech.shape[0] != 1
+            or torch.is_grad_enabled()
+            or torch.is_autocast_enabled("cuda")
+        ):
             return self.frontend(speech)
         key = (
             tuple(speech.shape),

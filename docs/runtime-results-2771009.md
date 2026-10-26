@@ -55,7 +55,10 @@ does not reduce ASR verification work. The1B long-prompt cold median increased38
 small sample; stream cold medians were unchanged. Translation/LID save unused graphs. Mode-switch
 and reuse output checks passed. Load/first observations are separate in each `cold.json`.
 
-Graph private buffers add memory/capture work. Allocator deltas during warmup are recorded in each
+Graph private buffers add memory/capture work. After the eager path was warm, the16 additional
+English shapes increased allocated memory by531.5MiB and reserved memory by about810MiB on both
+1B/102M (17 total entries). This is a material memory cost for the single-request latency gain.
+Allocator deltas during warmup are recorded in each
 `cold.json`, but can include deferred backend allocations. Steady-state peak memory includes all
 warmed variants and must not be presented as isolated graph memory savings.
 

@@ -48,3 +48,24 @@ def test_retained_outputs_cross_streams_and_cache_limit(fused, normalize):
     two = torch.cat([waves[0], waves[0]])
     torch.testing.assert_close(replay(two), frontend(two), rtol=0, atol=0)
     assert replay.info()["captures"] == 2
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="compute allocation required")
+@pytest.mark.parametrize("fused", [False, True])
+@torch.inference_mode()
+def test_autocast_uses_eager_frontend_after_fp32_capture(fused):
+    frontend = Frontend(TINY).eval().cuda()
+    frontend.melmat.uniform_(0, 1)
+    speech = torch.randn(1, 3200, device="cuda")
+    replay = FrontendReplay(frontend)
+    expected = frontend(speech)
+    frontend.fused_power = frontend.fused_logmel = fused
+    torch.testing.assert_close(replay(speech), expected, rtol=0, atol=0)
+    for dtype in (torch.float16, torch.bfloat16):
+        with torch.autocast("cuda", dtype=dtype):
+            frontend.fused_power = frontend.fused_logmel = False
+            amp_expected = frontend(speech)
+            frontend.fused_power = frontend.fused_logmel = fused
+            torch.testing.assert_close(replay(speech), amp_expected, rtol=0, atol=0)
+    torch.testing.assert_close(replay(speech), expected, rtol=0, atol=0)
+    assert replay.info()["captures"] == 1

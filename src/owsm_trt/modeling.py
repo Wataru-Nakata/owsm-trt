@@ -84,7 +84,15 @@ class Frontend(nn.Module):
             onesided=True,
             return_complex=True,
         )  # [B, F, T]
-        fast = not torch.is_grad_enabled() and frontend_kernels.available(speech.device)
+        fast = (
+            (self.fused_power or self.fused_logmel)
+            and not torch.is_grad_enabled()
+            and not torch.is_autocast_enabled("cuda")
+            and spec.dtype == torch.complex64
+            and self.melmat.dtype == torch.float32
+            and (not self.global_mvn or (self.mean.dtype == self.std.dtype == torch.float32))
+            and frontend_kernels.available(speech.device)
+        )
         power = (frontend_kernels.power(spec) if fast and self.fused_power else
                  (spec.real**2 + spec.imag**2).transpose(1, 2))  # [B, F, T] -> [B, T, F]
         mel = torch.matmul(power, self.melmat)  # original fp32 GEMM and normalization order

@@ -274,7 +274,7 @@ class OWSM:
 
         ``frontend_graph``: reuse CUDA graphs for single-utterance STFT/mel/normalization (default
         True with ``use_cuda_graph``). A bounded 32-shape cache retains private graph buffers; each
-        returned feature tensor has its own storage. Larger batches, CPU and cache saturation run
+        returned feature tensor has its own storage. Larger batches, CPU, autocast and cache saturation run
         eagerly. False restores eager frontend execution. Exact features/output verified on H200
         with v4 medium 1B/base 102M; other GPUs/checkpoints are unmeasured.
 

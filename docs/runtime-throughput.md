@@ -24,7 +24,7 @@ measurements will decide adoption. Cold load/JIT/warmup are separated from stead
 `OWSM.from_pretrained(..., frontend_graph=True)` (default) captures STFT/mel/normalization on a dedicated
 capture stream. Replays serialize frontend workspace use through an event, while encoder/decoder
 work can still overlap. Each result is cloned before graph reuse, so another encoder stream cannot
-observe overwritten features. Shape/mode keys use a bounded32-entry cache; larger batches, CPU or
+observe overwritten features. Shape/mode keys use a bounded32-entry cache; larger batches, CPU, autocast or
 grad-enabled paths run eagerly. Saturation falls back eagerly without eviction/recapture. Graph
 inputs/outputs and intermediate private pools add memory, which must be measured before adoption.
 

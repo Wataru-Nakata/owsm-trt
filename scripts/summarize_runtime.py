@@ -18,7 +18,7 @@ def main():
         "datasets": {},
     }
     for root in sorted(args.run.iterdir()):
-        if not (root / "summary.json").is_file():
+        if not (root / "summary.json").is_file() or not (root / "frontend.json").is_file():
             continue
         summaries = json.loads((root / "summary.json").read_text())
         result = {
