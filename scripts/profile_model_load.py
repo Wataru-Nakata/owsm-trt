@@ -20,7 +20,7 @@ def worker(args):
     import importlib.metadata
     import resource
     from dataclasses import asdict
-    from functools import partial, wraps
+    from functools import wraps
 
     import torch
 
@@ -37,8 +37,14 @@ def worker(args):
         return original_checkpoint(path, **kwargs)
 
     if args.worker_mode in ("initialized", "empty", "skipped"):
-        pipeline._load_decoder = partial(pipeline._load_decoder, empty_init=args.worker_mode == "empty",
-                                         skip_init=args.worker_mode == "skipped")
+        original_decoder = pipeline._load_decoder
+
+        def selected_decoder(*a, **kw):
+            # Explicit production kwargs must not override the requested reference ablation.
+            kw.update(empty_init=args.worker_mode == "empty", skip_init=args.worker_mode == "skipped")
+            return original_decoder(*a, **kw)
+
+        pipeline._load_decoder = selected_decoder
     phases = []
     load_calls = []
 
@@ -47,7 +53,10 @@ def worker(args):
         def measured(*a, **kw):
             start = time.perf_counter()
             result = fn(*a, **kw)
-            phases.append(dict(helper=name, host_elapsed_ms=(time.perf_counter() - start) * 1000))
+            phase = dict(helper=name, host_elapsed_ms=(time.perf_counter() - start) * 1000)
+            if name == "_load_decoder":
+                phase["output_layer_class"] = type(result.output_layer).__name__
+            phases.append(phase)
             return result
 
         return measured

@@ -287,7 +287,9 @@ class OWSM:
         Cached-engine frontend/decoder loading privately maps supported ZIP checkpoints, reading
         only the required tensors. Legacy/file-like checkpoints or shared-mapping configurations
         use ordinary loading. No tensor precision changes; engine builds and full Torch model
-        loading keep their existing path. Measured startup improvements cover H200, v4 1B/102M,
+        loading keep their existing path. Decoder megakernel setup skips unused random parameter
+        initialization before strict copying; norms/position buffers remain initialized. Measured
+        startup improvements cover H200, v4 1B/102M,
         node-local files and warmed OS/JIT caches.
 
         ``ctc_draft``: for greedy ASR, let the encoder's CTC head propose the transcript and check up
@@ -1229,7 +1231,7 @@ def _decoder_kernel(runner, cfg, checkpoint: Path, dev: torch.device, which):
         if not megakernel.available(dev):
             log.warning("the Triton decoder megakernel needs Triton and an Ampere or newer GPU; not used")
             return runner
-        return megakernel.MegaBackend(runner, megakernel.MegaDecoder(_load_decoder(cfg, checkpoint), dev))
+        return megakernel.MegaBackend(runner, megakernel.MegaDecoder(_load_decoder(cfg, checkpoint, skip_init=True), dev))
     if not megakernel_gluon.available(dev):
         if which != "auto":
             log.warning("the Gluon decoder megakernels need Triton with Gluon and a Hopper GPU; not used")
@@ -1243,7 +1245,7 @@ def _decoder_kernel(runner, cfg, checkpoint: Path, dev: torch.device, which):
         return runner
     auto = which == "auto"
     try:
-        decoder = _load_decoder(cfg, checkpoint)
+        decoder = _load_decoder(cfg, checkpoint, skip_init=True)
         mega = megakernel.MegaDecoder(decoder, dev)
         try:
             gk = megakernel_gluon.GluonDecoder(mega)

@@ -83,3 +83,32 @@ and forward checks plus a direct-RNG/position-buffer guard. They require a compu
 regressions, then `profile_model_load.py --experiment decoder_skip --repeat 5` on1B/102M in fresh
 processes with the same node-local cached engines. All English/Japanese public outputs must match.
 This is a new ablation, not an attribution of the previous meta slowdown; no improvement is assumed.
+
+
+## Direct allocation adopted after2773582
+
+Source39c62f7, H200, five alternating fresh-process pairs for each model, with warmed node-local
+files/cached engines. Two first and two instrumented workers per model remain outside timing.
+
+|Model|Initialized p50|Direct skipped p50|Load reduction|Paired reductions|
+|---|---:|---:|---:|---:|
+|1B|4694.93ms|3283.58ms|30.06%|28.15–32.71%|
+|102M|1593.71ms|1400.16ms|12.14%|5.92–12.61%|
+
+All728 public API requests match complete results; checkpoint/engine hashes match.29 storage/
+initialization tests and17 focused naive beam/greedy/timestamp regressions pass. GPU peak allocation
+is unchanged; CPU peak RSS is essentially unchanged (1B-1.38MiB,102M+8.72MiB), so no memory saving
+is claimed. Separately instrumented decoder helpers take1540.77→234.78ms and228.02→45.88ms;
+these inclusive host timings are not independent phase sums.
+
+Production megakernel setup now explicitly requests `skip_init=True` at both decoder-loading call
+sites. The private helper keeps its ordinary default for reference/diagnostic use; full-model Torch
+loading and engine building retain normal construction. Strict state copying and initialized position
+buffers remain. `empty_init=True` still reproduces the rejected meta experiment. RNG consumption
+changes as documented above; loaded inference outputs match. An unmodified production-settings
+worker with actual module-class diagnostics is prepared as the final adoption check.
+
+[All load samples and hashes](runtime-decoder-skip-results-2773582.json); raw workers/output records:
+`outputs/runtime-2773582/load1b`, `load102m`. These gains are additional to mapped loading in this
+comparison, but should not be multiplied by the mapping percentages from another job. No single-
+request steady-state, disk-cold or engine-build speed improvement is attributed to this change.

@@ -1,0 +1,302 @@
+{
+  "job": "2773582.pbs1",
+  "source": "39c62f7be9ed661cadf615a9f7c239b252d95298",
+  "loads": {
+    "load1b": {
+      "summary": {
+        "initialized": {
+          "model_load_ms": {
+            "n": 5,
+            "median": 4694.93349804543,
+            "min": 4526.712450024206,
+            "max": 4884.306045016274,
+            "stdev": 128.4341689028479
+          },
+          "load_peak_rss_kib": {
+            "n": 5,
+            "median": 4353276,
+            "min": 4349592,
+            "max": 4371524,
+            "stdev": 9558.451623563305
+          },
+          "load_peak_cuda_bytes": {
+            "n": 5,
+            "median": 2040667648,
+            "min": 2040667648,
+            "max": 2040667648,
+            "stdev": 0.0
+          }
+        },
+        "skipped": {
+          "model_load_ms": {
+            "n": 5,
+            "median": 3283.576015033759,
+            "min": 3046.0664569982328,
+            "max": 3300.6752629880793,
+            "stdev": 94.62733939875858
+          },
+          "load_peak_rss_kib": {
+            "n": 5,
+            "median": 4351860,
+            "min": 4348256,
+            "max": 4373736,
+            "stdev": 9071.546514238904
+          },
+          "load_peak_cuda_bytes": {
+            "n": 5,
+            "median": 2040667648,
+            "min": 2040667648,
+            "max": 2040667648,
+            "stdev": 0.0
+          }
+        }
+      },
+      "all_equal": true,
+      "workers": 14,
+      "requests_per_worker": 26,
+      "median_reduction_percent": 30.061288058696455,
+      "paired_reductions_percent": [
+        30.061288058696455,
+        32.422840981556845,
+        32.16772005363446,
+        28.15260452094589,
+        32.70907991997716
+      ],
+      "rss_saved_mib": 1.3828125,
+      "first": [
+        {
+          "mode": "skipped",
+          "model_load_ms": 9004.9309200258
+        },
+        {
+          "mode": "initialized",
+          "model_load_ms": 4994.467161013745
+        }
+      ],
+      "instrumented": [
+        {
+          "mode": "skipped",
+          "model_load_ms": 2984.458610008005,
+          "helper_host_timings": [
+            {
+              "helper": "load_checkpoint",
+              "host_elapsed_ms": 50.21940096048638
+            },
+            {
+              "helper": "_load_frontend",
+              "host_elapsed_ms": 54.189814953133464
+            },
+            {
+              "helper": "load_checkpoint",
+              "host_elapsed_ms": 43.5268779983744
+            },
+            {
+              "helper": "_load_decoder",
+              "host_elapsed_ms": 234.78416301077232
+            }
+          ],
+          "checkpoint_load_calls": [
+            {
+              "mmap": true,
+              "map_location": "cpu",
+              "weights_only": true
+            },
+            {
+              "mmap": true,
+              "map_location": "cpu",
+              "weights_only": true
+            }
+          ]
+        },
+        {
+          "mode": "initialized",
+          "model_load_ms": 4268.478310026694,
+          "helper_host_timings": [
+            {
+              "helper": "load_checkpoint",
+              "host_elapsed_ms": 43.77310094423592
+            },
+            {
+              "helper": "_load_frontend",
+              "host_elapsed_ms": 47.461506037507206
+            },
+            {
+              "helper": "load_checkpoint",
+              "host_elapsed_ms": 45.166131982114166
+            },
+            {
+              "helper": "_load_decoder",
+              "host_elapsed_ms": 1540.774170018267
+            }
+          ],
+          "checkpoint_load_calls": [
+            {
+              "mmap": true,
+              "map_location": "cpu",
+              "weights_only": true
+            },
+            {
+              "mmap": true,
+              "map_location": "cpu",
+              "weights_only": true
+            }
+          ]
+        }
+      ],
+      "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+      "engine_sha256": {
+        "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+        "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+        "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+      }
+    },
+    "load102m": {
+      "summary": {
+        "initialized": {
+          "model_load_ms": {
+            "n": 5,
+            "median": 1593.7111119856127,
+            "min": 1494.965053978376,
+            "max": 1600.2333029755391,
+            "stdev": 40.49733299336966
+          },
+          "load_peak_rss_kib": {
+            "n": 5,
+            "median": 1500808,
+            "min": 1499760,
+            "max": 1506292,
+            "stdev": 2349.283601441086
+          },
+          "load_peak_cuda_bytes": {
+            "n": 5,
+            "median": 730622976,
+            "min": 730622976,
+            "max": 730622976,
+            "stdev": 0.0
+          }
+        },
+        "skipped": {
+          "model_load_ms": {
+            "n": 5,
+            "median": 1400.1649299752899,
+            "min": 1392.686404986307,
+            "max": 1414.6840660250746,
+            "stdev": 7.886115757648282
+          },
+          "load_peak_rss_kib": {
+            "n": 5,
+            "median": 1509740,
+            "min": 1504508,
+            "max": 1513616,
+            "stdev": 3293.9105998797236
+          },
+          "load_peak_cuda_bytes": {
+            "n": 5,
+            "median": 730622976,
+            "min": 730622976,
+            "max": 730622976,
+            "stdev": 0.0
+          }
+        }
+      },
+      "all_equal": true,
+      "workers": 14,
+      "requests_per_worker": 26,
+      "median_reduction_percent": 12.144370491913225,
+      "paired_reductions_percent": [
+        5.917127412156087,
+        11.595136571989018,
+        12.155758430465047,
+        12.481615023857417,
+        12.613622725441619
+      ],
+      "rss_saved_mib": -8.72265625,
+      "first": [
+        {
+          "mode": "skipped",
+          "model_load_ms": 3722.4303709808737
+        },
+        {
+          "mode": "initialized",
+          "model_load_ms": 1387.225724000018
+        }
+      ],
+      "instrumented": [
+        {
+          "mode": "skipped",
+          "model_load_ms": 1300.990007002838,
+          "helper_host_timings": [
+            {
+              "helper": "load_checkpoint",
+              "host_elapsed_ms": 16.664880036842078
+            },
+            {
+              "helper": "_load_frontend",
+              "host_elapsed_ms": 19.971766974776983
+            },
+            {
+              "helper": "load_checkpoint",
+              "host_elapsed_ms": 15.254370984621346
+            },
+            {
+              "helper": "_load_decoder",
+              "host_elapsed_ms": 45.88285001227632
+            }
+          ],
+          "checkpoint_load_calls": [
+            {
+              "mmap": true,
+              "map_location": "cpu",
+              "weights_only": true
+            },
+            {
+              "mmap": true,
+              "map_location": "cpu",
+              "weights_only": true
+            }
+          ]
+        },
+        {
+          "mode": "initialized",
+          "model_load_ms": 1762.1876059565693,
+          "helper_host_timings": [
+            {
+              "helper": "load_checkpoint",
+              "host_elapsed_ms": 16.694571007974446
+            },
+            {
+              "helper": "_load_frontend",
+              "host_elapsed_ms": 19.975972012616694
+            },
+            {
+              "helper": "load_checkpoint",
+              "host_elapsed_ms": 16.460840008221567
+            },
+            {
+              "helper": "_load_decoder",
+              "host_elapsed_ms": 228.01679896656424
+            }
+          ],
+          "checkpoint_load_calls": [
+            {
+              "mmap": true,
+              "map_location": "cpu",
+              "weights_only": true
+            },
+            {
+              "mmap": true,
+              "map_location": "cpu",
+              "weights_only": true
+            }
+          ]
+        }
+      ],
+      "checkpoint_sha256": "4702713d44ab3e239101f09182903cd28f7b51e565bb632008af12beefb37752",
+      "engine_sha256": {
+        "encoder.engine": "f3da9563c8ef41b6252388c18d89fac46cc5781cfa505d6750837e0c12e0f481",
+        "decoder.engine": "b6065937220853d65633f6f59ce0edab80270717b8971c8afa53baf9a2bf5f72",
+        "verify.engine": "34a912836635a2c6928abef52e6ea5140c5215bc8fa178ee8b1af07bd5458dcb"
+      }
+    }
+  }
+}

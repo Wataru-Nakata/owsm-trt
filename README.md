@@ -225,6 +225,10 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   English/Japanese public outputs). CPU peak RSS fell by2.33 GiB/196 MiB; GPU peak was unchanged.
   These are startup measurements, not steady-state gains or cold-disk/build timings. Legacy formats
   and shared-mapping configurations keep ordinary loading. [Measurements](docs/runtime-checkpoint-load.md).
+  Decoder setup also skips random parameter initialization before strict checkpoint copying. With
+  mapping already enabled, a separate five-pair comparison reduces1B load4.69→3.28s (30.06%) and
+  102M1.59→1.40s (12.14%), with all728 public outputs matching and46 focused tests passing.
+  GPU peak allocation is unchanged. [Direct allocation measurements](docs/runtime-decoder-loading.md).
 * **Unused draft setup is deferred.** `lazy_drafts=True` (default) creates verification buffers on first
   draft use and prepares each bucket/window/solo call and graph only when needed. With resident engines, session-cold translation/language identification was 33–36% shorter
   on H200/v4 1B and 102M, saving 45.4/26.1 MiB of unused buffers. Warm ASR work is unchanged; long-prompt
