@@ -116,3 +116,16 @@ creates only the requested mode, but switching modes retains another graph set. 
 therefore **not** enabled by the accepted default. `reuse_notime` stays experimental.
 Per-case VRAM includes all variant session pools, not standalone deployment usage. Synthetic
 selection workspace remains300bytes atR1W1/76.8KB atR16W16, separate from graph metadata.
+
+## Short-primer measurements and narrower follow-up
+
+Job2771857 passed135 regression and8 state/mode tests, with exact outputs for the17 cases. Against
+notime reuse alone, cached initialization improved single-request RTFx1.92%/1.42% (plain/timestamp)
+English1B,1.58%/0.95% Japanese1B and4.43%/4.17% English102M. Candidate within-input median CVs were
+0.4–0.6% for1B and1.2–1.3% for102M. English plain B1 streaming changed-0.93%/-1.94% (1B/102M), with
+CV1.28%/7.09%; no streaming benefit is established. Artifact: `outputs/runtime-2771857/analysis-graph.json`.
+
+The follow-up limits this candidate to fixed-batch `decode_drafted` short primers. Streaming retains
+its prior initialization. `profile_runtime.py`'s `graph_flags` compares it with the accepted fused
+selection **without** the unadopted notime graph mode. It is still disabled by default until that
+independent replication completes. Existing mixed/long-primer/plain-decode state tests remain.

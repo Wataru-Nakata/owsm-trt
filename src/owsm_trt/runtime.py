@@ -965,9 +965,7 @@ class GreedySession(_Session):
             raise ValueError(f"a primer of {p} tokens does not fit a draft window")
         max_new_tokens = min(max_new_tokens, self.capacity - p)
         self._draft_rule_mode([primer])
-        if self.cache_draft_flags:
-            self._draft_flags_start([primer] * self.rows)
-        elif self.rules is not None:
+        if self.rules is not None:
             self.tok.fill_(-1)
             self._rules_start(torch.tensor([primer] * self.rows, device=self.device))
         cuda = self.device.type == "cuda"

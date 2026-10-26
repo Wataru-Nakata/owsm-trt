@@ -68,20 +68,31 @@ cp "$LOCAL/baseline_runtime.py" "$LOCAL/results/"
 nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv -l 5 \
     > "$LOCAL/results/gpu_utilization.csv" &
 SMI=$!
-timeout 800 "$PY" "$LOCAL/scripts/validate_greedy_api.py" \
+timeout 500 "$PY" "$LOCAL/scripts/validate_greedy_api.py" \
     --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/manifest.json" \
     --out "$LOCAL/results/api1b" > "$LOCAL/results/api1b.log" 2>&1
 printf '%s\n' 'public greedy API regression passed' >> "$OUT/progress.log"
-timeout 1200 "$PY" "$LOCAL/scripts/profile_runtime.py" \
+timeout 1000 "$PY" "$LOCAL/scripts/profile_runtime.py" \
     --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/manifest.json" \
-    --repeat 7 --variants reference graph graph_fused --count-dispatch --lazy-drafts --trace \
-    --cases single_ts stream_greedy_b1 stream_ts_b8 long_greedy \
+    --repeat 11 --variants reference graph graph_fused graph_flags --count-dispatch --lazy-drafts \
+    --trace --trace-variants graph_fused graph_flags \
+    --cases single_greedy single_ts stream_greedy_b1 stream_ts_b8 long_greedy \
     --long-audio "$LOCAL/long_110s.wav" --out "$LOCAL/results/english" \
     > "$LOCAL/results/english.log" 2>&1
+timeout 500 "$PY" "$LOCAL/scripts/profile_runtime.py" \
+    --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/extra_manifest.json" --lang jpn \
+    --repeat 11 --variants reference graph graph_fused graph_flags --count-dispatch --lazy-drafts \
+    --cases single_greedy single_ts stream_greedy_b1 \
+    --out "$LOCAL/results/japanese" > "$LOCAL/results/japanese.log" 2>&1
 cp -a "$REPO/.cache/models/owsm_v4_base_102M" "$LOCAL/owsm_v4_base_102M"
 mkdir -p "$OWSM_TRT_CACHE/owsm_v4_base_102M"
 cp -a "$REPO/.cache/engines/owsm_v4_base_102M/v621-NVIDIA_H200-sm90-trt11.4.0.106-float16-3d0cbdc9" \
     "$OWSM_TRT_CACHE/owsm_v4_base_102M/"
-timeout 800 "$PY" "$LOCAL/scripts/validate_greedy_api.py" \
+timeout 500 "$PY" "$LOCAL/scripts/validate_greedy_api.py" \
     --model "$LOCAL/owsm_v4_base_102M" --manifest "$LOCAL/manifest.json" \
     --out "$LOCAL/results/api102m" > "$LOCAL/results/api102m.log" 2>&1
+timeout 500 "$PY" "$LOCAL/scripts/profile_runtime.py" \
+    --model "$LOCAL/owsm_v4_base_102M" --manifest "$LOCAL/manifest.json" \
+    --repeat 11 --variants reference graph graph_fused graph_flags --count-dispatch --lazy-drafts \
+    --cases single_greedy single_ts stream_greedy_b1 stream_ts_b8 \
+    --out "$LOCAL/results/base102m" > "$LOCAL/results/base102m.log" 2>&1

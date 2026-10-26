@@ -33,6 +33,7 @@ VARIANTS = (
     "graph_fused",
     "graph_notime",
     "graph_cached",
+    "graph_flags",
 )
 CASES = {
     "single_greedy": (1, 1, False, True, False, "asr", None, None),
@@ -95,11 +96,18 @@ def variant(model, name):
         "graph_fused",
         "graph_notime",
         "graph_cached",
+        "graph_flags",
     )
-    model.greedy_split_choose = name in ("graph_split", "graph_fused", "graph_notime", "graph_cached")
-    model.greedy_fuse_accept = name in ("graph_fused", "graph_notime", "graph_cached")
+    model.greedy_split_choose = name in (
+        "graph_split",
+        "graph_fused",
+        "graph_notime",
+        "graph_cached",
+        "graph_flags",
+    )
+    model.greedy_fuse_accept = name in ("graph_fused", "graph_notime", "graph_cached", "graph_flags")
     model.greedy_reuse_notime = name in ("graph_notime", "graph_cached")
-    model.greedy_cache_draft_flags = name == "graph_cached"
+    model.greedy_cache_draft_flags = name in ("graph_cached", "graph_flags")
 
 
 def captures(model):
@@ -184,6 +192,7 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
             "fused": OrderedDict(),
             "notime": OrderedDict(),
             "cached": OrderedDict(),
+            "flags": OrderedDict(),
         }
     )
 
@@ -197,6 +206,7 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
             "graph_fused": "fused",
             "graph_notime": "notime",
             "graph_cached": "cached",
+            "graph_flags": "flags",
         }
         model._sessions = pools[v if configure is not None else modes.get(v, "serial")]
 
@@ -265,7 +275,8 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
                 "all variant session pools resident; not standalone deployment peak"
                 if configure is not None
                 or any(
-                    v in args.variants for v in ("graph_split", "graph_fused", "graph_notime", "graph_cached")
+                    v in args.variants
+                    for v in ("graph_split", "graph_fused", "graph_notime", "graph_cached", "graph_flags")
                 )
                 else "shared sessions and all frontend variants resident"
             ),
@@ -294,6 +305,8 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
         "long_greedy",
     ):
         for v in args.variants:
+            if getattr(args, "trace_variants", None) and v not in args.trace_variants:
+                continue
             activate(v)
             group = [waves[i] for i in chunks[0]]
             with torch.profiler.profile(
@@ -388,6 +401,7 @@ def main():
     ap.add_argument("--repeat", type=int, default=5)
     ap.add_argument("--long-audio")
     ap.add_argument("--trace", action="store_true")
+    ap.add_argument("--trace-variants", nargs="+", choices=VARIANTS)
     ap.add_argument("--count-dispatch", action="store_true")
     ap.add_argument("--lazy-drafts", action="store_true")
     ap.add_argument("--out", type=Path, required=True)
