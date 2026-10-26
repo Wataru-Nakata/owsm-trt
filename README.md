@@ -214,6 +214,11 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   5% on 102M, with exact sampled output. This initialization change does not apply to streaming or
   long prefill. `greedy_kernels=False` restores serial selection and full initialization. CPU, missing Triton
   and small vocabularies retain the reference path. [Measurements and limits](docs/runtime-greedy-selection.md).
+  The same option also fuses mask/argmax/state updates for non-drafted greedy and translation.
+  On H200, sampled 1B English/Japanese requests gained 8.5–9.3% RTFx and102M English gained
+  26.6–27.1%, with exact tokens/segments (12 inputs per condition,11 alternating repeats,
+  versus the previously optimized path). Drafted/beam paths have no corresponding speedup claim.
+  [Plain selection measurements and cold costs](docs/runtime-plain-selection.md).
 * **Unused draft setup is deferred.** `lazy_drafts=True` (default) creates verification buffers on first
   draft use and prepares each bucket/window/solo call and graph only when needed. With resident engines, session-cold translation/language identification was 33–36% shorter
   on H200/v4 1B and 102M, saving 45.4/26.1 MiB of unused buffers. Warm ASR work is unchanged; long-prompt

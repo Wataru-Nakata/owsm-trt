@@ -75,7 +75,7 @@ printf '%s\n' 'public API1B passed' >> "$OUT/progress.log"
 timeout 800 "$PY" "$LOCAL/scripts/profile_runtime.py" \
     --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/manifest.json" \
     --repeat 11 --variants reference graph_lazy graph_plain --count-dispatch --lazy-drafts \
-    --cases plain_greedy plain_ts translation stream_greedy_b1 stream_ts_b8 \
+    --cases plain_greedy plain_ts translation stream_greedy_b1 stream_ts_b8 beam_ts \
     --out "$LOCAL/results/english" > "$LOCAL/results/english.log" 2>&1
 timeout 400 "$PY" "$LOCAL/scripts/profile_runtime.py" \
     --model "$LOCAL/owsm_v4_medium_1B" --manifest "$LOCAL/extra_manifest.json" --lang jpn \

@@ -1,4 +1,4 @@
-# Plain greedy / translation selection fusion (experimental)
+# Plain greedy / translation selection fusion
 
 Job2771972's English translation trace has24 ring decoder calls (15.94ms GPU sum),25 argmax calls
 (0.343ms) and many per-token boolean/mask/state kernels. All PyTorch-native GPU kernels together
@@ -10,16 +10,53 @@ timestamp update. It keeps mask-before-argmax, first-index ties, first surviving
 index0, done-row EOS behavior and unchanged pos. Unlike drafted choose, the baseline is PyTorch
 argmax, so nonfinite handling has independent tests. Decoder logits and arithmetic are untouched.
 Small vocabularies, non-fp32 logits, CPU/missing Triton retain PyTorch. GreedySession(fused_select=True)
-and internal OWSM.greedy_fused_select are opt-in; default remains False.
+remains an explicit low-level switch. OWSM now enables this path with greedy_kernels=True;
+False restores PyTorch plain selection as well as the serial drafted path.
 
 GPU tests cover arbitrary states, time-boundary masks, ties/near-ties, NaN/Inf/all-invalid logits,
 EOS, repeated captured calls, final output slot, long prefill and bucket16/32/64 transitions.
 `profile_greedy_select.py` reports synthetic selection-only graph CUDA events separately.
 `profile_runtime.py graph_plain` compares actual same-engine requests with accepted `graph_lazy`,
 including plain greedy with/without timestamps, translation, drafted/beam regressions and102M.
-All returned tokens/segments must match. No new speed claim until measurement.
+All returned tokens/segments must match.
 
 Job2772060 passed131 tests and the10-request public API rollback comparison. The benchmark then
 failed before timing because its PBS wrapper named the model-root config.yaml instead of the file
 under exp/. No selection/runtime performance result was produced. The wrapper path was corrected
 against the staged model tree for the retry; runtime/kernel code is unchanged.
+
+
+## H200 same-engine result:2772077
+
+Source8d293ac completed131 tests, a10-request public API rollback regression, all9 synthetic
+selection shapes, and13 runtime conditions. All tokens, timestamp IDs and segments matched.
+Public-API regression in this job predates adoption of plain fusion; its new default wiring is
+checked in the follow-up job. Timing compares graph_plain against accepted graph_lazy, both with
+frontend graphs and existing drafted optimizations; eleven alternating repeats after all-shape warmup.
+
+| Model / language | Plain no timestamps RTFx gain | Plain timestamps | Translation |
+|---|---:|---:|---:|
+|1B English|8.85%|9.31%|9.17%|
+|1B Japanese|8.52%|8.79%|8.52%|
+|102M English|26.60%|26.97%|27.07%|
+
+Each table condition uses12 utterances. Within-input timing CV medians were0.12–0.31%, and the
+paired median gains agreed with the aggregate gains. Drafted timestamp requests(73 English inputs)
+and long prompts were nearly unchanged. Beam showed-0.39% in this run; its code and configuration
+are unaffected by plain fusion. These checks establish output agreement, not speedup of unaffected paths.
+
+For1B English plain timestamps, across the12×11 mixed-duration requests, median latency was
+26.12→24.00ms and p95 was88.52→80.49ms.102M:10.07→7.90ms and35.97→27.99ms. These percentiles
+include differences in input length; per-input variation is retained separately in the raw report.
+
+Synthetic R1/V50002 selection CUDA-event medians: without rules20.37→4.15µs; timestamp rules
+64.98→5.09µs; notime rules65.74→5.24µs. This is selection only, not model latency. Workspace is
+300bytes per row. First-use JIT is material: the first synthetic fused configuration's combined
+compile/capture took486.75ms versus48.61ms for Torch; later configurations reuse compiled kernels.
+It is excluded from warm timing. Runtime peak-memory samples retain all variant pools and are not
+standalone deployment measurements. There are no reference timestamp annotations; equality is
+against the same engine, not timestamp accuracy against a human reference.
+
+Artifacts: outputs/runtime-2772077/{analysis-graph_lazy.json,selection.json,tests.log,api1b/public_api.json},
+plus english/japanese/base102m case wall/token/cold/dispatch JSON. The checkpoint and engine hashes,
+software versions and GPU details are in each dataset's environment.json.

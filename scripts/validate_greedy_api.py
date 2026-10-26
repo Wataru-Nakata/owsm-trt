@@ -60,6 +60,8 @@ def main():
             dispatch[name] = captures(model)
             if name == "plain_decoder" and model._session(1).windows:
                 raise RuntimeError("plain decoder check accidentally used drafted decoding")
+            if name == "plain_decoder" and (model._session(1).select_workspace is not None) != (mode == "default"):
+                raise RuntimeError("public option did not select expected plain greedy kernel")
             if name == "single_ts":
                 windows = [v.bufs for sess in model._sessions.values() for v in sess._verify.values()]
                 active = any(w.fuse_accept and w.choose_workspace is not None for w in windows)
