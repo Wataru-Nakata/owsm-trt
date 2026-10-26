@@ -34,3 +34,9 @@ python scripts/profile_model_load.py --model /local/owsm_v4_medium_1B \
   --manifest /local/manifest.json --extra-manifest /local/extra_manifest.json \
   --experiment decoder_init --repeat 5 --out /local/results/load1b
 ```
+
+The prepared allocation also compares the existing grouped cross-attention setting with two
+key slices for B2/B3 beam5. The1B decoder has16 heads: at B3 this gives96 attention work units
+on132 H200 SMs, while four/eight slices have192/384 units. This motivates a measurement, not a
+speed claim. Arithmetic reductions differ; all output differences remain N-class results.
+This is separate from startup initialization and leaves production routing unchanged.

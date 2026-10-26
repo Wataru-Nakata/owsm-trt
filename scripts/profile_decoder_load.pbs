@@ -87,3 +87,22 @@ timeout 1200 "$PY" "$LOCAL/scripts/profile_model_load.py" \
     --extra-manifest "$LOCAL/extra_manifest.json" --experiment decoder_init --repeat 5 --out "$LOCAL/results/load102m" \
     > "$LOCAL/results/load102m.log" 2>&1
 printf '%s\n' '102M model loading comparison complete' >> "$OUT/progress.log"
+
+# Follow-up N setting: for B3/H16, two grouped key slices yield96 attention units on132 SMs.
+# Compare actual latency/output; unit count alone is not a speed prediction.
+for corpus in english japanese; do
+    MANIFEST="$LOCAL/manifest.json"
+    LANG_ID=eng
+    if [ "$corpus" = japanese ]; then
+        MANIFEST="$LOCAL/extra_manifest.json"
+        LANG_ID=jpn
+    fi
+    timeout 600 "$PY" "$LOCAL/scripts/profile_beam.py" \
+        --model "$LOCAL/owsm_v4_medium_1B" --manifest "$MANIFEST" --lang "$LANG_ID" \
+        --beam 5 --timestamps --batch 2 3 --chunk 4 --repeat 7 --limit 73 \
+        --upper-bound on --fused-rank --fused-finish --fused-state --kv-reorder prefix --share-cross-kv \
+        --gluon-max-rows 16 --gluon-group-queries --gluon-cross-splits 2 \
+        --baseline-runtime "$LOCAL/baseline_runtime.py" --phases \
+        --out "$LOCAL/results/grouped2_${corpus}" > "$LOCAL/results/grouped2_${corpus}.log" 2>&1
+    printf 'grouped2 %s wider rows complete\n' "$corpus" >> "$OUT/progress.log"
+done

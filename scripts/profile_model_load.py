@@ -1,4 +1,4 @@
-"""Fresh-process cached-engine loading; checkpoint mapping is an isolated opt-in experiment.
+"""Fresh-process cached-engine loading with isolated storage and decoder-construction ablations.
 
 Run on a compute node. OS cache and JIT are warm; Python/CUDA initialization and instrumented
 helper timings are separate from load samples. This does not measure cold disk or engine builds.
