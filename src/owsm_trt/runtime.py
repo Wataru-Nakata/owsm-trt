@@ -522,6 +522,7 @@ class _Session:
         buckets: list[int] | None,
         rules: TimestampRules | None,
         cross_rows: int | None = None,
+        lazy_steps: bool = False,
     ):
         self.backend, self.cfg, self.rows, self.capacity = backend, cfg, rows, capacity
         self.rules = rules
@@ -549,12 +550,9 @@ class _Session:
         self.pos = torch.zeros(1, dtype=torch.long, device=device)  # every row's position (lock step)
         self.offs = torch.zeros(rows, dtype=torch.long, device=device)  # the decoder's per-row offsets
         self.eos = eos
-        self._steps = {
-            c: backend.step_fn(
-                self.tok, self.offs, k, v, self.cross_k, self.cross_v, self.logits, self.new_kv
-            )
-            for c, (k, v) in self.caches.items()
-        }
+        self._steps = {}
+        if not lazy_steps:
+            self._prepare_steps()
         self.use_cuda_graph = use_cuda_graph
         self.graphs: dict[int, torch.cuda.CUDAGraph] = {}
         self._feats: dict[int, torch.Tensor] = {}  # per lane: flat, viewed as encoder inputs of any length
@@ -563,6 +561,14 @@ class _Session:
         # (with the torch backend, sharing it corrupts both).
         self._enc_capture = torch.cuda.Stream(device) if use_cuda_graph and device.type == "cuda" else None
         self._enc_graphs: dict[tuple, tuple] = {}  # (outputs, input shape) -> (closure, input, graph)
+
+    def _prepare_steps(self) -> None:
+        self._steps = {
+            c: self.backend.step_fn(
+                self.tok, self.offs, k, v, self.cross_k, self.cross_v, self.logits, self.new_kv
+            )
+            for c, (k, v) in self.caches.items()
+        }
 
     def _check(self) -> None:
         """Let the backend raise errors its kernels flagged (the decoder megakernel's barrier timeout)."""
@@ -738,9 +744,11 @@ class GreedySession(_Session):
         cache_draft_flags: bool = False,
         lazy_verify_graphs: bool = False,
         fused_select: bool = False,
+        lazy_plain: bool = False,
     ):
         super().__init__(
-            backend, cfg, batch, capacity, eos, dtype, device, use_cuda_graph, chunk, buckets, rules
+            backend, cfg, batch, capacity, eos, dtype, device, use_cuda_graph, chunk, buckets, rules,
+            lazy_steps=lazy_plain,
         )
         self.split_choose = split_choose
         self.fuse_accept = fuse_accept
@@ -760,7 +768,9 @@ class GreedySession(_Session):
             if fused_select and self.logits.dtype == torch.float32 and kernels.available(device)
             else None
         )
-        self._capture_all()
+        self._plain_ready = not lazy_plain
+        if self._plain_ready:
+            self._capture_all()
 
         self.windows = sorted(set(draft_windows) | {1}) if draft_windows else []
         self._stage: list[tuple[torch.Tensor, ...]] = []  # decode_stream's encoder outputs, two batches
@@ -846,6 +856,19 @@ class GreedySession(_Session):
     def self_v(self) -> torch.Tensor:
         return self.caches[self.buckets[-1]][1]
 
+    def _prepare_plain(self) -> None:
+        if self._plain_ready:
+            return
+        # Trial and capture can write KV/state. Run them before the request's prefill, with bounded
+        # offsets; prefill and _rules_start then install the new request's prefix and search state.
+        self.pos.zero_()
+        self.offs.zero_()
+        self.tok.zero_()
+        self.done.zero_()
+        self._prepare_steps()
+        self._capture_all()
+        self._plain_ready = True
+
     def _select(self, c: int) -> None:
         if self.select_workspace is not None:
             kernels.greedy_select(
@@ -872,6 +895,7 @@ class GreedySession(_Session):
         if max_new_tokens <= 0:
             raise ValueError(f"prompt of {p} tokens does not fit the cache capacity {self.capacity}")
 
+        self._prepare_plain()
         logits, new_kv, c = self._prefill(primer, self.cross_k, self.cross_v)
         k, v = self.caches[c]
         k[:, :, :, :p] = new_kv[:, 0]
