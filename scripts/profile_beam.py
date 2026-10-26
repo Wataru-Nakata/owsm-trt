@@ -423,17 +423,23 @@ def run_batch(model, args, items, waves, batch, legacy):
     if args.verify_api:
         # Exercise OWSM's production session factory, independently of profiler-supplied sessions.
         original_options = model.beam_compact_tail, model.beam_grouped_cross, model._beam_backend
-        model.beam_compact_tail = model.beam_grouped_cross = True
+        model.beam_compact_tail = args.compact_tail
+        model.beam_grouped_cross = True
         model._beam_backend = None
         model._sessions.clear()
-        actual = {}
+        actual, api_dispatch = {}, {}
         try:
             for indices in chunks:
                 results = model.transcribe([waves[i] for i in indices], **kw)
+                api_session = model._sessions[len(indices), args.beam]
+                api_dispatch[len(indices)] = dispatch(api_session)
+                assert api_dispatch[len(indices)] == cold[f"fixed/b{len(indices)}"]["dispatch"], "API dispatch differs"
+                assert not getattr(api_session.backend, "failed", set()), "API decoder trial failed"
                 for i, result in zip(indices, results):
                     actual[items[i]["id"]] = result_record(model, result, items[i], len(waves[i]) / model.cfg.sample_rate)
             agreement = comparison(records["on"], actual)
             save(out / "api_agreement.json", agreement)
+            save(out / "api_dispatch.json", api_dispatch)
             assert all(v["equal"] == v["total"] for v in agreement.values()), "public API and measured mode differ"
         finally:
             model._sessions.clear()
@@ -453,9 +459,13 @@ def extra_checks(model, args, waves, legacy):
              ("silence_noise", [silence, noise], {}), ("30s_repeated_speech", [window], {})]
     if args.long_audio:
         cases.append(("long_audio", [load_audio(args.long_audio)], {"long": True}))
+    if args.extra_batch > 1:
+        cases = [(name, audio + waves[:max(0, args.extra_batch - len(audio))], extra)
+                 if not extra.get("long") else (name, audio, extra) for name, audio, extra in cases]
     original = model._session
+    original_options = model.beam_compact_tail, model.beam_grouped_cross, model._beam_backend
     results = {}
-    for mode in (["baseline"] if legacy else []) + ["off", "on"]:
+    for mode in (["baseline"] if legacy else []) + ["off", "on"] + (["api"] if args.verify_api else []):
         cache = {}
 
         def get(batch, beam=1):
@@ -471,11 +481,14 @@ def extra_checks(model, args, waves, legacy):
                     cache[key].set_upper_bound(mode == "on")
             return cache[key]
 
-        model._session = get
+        model._session = original if mode == "api" else get
+        if mode == "api":
+            model._sessions.clear()
+            model.beam_compact_tail, model.beam_grouped_cross, model._beam_backend = args.compact_tail, True, None
         try:
             results[mode] = {}
             for name, audio, extra in cases:
-                kw = dict(lang=args.lang, beam_size=args.beam, batch_size=1)
+                kw = dict(lang=args.lang, beam_size=args.beam, batch_size=args.extra_batch)
                 if extra.get("long"):
                     value, ms = wall(lambda: model.transcribe_long(audio, **kw))
                 else:
@@ -487,6 +500,9 @@ def extra_checks(model, args, waves, legacy):
                 print(f"extra {mode}/{name} complete", flush=True)
         finally:
             model._session = original
+            if mode == "api":
+                model._sessions.clear()
+                model.beam_compact_tail, model.beam_grouped_cross, model._beam_backend = original_options
         cache.clear()
         gc.collect()
         torch.cuda.empty_cache()
@@ -494,6 +510,11 @@ def extra_checks(model, args, waves, legacy):
     agreement = {mode: {name: val["results"] == reference[name]["results"] for name, val in rows.items()}
                  for mode, rows in results.items()}
     save(args.out / "extra_agreement.json", agreement)
+    if args.verify_api:
+        api_matches = {name: val["results"] == results["on"][name]["results"]
+                       for name, val in results["api"].items()}
+        save(args.out / "extra_api_agreement.json", api_matches)
+        assert all(api_matches.values()), "extra-case public API and candidate differ"
 
 
 @torch.inference_mode()
@@ -525,6 +546,8 @@ def main():
                     help="candidate only: group beam queries sharing cross KV in one attention tile")
     ap.add_argument("--gluon-cross-splits", type=int, choices=[1, 2, 4, 8],
                     help="candidate only: key slices per cross-attention head (changes FP reduction order)")
+    ap.add_argument("--gluon-beam-splits", action="store_true",
+                    help="candidate only: measured K5 row preset R5/10/15 uses8/4/2 key slices")
     ap.add_argument("--gluon-max-rows", type=int, choices=[8, 16],
                     help="experimental N-class multi-row routing, existing token/tile capacity unchanged")
     ap.add_argument("--gluon-programs", type=int, help="candidate only: persistent CTA count")
@@ -539,25 +562,31 @@ def main():
     ap.add_argument("--disk", action="store_true")
     ap.add_argument("--verify-api", action="store_true", help="check production API with both measured opt-in options")
     ap.add_argument("--extra-checks", action="store_true")
+    ap.add_argument("--extra-batch", type=int, default=1, help="batch size for extra mixed-window cases")
     ap.add_argument("--long-audio")
     args = ap.parse_args()
     if args.beam < 2 or min(args.batch) < 1 or max(args.batch) * args.beam > 16:
         ap.error("require beam >= 2 and 1 <= batch * beam <= 16 for the default engines")
+    if not 1 <= args.extra_batch <= 16 // args.beam:
+        ap.error("extra-batch must fit batch * beam <=16")
     if args.repeat < 1 or args.chunk < 1 or (args.limit is not None and args.limit < 1):
         ap.error("repeat, chunk and limit must be positive")
     if any(n < 1 for n in args.compare_chunks) or len(set(args.compare_chunks)) != len(args.compare_chunks):
         ap.error("compare-chunks must be distinct positive integers")
     tuning = (args.gluon_programs is not None or args.gluon_prefetch is not None or args.gluon_group_queries
-              or args.gluon_cross_splits is not None or args.gluon_max_rows is not None)
+              or args.gluon_cross_splits is not None or args.gluon_max_rows is not None or args.gluon_beam_splits)
     if (tuning or args.local_topk) and not args.baseline_runtime:
         ap.error("selection/Gluon ablations require --baseline-runtime for the unchanged reference")
     if args.verify_api and args.local_topk:
         ap.error("local-topk is not a public API option")
+    if args.gluon_beam_splits and not (args.beam == 5 and args.gluon_max_rows == 16
+                                      and args.gluon_group_queries and args.gluon_cross_splits is None):
+        ap.error("gluon-beam-splits requires K5, grouped queries, max-rows16 and no fixed cross-splits")
     if args.verify_api and not (args.beam == 5 and args.upper_bound == "on" and args.fused_state
                                 and args.fused_rank and args.fused_finish and args.kv_reorder == "prefix"
-                                and args.share_cross_kv and args.compact_tail and args.gluon_group_queries
-                                and args.gluon_cross_splits == 8):
-        ap.error("verify-api requires the combined K5 state/prefix/shared/tail/grouped8 upper-bound ON mode")
+                                and args.share_cross_kv and args.gluon_group_queries
+                                and args.gluon_beam_splits):
+        ap.error("verify-api requires the current K5 grouped row preset with fused/prefix/shared upper-bound ON")
     if not os.environ.get("PBS_JOBID") and os.uname().nodename.startswith("login"):
         ap.error("audio and inference must run in an allocated compute job")
     args.out.mkdir(parents=True, exist_ok=True)
@@ -586,8 +615,11 @@ def main():
         setattr(pipeline, name, fn)
     decoder_options = None
     if tuning:
+        from owsm_trt.megakernel_gluon import BEAM_CROSS_SPLITS
+
+        splits = BEAM_CROSS_SPLITS if args.gluon_beam_splits else args.gluon_cross_splits
         decoder_options = configure_gluon(model, args.gluon_programs, args.gluon_prefetch,
-                                          args.gluon_group_queries, args.gluon_cross_splits, args.gluon_max_rows)
+                                          args.gluon_group_queries, splits, args.gluon_max_rows)
         if args.gluon_max_rows is not None:
             # Shape-specific numeric checks precede real search; synthetic shared-KV/cache tests
             # are run separately by the PBS driver. No public dispatch limits are changed.

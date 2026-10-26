@@ -40,6 +40,8 @@ MAX_TOKENS = 32  # rows x window of a call
 # for windows 1..16), slower with 32 tokens (1.45 vs 1.13 ms) and with 16 rows (1.32-1.46 vs 1.24-1.35 ms)
 ROUTE_TOKENS = 16
 ROUTE_ROWS = 8
+# Measured opt-in H200/1B beam5 preset; prefill and compacted rows retain eight slices.
+BEAM_CROSS_SPLITS = {1: 8, 2: 8, 3: 8, 5: 8, 10: 4, 15: 2}
 
 
 def available(device: torch.device) -> bool:
@@ -932,8 +934,13 @@ class GluonDecoder:
 
     def __init__(self, mega, programs: int | None = None, num_warps: int = 4, maxs: int = 1 << 24, ts: bool = False,
                  prefetch_attention: bool = True, group_cross_queries: bool = False,
-                 cross_splits: int | None = None):  # fmt: skip
-        if cross_splits is not None and cross_splits not in (1, 2, 4, 8):
+                 cross_splits: int | dict[int, int] | None = None):  # fmt: skip
+        if isinstance(cross_splits, dict):
+            if not cross_splits or any(type(r) is not int or r < 1 or s not in (1, 2, 4, 8)
+                                       for r, s in cross_splits.items()):
+                raise ValueError("cross_splits maps positive row counts to 1, 2, 4 or 8")
+            cross_splits = dict(cross_splits)
+        elif cross_splits is not None and cross_splits not in (1, 2, 4, 8):
             raise ValueError("cross_splits must be 1, 2, 4 or 8")
         self.m = mega
         d, f = mega.D, mega.F
@@ -980,7 +987,8 @@ class GluonDecoder:
         mt = max(2, _pow2(M))
         mtf = max(8, mt)
         hl = 2 if mt <= 16 else 1  # LayerNorm GEMMs: the residual stream as a hi/lo pair while it fits
-        ns = self.cross_splits or max(1, min(8, P // (R * H)))
+        splits = self.cross_splits.get(R) if isinstance(self.cross_splits, dict) else self.cross_splits
+        ns = splits or max(1, min(8, P // (R * H)))
         f16 = {"device": dev, "dtype": torch.float16}
         i32 = {"device": dev, "dtype": torch.int32}
         x = torch.zeros(M, D, device=dev)

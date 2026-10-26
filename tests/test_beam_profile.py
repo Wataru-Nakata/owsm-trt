@@ -79,3 +79,47 @@ def test_public_beam_options_are_scoped_and_preserve_reference(monkeypatch):
     s.backend.failed.add(id(grouped))
     assert not base.failed
     assert pipeline._grouped_beam_backend(object()).__class__ is object
+
+
+@pytest.mark.parametrize("multi", [False, True])
+@pytest.mark.parametrize("case", ["measured", "other_model", "other_gpu", "other_sms", "other_programs"])
+def test_wide_grouped_beam_routing_is_shape_scoped(monkeypatch, multi, case):
+    from owsm_trt import megakernel, megakernel_gluon, pipeline
+
+    class Kernel:
+        def __init__(self, mega, programs=132, num_warps=4, prefetch_attention=True,
+                     group_cross_queries=False, cross_splits=None):
+            self.m, self.P, self.nw, self.pfa = mega, programs, num_warps, prefetch_attention
+            self.group_cross_queries, self.cross_splits = group_cross_queries, cross_splits
+
+    monkeypatch.setattr(megakernel_gluon, "GluonDecoder", Kernel)
+    weights = SimpleNamespace(D=1024, F=4096, L=18, H=16, device="cuda")
+    gpu = SimpleNamespace(name="NVIDIA H200", multi_processor_count=132)
+    if case == "other_model":
+        weights.L = 6
+    elif case == "other_gpu":
+        gpu.name = "NVIDIA H100"
+    elif case == "other_sms":
+        gpu.multi_processor_count = 120
+    original = Kernel(weights, programs=128 if case == "other_programs" else 132)
+    monkeypatch.setattr(pipeline.torch.cuda, "get_device_properties", lambda _: gpu)
+    base = megakernel.MegaBackend(object(), object() if multi else original, 16, 8,
+                                 rows_kernel=(original, 16, 8) if multi else None, trial=True)
+    backend = pipeline._grouped_beam_backend(base)
+    grouped = backend.rows_kernel[0] if multi else backend.kernel
+    assert grouped.m is weights and grouped is not original
+    assert grouped.cross_splits == (megakernel_gluon.BEAM_CROSS_SPLITS if case == "measured" else 8)
+    assert (backend.rows_kernel[1:] if multi else (backend.max_tokens, backend.max_rows)) == (
+        16, 16 if case == "measured" else 8)
+    assert (base.rows_kernel[1:] if multi else (base.max_tokens, base.max_rows)) == (16, 8)
+    assert original.cross_splits is None
+    backend.failed.add(id(grouped))
+    assert not base.failed
+
+
+@pytest.mark.parametrize("splits", [{}, {0: 2}, {"5": 8}, {5: 3}])
+def test_row_slice_mapping_rejects_invalid_settings(splits):
+    from owsm_trt.megakernel_gluon import GluonDecoder
+
+    with pytest.raises(ValueError, match="maps positive row counts"):
+        GluonDecoder(None, cross_splits=splits)

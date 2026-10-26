@@ -193,3 +193,42 @@ def test_cross_splits_numeric_agreement_and_empty_slices(grouped, splits):
         outputs.append(first)
     for actual, reference in zip(outputs[1], outputs[0]):
         torch.testing.assert_close(actual, reference, rtol=.005, atol=.02)
+
+
+@gluon_only
+@pytest.mark.parametrize("batch, splits", [(1, 8), (2, 4), (3, 2)])
+@torch.inference_mode()
+def test_row_slice_preset_matches_fixed_kernel_graph(batch, splits):
+    from test_megakernel import CFG, _model
+
+    cfg, dev = CFG, torch.device("cuda")
+    weights = megakernel.MegaDecoder(_model(cfg).decoder, dev)
+    rows = batch * 5
+    shape = (cfg.dec_layers, rows, cfg.dec_heads, 32, cfg.d_model // cfg.dec_heads)
+    cross = (cfg.dec_layers, batch, cfg.dec_heads, 65, cfg.d_model // cfg.dec_heads)
+    k, v = [torch.randn(shape, device=dev, dtype=torch.float16) for _ in range(2)]
+    ck, cv = [torch.randn(cross, device=dev, dtype=torch.float16) for _ in range(2)]
+    tok = torch.randint(0, cfg.vocab_size, (rows, 1), device=dev)
+    offset = torch.arange(rows, device=dev)
+    owners, graphs, outputs = [], [], []
+    for setting in (splits, megakernel_gluon.BEAM_CROSS_SPLITS):
+        kernel = megakernel_gluon.GluonDecoder(weights, group_cross_queries=True, cross_splits=setting)
+        logits = torch.empty(rows, 1, cfg.vocab_size, device=dev)
+        kv = torch.empty(cfg.dec_layers, 2, rows, cfg.dec_heads, 1, cfg.d_model // cfg.dec_heads,
+                         device=dev, dtype=torch.float16)
+        run = kernel.step_fn(tok, offset, k, v, ck, cv, logits, kv)
+        run()
+        graph = torch.cuda.CUDAGraph()
+        with torch.cuda.graph(graph):
+            run()
+        owners.append((kernel, run))  # Workspaces allocated before capture must outlive replay.
+        graphs.append(graph)
+        outputs.append((logits, kv))
+    for _ in range(3):
+        tok.random_(0, cfg.vocab_size)
+        for graph in graphs:
+            graph.replay()
+        for left, right in zip(*outputs):
+            torch.testing.assert_close(left, right, rtol=0, atol=0)
+    for kernel, _ in owners:
+        kernel.check()

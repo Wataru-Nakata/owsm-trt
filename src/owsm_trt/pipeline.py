@@ -337,10 +337,11 @@ class OWSM:
         Shape/kernel changes may change tokens. Additional group/bucket graphs increase cold start.
 
         ``beam_grouped_cross`` (experimental, default False): for K5 with ``beam_kernels=True``,
-        group cross-attention queries and use eight key slices on an available Gluon decoder. This
-        changes reduction order and can change tokens (observed on silence). Larger full batches
-        still dispatch to TensorRT; compacted tails can use it. Greedy keeps the original decoder.
-        Measurements currently cover H200/1B only.
+        group cross-attention queries on an available Gluon decoder. The measured H200/1B preset
+        permits10/15 rows with4/2 key slices; five rows and prefill retain8. Other model/GPU shapes
+        keep the existing routing limits. This changes reduction order and can change tokens
+        (observed on silence and two English segment ends). Greedy keeps the original decoder.
+        Measurements currently cover H200/1B only; the option remains off by default.
 
         ``fp8_calibration`` (experimental, TensorRT): run the encoder's linear layers and subsampling
         convolutions in FP8, with input ranges measured on these recordings.
@@ -1113,7 +1114,7 @@ def _quantize_encoder(
 
 def _grouped_beam_backend(base):
     """Independent experimental dispatch, sharing weights/engines; greedy retains ``base``."""
-    from .megakernel_gluon import GluonDecoder
+    from .megakernel_gluon import BEAM_CROSS_SPLITS, GluonDecoder
 
     if not isinstance(base, megakernel.MegaBackend):
         log.warning("grouped beam attention needs an available Gluon decoder; using the existing backend")
@@ -1122,15 +1123,26 @@ def _grouped_beam_backend(base):
     if not isinstance(source, GluonDecoder) or id(source) in base.failed:
         log.warning("grouped beam attention has no available multi-row Gluon kernel; using the existing backend")
         return base
+    # Wider routing is measured only for this decoder/GPU. Keep all default and greedy
+    # routing limits unchanged; unsupported models retain the existing grouped path.
+    m = source.m
+    wide = False
+    if (tuple(getattr(m, k, None) for k in ("D", "F", "L", "H")) == (1024, 4096, 18, 16)
+            and source.P == 132 and source.nw == 4 and source.pfa):
+        gpu = torch.cuda.get_device_properties(m.device)
+        wide = "H200" in gpu.name and gpu.multi_processor_count == 132
     kernel = GluonDecoder(source.m, programs=source.P, num_warps=source.nw,
-                          prefetch_attention=source.pfa, group_cross_queries=True, cross_splits=8)
+                          prefetch_attention=source.pfa, group_cross_queries=True,
+                          cross_splits=BEAM_CROSS_SPLITS if wide else 8)
     backend = megakernel.MegaBackend(base.inner, base.kernel, base.max_tokens, base.max_rows,
                                     rows_kernel=base.rows_kernel, trial=base.trial)
     backend.failed = set(base.failed)
     if base.rows_kernel is None:
         backend.kernel = kernel
+        if wide:
+            backend.max_rows = 16
     else:
-        backend.rows_kernel = (kernel, *base.rows_kernel[1:])
+        backend.rows_kernel = (kernel, base.rows_kernel[1], 16 if wide else base.rows_kernel[2])
     return backend
 
 

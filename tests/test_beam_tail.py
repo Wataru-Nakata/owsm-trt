@@ -102,7 +102,7 @@ def test_gluon_strided_group_cache_matches_contiguous(group, prefetch):
     before = [a.clone() for a in large]
     tok = torch.randint(0, config.vocab_size, (R, 1), device=dev)
     offsets = torch.full((R,), 7, dtype=torch.long, device=dev)
-    runs, outputs = [], []
+    runs, owners, outputs = [], [], []
     for k, v, ck, cval in ((*views, *cv), copies):
         logits = torch.empty(R, 1, config.vocab_size, device=dev)
         kv = torch.empty(L, 2, R, H, 1, dk, device=dev, dtype=torch.float16)
@@ -112,6 +112,7 @@ def test_gluon_strided_group_cache_matches_contiguous(group, prefetch):
         with torch.cuda.graph(graph):
             run()
         runs.append(graph)
+        owners.append(run)  # Retain both externally allocated workspaces through graph replay.
         outputs.append((logits, kv))
     for _ in range(3):
         for graph in runs:

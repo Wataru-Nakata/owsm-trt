@@ -97,3 +97,21 @@ the next B2 candidate. Cross-job absolute times are not an isolated two-versus-f
 
 [Compact follow-up metrics](runtime-results-2773320.json); full artifacts and eager phases:
 `outputs/runtime-2773320/grouped2_{english,japanese}`. No production routing change in this job.
+
+## Prepared API preset
+
+The opt-in `beam_grouped_cross=True` now prepares a separate H200/1B wrapper with row limit16
+and per-row key slices R5:8,R10:4,R15:2. Prefill rows1/2/3 and compacted tails retain8 slices.
+The guard requires model(D,F,L,H)=(1024,4096,18,16),H200132SM,132 programs,4warps and attention
+prefetch. Other shapes keep prior grouped routing; default/greedy dispatch constants remain8 rows.
+All wrappers share immutable weights but own failure state. Row selection is static at capture,
+with no device-to-host operation or live mutation of the reference kernel.
+
+16 lightweight CPU routing/validation tests pass. Three new GPU graph tests compare the row
+preset against its fixed-slice kernels at B1/B2/B3; public API/token/dispatch validation and a
+combined tail ablation are pending. Existing opt-in numerical caveats remain. No new default.
+The profiler `--gluon-beam-splits --gluon-max-rows16 --gluon-group-queries --verify-api` compares
+the measured candidate with the independent production factory, including actual dispatch.
+`--extra-batch3` additionally exercises mixed silence/noise, prompt, translation and long-window
+cases at B3; long-form remains a separate single-recording check. All flags use normal CLI spaces
+(e.g. `--gluon-max-rows 16`, `--extra-batch 3`).

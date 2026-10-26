@@ -23,10 +23,12 @@ results = model.transcribe(
 )
 ```
 
-`beam_grouped_cross` groups sibling queries and uses eight key slices on the Gluon path for K5.
-B1 uses it throughout decoding; with compaction, a remaining group can use it too. Larger full
-batches retain TensorRT routing. The backend has independent dispatch/failure state and shares the
-existing weights/engines. Greedy continues using the original backend.
+`beam_grouped_cross` groups sibling queries on the Gluon path for K5. The pending H200/1B preset
+extends measured routing to B2/B3 with four/two key slices, retaining eight for B1/prefill and
+compacted tails. Wider routing is guarded by H200132 SM and the tested1B decoder dimensions;
+other models/GPUs retain the previous grouped routing. Default/greedy routing is unchanged.
+The backend has independent dispatch/failure state and shares existing weights/engines.
+[Wider-row results and pending API verification](beam-wider-rows.md).
 
 `beam_compact_tail` switches to the single remaining utterance's decoder rows at an existing host
 completion check. Selection keeps the original B*K layout and beam width. It adds one graph per
@@ -46,7 +48,8 @@ Cold load/JIT/capture, diagnostic eager traces and disk-inclusive measurements a
 from synchronized warm wall time. Eager kernel sums do not attribute CUDA graph nodes. Peak memory
 is the process containing both variants, not independent per-mode memory. Final combined results follow below.
 
-Reproduction (inside an allocated compute job; prepare the baseline from4d8466a):
+Historical comparison used fixed eight slices and the original API routing. To evaluate the
+current row preset inside an allocation (results will differ from the historical table):
 
 ```sh
 git show 4d8466a:src/owsm_trt/runtime.py > /tmp/runtime-4d8466a.py
@@ -54,7 +57,7 @@ uv run python scripts/profile_beam.py --model espnet/owsm_v4_medium_1B \
   --manifest /path/to/english.json --beam 5 --timestamps --batch 3 --chunk 4 --repeat 5 \
   --baseline-runtime /tmp/runtime-4d8466a.py --upper-bound on \
   --fused-rank --fused-finish --fused-state --kv-reorder prefix --share-cross-kv \
-  --compact-tail --gluon-group-queries --gluon-cross-splits 8 --verify-api \
+  --compact-tail --gluon-group-queries --gluon-max-rows 16 --gluon-beam-splits --verify-api \
   --out outputs/combined-fast
 ```
 
