@@ -19,7 +19,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from . import attn_plugin
+from . import attn_plugin, frontend_kernels
 from .config import OWSMConfig
 
 LN_EPS = 1e-12
@@ -64,6 +64,8 @@ class Frontend(nn.Module):
         # Filled from the checkpoint ("frontend.logmel.melmat", "normalize.mean/std").
         self.register_buffer("melmat", torch.zeros(cfg.n_fft // 2 + 1, cfg.n_mels))
         self.global_mvn = cfg.normalize == "global_mvn"
+        self.fused_power = False
+        self.fused_logmel = False
         if self.global_mvn:
             self.register_buffer("mean", torch.zeros(cfg.n_mels))
             self.register_buffer("std", torch.ones(cfg.n_mels))
@@ -82,8 +84,15 @@ class Frontend(nn.Module):
             onesided=True,
             return_complex=True,
         )  # [B, F, T]
-        power = (spec.real**2 + spec.imag**2).transpose(1, 2)  # [B, T, F]
-        mel = torch.matmul(power, self.melmat).clamp(min=1e-10).log()
+        fast = not torch.is_grad_enabled() and frontend_kernels.available(speech.device)
+        power = (frontend_kernels.power(spec) if fast and self.fused_power else
+                 (spec.real**2 + spec.imag**2).transpose(1, 2))  # [B, F, T] -> [B, T, F]
+        mel = torch.matmul(power, self.melmat)  # original fp32 GEMM and normalization order
+        if fast and self.fused_logmel:
+            mel = frontend_kernels.log_mvn(mel, self.mean if self.global_mvn else None,
+                                           self.std if self.global_mvn else None)
+            return mel if self.global_mvn else mel - mel.mean(dim=1, keepdim=True)
+        mel = mel.clamp(min=1e-10).log()
         if self.global_mvn:
             return (mel - self.mean) / self.std
         return mel - mel.mean(dim=1, keepdim=True)  # utterance MVN, means only
