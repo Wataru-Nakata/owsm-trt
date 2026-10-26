@@ -230,7 +230,7 @@ class OWSM:
         self.greedy_split_choose = greedy_kernels
         self.greedy_fuse_accept = greedy_kernels
         self.greedy_reuse_notime = False
-        self.greedy_cache_draft_flags = False
+        self.greedy_cache_draft_flags = greedy_kernels
         self.greedy_lazy_verify_graphs = False
         self._frontend_replay = None
         self.draft_stats = [0, 0]  # tokens emitted, decoder calls made by drafted decoding
@@ -291,7 +291,8 @@ class OWSM:
         with v4 medium 1B/base 102M; other GPUs/checkpoints are unmeasured.
 
         ``greedy_kernels`` (default True): split draft-window vocabulary selection across blocks and
-        fuse the final argmax with draft acceptance. The same timestamp rules, smallest-index ties
+        fuse the final argmax with draft acceptance, and reuse short-primer flags for fixed-batch
+        drafts. Streaming and long-prefill initialization stay unchanged. The same timestamp rules, smallest-index ties
         and decoder scores apply. False restores serial selection; CPU, missing Triton and small
         vocabularies keep the reference path. Exact sampled output and latency checks cover H200,
         v4 medium 1B/base 102M, English/Japanese. Other GPUs are unmeasured. Beam decoding is independent.

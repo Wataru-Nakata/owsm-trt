@@ -129,3 +129,30 @@ The follow-up limits this candidate to fixed-batch `decode_drafted` short primer
 its prior initialization. `profile_runtime.py`'s `graph_flags` compares it with the accepted fused
 selection **without** the unadopted notime graph mode. It is still disabled by default until that
 independent replication completes. Existing mixed/long-primer/plain-decode state tests remain.
+
+## Independent flag replication and post-fusion profile
+
+Job2771910 (source2485121,H200) compared `graph_flags` to `graph_fused`, without notime graph reuse,
+11 alternating repeats. All12 API/model cases matched tokens/text/segments; long-form has no joined
+token IDs. English73 and Japanese12 are the same corpora. Public default/serial rollback regressions
+also passed10 requests each for1B/102M, including session reuse, prompt, plain decode, translation,
+beam and language identification. Artifact: `outputs/runtime-2771910/analysis-graph.json`.
+
+| Single request | Added flag-cache RTFx | Median within-input CV |
+|---|---:|---:|
+| 1B English plain | +2.46% | 1.22% |
+| 1B English timestamp | +2.14% | 1.00% |
+| 1B Japanese plain | +2.13% | 0.61% |
+| 1B Japanese timestamp | +1.64% | 0.60% |
+| 102M English plain | +5.20% | 1.61% |
+| 102M English timestamp | +4.99% | 2.05% |
+
+This repeats the single-request improvement independently. `greedy_kernels=True` now also enables
+short-primer flag caching for fixed-batch drafted requests; False restores both serial selection and
+full initialization. Streaming/long-prefill initialization is unchanged; streaming timing differences
+are not claimed as gains from this change. Notime graph reuse stays disabled.
+
+The separate post-fusion110s trace attributes47.61ms/67 calls to the existing ring decoder and0.837ms
+combined to selection/acceptance. The B1 streaming trace attributes203.77ms/174 calls to ring, with
+encoder overlap. These instrumented device sums are not wall time or predicted speedups. They support
+the next isolated existing Ring weight-prefetch experiment; the prior SM-budget default remains.

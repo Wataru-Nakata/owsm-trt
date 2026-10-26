@@ -209,7 +209,10 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   with frontend graphs already enabled, timestamped single-request RTFx improved 4.3% English/4.8%
   Japanese on v4 1B and 10.6% on 102M; a 110 s recording improved 5.6% (H200, 11 alternating repeats).
   All sampled tokens and segments matched. Plain greedy changes were small; these are not speedup
-  claims for every workload/GPU. `greedy_kernels=False` restores serial selection. CPU, missing Triton
+  claims for every workload/GPU. Short-primer fixed-batch requests also skip redundant state
+  initialization: independently replicated incremental gains were 2.1–2.5% on 1B English and about
+  5% on 102M, with exact sampled output. This initialization change does not apply to streaming or
+  long prefill. `greedy_kernels=False` restores serial selection and full initialization. CPU, missing Triton
   and small vocabularies retain the reference path. [Measurements and limits](docs/runtime-greedy-selection.md).
 * **Unused draft setup is deferred.** `lazy_drafts=True` (default) creates verification graphs on first
   draft use. With resident engines, session-cold translation/language identification was 33–36% shorter
