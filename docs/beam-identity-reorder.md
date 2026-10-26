@@ -24,3 +24,12 @@ profiler subclass; warmed wall sessions contain no counter work. Counts must equ
 selection count, including the post-prefill selection. They cover all copied slots, including
 inactive ones; unwritten-tail zeroing is not included in the weighted prefix fraction. Full output
 and step parity plus independent alternating timings are required before any adoption.
+
+
+Prepared runner: `scripts/profile_kv_identity.pbs`. It first runs the expanded KV/state/finished-stop
+suite and existing naive regressions, then validates the adopted finished-stop public factory on
+1B/102M with `validate_greedy_api.py --finished-stop`. The independent KV ablation uses frozen
+pre-identity runtime64cfddf as baseline, same checkpoint/engine, beam5/timestamps, B1/B3, English73/
+Japanese12 and11 alternating repeats on both models. All shapes are warmed; wall and diagnostic
+sessions are separate. Full outputs, decoder-call counts and extra cases must match. Low-level
+identity-counter reset/selection-count consistency also passed two tiny CPU synthetic decodes.
