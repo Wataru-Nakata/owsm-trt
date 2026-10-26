@@ -52,7 +52,8 @@ def test_staged_encoder_matches_sequential_reuse_and_partial_batch(beam, batch, 
     tokenizer = SimpleNamespace(first_time=None, notime=None, eos=1, punctuation=frozenset())
     model = pipeline.OWSM(TINY, tokenizer, None, TorchBackend(network),
                           BuildOptions(dtype="float32", capacity=32), dev,
-                          use_cuda_graph=graphs, ctc_draft=False, beam_kernels=False, greedy_kernels=False)
+                          use_cuda_graph=graphs, ctc_draft=False, beam_kernels=False, greedy_kernels=False, encoder_lookahead=True)
+    assert model._encoder_lookahead
     model._features = lambda rows: torch.stack(rows)
     model._wave = lambda value, _: value
     snapshots = []

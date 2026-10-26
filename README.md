@@ -229,6 +229,12 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   mapping already enabled, a separate five-pair comparison reduces1B load4.69→3.28s (30.06%) and
   102M1.59→1.40s (12.14%), with all728 public outputs matching and46 focused tests passing.
   GPU peak allocation is unchanged. [Direct allocation measurements](docs/runtime-decoder-loading.md).
+* **Fixed-batch encoder lookahead (opt-in).** `encoder_lookahead=True` overlaps the next encoder batch
+  with beam/plain decoding for multiple-batch requests. On H200/1B English73, an independent warm
+  comparison measures about6% more RTFx for beam B1/B3 and3.6–8.3% for translation B8/B1, with exact
+  full outputs. The tested102M cases improve4.7–8.3%; short Japanese B8 translation is neutral.
+  Existing drafted greedy streaming and single-batch calls retain their paths. Extra buffers/captures
+  increase memory/cold cost, so the default remains False. [Measurements and limits](docs/runtime-encoder-lookahead.md).
 * **Unused draft setup is deferred.** `lazy_drafts=True` (default) creates verification buffers on first
   draft use and prepares each bucket/window/solo call and graph only when needed. With resident engines, session-cold translation/language identification was 33–36% shorter
   on H200/v4 1B and 102M, saving 45.4/26.1 MiB of unused buffers. Warm ASR work is unchanged; long-prompt

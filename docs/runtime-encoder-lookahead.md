@@ -4,7 +4,7 @@ Candidate35 addresses the sequential fixed-batch path used by beam and translati
 wider-row comparison, the illustrative eager B3 encoder takes7.11ms against47.68ms decoder;
 these are instrumented phases, not a prediction of end-to-end overlap or speed.
 
-The private `OWSM._encoder_lookahead=True` experiment preserves duration sorting, fixed batches,
+The opt-in `OWSM.from_pretrained(..., encoder_lookahead=True)` preserves duration sorting, fixed batches,
 primer, beam width and decoder shapes. It stages exactly one subsequent encoder batch on a
 separate CUDA stream while the current batch decodes. Two utterance-sized cross-KV/CTC buffer
 sets are retained per session and reused. Events protect producer completion and slot reuse;
@@ -13,7 +13,7 @@ and both streams join the caller on success or exception. Active cross KV is cop
 the decode stream before prefill. Partial final batches keep their own original shape/session.
 
 CPU, single-batch calls and existing drafted greedy streaming keep their paths. Greedy ASR with
-a long prompt and enabled drafts also retains its previous draft semantics. The flag is private,
+a long prompt and enabled drafts also retains its previous draft semantics. The option is
 False by default, and creates no staging resources when disabled. This is not continuous beam
 refill; ended hypotheses stay within their original group. No claim about single-request latency.
 
@@ -56,7 +56,7 @@ The complete input list is one timed request; these are throughput results, not 
 English has73 inputs, Japanese12. Translation references are unavailable; full output agreement
 is checked but no target-language WER/CER is claimed. Japanese translation B8 has only two
 batches and is neutral. The102M beam B1 paired range includes a-6.67% outlier despite its positive
-median; independent replication is required. Defaults remain private/off while this is evaluated.
+median; independent replication is required. The option remains off by default; the independent follow-up is below.
 
 Cold observations are **not an isolated startup comparison**: the reference always warms first,
 so initial compiler/frontend caches differ. They are preserved as setup observations only, with
@@ -68,3 +68,45 @@ node to verify inter-stream kernel overlap without treating kernel sums as wall 
 `outputs/runtime-2773541`. The follow-up2773582 repeats all English1B conditions with nine pairs,
 tests two-input B1 requests, and measures interaction with the already-verified grouped/tail
 beam option. Separate improvements must not be added or multiplied.
+
+
+## Independent follow-up and opt-in API (2773582)
+
+Frozen39c62f7, same H200/1B engines/checkpoint, nine alternating whole-list repetitions for73
+English inputs. Full tokens/times/segments/text match in all seven additional conditions.
+
+|Condition|Whole-list p50 before→after(ms)|RTFx gain|Paired range|
+|---|---:|---:|---:|
+|lookahead_repeat/beam_b1|1963.43→1852.74|+5.97%|+5.58–+6.68%|
+|lookahead_repeat/beam_b3|1256.38→1184.68|+6.05%|-2.26–+8.06%|
+|lookahead_repeat/translation_b1|1515.31→1399.53|+8.27%|+7.22–+8.45%|
+|lookahead_repeat/translation_b8|455.67→439.78|+3.61%|+1.84–+4.82%|
+|lookahead_two/beam_b1|46.58→45.23|+2.98%|+1.98–+3.40%|
+|lookahead_two/translation_b1|37.28→35.61|+4.67%|+4.33–+5.44%|
+|lookahead_wide/beam_b3|1075.69→1007.70|+6.75%|+6.34–+7.28%|
+
+`repeat` is73 inputs, `two` is two inputs (11 repetitions), `wide` is73 with both grouped cross
+attention and tail compaction enabled. The wide result is the **additional** lookahead comparison
+against that same wide/tail configuration; it is not a product of separate speedup claims.
+The repeated ordinary beam B3 median improves but one pair regresses2.26%; no sample was removed.
+The102M B1 outlier still requires its own replication. Cold observations retain unequal first-use
+compiler caches and cannot establish a startup improvement.
+
+The separately recorded12-input trace contains61,914 GPU kernel events with stream IDs. After
+unioning each stream's intervals, distinct streams overlap for11.93ms out of288.68ms with active
+kernels (4.13%). This confirms concurrent kernel work in the traced run. It does not attribute
+all events to encoder/decoder phases or equate the kernel sum with wall time. The69MB trace was
+parsed inside the next compute allocation, not on the login node.
+
+Warm throughput gains and exact observed outputs support an explicit option. The default stays
+False because extra staging/captures have cold and memory costs and small batches can be neutral.
+The final production-option and strengthened exact encoder-KV checks are the next validation step.
+
+```python
+model = OWSM.from_pretrained("espnet/owsm_v4_medium_1B", encoder_lookahead=True)
+results = model.transcribe(recordings, beam_size=5, timestamps=True, batch_size=3)
+```
+
+[Follow-up timings and overlap evidence](runtime-lookahead-results-2773582.json); full results:
+`outputs/runtime-2773582/lookahead_{repeat,two,wide}`. Translation and fixed plain ASR also use
+this path; existing drafted ASR streaming and single-batch calls retain theirs.

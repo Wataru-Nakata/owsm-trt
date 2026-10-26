@@ -214,6 +214,7 @@ class OWSM:
         lazy_drafts: bool = True,
         draft_token_budget: int = DRAFT_TOKENS,
         greedy_kernels: bool = True,
+        encoder_lookahead: bool = False,
     ):
         if type(draft_token_budget) is not int or draft_token_budget < 1:
             raise ValueError("draft_token_budget must be a positive integer")
@@ -227,7 +228,7 @@ class OWSM:
         self.beam_compact_tail = beam_compact_tail
         self.beam_grouped_cross = beam_grouped_cross
         self._beam_backend = None
-        self._encoder_lookahead = False  # Private throughput experiment; no staging resources until enabled.
+        self._encoder_lookahead = encoder_lookahead  # Staging resources are allocated only on eligible calls.
         self.frontend_graph = frontend_graph
         self.greedy_fused_select = greedy_kernels
         self.greedy_split_choose = greedy_kernels
@@ -275,6 +276,7 @@ class OWSM:
         lazy_drafts: bool = True,
         draft_token_budget: int = DRAFT_TOKENS,
         greedy_kernels: bool = True,
+        encoder_lookahead: bool = False,
         fp8: bool | str = False,
         fp8_margin: float = 1.0,
         fp8_skip: str = "",
@@ -334,6 +336,12 @@ class OWSM:
         (default True on CUDA when Triton is available). Full-vocabulary log-softmax and global top-K
         stay in PyTorch. False selects the reference operations; CPU and missing-Triton paths also
         use them. These kernels do not affect greedy decoding.
+
+        ``encoder_lookahead`` (opt-in, default False): for multiple fixed batches, prepare the next
+        encoder batch on a separate stream while the current beam/plain batch decodes. Batch shapes,
+        sorting and tokens stay unchanged in the measured tests. Existing drafted ASR streaming,
+        single-batch calls, CPU and CTC-only paths keep their execution. Extra staging buffers and
+        encoder captures cost memory/cold time; warm throughput measurements cover H200 v4 1B/102M.
 
         ``beam_compact_tail`` (experimental, default False): once only one utterance remains in a
         beam batch, decode its rows only when a shared-cross-KV decoder supports that shape.
@@ -411,7 +419,7 @@ class OWSM:
             return cls(cfg, tok, net.frontend, runner, opts, dev, graphs, ctc_draft,
                        beam_upper_bound, beam_kernels, beam_compact_tail, beam_grouped_cross,
                        frontend_graph=frontend_graph, lazy_drafts=lazy_drafts, draft_token_budget=draft_token_budget,
-                       greedy_kernels=greedy_kernels)
+                       greedy_kernels=greedy_kernels, encoder_lookahead=encoder_lookahead)
         if backend != "tensorrt":
             raise ValueError(f"unknown backend {backend!r} (use 'tensorrt' or 'torch')")
 
@@ -452,7 +460,7 @@ class OWSM:
             return cls(cfg, tok, frontend, runner, opts, dev, use_cuda_graph, ctc_draft,
                        beam_upper_bound, beam_kernels, beam_compact_tail, beam_grouped_cross,
                        frontend_graph=frontend_graph, lazy_drafts=lazy_drafts, draft_token_budget=draft_token_budget,
-                       greedy_kernels=greedy_kernels)
+                       greedy_kernels=greedy_kernels, encoder_lookahead=encoder_lookahead)
 
     # ------------------------------------------------------------------ helpers
 

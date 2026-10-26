@@ -1,0 +1,747 @@
+{
+  "job": "2773582.pbs1",
+  "source": "39c62f7be9ed661cadf615a9f7c239b252d95298",
+  "lookahead": {
+    "lookahead_repeat": {
+      "beam_b1": {
+        "summary": {
+          "cold_ms": {
+            "reference": 6408.915624022484,
+            "lookahead": 8976.638666994404
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          },
+          "quality": {
+            "reference": {
+              "metric": "WER",
+              "reference_units": 1150,
+              "errors": 45,
+              "rate": 0.0391304347826087,
+              "annotated_utterances": 73,
+              "reference_timestamp_error": null,
+              "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+            },
+            "lookahead": {
+              "metric": "WER",
+              "reference_units": 1150,
+              "errors": 45,
+              "rate": 0.0391304347826087,
+              "annotated_utterances": 73,
+              "reference_timestamp_error": null,
+              "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+            }
+          },
+          "reference": {
+            "n": 9,
+            "p50": 1963.4335919981822,
+            "p95": 1976.17535518948,
+            "min": 1958.716107008513,
+            "max": 1979.7800399828702,
+            "stdev": 6.003122702112936,
+            "rtfx": 244.9967633030317
+          },
+          "reference_resources": {
+            "(1, 5)": {
+              "encoder_captures": 17,
+              "staging_bytes": 0
+            }
+          },
+          "lookahead": {
+            "n": 9,
+            "p50": 1852.741506008897,
+            "p95": 1857.5679216068238,
+            "min": 1849.445509025827,
+            "max": 1857.6690279878676,
+            "stdev": 2.9456040786910638,
+            "rtfx": 259.634100839154
+          },
+          "lookahead_resources": {
+            "(1, 5)": {
+              "encoder_captures": 27,
+              "staging_bytes": 55151552
+            }
+          },
+          "shared_process_peak_cuda_bytes": 7736076800
+        },
+        "rtfx_gain_percent": 5.974502413330907,
+        "paired_gains_percent": [
+          5.875776663002608,
+          6.0977099556598136,
+          6.015714558829299,
+          5.954796571686427,
+          5.974502413330929,
+          6.102674359054605,
+          5.576810693562018,
+          6.676213475158743,
+          5.908289671115696
+        ],
+        "paired_median": 5.974502413330929
+      },
+      "beam_b3": {
+        "summary": {
+          "cold_ms": {
+            "reference": 10504.148568026721,
+            "lookahead": 13865.584190003574
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          },
+          "quality": {
+            "reference": {
+              "metric": "WER",
+              "reference_units": 1150,
+              "errors": 45,
+              "rate": 0.0391304347826087,
+              "annotated_utterances": 73,
+              "reference_timestamp_error": null,
+              "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+            },
+            "lookahead": {
+              "metric": "WER",
+              "reference_units": 1150,
+              "errors": 45,
+              "rate": 0.0391304347826087,
+              "annotated_utterances": 73,
+              "reference_timestamp_error": null,
+              "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+            }
+          },
+          "reference": {
+            "n": 9,
+            "p50": 1256.3804410165176,
+            "p95": 1268.9438212080859,
+            "min": 1253.7998569896445,
+            "max": 1276.1261480045505,
+            "stdev": 6.525306825389557,
+            "rtfx": 382.87357817414147
+          },
+          "reference_resources": {
+            "(3, 5)": {
+              "encoder_captures": 12,
+              "staging_bytes": 0
+            },
+            "(1, 5)": {
+              "encoder_captures": 1,
+              "staging_bytes": 0
+            }
+          },
+          "lookahead": {
+            "n": 9,
+            "p50": 1184.6774659934454,
+            "p95": 1246.3451969786547,
+            "min": 1180.9620080166496,
+            "max": 1287.274346977938,
+            "stdev": 32.57661887608943,
+            "rtfx": 406.04712152316864
+          },
+          "lookahead_resources": {
+            "(1, 5)": {
+              "encoder_captures": 1,
+              "staging_bytes": 27575776
+            },
+            "(3, 5)": {
+              "encoder_captures": 18,
+              "staging_bytes": 165454656
+            }
+          },
+          "shared_process_peak_cuda_bytes": 16502344704
+        },
+        "rtfx_gain_percent": 6.052531349783341,
+        "paired_gains_percent": [
+          6.089420039998172,
+          -2.2609023502157766,
+          6.1553994183612515,
+          8.058188099354947,
+          5.998704061371751,
+          6.021878136038916,
+          6.11227565796264,
+          6.045351077242733,
+          5.8506378728913955
+        ],
+        "paired_median": 6.045351077242733
+      },
+      "translation_b1": {
+        "summary": {
+          "cold_ms": {
+            "reference": 5670.280235004611,
+            "lookahead": 7524.375701032113
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          },
+          "quality": {
+            "reference": {
+              "unmeasured": "No reference English translations in this manifest"
+            },
+            "lookahead": {
+              "unmeasured": "No reference English translations in this manifest"
+            }
+          },
+          "reference": {
+            "n": 9,
+            "p50": 1515.312458970584,
+            "p95": 1515.8790711895563,
+            "min": 1514.6498999674805,
+            "max": 1516.1482999683358,
+            "stdev": 0.459382107774838,
+            "rtfx": 317.44929710852335
+          },
+          "reference_resources": {
+            "(1, 1)": {
+              "encoder_captures": 17,
+              "staging_bytes": 0
+            }
+          },
+          "lookahead": {
+            "n": 9,
+            "p50": 1399.5321440161206,
+            "p95": 1408.330832584761,
+            "min": 1398.060600971803,
+            "max": 1412.6695629674941,
+            "stdev": 4.267818405380139,
+            "rtfx": 343.7112016731637
+          },
+          "lookahead_resources": {
+            "(1, 1)": {
+              "encoder_captures": 27,
+              "staging_bytes": 55151552
+            }
+          },
+          "shared_process_peak_cuda_bytes": 10817582592
+        },
+        "rtfx_gain_percent": 8.272787120288516,
+        "paired_gains_percent": [
+          8.4465365030993,
+          8.227887150856073,
+          8.25001600151789,
+          8.301112756861562,
+          8.236884552954704,
+          8.19306338061967,
+          8.397086096718409,
+          8.096928520159619,
+          7.21898026781036
+        ],
+        "paired_median": 8.236884552954704
+      },
+      "translation_b8": {
+        "summary": {
+          "cold_ms": {
+            "reference": 16297.100126044825,
+            "lookahead": 6096.115021035075
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          },
+          "quality": {
+            "reference": {
+              "unmeasured": "No reference English translations in this manifest"
+            },
+            "lookahead": {
+              "unmeasured": "No reference English translations in this manifest"
+            }
+          },
+          "reference": {
+            "n": 9,
+            "p50": 455.6709000025876,
+            "p95": 456.7680555861443,
+            "min": 449.4987259968184,
+            "max": 456.881521968171,
+            "stdev": 2.1626797895849306,
+            "rtfx": 1055.6629247056776
+          },
+          "reference_resources": {
+            "(8, 1)": {
+              "encoder_captures": 8,
+              "staging_bytes": 0
+            },
+            "(1, 1)": {
+              "encoder_captures": 1,
+              "staging_bytes": 0
+            }
+          },
+          "lookahead": {
+            "n": 9,
+            "p50": 439.77948697283864,
+            "p95": 441.1215163883753,
+            "min": 434.8899979959242,
+            "max": 441.3964039995335,
+            "stdev": 2.220386066127784,
+            "rtfx": 1093.8092595248977
+          },
+          "lookahead_resources": {
+            "(1, 1)": {
+              "encoder_captures": 1,
+              "staging_bytes": 27575776
+            },
+            "(8, 1)": {
+              "encoder_captures": 9,
+              "staging_bytes": 441212416
+            }
+          },
+          "shared_process_peak_cuda_bytes": 13097540096
+        },
+        "rtfx_gain_percent": 3.613495740589312,
+        "paired_gains_percent": [
+          3.5396572141427107,
+          3.8183511485274435,
+          3.6642045970644688,
+          3.3949179053103684,
+          3.824273195649175,
+          1.8356112383039358,
+          4.824241094395321,
+          3.6209729666872636,
+          4.560910082969438
+        ],
+        "paired_median": 3.6642045970644688
+      }
+    },
+    "lookahead_two": {
+      "beam_b1": {
+        "summary": {
+          "cold_ms": {
+            "reference": 678.6387210013345,
+            "lookahead": 550.1551500055939
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 2,
+              "total": 2,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 2,
+              "total": 2,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 2,
+              "total": 2,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 2,
+              "total": 2,
+              "different_ids": []
+            }
+          },
+          "quality": {
+            "reference": {
+              "metric": "WER",
+              "reference_units": 27,
+              "errors": 0,
+              "rate": 0.0,
+              "annotated_utterances": 2,
+              "reference_timestamp_error": null,
+              "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+            },
+            "lookahead": {
+              "metric": "WER",
+              "reference_units": 27,
+              "errors": 0,
+              "rate": 0.0,
+              "annotated_utterances": 2,
+              "reference_timestamp_error": null,
+              "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+            }
+          },
+          "reference": {
+            "n": 11,
+            "p50": 46.57974099973217,
+            "p95": 46.735819516470656,
+            "min": 46.36834602570161,
+            "max": 46.76304303575307,
+            "stdev": 0.09839732227323165,
+            "rtfx": 229.06954334635208
+          },
+          "reference_resources": {
+            "(1, 5)": {
+              "encoder_captures": 2,
+              "staging_bytes": 0
+            }
+          },
+          "lookahead": {
+            "n": 11,
+            "p50": 45.2337900060229,
+            "p95": 45.39305152138695,
+            "min": 45.024883991573006,
+            "max": 45.47022300539538,
+            "stdev": 0.1189349348255489,
+            "rtfx": 235.88560672407252
+          },
+          "lookahead_resources": {
+            "(1, 5)": {
+              "encoder_captures": 2,
+              "staging_bytes": 55151552
+            }
+          },
+          "shared_process_peak_cuda_bytes": 7244246528
+        },
+        "rtfx_gain_percent": 2.975543268715808,
+        "paired_gains_percent": [
+          3.3660319939583516,
+          2.9674008591819456,
+          2.775111987987078,
+          3.384399492995005,
+          2.9895433341185607,
+          3.1160233929707237,
+          3.380775808364822,
+          3.3977989008159737,
+          2.7219044787328617,
+          3.3189650882934574,
+          1.9751893897675954
+        ],
+        "paired_median": 3.1160233929707237
+      },
+      "translation_b1": {
+        "summary": {
+          "cold_ms": {
+            "reference": 501.78058398887515,
+            "lookahead": 485.17637699842453
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 2,
+              "total": 2,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 2,
+              "total": 2,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 2,
+              "total": 2,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 2,
+              "total": 2,
+              "different_ids": []
+            }
+          },
+          "quality": {
+            "reference": {
+              "unmeasured": "No reference English translations in this manifest"
+            },
+            "lookahead": {
+              "unmeasured": "No reference English translations in this manifest"
+            }
+          },
+          "reference": {
+            "n": 11,
+            "p50": 37.27646404877305,
+            "p95": 37.47922403272241,
+            "min": 37.12575702229515,
+            "max": 37.55164303584024,
+            "stdev": 0.10825087830997666,
+            "rtfx": 286.2395957416782
+          },
+          "reference_resources": {
+            "(1, 1)": {
+              "encoder_captures": 2,
+              "staging_bytes": 0
+            }
+          },
+          "lookahead": {
+            "n": 11,
+            "p50": 35.613611980807036,
+            "p95": 35.73046450037509,
+            "min": 35.41450097691268,
+            "max": 35.75597098097205,
+            "stdev": 0.0990859355620253,
+            "rtfx": 299.60454462609124
+          },
+          "lookahead_resources": {
+            "(1, 1)": {
+              "encoder_captures": 2,
+              "staging_bytes": 55151552
+            }
+          },
+          "shared_process_peak_cuda_bytes": 6290404352
+        },
+        "rtfx_gain_percent": 4.669147484568992,
+        "paired_gains_percent": [
+          4.849088974156568,
+          4.328877612755955,
+          4.913880834621098,
+          5.440888190726811,
+          4.835793662288235,
+          5.337138673955799,
+          4.503236028335933,
+          4.750745082571628,
+          4.490059479663677,
+          4.799263670547549,
+          4.572819431745079
+        ],
+        "paired_median": 4.799263670547549
+      }
+    },
+    "lookahead_wide": {
+      "beam_b3": {
+        "summary": {
+          "cold_ms": {
+            "reference": 59089.76567501668,
+            "lookahead": 11834.220887045376
+          },
+          "agreement": {
+            "tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "timestamp_tokens": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "segments": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            },
+            "text": {
+              "equal": 73,
+              "total": 73,
+              "different_ids": []
+            }
+          },
+          "quality": {
+            "reference": {
+              "metric": "WER",
+              "reference_units": 1150,
+              "errors": 45,
+              "rate": 0.0391304347826087,
+              "annotated_utterances": 73,
+              "reference_timestamp_error": null,
+              "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+            },
+            "lookahead": {
+              "metric": "WER",
+              "reference_units": 1150,
+              "errors": 45,
+              "rate": 0.0391304347826087,
+              "annotated_utterances": 73,
+              "reference_timestamp_error": null,
+              "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+            }
+          },
+          "reference": {
+            "n": 9,
+            "p50": 1075.6868629832752,
+            "p95": 1078.3332201768644,
+            "min": 1072.831251018215,
+            "max": 1078.7519669975154,
+            "stdev": 1.9289710903361668,
+            "rtfx": 447.1885746246946
+          },
+          "reference_resources": {
+            "(3, 5)": {
+              "encoder_captures": 12,
+              "staging_bytes": 0
+            },
+            "(1, 5)": {
+              "encoder_captures": 1,
+              "staging_bytes": 0
+            }
+          },
+          "lookahead": {
+            "n": 9,
+            "p50": 1007.6973020331934,
+            "p95": 1009.8231768119149,
+            "min": 1005.2070050151087,
+            "max": 1009.9407979869284,
+            "stdev": 1.7943667111882429,
+            "rtfx": 477.3604871516812
+          },
+          "lookahead_resources": {
+            "(1, 5)": {
+              "encoder_captures": 1,
+              "staging_bytes": 27575776
+            },
+            "(3, 5)": {
+              "encoder_captures": 18,
+              "staging_bytes": 165454656
+            }
+          },
+          "shared_process_peak_cuda_bytes": 15197357056
+        },
+        "rtfx_gain_percent": 6.747022227101529,
+        "paired_gains_percent": [
+          7.277509926540127,
+          6.437444764035138,
+          6.676647094414667,
+          6.740909336216339,
+          6.342339961123011,
+          6.727395020699234,
+          6.747022227101507,
+          6.685504969343081,
+          7.186004563702353
+        ],
+        "paired_median": 6.727395020699234
+      }
+    }
+  },
+  "overlap": {
+    "kernel_events": 61914,
+    "missing_stream_events": 0,
+    "active_kernel_union_ms": 288.68118798828124,
+    "inter_stream_kernel_overlap_ms": 11.9321181640625,
+    "overlap_fraction_of_active_kernel_time": 0.041333203064644705,
+    "streams": {
+      "(0, 105)": {
+        "kernel_events": 60286,
+        "duration_sum_ms": 271.6101870117187,
+        "active_union_ms": 271.59665112304685,
+        "top_kernels_ms": {
+          "sm80_xmma_gemm_f16f16_f16f32_f32_tn_n_tilesize32x32x64_stage6_warpsize2x2x1_tensor16x8x16_execute_kernel_trt": 127.24796700000013,
+          "_cross_attn_kernel_16_64_4_3": 33.55618400000009,
+          "_self_attn_kernel_16_128_4_2": 17.14816799999982,
+          "__myl_CastMeanSubMulMeanAddSqrtDivMulCastMulAdd_0x64ee385b02e986a6fb7ced9e231bc9df_vec": 16.163051999999965,
+          "_reorder_kv": 11.556829000000004,
+          "sm80_xmma_gemm_f16f16_f16f32_f32_tn_n_tilesize32x32x64_stage6_warpsize2x2x1_tensor16x8x16_execute_split_k_kernel_trt": 9.746231000000039,
+          "__myl_ReshAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_0x7d7cf45743b58d72e17330647573ab03_vec": 8.557135999999836,
+          "sm80_xmma_gemm_f16f16_f16f16_f16_nn_n_tilesize64x128x32_stage5_warpsize2x2x1_tensor16x8x16_execute_kernel_trt": 6.201827000000001
+        }
+      },
+      "(0, 23)": {
+        "kernel_events": 4,
+        "duration_sum_ms": 0.012126953125,
+        "active_union_ms": 0.012126953125,
+        "top_kernels_ms": {
+          "__myl_ReshSlicTranReshReshSlicTranReshReshSlicTranReshReshSlicTranReshReshSlicTranReshReshSlicEtc_0x63b9dee50b82c311fdd29d5f9daaa1ba_vec": 0.012126999999999999
+        }
+      },
+      "(0, 100)": {
+        "kernel_events": 1480,
+        "duration_sum_ms": 27.99450732421875,
+        "active_union_ms": 27.843271240234376,
+        "top_kernels_ms": {
+          "sm90_xmma_gemm_f16f16_f16f16_f16_nn_n_tilesize128x128x64_cgasize1x2x1_warpgroupsize1x1x1_beta0_execute_segment_k_off_kernel_trt": 5.492902,
+          "sm90_xmma_gemm_f16f16_f16f16_f16_tn_n_tilesize128x128x64_cgasize1x2x1_warpgroupsize1x1x1_beta0_fused": 4.380024,
+          "sm90_xmma_fprop_implicit_gemm_f16f16_f16f16_f16_nhwckrsc_nhwc_tilesize128x256x32_cgasize2x1x1_warpgroupsize1x1x1_g1_execute_segment_k_off_kernel_trt": 3.553297,
+          "dwconv1d": 3.201425000000001,
+          "sm90_xmma_gemm_f16f16_f16f16_f16_nn_n_tilesize128x128x64_cgasize1x2x1_warpgroupsize1x1x1_beta0_fused": 2.194122,
+          "sm90_xmma_gemm_f16f16_f16f16_f16_tn_n_tilesize128x128x64_cgasize1x2x1_warpgroupsize1x1x1_beta0_execute_segment_k_off_kernel_trt": 2.011115000000001,
+          "_gemm_mha_v2_0x90023bf2864b423a25002a68ea47f020": 1.082437,
+          "sm90_xmma_fprop_implicit_gemm_f16f16_f16f16_f16_nhwckrsc_nhwc_tilesize128x256x32_cgasize2x1x1_warpgroupsize1x1x1_g1_beta0_execute_segment_k_off_kernel_trt": 0.866308
+        }
+      },
+      "(0, 5342)": {
+        "kernel_events": 36,
+        "duration_sum_ms": 0.408131591796875,
+        "active_union_ms": 0.408131591796875,
+        "top_kernels_ms": {
+          "sm90_xmma_gemm_f16f16_f16f16_f16_tn_n_tilesize128x128x64_cgasize1x2x1_warpgroupsize1x1x1_beta0_execute_segment_k_off_kernel_trt": 0.27421100000000004,
+          "__myl_SlicCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_0xe22cfdaf41198ddfb38e4739bc34977c_vec": 0.13391999999999998
+        }
+      },
+      "(0, 6050)": {
+        "kernel_events": 36,
+        "duration_sum_ms": 0.467806640625,
+        "active_union_ms": 0.467806640625,
+        "top_kernels_ms": {
+          "sm90_xmma_gemm_f16f16_f16f16_f16_tn_n_tilesize128x128x64_cgasize1x2x1_warpgroupsize1x1x1_beta0_execute_segment_k_off_kernel_trt": 0.32150499999999993,
+          "__myl_SlicCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_0xe22cfdaf41198ddfb38e4739bc34977c_vec": 0.146302
+        }
+      },
+      "(0, 6701)": {
+        "kernel_events": 36,
+        "duration_sum_ms": 0.456642822265625,
+        "active_union_ms": 0.456642822265625,
+        "top_kernels_ms": {
+          "sm90_xmma_gemm_f16f16_f16f16_f16_tn_n_tilesize128x128x64_cgasize1x2x1_warpgroupsize1x1x1_beta0_execute_segment_k_off_kernel_trt": 0.298304,
+          "__myl_SlicCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_0xe22cfdaf41198ddfb38e4739bc34977c_vec": 0.15833899999999998
+        }
+      },
+      "(0, 6819)": {
+        "kernel_events": 36,
+        "duration_sum_ms": 0.445472900390625,
+        "active_union_ms": 0.445472900390625,
+        "top_kernels_ms": {
+          "sm90_xmma_gemm_f16f16_f16f16_f16_tn_n_tilesize128x128x64_cgasize1x2x1_warpgroupsize1x1x1_beta0_execute_segment_k_off_kernel_trt": 0.30089799999999994,
+          "__myl_SlicCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_0xe22cfdaf41198ddfb38e4739bc34977c_vec": 0.144575
+        }
+      }
+    },
+    "note": "Only positive-duration GPU kernel events with stream IDs; copies and CPU events excluded. Each stream is unioned before measuring concurrent streams. Kernel sums are not wall time. This establishes inter-stream compute overlap, not automatic encoder/decoder attribution. Missing graph-node kernel events make the overlap estimate incomplete.",
+    "trace": "/local/2773582.pbs1/beam/tmp/encoder_trace.json"
+  }
+}

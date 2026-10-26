@@ -46,8 +46,9 @@ def main():
     if len({x["id"] for x in items}) != len(items):
         ap.error("manifest IDs must be unique")
     waves, disk_ms = wall(lambda: [load_audio(x["path"]) for x in items])
-    model, load_ms = wall(lambda: OWSM.from_pretrained(args.model, ctc_draft=False,
+    model, load_ms = wall(lambda: OWSM.from_pretrained(args.model, ctc_draft=False, encoder_lookahead=True,
                           beam_grouped_cross=args.beam_grouped_cross, beam_compact_tail=args.beam_compact_tail))
+    assert model._encoder_lookahead, "public encoder_lookahead setting was not forwarded"
     files = hub.resolve(args.model)
     engines = hub.cache_dir() / files.name.replace("/", "--") / engine_tag(model.opts)
     save(args.out / "environment.json", dict(
