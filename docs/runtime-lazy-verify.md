@@ -1,13 +1,14 @@
-# Deferred verification calls (experimental)
+# Deferred verification calls
 
 Job2771808 constructed48 B1 verification graphs per session but actually invoked11 shapes in direct
 ASR and18 in B1 streaming; B8 timestamp mode constructed24 and invoked7. Whole-manifest cold warmup
 was3.85–7.81s on1B. That includes all cold work and requests; it is not a graph-capture-only duration.
 
-The opt-in `GreedySession(lazy_verify_graphs=True)` retains per-window input/scratch buffers, but
+High-level `lazy_drafts=True` enables deferred verification by default. Standalone
+`GreedySession(lazy_verify_graphs=True)` retains per-window input/scratch buffers, but
 constructs the decoder closure (including backend trial) and captures its graph only on first use
 of that bucket/window/solo mode. No cache layout, arithmetic, window or dispatch limit changes.
-`OWSM.greedy_lazy_verify_graphs` is an internal experimental switch, initially False.
+`OWSM.greedy_lazy_verify_graphs` follows the public `lazy_drafts` option.
 
 First use can happen after long prompt prefill or a live bucket migration. Warmup uses offset0,
 so the written firstW self-KV positions are cloned and restored around trial/capture. Pinned inputs
@@ -22,9 +23,9 @@ execution. Actual inference, tests and cold timing run only in an allocated job.
 `profile_runtime_cold.py --mode verify --cases asr prompt stream` compares fresh sessions using one
 resident engine/backend; the first cycle is recorded separately and later cycles warm JIT. It checks
 outputs after both cold calls and reuse across tasks. This measures session-cold costs, not full model
-load/build or steady-state speed. No performance result or adoption is claimed yet.
+load/build or steady-state speed. Measured results and the validated scope follow.
 
-## First measured result (additional shape/warm checks pending)
+## Initial B1 measurements
 
 Job2771944 passed119 regression tests and18 selected GPU tests (4 deferred-state/capture,8 existing
 mode/cache,6 Ring-prefetch tests). `verify_cold/cold.json` matched all cold and reused-request outputs.
@@ -34,8 +35,7 @@ ASR334.18→218.64ms (-34.6%), long prompt340.61→223.68ms (-34.3%), three-inpu
 streaming allocation varied by32MiB across repeats, so the raw samples should be used for memory claims.
 Actual verification graphs were48→1/2/3 for these three initial requests; template count remains48.
 
-The candidate stays opt-in pending B8/102M and warmed runtime checks. `profile_runtime.py graph_lazy`
-records first-use time/counts, then explicitly prepares all potential verification shapes for a separate
+`profile_runtime.py graph_lazy` records first-use time/counts, then explicitly prepares all potential verification shapes for a separate
 steady-state comparison. The latter tests hot-path overhead and prevents timing a new capture when
 encoder overlap changes solo dispatch; it is not a requirement that deployments prewarm every shape.
 Memory in that multi-variant steady benchmark is not the cold memory saving or deployment peak.
