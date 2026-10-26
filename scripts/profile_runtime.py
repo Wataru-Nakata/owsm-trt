@@ -154,7 +154,7 @@ def dispatch(model):
         calls += [v.step for v in getattr(s, "_verify", {}).values()]
         counts = {}
         for fn in calls:
-            name = getattr(fn, "dispatch", fn.__qualname__)
+            name = getattr(fn, "dispatch", getattr(fn, "__qualname__", "uninitialized"))
             reason = getattr(fn, "fallback_reason", None)
             tag = f"{name}: {reason}" if reason else name
             counts[tag] = counts.get(tag, 0) + 1

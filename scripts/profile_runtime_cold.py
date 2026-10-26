@@ -1,4 +1,4 @@
-"""Session-cold costs with warm engines/JIT; compare lazy draft setup on identical requests."""
+"""Session-cold costs with warm engines/JIT; defer draft setup or individual verification calls."""
 
 import argparse
 import gc
@@ -21,6 +21,8 @@ def main():
     ap.add_argument("--model", required=True)
     ap.add_argument("--manifest", required=True)
     ap.add_argument("--repeat", type=int, default=3)
+    ap.add_argument("--mode", choices=("drafts", "verify"), default="drafts")
+    ap.add_argument("--cases", nargs="+", choices=("translation", "lid", "asr", "prompt", "stream"))
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
     if not os.environ.get("PBS_JOBID") and os.uname().nodename.startswith("login"):
@@ -45,7 +47,8 @@ def main():
             ]
         return [asdict(r) for r in result]
 
-    cases = ("translation", "lid", "asr", "prompt", "stream")
+    cases = args.cases or ("translation", "lid", "asr", "prompt", "stream")
+    option = "lazy_drafts" if args.mode == "drafts" else "greedy_lazy_verify_graphs"
     records, expected, first = [], {}, []
     for repeat in range(-1, args.repeat):
         for task in cases:
@@ -53,14 +56,14 @@ def main():
                 model._sessions.clear()
                 gc.collect()
                 torch.cuda.empty_cache()
-                model.lazy_drafts = lazy
+                setattr(model, option, lazy)
                 torch.cuda.reset_peak_memory_stats()
                 before = torch.cuda.memory_allocated()
                 result, ms = wall(lambda: call(task))
                 row = dict(
                     repeat=repeat,
                     task=task,
-                    lazy_drafts=lazy,
+                    **{option: lazy},
                     session_cold_ms=ms,
                     allocated_delta_bytes=torch.cuda.memory_allocated() - before,
                     peak_delta_bytes=torch.cuda.max_memory_allocated() - before,
@@ -81,7 +84,7 @@ def main():
     for task in cases:
         summary[task] = {
             str(lazy): {
-                name: stats([r[name] for r in records if r["task"] == task and r["lazy_drafts"] == lazy])
+                name: stats([r[name] for r in records if r["task"] == task and r[option] == lazy])
                 for name in ("session_cold_ms", "allocated_delta_bytes", "peak_delta_bytes")
             }
             for lazy in (False, True)
@@ -90,6 +93,8 @@ def main():
         args.out / "cold.json",
         dict(
             model_load_ms=load_ms,
+            mode=args.mode,
+            option=option,
             first_cold=first,
             samples=records,
             summary=summary,

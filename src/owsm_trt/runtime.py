@@ -19,6 +19,7 @@ from bisect import bisect_left
 from collections import deque
 from collections.abc import Callable, Iterator
 from contextlib import nullcontext
+from functools import partial
 from pathlib import Path
 
 import numpy as np
@@ -735,6 +736,7 @@ class GreedySession(_Session):
         fuse_accept: bool = False,
         reuse_notime: bool = False,
         cache_draft_flags: bool = False,
+        lazy_verify_graphs: bool = False,
     ):
         super().__init__(
             backend, cfg, batch, capacity, eos, dtype, device, use_cuda_graph, chunk, buckets, rules
@@ -743,6 +745,7 @@ class GreedySession(_Session):
         self.fuse_accept = fuse_accept
         self.reuse_notime = reuse_notime
         self.cache_draft_flags = cache_draft_flags
+        self.lazy_verify_graphs = lazy_verify_graphs
         self._draft_flags = None
         self._draft_notime = False
         self.punctuation = punctuation  # see _resync
@@ -774,40 +777,33 @@ class GreedySession(_Session):
             bufs = _Verify(cfg, batch, w, self.kw, rules, self.t_notime, eos, self.split_choose)
             bufs.fuse_accept = self.fuse_accept
             for c, (k, v) in self.caches.items():
-                kind = "verify" if w > 1 else "decode"
-                # a decoder megakernel can do the argmax itself: plain, or with <notimestamps> (no timestamp
-                # tokens); kernels.choose for rows under the other timestamp rules
-                extra = {}
-                if getattr(backend, "argmax", False):  # (a megakernel backend)
-                    extra["inp"] = (bufs.inp, w)
-                    extra["pred"] = bufs.pred
-                    if rules is not None:
-                        extra["notime"] = (self.t_notime, rules.first_time, rules.last_time)
-                step = backend.step_fn(
-                    bufs.tok,
-                    bufs.offs,
-                    k,
-                    v,
-                    self.cross_k,
-                    self.cross_v,
-                    bufs.logits,
-                    bufs.new_kv,
-                    kind=kind,
-                    **extra,
-                )
-                self._verify[c, w] = bufs.bind(step, k, v)
-                if solo and getattr(backend, "solo_differs", False):
-                    step = backend.step_fn(
-                        bufs.tok, bufs.offs, k, v, self.cross_k, self.cross_v, bufs.logits, bufs.new_kv, kind=kind,
-                        solo=True, **extra,
-                    )  # fmt: skip
-                    self._verify_solo[c, w] = bufs.bind(step, k, v)
+                for table, alone in ((self._verify, False), (self._verify_solo, True)):
+                    if alone and (not solo or not getattr(backend, "solo_differs", False)):
+                        continue
+                    factory = self._verify_factory(bufs, k, v, alone)
+                    table[c, w] = bufs.bind(
+                        None if self.lazy_verify_graphs else factory(), k, v,
+                        factory=factory if self.lazy_verify_graphs else None,
+                    )
         for ver in (*self._verify.values(), *self._verify_solo.values()):
             ver.select_notime(notime)
             if self.use_cuda_graph:
                 ver.capture()
         self._draft_notime = notime
         self._drafts_ready = True
+
+    def _verify_factory(self, bufs, k, v, solo):
+        extra = {}
+        if getattr(self.backend, "argmax", False):
+            extra.update(inp=(bufs.inp, bufs.w), pred=bufs.pred)
+            if self.rules is not None:
+                extra["notime"] = (self.t_notime, self.rules.first_time, self.rules.last_time)
+        if solo:
+            extra["solo"] = True
+        return partial(
+            self.backend.step_fn, bufs.tok, bufs.offs, k, v, self.cross_k, self.cross_v, bufs.logits, bufs.new_kv,
+            kind="verify" if bufs.w > 1 else "decode", **extra,
+        )
 
     def _rules_start(self, primer: torch.Tensor) -> None:
         super()._rules_start(primer)
@@ -1344,38 +1340,65 @@ class _Verify:
         end = ok.long().cumprod(1).sum(1)  # s + n
         return torch.stack([end - s, self.pred.gather(1, end.unsqueeze(1)).squeeze(1)], 1)
 
-    def bind(self, step: Callable[[], None], k: torch.Tensor, v: torch.Tensor) -> "_Bound":
-        return _Bound(self, step, k, v)
+    def bind(self, step, k: torch.Tensor, v: torch.Tensor, factory=None) -> "_Bound":
+        return _Bound(self, step, k, v, factory)
 
 
 class _Bound:
     """One window size on one cache bucket: the decoder call, the per-row K/V scatter, the argmax and
     the drafted tokens accepted."""
 
-    def __init__(self, bufs: _Verify, step, k, v):
+    def __init__(self, bufs: _Verify, step, k, v, factory=None):
         self.bufs, self.step, self.k, self.v = bufs, step, k, v
+        self.factory = factory
+        self.deferred = factory is not None
+        self.notime_requested = False
         self.graph: torch.cuda.CUDAGraph | None = None
         self.notime_graph: torch.cuda.CUDAGraph | None = None
         self.use_notime = False
         self.graph_enabled = False
 
     def select_notime(self, enabled: bool) -> None:
-        self.use_notime = (enabled and self.bufs.fast and self.bufs.rules is not None
-                           and getattr(self.step, "writes_pred", False))
-        if self.graph_enabled:
+        self.notime_requested = enabled
+        self._notime_mode()
+        if self.graph_enabled and not self.deferred:
             self._ensure_graph()
+
+    def _notime_mode(self) -> None:
+        self.use_notime = (self.notime_requested and self.bufs.fast and self.bufs.rules is not None
+                           and getattr(self.step, "writes_pred", False))
 
     def _ensure_graph(self) -> None:
         graph = self.notime_graph if self.use_notime else self.graph
-        if graph is None:
-            # A prior request may leave a large offset in this window's shared host input.
-            # Capture warmup must start at zero even for smaller cache buckets.
-            self.bufs.host.zero_()
-            graph = capture_graph(lambda: self.body(skip_rules=self.use_notime))
-            if self.use_notime:
-                self.notime_graph = graph
-            else:
-                self.graph = graph
+        if self.step is not None and (graph is not None or not self.graph_enabled):
+            return
+        b = self.bufs
+        # First use can follow live prefill/bucket migration. Trial and capture write offset0..w;
+        # retain that prefix until warmup completes, without a steady-state copy or synchronization.
+        saved = [t[:, :, :, :b.w].clone() for t in (self.k, self.v)] if self.deferred else None
+        try:
+            b.host.zero_()
+            if self.step is None:
+                b.inp.zero_()
+                b.tok.zero_()
+                b.offs.zero_()
+                self.step = self.factory()
+                self.factory = None
+                self._notime_mode()
+            if self.graph_enabled:
+                graph = capture_graph(lambda: self.body(skip_rules=self.use_notime))
+                if self.use_notime:
+                    self.notime_graph = graph
+                else:
+                    self.graph = graph
+        finally:
+            if saved is not None:
+                for target, source in zip((self.k, self.v), saved):
+                    target[:, :, :, :b.w].copy_(source)
+                # Do not overwrite pinned host input while capture warmup can still read it.
+                if b.ready is not None:
+                    b.ready.record()
+                    b.ready.synchronize()
 
     def body(self, skip_rules: bool = False) -> None:
         b = self.bufs
@@ -1414,12 +1437,15 @@ class _Bound:
 
     def capture(self) -> None:
         self.graph_enabled = True
-        self._ensure_graph()
+        if not self.deferred:
+            self._ensure_graph()
 
     def __call__(self, flat: list[int], meanwhile: Callable[[], None] | None = None) -> list[list[int]]:
         """``flat``: per row, the window's tokens + [offset, #timestamps, last timestamp, first position],
         concatenated. Returns per row [drafted tokens accepted, the token emitted after them], after
         running ``meanwhile()`` while the GPU works."""
+        if self.deferred:
+            self._ensure_graph()
         b = self.bufs
         b.host_flat[:] = np.frombuffer(array("q", flat), dtype=np.int64)  # read by the call, reused after it
         graph = self.notime_graph if self.use_notime else self.graph

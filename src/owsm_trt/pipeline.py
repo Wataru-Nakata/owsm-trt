@@ -231,6 +231,7 @@ class OWSM:
         self.greedy_fuse_accept = greedy_kernels
         self.greedy_reuse_notime = False
         self.greedy_cache_draft_flags = False
+        self.greedy_lazy_verify_graphs = False
         self._frontend_replay = None
         self.draft_stats = [0, 0]  # tokens emitted, decoder calls made by drafted decoding
         self.stream_priority = True  # decoder calls go first while the encoder works ahead
@@ -455,6 +456,7 @@ class OWSM:
                     punctuation=t.punctuation | times, lazy_drafts=self.lazy_drafts,
                     split_choose=self.greedy_split_choose, fuse_accept=self.greedy_fuse_accept,
                     reuse_notime=self.greedy_reuse_notime, cache_draft_flags=self.greedy_cache_draft_flags,
+                    lazy_verify_graphs=self.greedy_lazy_verify_graphs,
                 )  # fmt: skip
             else:
                 backend = self.backend

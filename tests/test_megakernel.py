@@ -529,3 +529,49 @@ def test_ring_prefetch_preserves_logits_and_cache(model, window, solo):
             for actuals, refs in zip(results, expected):
                 for actual, ref in zip(actuals, refs):
                     assert torch.equal(actual, ref)
+
+
+@gluon_only
+@pytest.mark.parametrize("rows", [1, 2])
+@pytest.mark.parametrize("graphs", [False, True])
+def test_deferred_verify_preserves_prefill_bucket_and_mode_changes(model, rows, graphs):
+    from owsm_trt.runtime import TimestampRules
+
+    m16 = copy.deepcopy(model).half()
+    m16.frontend.float()
+    dev = torch.device("cuda")
+    backend = megakernel.MegaBackend(
+        TorchBackend(m16), megakernel_ring.RingDecoder(megakernel.MegaDecoder(model.decoder, dev)),
+        32, 8, trial=True,
+    )
+    rules = TimestampRules(999, 900, 998, 1, CFG.vocab_size, dev)
+    torch.manual_seed(198)
+    cross = [
+        torch.randn(CFG.dec_layers, rows, CFG.dec_heads, CFG.enc_frames, 64, device=dev, dtype=torch.float16)
+        for _ in range(2)
+    ]
+    timed, plain = [2, 3, 4], [2, 3, 999]
+    long_plain = [2, 3] + list(range(5, 19)) + [999]
+    reference = None
+    for deferred in (False, True):
+        sess = GreedySession(
+            backend, CFG, rows, 64, -1, torch.float16, dev, use_cuda_graph=graphs,
+            buckets=[16, 32, 64], draft_windows=(2, 4, 8), rules=rules, lazy_drafts=True,
+            split_choose=True, fuse_accept=True, reuse_notime=True, lazy_verify_graphs=deferred,
+        )
+        sess.cross_k.copy_(cross[0])
+        sess.cross_v.copy_(cross[1])
+        outputs = []
+        for primers in ([long_plain] * rows, [timed] * rows,
+                        [plain if r % 2 else timed for r in range(rows)], [plain] * rows):
+            outputs.append(sess.decode_drafted(primers, [[5, 6, 7, 8]] * rows, 38)[0])
+            assert all(len(row) == 38 for row in outputs[-1])
+        if reference is None:
+            reference = outputs
+        else:
+            assert outputs == reference
+            assert any(b.step is None for b in sess._verify.values())
+            previous = [(id(b.graph), id(b.notime_graph), id(b.step)) for b in sess._verify.values()]
+            assert sess.decode_drafted([plain] * rows, [[5, 6, 7, 8]] * rows, 38)[0] == outputs[-1]
+            assert previous == [(id(b.graph), id(b.notime_graph), id(b.step)) for b in sess._verify.values()]
+        assert not backend.failed

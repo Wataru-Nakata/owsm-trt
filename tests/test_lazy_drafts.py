@@ -92,3 +92,36 @@ def test_invalid_public_budget_fails_before_model_resolution(budget, monkeypatch
     monkeypatch.setattr(hub, "resolve", unexpected)
     with pytest.raises(ValueError, match="draft_token_budget"):
         OWSM.from_pretrained(draft_token_budget=budget)
+
+
+def test_deferred_step_trial_preserves_live_prefix_and_builds_once():
+    class Backend:
+        def __init__(self):
+            self.calls = 0
+
+        def step_fn(self, tok, offs, k, v, *args, **kwargs):
+            self.calls += 1
+            assert not tok.any() and not offs.any()
+            k[:, :, :, :tok.shape[1]].fill_(91)
+            v[:, :, :, :tok.shape[1]].fill_(92)
+            return lambda: None
+
+    backend = Backend()
+    sess = GreedySession(
+        backend, TINY, 1, 32, 1, torch.float32, torch.device("cpu"),
+        use_cuda_graph=False, buckets=[8, 16, 32], draft_windows=(2, 4, 8),
+        lazy_drafts=True, lazy_verify_graphs=True,
+    )
+    sess._prepare_drafts()
+    assert backend.calls == 3 and all(b.step is None for b in sess._verify.values())
+    bound = sess._verify[16, 4]
+    for x in (bound.k, bound.v):
+        x.copy_(torch.arange(x.numel()).view_as(x))
+    expected = [bound.k.clone(), bound.v.clone()]
+    bound.bufs.host[:, 4] = 1000
+    bound.bufs.inp[:, 4] = 1000
+    bound._ensure_graph()
+    bound._ensure_graph()
+    assert backend.calls == 4 and bound.factory is None
+    for actual, ref in zip((bound.k, bound.v), expected):
+        assert torch.equal(actual, ref)
