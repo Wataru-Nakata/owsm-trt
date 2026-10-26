@@ -43,6 +43,7 @@ CASES = {
     "stream_greedy_b16": (16, 1, False, True, True, "asr", None, None),
     "stream_ts_b8": (8, 1, True, True, True, "asr", None, None),
     "plain_greedy": (1, 1, False, False, False, "asr", None, 12),
+    "plain_ts": (1, 1, True, False, False, "asr", None, 12),
     "beam_no_ts": (1, 5, False, True, False, "asr", None, None),
     "beam_ts": (1, 5, True, True, False, "asr", None, 12),
     "translation": (1, 1, False, True, False, "st_eng", None, 12),
@@ -304,6 +305,9 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
     if args.trace and name in (
         "single_greedy",
         "single_ts",
+        "plain_greedy",
+        "plain_ts",
+        "translation",
         "stream_greedy_b1",
         "stream_greedy_b8",
         "stream_ts_b8",
