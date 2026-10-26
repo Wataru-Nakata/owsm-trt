@@ -22,6 +22,7 @@ def main():
     ap.add_argument("--model", required=True)
     ap.add_argument("--manifest", required=True)
     ap.add_argument("--lang", default="eng")
+    ap.add_argument("--lazy-plain", action="store_true", help="Validate opt-in deferred plain setup")
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
     if not os.environ.get("PBS_JOBID") and os.uname().nodename.startswith("login"):
@@ -31,6 +32,8 @@ def main():
     expected, records, engine_hashes = {}, {}, None
     for mode, options in (("serial", {"greedy_kernels": False, "lazy_drafts": False}), ("default", {})):
         model, load_ms = wall(lambda: OWSM.from_pretrained(args.model, **options))
+        if args.lazy_plain:
+            model.greedy_lazy_plain = mode == "default"
         files = hub.resolve(args.model)
         engines = hub.cache_dir() / files.name.replace("/", "--") / engine_tag(model.opts)
         hashes = {p.name: sha256(p) for p in engines.glob("*.engine")}
@@ -63,6 +66,8 @@ def main():
             if name == "plain_decoder" and (model._session(1).select_workspace is not None) != (mode == "default"):
                 raise RuntimeError("public option did not select expected plain greedy kernel")
             if name == "single_ts":
+                if args.lazy_plain and model._session(1)._plain_ready != (mode == "serial"):
+                    raise RuntimeError("plain decoder was prepared during drafted ASR")
                 windows = [v.bufs for sess in model._sessions.values() for v in sess._verify.values()]
                 active = any(w.fuse_accept and w.choose_workspace is not None for w in windows)
                 if active != (mode == "default"):
@@ -83,6 +88,7 @@ def main():
         args.out / "public_api.json",
         dict(
             all_equal=True,
+            lazy_plain=args.lazy_plain,
             checkpoint_sha256=sha256(files.checkpoint),
             engine_sha256=engine_hashes,
             gpu=torch.cuda.get_device_name(),

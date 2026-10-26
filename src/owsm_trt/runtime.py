@@ -895,7 +895,8 @@ class GreedySession(_Session):
         if max_new_tokens <= 0:
             raise ValueError(f"prompt of {p} tokens does not fit the cache capacity {self.capacity}")
 
-        self._prepare_plain()
+        if max_new_tokens > 1:  # a single selection (language ID) only uses prefill logits
+            self._prepare_plain()
         logits, new_kv, c = self._prefill(primer, self.cross_k, self.cross_v)
         k, v = self.caches[c]
         k[:, :, :, :p] = new_kv[:, 0]

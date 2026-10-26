@@ -92,9 +92,9 @@ def test_deferred_plain_after_drafts_prefill_and_repeated_switches(rows, graphs,
                 assert all(len(row) == count for row in outputs[-1])
             assert bool(sess._steps) != lazy
             assert len(sess.graphs) == (3 if graphs and not lazy else 0)
-        # Language-ID-style prefill alone must not construct plain token-by-token steps.
-        logits, _, _ = sess._prefill(torch.tensor(primers, device=dev), sess.cross_k, sess.cross_v)
-        prefill_logits = logits.clone()
+        # Language ID goes through decode(max_new_tokens=1), not a raw _prefill call.
+        outputs.append(sess.decode(torch.tensor(primers, device=dev), 1))
+        prefill_logits = sess.logits.clone()
         assert bool(sess._steps) != lazy
         plain_steps = None
         for primer, count in ((primers, 40), (long_primers, 34), (primers, 40)):
