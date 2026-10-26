@@ -211,7 +211,11 @@ class OWSM:
         beam_grouped_cross: bool = False,
         frontend_graph: bool = True,
         lazy_drafts: bool = True,
+        draft_token_budget: int = DRAFT_TOKENS,
     ):
+        if type(draft_token_budget) is not int or draft_token_budget < 1:
+            raise ValueError("draft_token_budget must be a positive integer")
+        self.draft_token_budget = draft_token_budget
         self.cfg, self.tokenizer, self.frontend, self.backend = cfg, tokenizer, frontend, backend
         self.opts, self.device, self.use_cuda_graph = opts, device, use_cuda_graph
         self.ctc_draft = ctc_draft
@@ -259,6 +263,7 @@ class OWSM:
         beam_grouped_cross: bool = False,
         frontend_graph: bool = True,
         lazy_drafts: bool = True,
+        draft_token_budget: int = DRAFT_TOKENS,
         fp8: bool | str = False,
         fp8_margin: float = 1.0,
         fp8_skip: str = "",
@@ -281,6 +286,12 @@ class OWSM:
         ``lazy_drafts`` (default True): create verification buffers/graphs on first
         draft use. Translation and language identification avoid unused verification setup. This
         reduces cold work, not the number of steady-state decoder calls.
+
+        ``draft_token_budget`` (default 256): maximum rows x verification window for greedy CTC
+        drafts (at least one token per row). 128 improved H200/1B timestamped B8 throughput in the
+        measured English/Japanese corpora. Shape/kernel changes can change fp16 outputs; this is
+        an opt-in numerical tradeoff, not a beam parameter. Smaller is not always faster. A primer
+        too long for the resulting window uses the existing fixed-batch/prefill path.
 
         ``beam_upper_bound``: stop beam search when the best finished score strictly exceeds every
         live score (default True). Existing stopping rules still apply; greedy decoding is unaffected.
@@ -322,6 +333,8 @@ class OWSM:
         TensorRT (logged). None: the ``OWSM_TRT_MEGAKERNEL`` environment variable (auto / ring / 1 / triton /
         0), ``"auto"`` if unset.
         """
+        if type(draft_token_budget) is not int or draft_token_budget < 1:
+            raise ValueError("draft_token_budget must be a positive integer")
         files = hub.resolve(model)
         raw = load_espnet_config(files.config)
         cfg = parse_config(raw)
@@ -366,7 +379,7 @@ class OWSM:
             runner = TorchCTCBackend(net) if cfg.ctc_only else TorchBackend(net)
             return cls(cfg, tok, net.frontend, runner, opts, dev, graphs, ctc_draft,
                        beam_upper_bound, beam_kernels, beam_compact_tail, beam_grouped_cross,
-                       frontend_graph=frontend_graph, lazy_drafts=lazy_drafts)
+                       frontend_graph=frontend_graph, lazy_drafts=lazy_drafts, draft_token_budget=draft_token_budget)
         if backend != "tensorrt":
             raise ValueError(f"unknown backend {backend!r} (use 'tensorrt' or 'torch')")
 
@@ -406,7 +419,7 @@ class OWSM:
                 runner = _decoder_kernel(runner, cfg, files.checkpoint, dev, decoder_kernel)
             return cls(cfg, tok, frontend, runner, opts, dev, use_cuda_graph, ctc_draft,
                        beam_upper_bound, beam_kernels, beam_compact_tail, beam_grouped_cross,
-                       frontend_graph=frontend_graph, lazy_drafts=lazy_drafts)
+                       frontend_graph=frontend_graph, lazy_drafts=lazy_drafts, draft_token_budget=draft_token_budget)
 
     # ------------------------------------------------------------------ helpers
 
@@ -448,7 +461,7 @@ class OWSM:
         if not self.ctc_draft:
             return ()
         return tuple(
-            w for w in DRAFT_WINDOWS if w <= self.opts.max_verify and w * batch <= max(DRAFT_TOKENS, batch)
+            w for w in DRAFT_WINDOWS if w <= self.opts.max_verify and w * batch <= max(self.draft_token_budget, batch)
         )
 
     def _check_beam(self, beam: int) -> int:

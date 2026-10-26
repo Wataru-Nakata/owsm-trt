@@ -80,3 +80,15 @@ def test_lazy_capture_before_long_prefill_and_reuse(timestamp):
             reference = out
         else:
             assert out == reference
+
+
+@pytest.mark.parametrize("budget", [0, -1, True, 1.5])
+def test_invalid_public_budget_fails_before_model_resolution(budget, monkeypatch):
+    from owsm_trt import OWSM, hub
+
+    def unexpected(*args):
+        raise AssertionError("invalid options must not trigger model downloads")
+
+    monkeypatch.setattr(hub, "resolve", unexpected)
+    with pytest.raises(ValueError, match="draft_token_budget"):
+        OWSM.from_pretrained(draft_token_budget=budget)

@@ -3,7 +3,7 @@
 The measured scope expands beyond timestamp beam: direct greedy with/without CTC drafts,
 timestamps, streaming greedy B1/B8/B16, streaming timestamps B8, no-timestamp beam, timestamp-beam
 regression, translation, long prompt and a110-second recording. Main corpus is English73; Japanese12
-covers direct greedy/TS, stream B1/B8 and no-timestamp beam. The 102M checkpoint is now measured too; CTC-only models and other GPUs remain pending. Engine/checkpoint hashes, warmup/capture/dispatch and all token/segment
+covers direct greedy/TS, stream B1/B8 and no-timestamp beam. The 102M checkpoint is now measured too; CTC-only v4 1B is now measured; other GPUs remain unmeasured. Engine/checkpoint hashes, warmup/capture/dispatch and all token/segment
 outputs are saved. Single requests and whole-manifest throughput are separate metrics.
 
 The first candidate is frontend pointwise fusion. STFT and full fp32 mel GEMM remain unchanged.
@@ -60,7 +60,7 @@ retains eager construction by default and accepts the same explicit switch.
 first observations separately, and checks mode switches on the same session. This optimization
 targets cold latency and unused memory, not a steady-state decoder speedup.
 
-## Throughput follow-up (not yet measured)
+## Throughput follow-up (measured)
 
 The whole-runtime trace shows decoder verification dominates B8; actual session routing includes
 Gluon and TensorRT shape fallbacks. `scripts/profile_draft_windows.py` independently compares the
@@ -72,5 +72,6 @@ stream condition; this scheduling change is explicitly recorded. Actual window/d
 collected in a separate instrumented pass, outside wall timing.
 
 CTC-only v4 1B is also added to the frontend-graph comparison using a locally cached checkpoint and
-engine. Those results are pending. Multi-GPU, engine rebuilds, lower precision and altered audio
+engine. Exact outputs passed; single-utterance RTFx improved4.35% English/5.15% Japanese.
+See [the full sweep and CTC report](runtime-results-2771126.md). Multi-GPU, engine rebuilds, lower precision and altered audio
 padding are outside these experiments.

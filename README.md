@@ -194,13 +194,16 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   (the CTC head is trained on transcripts), and dropped when 8 calls have accepted fewer drafted tokens than calls
   (POWSM's CTC head writes phones). `ctc_draft=False` turns it off. A call checks at most
   256 tokens (rows × window), so at batch 16 a row gets up to 15 drafted tokens per call: wider calls cost more than
-  they save.
+  they save. `draft_token_budget=128` is an opt-in for H200/1B B8: timestamped throughput improved
+  3.6% English/6.9% Japanese in the window sweep. Smaller windows can change fp16 output and are not
+  always faster; the default remains256. [All settings and output differences](docs/runtime-results-2771126.md).
 * **Single-utterance frontend graphs.** STFT/mel/normalization use a bounded CUDA graph cache by default;
   `frontend_graph=False` restores eager execution. H200 measurements with identical engines found single
   greedy RTFx +4.3% for v4 medium1B and +11.5% for base102M (English73, five alternating repeats), with exact
   features/tokens/segments. Larger batches run eagerly; graph buffers add cold work and memory. Pointwise
   frontend fusion remains disabled. A seven-repeat validation reproduced +5.0%/+12.1%, including lazy
-  draft setup. [Scope, p50/p95 and limitations](docs/runtime-results-2771009.md).
+  draft setup. CTC-only v4 1B also improved single-utterance RTFx4.4% English/5.2% Japanese with exact
+  features/output. [Runtime measurements](docs/runtime-results-2771009.md), [CTC measurements](docs/runtime-results-2771126.md).
 * **Unused draft setup is deferred.** `lazy_drafts=True` (default) creates verification graphs on first
   draft use. With resident engines, session-cold translation/language identification was 33–36% shorter
   on H200/v4 1B and102M, saving45.4/26.1MiB of unused buffers. Warm ASR work is unchanged; long-prompt

@@ -16,7 +16,6 @@ from profile_beam import comparison, quality, result_record, save, sha256, stats
 from profile_runtime import captures, dispatch
 
 from owsm_trt import OWSM, hub
-from owsm_trt import pipeline as pipe
 from owsm_trt.audio import load_audio
 from owsm_trt.build import engine_tag
 
@@ -48,7 +47,10 @@ def main():
         ap.error("audio/model work requires a compute allocation")
     if 256 not in args.budgets or min(args.budgets) < 1:
         ap.error("positive budgets and reference=256 required")
-    model, load_ms = wall(lambda: OWSM.from_pretrained(args.model, lazy_drafts=True))
+    model, load_ms = wall(
+        lambda: OWSM.from_pretrained(args.model, lazy_drafts=True, draft_token_budget=args.budgets[0])
+    )
+    assert model.draft_token_budget == args.budgets[0]
     files = hub.resolve(args.model)
     engines = hub.cache_dir() / files.name.replace("/", "--") / engine_tag(model.opts)
     save(
@@ -79,7 +81,7 @@ def main():
                 return model.transcribe(waves, lang=args.lang, batch_size=b, timestamps=ts)
 
             for budget in args.budgets:
-                pipe.DRAFT_TOKENS = budget
+                model.draft_token_budget = budget
                 model._sessions = pools[budget] = OrderedDict()
                 _, ms = wall(call)
                 cold[budget] = dict(
@@ -92,7 +94,7 @@ def main():
                 )
             for repeat in range(args.repeat):
                 for budget in args.budgets if repeat % 2 == 0 else args.budgets[::-1]:
-                    pipe.DRAFT_TOKENS = budget
+                    model.draft_token_budget = budget
                     model._sessions = pools[budget]
                     before = model.draft_stats[1]
                     out, ms = wall(call)
@@ -115,7 +117,7 @@ def main():
                     )
             actual_dispatch = {}
             for budget in args.budgets:
-                pipe.DRAFT_TOKENS = budget
+                model.draft_token_budget = budget
                 model._sessions = pools[budget]
                 counts = Counter()
                 for sess in model._sessions.values():
