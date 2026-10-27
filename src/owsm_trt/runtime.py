@@ -1589,6 +1589,7 @@ class BeamSession(_Session):
         local_topk: bool = False,
         prefill_shared: bool = False,
         kv_clear_once: bool = False,
+        fused_lse: bool = False,
     ):
         # H200/1B, beam 5 with bound stopping: every-step checks help batch 1, but hurt batch 3.
         # Explicit intervals stay fixed when set_upper_bound toggles the device flag for ablations.
@@ -1630,6 +1631,7 @@ class BeamSession(_Session):
         # A device flag lets ON/OFF ablations replay the very same captured graphs.
         self.upper_bound = torch.tensor(upper_bound, dtype=torch.bool, **dev)
         self.fused_rank = fused_rank and kernels.available(device)
+        self.fused_lse = fused_lse and self.fused_rank  # Experimental N reduction order; default stays PyTorch.
         self.prefill_shared = prefill_shared and self.fused_rank
         self.fused_finish = fused_finish and kernels.available(device)
         self.fused_state = fused_state and kernels.available(device) and beam <= 8 and capacity <= 512
@@ -1643,10 +1645,12 @@ class BeamSession(_Session):
         self._kv_scratch = None
         if self.kv_reorder != "torch":
             self._kv_scratch = torch.empty(2 * L * n * H * max(self.buckets) * dk, **self.kw)
-        self._candidates = self._bad_blocks = None
+        self._candidates = self._bad_blocks = self._lse_partials = None
         if self.fused_rank:
             self._candidates = torch.empty(n, cfg.vocab_size, **dev)
             self._bad_blocks = torch.empty(n, (cfg.vocab_size + 1023) // 1024, dtype=torch.bool, **dev)
+            if self.fused_lse:
+                self._lse_partials = torch.empty(n, 2, self._bad_blocks.shape[1], **dev)
         self.diagnostics = diagnostics
         self._beam_history = None
         if diagnostics:
@@ -1749,15 +1753,17 @@ class BeamSession(_Session):
         if prefill_logits is not None:
             # The first selection has one live parent per utterance. Keep the original [B,K*V]
             # candidate layout/global top-K (including ties), but normalize only its [B,V] logits.
-            cand = beam_kernels.candidates(self, torch.log_softmax(prefill_logits, dim=-1), prefill_logits)
+            cand = beam_kernels.candidates(
+                self, None if self.fused_lse else torch.log_softmax(prefill_logits, dim=-1), prefill_logits,
+            )
             return beam_topk(cand.view(B, K * V), K, self.local_topk)
 
         # 1. the K best extensions per utterance (scores accumulate fp32 log-probabilities)
         logits = self.logits[:, -1]  # [N, V]
         if self.fused_rank:
-            # Full-vocabulary normalization is unchanged. Invalid rows produce only non-finite
-            # logp, which the kernel discards while flagging active NaN/+Inf inputs separately.
-            cand = beam_kernels.candidates(self, torch.log_softmax(logits, dim=-1))
+            # Both normalizers use the full vocabulary; the optional blockwise reduction changes
+            # fp32 rounding. Discard invalid rows and flag active NaN/+Inf inputs separately.
+            cand = beam_kernels.candidates(self, None if self.fused_lse else torch.log_softmax(logits, dim=-1))
             return beam_topk(cand.view(B, K * V), K, self.local_topk)
         bad = (torch.isnan(logits) | torch.isposinf(logits)).any(dim=-1)
         live_parent = self.active & ~self.done.repeat_interleave(K)

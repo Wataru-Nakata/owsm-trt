@@ -1,4 +1,4 @@
-"""Beam bookkeeping kernels; log-softmax and global top-K remain PyTorch operations."""
+"""Beam bookkeeping; global top-K stays in PyTorch, with optional N-class normalization."""
 
 import torch
 
@@ -95,10 +95,28 @@ if triton is not None:
             tl.store(temporary, value, written)
 
     @triton.jit
+    def _normalizer_parts(logits, partial, V: tl.constexpr, STRIDE: tl.constexpr,
+                          BLOCKS: tl.constexpr, BV: tl.constexpr):
+        row, block = tl.program_id(0), tl.program_id(1)
+        ids = block * BV + tl.arange(0, BV)
+        x = tl.load(logits + row * STRIDE + ids, ids < V, other=float("-inf")).to(tl.float32)
+        finite = (x == x) & (tl.abs(x) != float("inf"))
+        bad = (x != x) | (x == float("inf"))
+        maximum = tl.max(tl.where(finite, x, float("-inf")), 0)
+        total = tl.sum(tl.where(finite, tl.exp(x - maximum), 0.), 0)
+        # +Inf marks a numerical failure in any block; the later candidate pass rejects the
+        # entire row while retaining the existing active-parent error reporting. All -Inf is
+        # exhausted (max=-Inf, sum=0), not an error. Normalize before timestamp constraints.
+        maximum = tl.where(tl.sum(bad.to(tl.int32), 0) > 0, float("inf"), maximum)
+        tl.store(partial + row * 2 * BLOCKS + block, maximum)
+        tl.store(partial + row * 2 * BLOCKS + BLOCKS + block, total)
+
+    @triton.jit
     def _candidates(logits, logp, scores, active, done, notime, first, count, last, prev,
                     candidates, bad_blocks, V: tl.constexpr, K: tl.constexpr, BLOCKS: tl.constexpr,
                     RULES: tl.constexpr, FIRST: tl.constexpr, LAST: tl.constexpr, EOS: tl.constexpr,
-                    BV: tl.constexpr, SHARED_PREFILL: tl.constexpr, LOGITS_STRIDE: tl.constexpr):
+                    BV: tl.constexpr, SHARED_PREFILL: tl.constexpr, LOGITS_STRIDE: tl.constexpr,
+                    NORMALIZE: tl.constexpr, BN: tl.constexpr):
         row, block = tl.program_id(0), tl.program_id(1)
         ids = block * BV + tl.arange(0, BV)
         live = tl.load(active + row) & ~tl.load(done + row // K)
@@ -106,7 +124,15 @@ if triton is not None:
         raw = tl.load(logits + source * LOGITS_STRIDE + ids, ids < V, other=0)
         bad = (raw != raw) | (raw == float("inf"))
         tl.store(bad_blocks + row * BLOCKS + block, live & (tl.sum(bad.to(tl.int32), 0) > 0))
-        lp = tl.load(logp + source * V + ids, ids < V, other=float("-inf"))
+        if NORMALIZE:
+            part = tl.arange(0, BN)
+            maxima = tl.load(logp + source * 2 * BLOCKS + part, part < BLOCKS, other=float("-inf"))
+            sums = tl.load(logp + source * 2 * BLOCKS + BLOCKS + part, part < BLOCKS, other=0.)
+            maximum = tl.max(maxima, 0)
+            total = tl.sum(sums * tl.exp(maxima - maximum), 0)
+            lp = (raw.to(tl.float32) - maximum) - tl.log(total)
+        else:
+            lp = tl.load(logp + source * V + ids, ids < V, other=float("-inf"))
         allowed = live & (lp == lp) & (tl.abs(lp) != float("inf"))
         if RULES:
             t = (ids >= FIRST) & (ids <= LAST)
@@ -194,17 +220,28 @@ if triton is not None:
             tl.store(history_scores + (step * B + b) * 2 + 1, max_live)
 
 
-def candidates(session, logp: torch.Tensor, prefill_logits: torch.Tensor | None = None) -> torch.Tensor:
-    """[B*K, V] log probabilities -> candidate scores; optional prefill reads shared [B, V] rows."""
+def candidates(session, logp: torch.Tensor | None, prefill_logits: torch.Tensor | None = None) -> torch.Tensor:
+    """Log probabilities -> scores; None opts into blockwise full-vocabulary normalization.
+
+    Shared prefill reads [B,V] rows. Blockwise reduction changes floating-point order and is
+    an opt-in N experiment, not a bitwise substitute for torch.log_softmax.
+    """
     s = session
-    v = logp.shape[-1]
+    v = s.logits.shape[-1]
     rules = s.rules
     first, last, eos = (rules.first_time, rules.last_time, rules.eos) if rules else (0, -1, s.eos)
     raw = s.logits if prefill_logits is None else prefill_logits
+    normalize = logp is None
+    if normalize:
+        logp = s._lse_partials
+        _normalizer_parts[(raw.shape[0], s._bad_blocks.shape[1])](
+            raw, logp, v, raw.stride(0), s._bad_blocks.shape[1], BV=1024, num_warps=4,
+        )
     _candidates[(s.rows, s._bad_blocks.shape[1])](
         raw, logp, s.score, s.active, s.done, s.t_notime, s.t_first, s.t_count, s.t_last, s.tok,
         s._candidates, s._bad_blocks, v, s.beam, s._bad_blocks.shape[1], rules is not None,
-        first, last, eos, BV=1024, SHARED_PREFILL=prefill_logits is not None, LOGITS_STRIDE=raw.stride(0), num_warps=4,
+        first, last, eos, BV=1024, SHARED_PREFILL=prefill_logits is not None, LOGITS_STRIDE=raw.stride(0),
+        NORMALIZE=normalize, BN=triton.next_power_of_2(s._bad_blocks.shape[1]), num_warps=4,
     )
     s.numerical_error |= s._bad_blocks.view(s.batch, -1).any(dim=-1)
     return s._candidates
