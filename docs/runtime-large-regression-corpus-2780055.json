@@ -1,0 +1,444 @@
+{
+  "job": "2780055.pbs1",
+  "source_commit": "8151703a60ba41b65a8f651f25b9934fdbbc082e",
+  "corpus_manifest_sha256": "21f63f09a96cb2fc7912a45be81e1215b61586f3bd328f2dd6a1acb85c7c4c99",
+  "total_samples": 13319,
+  "real_short_samples": 13204,
+  "real_short_hours": 29.798444490740742,
+  "short_recordings_over_model_window": 41,
+  "synthetic_cases": 28,
+  "long_cases": 87,
+  "long_hours_reusing_test_clean": 5.403466840277778,
+  "shard_count": 27,
+  "total_encoded_bytes": 5194571795,
+  "files": [
+    {
+      "name": "audio-0000.tar",
+      "samples": 512,
+      "sha256": "850a84df38a2487d28352ba22b17fa9f1b1ec9fa1fd2e56cd4a4965b87aa4ef5",
+      "bytes": 433561600
+    },
+    {
+      "name": "audio-0001.tar",
+      "samples": 512,
+      "sha256": "074774d79507b999c46e96e9f3e781d430f0c46de8c335ba20560bcd912cdaf2",
+      "bytes": 395878400
+    },
+    {
+      "name": "audio-0002.tar",
+      "samples": 512,
+      "sha256": "7ec51085dbd678c5b196fba04cf0224b5ac6c25518a9bc33d636e5b9007bb3e6",
+      "bytes": 360560640
+    },
+    {
+      "name": "audio-0003.tar",
+      "samples": 512,
+      "sha256": "7aaf1ebc4dc0320dc6fd1b4e894668e6ea797106e431ca70ade27ba590342b9f",
+      "bytes": 405012480
+    },
+    {
+      "name": "audio-0004.tar",
+      "samples": 512,
+      "sha256": "6aa63b3d9892ed319f4984e1c1b3be12cf3b0685c3402c1da512e2c4738bd251",
+      "bytes": 362168320
+    },
+    {
+      "name": "audio-0005.tar",
+      "samples": 512,
+      "sha256": "97fedf4103c76d6c7f285576185a4ccad27831d87a180b9c23bc2558780b364c",
+      "bytes": 376668160
+    },
+    {
+      "name": "audio-0006.tar",
+      "samples": 512,
+      "sha256": "627750f27e85a730005791bb34adbdd156811126f856ff217028a9c5a8bab22b",
+      "bytes": 383221760
+    },
+    {
+      "name": "audio-0007.tar",
+      "samples": 512,
+      "sha256": "02b89a9d1243b42b4416fbf1d5a40156150241e98acf3f40854b2b69388626f0",
+      "bytes": 347105280
+    },
+    {
+      "name": "audio-0008.tar",
+      "samples": 512,
+      "sha256": "b77314748d7f2134f002ac02b952c83675aa52ed3cce70122b3804eb4ae1c0a6",
+      "bytes": 129443840
+    },
+    {
+      "name": "audio-0009.tar",
+      "samples": 512,
+      "sha256": "2886fe46b80be4fda3f244e791758190aa143bade9634d2d2f363869e118bd10",
+      "bytes": 130027520
+    },
+    {
+      "name": "audio-0010.tar",
+      "samples": 512,
+      "sha256": "1f7b6a36e81e0c9c097c219f3207a7ecee5fb244f8333d297cd04e181031e77a",
+      "bytes": 125235200
+    },
+    {
+      "name": "audio-0011.tar",
+      "samples": 512,
+      "sha256": "31ed4e6405dd3a1879bec2d307976b350e1ed43a126ff25d0a8d14e0726ccaef",
+      "bytes": 133447680
+    },
+    {
+      "name": "audio-0012.tar",
+      "samples": 512,
+      "sha256": "994bcf8b65d260921d88bccec92a32cd8e83259448e642475ac1e7ba719aa13f",
+      "bytes": 130017280
+    },
+    {
+      "name": "audio-0013.tar",
+      "samples": 512,
+      "sha256": "0805a665fb4f213bbd41360c4b07725166ac4de55b8c651a0f6207d7c245e27e",
+      "bytes": 185681920
+    },
+    {
+      "name": "audio-0014.tar",
+      "samples": 512,
+      "sha256": "afb9ed658d9b63e98c1534b525bd771da027b9903d80512d045b19e710a27a1a",
+      "bytes": 194099200
+    },
+    {
+      "name": "audio-0015.tar",
+      "samples": 512,
+      "sha256": "228b7febba2f60ba234d5c7ab030e6e0351911da13831ed52246ef766472b528",
+      "bytes": 72704000
+    },
+    {
+      "name": "audio-0016.tar",
+      "samples": 512,
+      "sha256": "09db10e9f50dea46012feaca36b1bdfb6d011294a56a209c228fc5b707b1e3d5",
+      "bytes": 68638720
+    },
+    {
+      "name": "audio-0017.tar",
+      "samples": 512,
+      "sha256": "9e25a22a4a624cc87b18a53b2c09bd1f341d4d69c321a5d602699b03cdb5aa55",
+      "bytes": 63918080
+    },
+    {
+      "name": "audio-0018.tar",
+      "samples": 512,
+      "sha256": "e49c869df212469c4aea26ca8159b9fbbf0b39a046c598087c3d045c96c786f7",
+      "bytes": 57251840
+    },
+    {
+      "name": "audio-0019.tar",
+      "samples": 512,
+      "sha256": "2feaae864c17e631c92266589f58941dc73697284310dd4ad64fc53461107364",
+      "bytes": 60835840
+    },
+    {
+      "name": "audio-0020.tar",
+      "samples": 512,
+      "sha256": "e1c2658e0596ac6faa8750cb4a598f6722796e330be739323135aa935b805bf1",
+      "bytes": 396718080
+    },
+    {
+      "name": "audio-0021.tar",
+      "samples": 512,
+      "sha256": "8638cb64880f2f834165b1128991c565040ec3f6150ef4ac698187cbfe43fccc",
+      "bytes": 76677120
+    },
+    {
+      "name": "audio-0022.tar",
+      "samples": 512,
+      "sha256": "45e332fce514854aa5d649506bf1a916cfd58537bf972c9bd5b95728a6925266",
+      "bytes": 76902400
+    },
+    {
+      "name": "audio-0023.tar",
+      "samples": 512,
+      "sha256": "87940f67928dcfabbdea00ebcae7c561038e63a75ad032fea0da0dfeed2b8d13",
+      "bytes": 66447360
+    },
+    {
+      "name": "audio-0024.tar",
+      "samples": 512,
+      "sha256": "ab05d63ac5cded7ab49544094561e90218b12d592ace5ee1a7020374f33415f8",
+      "bytes": 63631360
+    },
+    {
+      "name": "audio-0025.tar",
+      "samples": 512,
+      "sha256": "9932ef69b68ff3e3ceea280637f95c67823c2e1d64b479c852e4fb7f6ec9c30d",
+      "bytes": 85596160
+    },
+    {
+      "name": "audio-0026.tar",
+      "samples": 7,
+      "sha256": "184c7318548848e302c65f2a9f82b5e90766991abb6e1981ed5b69ff240257c8",
+      "bytes": 2693120
+    },
+    {
+      "name": "index.json",
+      "sha256": "213a5e54cf891cefdcfebffb4c2dbac392867f64bcecc9cc60c3bdf7e5057211",
+      "bytes": 10428435
+    }
+  ],
+  "datasets": {
+    "fleurs_de_test": {
+      "samples": 862,
+      "hours": 3.1525833333333333,
+      "unique_texts": 347,
+      "known_speakers": 0,
+      "duration_buckets": {
+        "<=20s": 431,
+        "<=10s": 294,
+        ">30s": 21,
+        "<=30s": 95,
+        "<=5s": 21
+      },
+      "sample_rates": {
+        "16000": 862
+      },
+      "screening_overlap": 0
+    },
+    "fleurs_en_validation": {
+      "samples": 394,
+      "hours": 1.0458833333333333,
+      "unique_texts": 150,
+      "known_speakers": 0,
+      "duration_buckets": {
+        "<=10s": 215,
+        "<=20s": 149,
+        "<=5s": 24,
+        "<=30s": 5,
+        ">30s": 1
+      },
+      "sample_rates": {
+        "16000": 394
+      },
+      "screening_overlap": 0
+    },
+    "fleurs_es_test": {
+      "samples": 908,
+      "hours": 3.0905833333333335,
+      "unique_texts": 348,
+      "known_speakers": 0,
+      "duration_buckets": {
+        "<=20s": 629,
+        "<=30s": 28,
+        "<=10s": 249,
+        ">30s": 1,
+        "<=5s": 1
+      },
+      "sample_rates": {
+        "16000": 908
+      },
+      "screening_overlap": 0
+    },
+    "fleurs_fr_validation": {
+      "samples": 289,
+      "hours": 0.7952166666666667,
+      "unique_texts": 137,
+      "known_speakers": 0,
+      "duration_buckets": {
+        "<=20s": 129,
+        "<=10s": 144,
+        "<=5s": 14,
+        "<=30s": 2
+      },
+      "sample_rates": {
+        "16000": 289
+      },
+      "screening_overlap": 0
+    },
+    "fleurs_ja_validation": {
+      "samples": 266,
+      "hours": 0.9415333333333333,
+      "unique_texts": 135,
+      "known_speakers": 0,
+      "duration_buckets": {
+        "<=20s": 176,
+        "<=30s": 17,
+        "<=10s": 73
+      },
+      "sample_rates": {
+        "16000": 266
+      },
+      "screening_overlap": 12
+    },
+    "fleurs_ru_validation": {
+      "samples": 356,
+      "hours": 1.0787666666666667,
+      "unique_texts": 150,
+      "known_speakers": 0,
+      "duration_buckets": {
+        "<=20s": 188,
+        "<=10s": 156,
+        "<=5s": 5,
+        "<=30s": 6,
+        ">30s": 1
+      },
+      "sample_rates": {
+        "16000": 356
+      },
+      "screening_overlap": 0
+    },
+    "fleurs_zh_test": {
+      "samples": 945,
+      "hours": 3.0736611111111114,
+      "unique_texts": 349,
+      "known_speakers": 0,
+      "duration_buckets": {
+        "<=20s": 540,
+        "<=10s": 350,
+        "<=30s": 38,
+        "<=5s": 16,
+        ">30s": 1
+      },
+      "sample_rates": {
+        "16000": 945
+      },
+      "screening_overlap": 0
+    },
+    "jvs_nonpara90": {
+      "samples": 2700,
+      "hours": 3.918505787037037,
+      "unique_texts": 2700,
+      "known_speakers": 90,
+      "duration_buckets": {
+        "<=5s": 1543,
+        "<=10s": 1081,
+        "<=20s": 73,
+        "<=2s": 2,
+        "<=30s": 1
+      },
+      "sample_rates": {
+        "24000": 2700
+      },
+      "screening_overlap": 0
+    },
+    "jvs_parallel10": {
+      "samples": 1000,
+      "hours": 2.1770592592592592,
+      "unique_texts": 100,
+      "known_speakers": 10,
+      "duration_buckets": {
+        "<=10s": 768,
+        "<=20s": 148,
+        "<=5s": 83,
+        "<=2s": 1
+      },
+      "sample_rates": {
+        "24000": 1000
+      },
+      "screening_overlap": 0
+    },
+    "librispeech_dev_other": {
+      "samples": 2864,
+      "hours": 5.121184826388888,
+      "unique_texts": 2862,
+      "known_speakers": 33,
+      "duration_buckets": {
+        "<=20s": 399,
+        "<=10s": 1073,
+        "<=5s": 1291,
+        "<=2s": 60,
+        "<=30s": 34,
+        ">30s": 7
+      },
+      "sample_rates": {
+        "16000": 2864
+      },
+      "screening_overlap": 0
+    },
+    "librispeech_long": {
+      "samples": 87,
+      "hours": 5.403466840277778,
+      "unique_texts": 87,
+      "known_speakers": 40,
+      "duration_buckets": {
+        ">30s": 85,
+        "<=20s": 1,
+        "<=30s": 1
+      },
+      "sample_rates": {
+        "16000": 87
+      },
+      "screening_overlap": 0
+    },
+    "librispeech_test_clean": {
+      "samples": 2620,
+      "hours": 5.403466840277778,
+      "unique_texts": 2619,
+      "known_speakers": 40,
+      "duration_buckets": {
+        "<=20s": 521,
+        "<=5s": 1055,
+        "<=10s": 914,
+        "<=30s": 83,
+        "<=2s": 38,
+        ">30s": 9
+      },
+      "sample_rates": {
+        "16000": 2620
+      },
+      "screening_overlap": 0
+    },
+    "stress": {
+      "samples": 28,
+      "hours": 0.0931111111111111,
+      "unique_texts": 1,
+      "known_speakers": 0,
+      "duration_buckets": {
+        "<=10s": 8,
+        "<=2s": 12,
+        "<=30s": 8
+      },
+      "sample_rates": {
+        "16000": 28
+      },
+      "screening_overlap": 0
+    }
+  },
+  "libri_restoration": {
+    "url": "https://openslr.trmal.net/resources/12/dev-other.tar.gz",
+    "md5": "c8d0bcc9cca99d4f8b62fcc847357931",
+    "sha256": "12661c48e8c3fe1de2c1caa4c3e135193bfb1811584f11f569dd12645aa84365",
+    "samples": 2864,
+    "cache": "/groups/gai51740/acc12576tt/github.com/owsm_trt/.cache/regression-inputs/dev-other.tar.gz"
+  },
+  "jvs_unused_transcript_entries": 1800,
+  "initial_audit_config": {
+    "schema": 1,
+    "commit": "8151703a60ba41b65a8f651f25b9934fdbbc082e",
+    "mode": "beam_bound",
+    "case": "beam_b1",
+    "index_sha256": "213a5e54cf891cefdcfebffb4c2dbac392867f64bcecc9cc60c3bdf7e5057211",
+    "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+    "selected_keys_sha256": "9e3b3aaf48d058ef6b2174dd89026bacc39b06c7551729bfd054ff80d36e9987",
+    "chunk_size": 128,
+    "selected_samples": 13232,
+    "datasets": null,
+    "scope": "Full output/quality regression, one pass per variant. Includes warmup/capture/I/O; no steady-state latency or speedup claim. Long-form has joined text/segments only. No human timestamp or reference translation annotation.",
+    "beam_variants": {
+      "reference": {
+        "beam_upper_bound": false,
+        "beam_kernels": true
+      },
+      "candidate": {
+        "beam_upper_bound": true,
+        "beam_kernels": true
+      }
+    }
+  },
+  "initial_environment": {
+    "engine_sha256": {
+      "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+      "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+      "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+    },
+    "gpu": "NVIDIA H200",
+    "torch": "2.14.1+cu130",
+    "cuda": "13.0",
+    "job": "2780055.pbs1",
+    "nvidia_smi": "name, uuid, driver_version\nNVIDIA H200, GPU-ceface32-d865-d82a-4941-fb64aa2447c3, 595.71.05"
+  },
+  "scope": "Corpus preparation verified. Inference in progress; no correctness/latency acceptance from this manifest. Long chapters reuse test-clean speech;41 ordinary corpus recordings exceed30s and use long-form public API without token IDs."
+}

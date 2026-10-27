@@ -2,7 +2,15 @@
 
 The English73/Japanese12 sets used for tuning are screening sets. Their agreement does not establish
 coverage of uncommon inputs. Large output regressions are now a separate acceptance step from the
-small, repeated latency benchmark. No large-corpus results have been measured yet. First job2779853
+small, repeated latency benchmark. Job2780055 completed corpus preparation and started inference;
+full large-corpus correctness and timing results are still pending. Its
+[corpus manifest](runtime-large-regression-corpus-2780055.json) records13,204 real short-corpus inputs
+(29.798hours),28 synthetic cases and87 long-context chapters, packed into27 verified shards
+(5,194,571,795 bytes including the index). The initial audit selects13,232 inputs;41 ordinary corpus
+recordings exceed30seconds and use the long-form API, whose token IDs are unavailable. The87 long
+chapters reuse test-clean speech and are reserved for the separate long-context case.
+
+First job2779853
 exited1 after53seconds during preparation: the dev-other manifest remained but its source directory
 was absent. No inference ran and no complete corpus was published. The retry checks all source
 paths first and records every missing input in `preflight.json`. It can restore dev-other locally
@@ -11,7 +19,7 @@ from the [official OpenSLR12 archive](https://www.openslr.org/12/), checking the
 its transcript before packing. Other missing datasets fail visibly instead of silently reducing coverage.
 The verified download is retained as one shared archive; extracted audio stays node-local and is
 deleted after shard publication. This repair and its small archive/metadata tests are implemented;
-successful full preparation and inference remain pending.
+successful full preparation is now recorded in2780055; full inference verification remains pending.
 Second job2780026 also stopped before inference: the first inventory treated all JVS nonpara30
 transcript lines as recordings. The original ZIP member index confirms2,700 recorded files across
 the selected90 speakers (30 each), while the1,800 extra transcript entries have no audio member in
