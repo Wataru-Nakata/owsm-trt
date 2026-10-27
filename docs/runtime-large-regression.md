@@ -10,6 +10,14 @@ full large-corpus correctness and timing results are still pending. Its
 recordings exceed30seconds and use the long-form API, whose token IDs are unavailable. The87 long
 chapters reuse test-clean speech and are reserved for the separate long-context case.
 
+Job2780055 was stopped after a fresh account query showed200 GPUs (the session cancelled only its
+own1GPU job). PBS exit271 is not a successful full audit. Its
+[validated partial result](runtime-large-regression-2780055-partial.json) contains3,584 Japanese
+inputs in28 complete chunks, with exact tokens/timestamp tokens/segments/text and zero differing
+outputs. `complete=false` and `interrupted=true` are retained. Resume validation checks every chunk
+hash, selected key, source/config digest and output difference. Job2780199 resumes the remaining
+9,648 inputs with the exact same8151703 code/checkpoint/engines/corpus; its results are pending.
+
 First job2779853
 exited1 after53seconds during preparation: the dev-other manifest remained but its source directory
 was absent. No inference ran and no complete corpus was published. The retry checks all source
