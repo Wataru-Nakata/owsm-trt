@@ -73,11 +73,11 @@ if (( AUDIT_TIMEOUT < 300 )); then
 fi
 AUDIT_BUDGET=$((AUDIT_TIMEOUT - 180))
 if (( AUDIT_BUDGET > 2600 )); then AUDIT_BUDGET=2600; fi
-printf '%s\n' 'large regression running; per128 samples saved atomically at resume_path' >> "$OUT/progress.log"
+printf '%s\n' 'large regression running; completed chunks saved atomically at resume_path' >> "$OUT/progress.log"
 # A partial45-minute pass is explicitly resumable, not a completed evaluation.
 timeout --kill-after=30 --preserve-status "$AUDIT_TIMEOUT" "$PY" "$LOCAL/scripts/audit_large_regression.py" --model "$LOCAL/$MODEL_NAME" \
     --data "$LOCAL/corpus" --out "$LOCAL/results/audit" --publish "$RESUME" \
-    --mode "$AUDIT_MODE" --case "$AUDIT_CASE" --budget-seconds "$AUDIT_BUDGET" --chunk-size 128 \
+    --mode "$AUDIT_MODE" --case "$AUDIT_CASE" --budget-seconds "$AUDIT_BUDGET" \
     > "$LOCAL/results/audit.log" 2>&1 &
 WORKER=$!
 wait "$WORKER"

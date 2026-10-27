@@ -105,10 +105,14 @@ def main():
     ap.add_argument('--case',choices=['beam_b1','beam_b3','beam_prompt','beam_long','plain_ts','draft_ts','translation','long'],default='beam_b1')
     ap.add_argument('--datasets',nargs='+')
     ap.add_argument('--budget-seconds',type=int,default=2700)
-    ap.add_argument('--chunk-size',type=int,default=128)
+    ap.add_argument('--chunk-size',type=int,
+                    help='completed inputs per published chunk (default:4 for long chapters,128 otherwise)')
     args = ap.parse_args()
     if not os.environ.get('PBS_JOBID'):
         ap.error('model/audio operations require an allocated compute node')
+    # A chapter spans many decoder windows; publish smaller checkpoints to bound lost work on preemption.
+    if args.chunk_size is None:
+        args.chunk_size = 4 if args.case in ('long','beam_long') else 128
     if args.budget_seconds<1 or args.chunk_size<1:
         ap.error('positive budget and chunk size required')
     beam_mode = args.mode.startswith('beam_')

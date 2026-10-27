@@ -270,7 +270,9 @@ coverage is still pending; the completed plain audit must not be extended to tho
 
 `audit_large_regression.py` stores both complete outputs, timestamp IDs, segments, text, WER/CER
 counts, invalid/empty/unpaired/nonmonotonic times and diagnostic repetition indicators. Results are
-published only as complete128-sample compressed chunks, with corpus/checkpoint/engine/code hashes.
+published only as complete compressed chunks, with corpus/checkpoint/engine/code hashes. The default
+is128 inputs for ordinary cases and4 for the separate long-chapter cases, so a preemption does not
+discard an entire87-chapter pass. Explicit `--chunk-size` overrides are recorded in the resume config.
 A subsequent job verifies config and finished chunks and resumes the remaining input IDs. A
 45-minute pass ending successfully is **not** a completed evaluation unless its `complete` flag is
 true. Each1GPU job remains limited to1hour and requires fresh account<=192/queue/duplicate checks.
