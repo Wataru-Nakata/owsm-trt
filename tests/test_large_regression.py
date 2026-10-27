@@ -118,7 +118,8 @@ def test_summary_separates_nonspeech_and_excludes_unavailable_token_ids(tmp_path
         empty_segments=0,invalid_segments=0,unpaired_timestamp=False,nonmonotonic_timestamps=False,
         repetition=repetition([1]),quality=dict(metric='WER',errors=1,reference_units=10))
     probe = value|dict(quality=dict(metric='CER',errors=9,reference_units=0))
-    joined = value|dict(tokens=[],token_ids_available=False)
+    joined = value|dict(tokens=[],token_ids_available=False,
+                       segments=[dict(start=0,end=3),dict(start=2,end=4)])
     records = [dict(key=key,lang=lang,dataset=dataset,duration_bucket='<=10s',config_sha256=digest,
                     reference=record,candidate=record,differences=[])
                for key,lang,dataset,record in [('a','eng','speech',value),('b','jpn','stress',probe),
@@ -138,6 +139,8 @@ def test_summary_separates_nonspeech_and_excludes_unavailable_token_ids(tmp_path
     assert total['quality']['candidate']['rate'] is None
     assert total['quality']['candidate']['errors']==2
     assert total['quality']['candidate']['excluded_nonspeech_errors']==9
+    assert total['flags']['candidate']['timestamp_token_records']==2
+    assert total['flags']['candidate']['nonmonotonic_segment_boundaries']==1
     assert result['strata']['language:eng']['quality']['candidate']['rate']==.1
     assert result['strata']['dataset:stress']['quality']['candidate']['rate'] is None
     path.write_bytes(b'changed')

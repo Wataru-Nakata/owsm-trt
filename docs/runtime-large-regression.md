@@ -55,6 +55,8 @@ being compared to an intentionally trimmed30-second input.
 The summary verifies published chunk hashes and recomputes output differences. Generated nonspeech
 probes retain insertion/empty-output diagnostics but are excluded from speech WER/CER. Mixed WER/CER
 counts never receive a combined error rate.
+Segment boundary order/overlap is checked even for long-form outputs. Token-level timestamp flags
+report their available-record count; missing long-form token IDs are not evidence of valid token timing.
 
 The preceding small public-split repeat2778800 was explicitly stopped when a fresh account query
 reported198 GPUs. PBS exit271 and partial publication are recorded in

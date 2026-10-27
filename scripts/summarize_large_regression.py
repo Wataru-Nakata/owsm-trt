@@ -49,8 +49,16 @@ def summarize(result_dir: Path) -> dict:
                         total['agreement'][field]['equal'] += row['reference'][field]==row['candidate'][field]
                     for mode in ('reference','candidate'):
                         record = row[mode]
-                        for field in ('empty_segments','invalid_segments','unpaired_timestamp','nonmonotonic_timestamps'):
+                        for field in ('empty_segments','invalid_segments'):
                             total['flags'][mode][field] += record[field]
+                        total['flags'][mode]['timestamp_token_records'] += record['token_ids_available']
+                        if record['token_ids_available']:
+                            for field in ('unpaired_timestamp','nonmonotonic_timestamps'):
+                                total['flags'][mode][field] += record[field]
+                        boundaries = [s[k] for s in record['segments'] for k in ('start','end')]
+                        total['flags'][mode]['nonmonotonic_segment_boundaries'] += any(
+                            b<a for a,b in zip(boundaries,boundaries[1:])
+                        )
                         total['flags'][mode]['empty_text'] += not record['text'].strip()
                         total['flags'][mode]['identical_token_run_ge8'] += record['repetition']['max_identical_token_run']>=8
                         total['flags'][mode]['fourgram_count_ge4'] += record['repetition']['max_fourgram_count']>=4
