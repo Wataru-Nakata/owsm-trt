@@ -32,10 +32,11 @@ cleanup() {
     local status=$?
     trap - EXIT
     if [ -f "$WORK_DIR/$NAME.txt" ]; then
-        cp "$WORK_DIR/$NAME.txt" "$OUT_DIR/$NAME.requirements.txt"
+        cp "$WORK_DIR/$NAME.txt" "$OUT_DIR/$NAME.requirements.txt" || status=1
     fi
-    rm -f -- "$ARCHIVE_TMP"
-    rm -rf -- "$WORK_DIR"
+    # A failed metadata publication must not prevent releasing the much larger build/cache tree.
+    rm -f -- "$ARCHIVE_TMP" || status=1
+    rm -rf -- "$WORK_DIR" || status=1
     exit "$status"
 }
 trap cleanup EXIT

@@ -9,7 +9,9 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize('kind,failure',[('main',None),('ref',None),('main','install'),('main','archive')])
+@pytest.mark.parametrize('kind,failure',[
+    ('main',None),('ref',None),('main','install'),('main','archive'),('main','metadata'),
+])
 def test_private_workdir_removed_and_results_preserved(tmp_path,kind,failure):
     repo = tmp_path/'repo'
     (repo/'scripts').mkdir(parents=True)
@@ -18,6 +20,14 @@ def test_private_workdir_removed_and_results_preserved(tmp_path,kind,failure):
     (repo/'tools/espnet_ref').mkdir(parents=True)
     bin_dir = tmp_path/'bin'
     bin_dir.mkdir()
+    cp = bin_dir/'cp'
+    cp.write_text('''#!/bin/bash
+if [ "${MOCK_FAILURE:-}" = metadata ] && [[ "${@: -1}" = *.requirements.txt ]]; then
+    exit 9
+fi
+exec /bin/cp "$@"
+''')
+    cp.chmod(0o755)
     uv = bin_dir/'uv'
     uv.write_text('''#!/bin/bash
 set -eu
@@ -57,9 +67,12 @@ if [ "${MOCK_FAILURE:-}" = archive ]; then exit 8; fi
     result = subprocess.run(['bash',str(script),kind],env=env,capture_output=True,text=True)
     assert (result.returncode==0)==(failure is None),result.stderr
     assert list(scratch.iterdir())==[owned]
-    assert (out/f'{name}.requirements.txt').read_text()=='fake-dependency\n'
+    if failure=='metadata':
+        assert not (out/f'{name}.requirements.txt').exists()
+    else:
+        assert (out/f'{name}.requirements.txt').read_text()=='fake-dependency\n'
     assert not list(out.glob('*.tmp.*'))
-    if failure:
+    if failure in ('install','archive'):
         assert archive.read_bytes()==b'previous archive'
     else:
         with tarfile.open(archive) as data:
