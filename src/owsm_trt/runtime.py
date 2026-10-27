@@ -165,6 +165,8 @@ class _TRTEngines:
         # ``lane`` run at the same time as those of lane 0 (on a stream of their own): a scratch buffer
         # of their own, per optimization profile (the size it needs).
         ctx = engine.create_execution_context(self.trt.ExecutionContextAllocationStrategy.USER_MANAGED)
+        if ctx is None:
+            raise RuntimeError(f"TensorRT failed to create execution context (profile={profile}, lane={lane})")
         key = (id(engine),) if lane == 0 else (id(engine), lane, profile)
         if key not in self._scratch:
             size = engine.device_memory_size_v2
