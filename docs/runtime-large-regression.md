@@ -40,6 +40,14 @@ fourgram indicators, and1 has an empty segment (categories overlap). There are n
 nonmonotonic timestamp-token/segment sequences in the available diagnostics. These are baseline
 quality/data findings, not upper-bound regressions or human timestamp errors. Raw range flags108
 include25 floating-point boundary false positives; corrected flags83 retain the20ms allowance.
+Three of the range flags are longer-than-window FLEURS inputs. In particular,
+`fleurs_es_test--es_419-10844880591943993561` is30.3seconds but ends at59.46seconds with1,058 predicted
+characters against397 reference characters; `fleurs_en_validation--en_us-8126899585335816719` is31.74seconds
+but ends at41.66seconds. The30.6second German input `fleurs_de_test--de_de-9045243611409192005`
+has an empty final segment ending31.16seconds. These cases expose short-tail window behavior in
+both variants. The retained outputs reproduce the issue; changing windowing or restricting times
+would require a separate quality/compatibility evaluation. The existing `cut_at_pauses` option was
+not enabled in this audit and is not assumed to solve it.
 B3 job2780636 follows with frozen773f827 source and language/API-preserving input groups; its
 results remain pending.
 
