@@ -62,18 +62,23 @@ if [ "${MOCK_FAILURE:-}" = archive ]; then exit 8; fi
     name = 'owsm-env' if kind=='main' else 'espnet-ref'
     archive = out/f'{name}.tar.zst'
     archive.write_bytes(b'previous archive')
+    previous_requirements = out/f'{name}.requirements.txt'
+    previous_requirements.write_text('previous archive dependencies\n')
     env = os.environ | dict(PBS_JOBID='synthetic-test',PBS_LOCALDIR=str(scratch),BUILD_ROOT=str(scratch),
                            PATH=str(bin_dir)+':'+os.environ['PATH'],MOCK_FAILURE=failure or '')
     result = subprocess.run(['bash',str(script),kind],env=env,capture_output=True,text=True)
     assert (result.returncode==0)==(failure is None),result.stderr
     assert list(scratch.iterdir())==[owned]
+    assert previous_requirements.read_text()=='previous archive dependencies\n'
+    retained = list(out.glob(f'{name}.*.requirements.txt'))
     if failure=='metadata':
-        assert not (out/f'{name}.requirements.txt').exists()
+        assert not retained
     else:
-        assert (out/f'{name}.requirements.txt').read_text()=='fake-dependency\n'
+        assert len(retained)==1 and retained[0].read_text()=='fake-dependency\n'
     assert not list(out.glob('*.tmp.*'))
     if failure in ('install','archive'):
         assert archive.read_bytes()==b'previous archive'
     else:
         with tarfile.open(archive) as data:
             assert data.getmember(name+'/bin/python3').isfile()
+            assert data.extractfile(name+'/requirements.txt').read()==b'fake-dependency\n'

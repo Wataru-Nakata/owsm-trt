@@ -32,7 +32,8 @@ cleanup() {
     local status=$?
     trap - EXIT
     if [ -f "$WORK_DIR/$NAME.txt" ]; then
-        cp "$WORK_DIR/$NAME.txt" "$OUT_DIR/$NAME.requirements.txt" || status=1
+        # Keep failed-build inputs without replacing metadata belonging to a previous archive.
+        cp "$WORK_DIR/$NAME.txt" "$OUT_DIR/$NAME.$BASHPID.requirements.txt" || status=1
     fi
     # A failed metadata publication must not prevent releasing the much larger build/cache tree.
     rm -f -- "$ARCHIVE_TMP" || status=1
@@ -55,6 +56,7 @@ rm -f "$ENV"/lib/python3.12/EXTERNALLY-MANAGED
 PY="$ENV/bin/python3"
 
 (cd "$PROJECT" && uv lock && uv export --frozen --no-hashes --no-emit-project --all-groups -o "$WORK_DIR/$NAME.txt")
+cp "$WORK_DIR/$NAME.txt" "$ENV/requirements.txt"  # authoritative dependency list travels with the archive
 uv pip install --python "$PY" -r "$WORK_DIR/$NAME.txt"
 if [ "$KIND" = main ]; then
   # editable: the .pth points at $REPO/src, so code edits need no rebuild
