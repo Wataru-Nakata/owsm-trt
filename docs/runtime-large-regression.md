@@ -6,15 +6,41 @@ small, repeated latency benchmark. The1B/beam5/timestamp/B1 and B3 upper-bound O
 zero output differences across13,232 inputs. The search-kernel OFF/ON audits also completed at B1 and B3,
 and the102M plain timestamp serial64-versus24 audit passes the same13,232 inputs;
 other large-corpus ablations and timing remain pending.
+
+Completed ordinary/stress-corpus E checks are listed below. Each row uses the same checkpoint and
+engines within that comparison, and all available output fields match. The rows reuse the same
+corpus; their counts must not be added to claim more independent evaluation inputs.
+
+| Model / request | Compared setting | Text / segment pairs | Full token / timestamp pairs | Result |
+|---|---|---:|---:|---|
+|1B beam5 B1|Upper bound OFF / ON|13,232|13,191|[2780523](runtime-large-regression-2780523.json)|
+|1B beam5 B3|Upper bound OFF / ON|13,232|13,191|[2780819](runtime-large-regression-2780819.json)|
+|1B beam5 B1|Combined search-kernel switch OFF / ON|13,232|13,191|[2780923](runtime-large-regression-2780923.json)|
+|1B beam5 B3|Combined search-kernel switch OFF / ON|13,232|13,191|[2781006](runtime-large-regression-2781006.json)|
+|102M plain greedy B1|Serial Ring24 /64 CTAs|13,232|13,191|[2781184](runtime-large-regression-2781184.json)|
+
+All rows enable timestamps. Beam upper-bound comparisons keep search kernels ON; search-kernel
+comparisons keep the upper bound ON. These are separate ablations, not whole-version parity.
+Each ordinary audit contains41 longer-than-window inputs with no joined token IDs. Prompt, drafted,
+translation and bulk/refill coverage must be evaluated independently. The separate87-chapter
+combined beam comparison also passes, as described below; its inputs reuse test-clean speech.
+
 Job2780055 prepared the corpus. Its
 [corpus manifest](runtime-large-regression-corpus-2780055.json) records13,204 real short-corpus inputs
 (29.798hours),28 synthetic cases and87 long-context chapters, packed into27 verified shards
 (5,194,571,795 bytes including the index). The initial audit selects13,232 inputs;41 ordinary corpus
 recordings exceed30seconds and use the long-form API, whose token IDs are unavailable. The87 long
 chapters reuse test-clean speech and are reserved for the separate long-context case.
-The prepared `beam_long` case runs the87 chapters through beam5 `transcribe_long`, independently
-of the greedy `long` case. Its GPU results are pending; the completed B1 audit selected
-the13,232 ordinary/stress inputs, including41 recordings longer than one window.
+The `beam_long` case runs the87 chapters through beam5 `transcribe_long`, independently of the greedy
+`long` case. [Job2781216](runtime-large-regression-2781216.json), frozen2dac80b, passes the combined
+boundOFF/kernelsOFF versus boundON/kernelsON comparison on all87 joined texts and segment lists.
+All22 chunks (four inputs each, final three) pass source/config/order/hash/output validation, with
+PBS F/exit0 and publication exit0. The chapters total5.403hours, median190.13seconds and maximum496.69seconds.
+Both variants have WER2.4365% (1,281/52,576 word edits). Two inputs retain an out-of-range final segment
+on both variants; there are no empty segments/texts or nonmonotonic segment boundaries. Joined raw
+token IDs are unavailable, so token/timestamp-token agreement and token-repetition diagnostics cannot
+be inferred from this pass. It does not cover greedy long-form or add independent speech beyond
+test-clean. Ordinary combined bound/kernel and prompt cases remain pending.
 
 The [complete B1 result](runtime-large-regression-2780523.json) combines the preserved partial runs
 with job2780523 (PBS F/exit0, final publication exit0). All104 chunks pass hash, source/config,
@@ -234,7 +260,7 @@ continuation stayed frozen at8151703.
 Each call in this audit handles one such group. Large multi-batch request behavior, row refill,
 encoder lookahead and file-prefetch coverage require separate cases; this audit does not establish them.
 
-Subsequent ablations also include `beam_kernels` (upper bound ON in both, search/state/cache kernels OFF/ON)
+Additional ablations include `beam_kernels` (upper bound ON in both, search/state/cache kernels OFF/ON)
 and `beam_combined` (upper bound and beam kernels both OFF/ON), to cover bugs shared by both sides
 of the upper-bound-only comparison. These use the existing PyTorch reference path, the same decoder
 backend/engine, and separate session pools. The [complete search-kernel B1 result](runtime-large-regression-2780923.json)
@@ -247,11 +273,16 @@ The candidate-output repeat checks at [B1](runtime-large-regression-repeat-27809
 [B3](runtime-large-regression-repeat-2781006.json) also match the respective earlier bound audits on
 every available field, with identical runtime source tree, engines/checkpoint and software.
 The101 B3 diagnostic inputs, including the Chinese repetition, are shared by both kernel variants;
-this check does not fix those baseline issues. Combined bound/kernel ablations remain pending.
+this check does not fix those baseline issues. The combined bound/kernel long-chapter result is above;
+ordinary-corpus combined ablations remain pending.
 Other ablations are102M serial64 versus24 (E), and the explicit1B NS4/102M NS8 option versus NS2 (N),
 with plain/drafted ASR, translation and long-form cases. N differences remain visible, not treated
 as exact or silently accepted as accuracy improvements. New default adoption waits for relevant
 large-corpus checks as well as the repeated performance benchmark.
+The prepared `greedy_kernels` audit mode compares the public constructor's OFF/ON switch with shared
+loaded weights/engines and separate pipeline/session state. It records the resolved greedy settings,
+uses the same corpus/order/hash/resume checks and requires exact full outputs. Its GPU results are pending;
+the serial64 audit alone does not validate all selection/draft-acceptance changes.
 
 The [102M serial64/24 plain timestamp result2781184](runtime-large-regression-2781184.json) uses frozen3d9bba3,
 with PBS F/exit0 and publication exit0. All104 chunks pass config/corpus/order/hash/output validation.
@@ -265,7 +296,14 @@ WER18.20%, French WER24.47%, Russian WER20.04%, Spanish WER9.54%, Chinese CER21.
 nonspeech is excluded from those rates. Both variants share51 distinct flagged inputs, including
 21 invalid/out-of-range segments,16 unpaired timestamp sequences,17 repeated-fourgram inputs,
 15 repeated-token inputs and1 empty segment (categories overlap). These are baseline findings,
-not schedule regressions or human timing errors. Large drafted/translation/87-chapter and bulk/refill
+not schedule regressions or human timing errors. Of16 unpaired sequences,15 are synthetic nonspeech.
+The remaining10.74second Russian input `fleurs_ru_validation--ru_ru-17103673108586618915` reaches374
+tokens with276 consecutive identical tokens, repeated punctuation and no complete timestamp pair
+(31/15 word edits).
+The9.66second Chinese input `fleurs_zh_test--cmn_hans_cn-9699581877784184472` repeats a digit token11
+times while retaining a valid segment (26/36 character edits). Both schedules produce the same results;
+the saved chunk/input IDs and diagnostics retain these cases for future quality work.
+Large drafted/translation/87-chapter and bulk/refill
 coverage is still pending; the completed plain audit must not be extended to those paths by inference.
 
 `audit_large_regression.py` stores both complete outputs, timestamp IDs, segments, text, WER/CER

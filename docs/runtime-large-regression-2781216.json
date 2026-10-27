@@ -1,0 +1,1338 @@
+{
+  "job": "2781216.pbs1",
+  "prior_inference_jobs": [],
+  "source": {
+    "group": "gai51740",
+    "queue": "R9920261300",
+    "resource": "rt_HG",
+    "nodes": 1,
+    "gpus": 1,
+    "walltime": "01:00:00",
+    "account_gpu_cap": 192,
+    "approval": "Standing serial1GPU authorization; fresh account192/queue/no-duplicate guard before each submission.",
+    "experiment": "runtime_large_audit",
+    "model_name": "owsm_v4_medium_1B",
+    "audit_mode": "beam_combined",
+    "audit_case": "beam_long",
+    "classification": "E intended: current same-engine reference boundOFF/kernelsOFF versus boundON/kernelsON on87 long chapters. Joined text/segments only; no token IDs or human timestamp annotations.",
+    "commit": "2dac80bd2b5735a751aae701aa1db613d2b6843c",
+    "runtime_tree": "a9ab5a575ef33008f254fac7c010af1bc817a765",
+    "snapshot": "/groups/gai51740/acc12576tt/github.com/owsm_trt/outputs/runtime-large-audit-beam-long-submit-01/snapshot-2dac80bd.tar",
+    "status": "submitted",
+    "approved_jobs": 1,
+    "additional_jobs_submitted": 1,
+    "prepared_at": "2026-10-27T22:13:48.298932+00:00",
+    "expected_samples": 87,
+    "chunk_size": 4,
+    "resume_completed": 0,
+    "purpose": "Cover full long-form window transitions and combined search controls on87 chapters/5.403h reused test-clean speech; not independent data or a latency benchmark.",
+    "prerequisite": "Prior1B/B1+B3 kernel and102M solo audits complete validated; fresh capacity192/queue/no duplicates before submission.",
+    "checks": "3 tiny metadata selection/resume/summary fixtures; Ruff, bash syntax, CLI help and diff checks passed.",
+    "submission_started_at": "2026-10-27T22:14:08.350588+00:00",
+    "admission_observation": {
+      "observed_at": "2026-10-27T22:14:08.339768+00:00",
+      "account": "acc12576tt",
+      "gpus_by_state": {
+        "R": 163,
+        "H": 128,
+        "E": 0,
+        "S": 0,
+        "U": 0,
+        "Q": 0,
+        "W": 0,
+        "T": 0,
+        "B": 0
+      },
+      "allocated_gpus": 163,
+      "queued_gpus": 0,
+      "cap": 192,
+      "additional_gpus": 1,
+      "matching_jobs": [],
+      "admission_available": true,
+      "error": null
+    },
+    "submission_command": [
+      "qsub",
+      "-P",
+      "gai51740",
+      "-q",
+      "R9920261300",
+      "-v",
+      "RTYPE=rt_HG,SNAPSHOT=/groups/gai51740/acc12576tt/github.com/owsm_trt/outputs/runtime-large-audit-beam-long-submit-01/snapshot-2dac80bd.tar,EXPERIMENT=runtime_large_audit,MODEL_NAME=owsm_v4_medium_1B,AUDIT_MODE=beam_combined,AUDIT_CASE=beam_long",
+      "-l",
+      "select=1",
+      "-l",
+      "walltime=01:00:00",
+      "outputs/runtime-large-audit-beam-long-submit-01/job.pbs"
+    ],
+    "job_id": "2781216.pbs1",
+    "blocker": null,
+    "submitted_at": "2026-10-27T22:14:08.891918+00:00"
+  },
+  "scheduler": {
+    "job": "2781216.pbs1",
+    "state": "F",
+    "exit_status": 0,
+    "stageout_status": 1,
+    "observed_at": "2026-10-27T22:26:12.607235+00:00",
+    "project": "gai51740",
+    "queue": "R9920261300",
+    "requested": {
+      "fs_factor": 1,
+      "mem": "160gb",
+      "mpiprocs": 1,
+      "ncpus": 16,
+      "ngpus": 1,
+      "njobs_rt_HG": 1,
+      "nodect": 1,
+      "ompthreads": 1,
+      "place": "scatter",
+      "select": "1:ncpus=16:mem=160gb:ngpus=1:njobs_rt_HG=1",
+      "walltime": "01:00:00"
+    },
+    "resources_used": {
+      "cpupercent": 105,
+      "cput": "00:09:31",
+      "mem": "31437360kb",
+      "ncpus": 16,
+      "vmem": "333589024kb",
+      "walltime": "00:09:46"
+    }
+  },
+  "environment": {
+    "engine_sha256": {
+      "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+      "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+      "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+    },
+    "gpu": "NVIDIA H200",
+    "torch": "2.14.1+cu130",
+    "cuda": "13.0",
+    "job": "2781216.pbs1",
+    "nvidia_smi": "name, uuid, driver_version\nNVIDIA H200, GPU-ceface32-d865-d82a-4941-fb64aa2447c3, 595.71.05",
+    "decoder_settings": {
+      "reference": {
+        "kernel": "RingDecoder",
+        "programs": 32,
+        "solo_programs": 64,
+        "single_cross_splits": null
+      },
+      "candidate": {
+        "kernel": "RingDecoder",
+        "programs": 32,
+        "solo_programs": 64,
+        "single_cross_splits": null
+      }
+    },
+    "decoder_dispatch": {
+      "reference": {
+        "batch=1,beam=5": {
+          "plain_solo": null,
+          "decoder": {
+            "64": {
+              "implementation": "megakernel-gluon",
+              "module": "owsm_trt.megakernel_gluon",
+              "fallback_reason": null,
+              "writes_cache": true,
+              "observed_job": "2781216.pbs1"
+            },
+            "128": {
+              "implementation": "megakernel-gluon",
+              "module": "owsm_trt.megakernel_gluon",
+              "fallback_reason": null,
+              "writes_cache": true,
+              "observed_job": "2781216.pbs1"
+            },
+            "256": {
+              "implementation": "megakernel-gluon",
+              "module": "owsm_trt.megakernel_gluon",
+              "fallback_reason": null,
+              "writes_cache": true,
+              "observed_job": "2781216.pbs1"
+            },
+            "512": {
+              "implementation": "megakernel-gluon",
+              "module": "owsm_trt.megakernel_gluon",
+              "fallback_reason": null,
+              "writes_cache": true,
+              "observed_job": "2781216.pbs1"
+            }
+          }
+        }
+      },
+      "candidate": {
+        "batch=1,beam=5": {
+          "plain_solo": null,
+          "decoder": {
+            "64": {
+              "implementation": "megakernel-gluon",
+              "module": "owsm_trt.megakernel_gluon",
+              "fallback_reason": null,
+              "writes_cache": true,
+              "observed_job": "2781216.pbs1"
+            },
+            "128": {
+              "implementation": "megakernel-gluon",
+              "module": "owsm_trt.megakernel_gluon",
+              "fallback_reason": null,
+              "writes_cache": true,
+              "observed_job": "2781216.pbs1"
+            },
+            "256": {
+              "implementation": "megakernel-gluon",
+              "module": "owsm_trt.megakernel_gluon",
+              "fallback_reason": null,
+              "writes_cache": true,
+              "observed_job": "2781216.pbs1"
+            },
+            "512": {
+              "implementation": "megakernel-gluon",
+              "module": "owsm_trt.megakernel_gluon",
+              "fallback_reason": null,
+              "writes_cache": true,
+              "observed_job": "2781216.pbs1"
+            }
+          }
+        }
+      }
+    },
+    "dispatch_scope": "Configured single-token functions for observed sessions; listed buckets may only have warmed/captured. Includes per-bucket observation jobs, not execution counts."
+  },
+  "validated_chunks": 22,
+  "summary": {
+    "config": {
+      "schema": 1,
+      "commit": "2dac80bd2b5735a751aae701aa1db613d2b6843c",
+      "mode": "beam_combined",
+      "case": "beam_long",
+      "index_sha256": "213a5e54cf891cefdcfebffb4c2dbac392867f64bcecc9cc60c3bdf7e5057211",
+      "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+      "selected_keys_sha256": "e08d062f512cfc93b3031990902233b16c2e822c1dc107f1c57bcf48e7cca958",
+      "chunk_size": 4,
+      "selected_samples": 87,
+      "datasets": null,
+      "scope": "Full output/quality regression, one pass per variant. Includes warmup/capture/I/O; no steady-state latency or speedup claim. Long-form has joined text/segments only. No human timestamp or reference translation annotation.",
+      "beam_variants": {
+        "reference": {
+          "beam_upper_bound": false,
+          "beam_kernels": false
+        },
+        "candidate": {
+          "beam_upper_bound": true,
+          "beam_kernels": true
+        }
+      }
+    },
+    "completed": 87,
+    "complete": true,
+    "strata": {
+      "all": {
+        "samples": 87,
+        "agreement": {
+          "tokens": {
+            "equal": 0,
+            "total": 0
+          },
+          "timestamp_tokens": {
+            "equal": 0,
+            "total": 0
+          },
+          "segments": {
+            "equal": 87,
+            "total": 87
+          },
+          "text": {
+            "equal": 87,
+            "total": 87
+          }
+        },
+        "quality": {
+          "reference": {
+            "errors": 1281,
+            "reference_units": 52576,
+            "metrics": {
+              "WER": 87
+            },
+            "excluded_nonspeech_samples": 0,
+            "excluded_nonspeech_errors": 0,
+            "rate": null,
+            "note": "Speech-only WER or CER; generated nonspeech probes are excluded and counted separately. Combined unlike units are not a single accuracy metric."
+          },
+          "candidate": {
+            "errors": 1281,
+            "reference_units": 52576,
+            "metrics": {
+              "WER": 87
+            },
+            "excluded_nonspeech_samples": 0,
+            "excluded_nonspeech_errors": 0,
+            "rate": null,
+            "note": "Speech-only WER or CER; generated nonspeech probes are excluded and counted separately. Combined unlike units are not a single accuracy metric."
+          }
+        },
+        "flags": {
+          "reference": {
+            "empty_segments": 0,
+            "recorded_invalid_segments": 2,
+            "invalid_segments": 2,
+            "timestamp_token_records": 0,
+            "nonmonotonic_segment_boundaries": 0,
+            "empty_text": 0,
+            "identical_token_run_ge8": 0,
+            "fourgram_count_ge4": 0
+          },
+          "candidate": {
+            "empty_segments": 0,
+            "recorded_invalid_segments": 2,
+            "invalid_segments": 2,
+            "timestamp_token_records": 0,
+            "nonmonotonic_segment_boundaries": 0,
+            "empty_text": 0,
+            "identical_token_run_ge8": 0,
+            "fourgram_count_ge4": 0
+          }
+        },
+        "different_examples": []
+      },
+      "language:eng": {
+        "samples": 87,
+        "agreement": {
+          "tokens": {
+            "equal": 0,
+            "total": 0
+          },
+          "timestamp_tokens": {
+            "equal": 0,
+            "total": 0
+          },
+          "segments": {
+            "equal": 87,
+            "total": 87
+          },
+          "text": {
+            "equal": 87,
+            "total": 87
+          }
+        },
+        "quality": {
+          "reference": {
+            "errors": 1281,
+            "reference_units": 52576,
+            "metrics": {
+              "WER": 87
+            },
+            "excluded_nonspeech_samples": 0,
+            "excluded_nonspeech_errors": 0,
+            "rate": 0.02436472915398661,
+            "note": "Speech-only WER or CER; generated nonspeech probes are excluded and counted separately. Combined unlike units are not a single accuracy metric."
+          },
+          "candidate": {
+            "errors": 1281,
+            "reference_units": 52576,
+            "metrics": {
+              "WER": 87
+            },
+            "excluded_nonspeech_samples": 0,
+            "excluded_nonspeech_errors": 0,
+            "rate": 0.02436472915398661,
+            "note": "Speech-only WER or CER; generated nonspeech probes are excluded and counted separately. Combined unlike units are not a single accuracy metric."
+          }
+        },
+        "flags": {
+          "reference": {
+            "empty_segments": 0,
+            "recorded_invalid_segments": 2,
+            "invalid_segments": 2,
+            "timestamp_token_records": 0,
+            "nonmonotonic_segment_boundaries": 0,
+            "empty_text": 0,
+            "identical_token_run_ge8": 0,
+            "fourgram_count_ge4": 0
+          },
+          "candidate": {
+            "empty_segments": 0,
+            "recorded_invalid_segments": 2,
+            "invalid_segments": 2,
+            "timestamp_token_records": 0,
+            "nonmonotonic_segment_boundaries": 0,
+            "empty_text": 0,
+            "identical_token_run_ge8": 0,
+            "fourgram_count_ge4": 0
+          }
+        },
+        "different_examples": []
+      },
+      "dataset:librispeech_long": {
+        "samples": 87,
+        "agreement": {
+          "tokens": {
+            "equal": 0,
+            "total": 0
+          },
+          "timestamp_tokens": {
+            "equal": 0,
+            "total": 0
+          },
+          "segments": {
+            "equal": 87,
+            "total": 87
+          },
+          "text": {
+            "equal": 87,
+            "total": 87
+          }
+        },
+        "quality": {
+          "reference": {
+            "errors": 1281,
+            "reference_units": 52576,
+            "metrics": {
+              "WER": 87
+            },
+            "excluded_nonspeech_samples": 0,
+            "excluded_nonspeech_errors": 0,
+            "rate": 0.02436472915398661,
+            "note": "Speech-only WER or CER; generated nonspeech probes are excluded and counted separately. Combined unlike units are not a single accuracy metric."
+          },
+          "candidate": {
+            "errors": 1281,
+            "reference_units": 52576,
+            "metrics": {
+              "WER": 87
+            },
+            "excluded_nonspeech_samples": 0,
+            "excluded_nonspeech_errors": 0,
+            "rate": 0.02436472915398661,
+            "note": "Speech-only WER or CER; generated nonspeech probes are excluded and counted separately. Combined unlike units are not a single accuracy metric."
+          }
+        },
+        "flags": {
+          "reference": {
+            "empty_segments": 0,
+            "recorded_invalid_segments": 2,
+            "invalid_segments": 2,
+            "timestamp_token_records": 0,
+            "nonmonotonic_segment_boundaries": 0,
+            "empty_text": 0,
+            "identical_token_run_ge8": 0,
+            "fourgram_count_ge4": 0
+          },
+          "candidate": {
+            "empty_segments": 0,
+            "recorded_invalid_segments": 2,
+            "invalid_segments": 2,
+            "timestamp_token_records": 0,
+            "nonmonotonic_segment_boundaries": 0,
+            "empty_text": 0,
+            "identical_token_run_ge8": 0,
+            "fourgram_count_ge4": 0
+          }
+        },
+        "different_examples": []
+      },
+      "duration:>30s": {
+        "samples": 85,
+        "agreement": {
+          "tokens": {
+            "equal": 0,
+            "total": 0
+          },
+          "timestamp_tokens": {
+            "equal": 0,
+            "total": 0
+          },
+          "segments": {
+            "equal": 85,
+            "total": 85
+          },
+          "text": {
+            "equal": 85,
+            "total": 85
+          }
+        },
+        "quality": {
+          "reference": {
+            "errors": 1281,
+            "reference_units": 52463,
+            "metrics": {
+              "WER": 85
+            },
+            "excluded_nonspeech_samples": 0,
+            "excluded_nonspeech_errors": 0,
+            "rate": null,
+            "note": "Speech-only WER or CER; generated nonspeech probes are excluded and counted separately. Combined unlike units are not a single accuracy metric."
+          },
+          "candidate": {
+            "errors": 1281,
+            "reference_units": 52463,
+            "metrics": {
+              "WER": 85
+            },
+            "excluded_nonspeech_samples": 0,
+            "excluded_nonspeech_errors": 0,
+            "rate": null,
+            "note": "Speech-only WER or CER; generated nonspeech probes are excluded and counted separately. Combined unlike units are not a single accuracy metric."
+          }
+        },
+        "flags": {
+          "reference": {
+            "empty_segments": 0,
+            "recorded_invalid_segments": 2,
+            "invalid_segments": 2,
+            "timestamp_token_records": 0,
+            "nonmonotonic_segment_boundaries": 0,
+            "empty_text": 0,
+            "identical_token_run_ge8": 0,
+            "fourgram_count_ge4": 0
+          },
+          "candidate": {
+            "empty_segments": 0,
+            "recorded_invalid_segments": 2,
+            "invalid_segments": 2,
+            "timestamp_token_records": 0,
+            "nonmonotonic_segment_boundaries": 0,
+            "empty_text": 0,
+            "identical_token_run_ge8": 0,
+            "fourgram_count_ge4": 0
+          }
+        },
+        "different_examples": []
+      },
+      "librispeech_long/>30s": {
+        "samples": 85,
+        "agreement": {
+          "tokens": {
+            "equal": 0,
+            "total": 0
+          },
+          "timestamp_tokens": {
+            "equal": 0,
+            "total": 0
+          },
+          "segments": {
+            "equal": 85,
+            "total": 85
+          },
+          "text": {
+            "equal": 85,
+            "total": 85
+          }
+        },
+        "quality": {
+          "reference": {
+            "errors": 1281,
+            "reference_units": 52463,
+            "metrics": {
+              "WER": 85
+            },
+            "excluded_nonspeech_samples": 0,
+            "excluded_nonspeech_errors": 0,
+            "rate": 0.024417208318243334,
+            "note": "Speech-only WER or CER; generated nonspeech probes are excluded and counted separately. Combined unlike units are not a single accuracy metric."
+          },
+          "candidate": {
+            "errors": 1281,
+            "reference_units": 52463,
+            "metrics": {
+              "WER": 85
+            },
+            "excluded_nonspeech_samples": 0,
+            "excluded_nonspeech_errors": 0,
+            "rate": 0.024417208318243334,
+            "note": "Speech-only WER or CER; generated nonspeech probes are excluded and counted separately. Combined unlike units are not a single accuracy metric."
+          }
+        },
+        "flags": {
+          "reference": {
+            "empty_segments": 0,
+            "recorded_invalid_segments": 2,
+            "invalid_segments": 2,
+            "timestamp_token_records": 0,
+            "nonmonotonic_segment_boundaries": 0,
+            "empty_text": 0,
+            "identical_token_run_ge8": 0,
+            "fourgram_count_ge4": 0
+          },
+          "candidate": {
+            "empty_segments": 0,
+            "recorded_invalid_segments": 2,
+            "invalid_segments": 2,
+            "timestamp_token_records": 0,
+            "nonmonotonic_segment_boundaries": 0,
+            "empty_text": 0,
+            "identical_token_run_ge8": 0,
+            "fourgram_count_ge4": 0
+          }
+        },
+        "different_examples": []
+      },
+      "duration:<=30s": {
+        "samples": 1,
+        "agreement": {
+          "tokens": {
+            "equal": 0,
+            "total": 0
+          },
+          "timestamp_tokens": {
+            "equal": 0,
+            "total": 0
+          },
+          "segments": {
+            "equal": 1,
+            "total": 1
+          },
+          "text": {
+            "equal": 1,
+            "total": 1
+          }
+        },
+        "quality": {
+          "reference": {
+            "errors": 0,
+            "reference_units": 64,
+            "metrics": {
+              "WER": 1
+            },
+            "excluded_nonspeech_samples": 0,
+            "excluded_nonspeech_errors": 0,
+            "rate": null,
+            "note": "Speech-only WER or CER; generated nonspeech probes are excluded and counted separately. Combined unlike units are not a single accuracy metric."
+          },
+          "candidate": {
+            "errors": 0,
+            "reference_units": 64,
+            "metrics": {
+              "WER": 1
+            },
+            "excluded_nonspeech_samples": 0,
+            "excluded_nonspeech_errors": 0,
+            "rate": null,
+            "note": "Speech-only WER or CER; generated nonspeech probes are excluded and counted separately. Combined unlike units are not a single accuracy metric."
+          }
+        },
+        "flags": {
+          "reference": {
+            "empty_segments": 0,
+            "recorded_invalid_segments": 0,
+            "invalid_segments": 0,
+            "timestamp_token_records": 0,
+            "nonmonotonic_segment_boundaries": 0,
+            "empty_text": 0,
+            "identical_token_run_ge8": 0,
+            "fourgram_count_ge4": 0
+          },
+          "candidate": {
+            "empty_segments": 0,
+            "recorded_invalid_segments": 0,
+            "invalid_segments": 0,
+            "timestamp_token_records": 0,
+            "nonmonotonic_segment_boundaries": 0,
+            "empty_text": 0,
+            "identical_token_run_ge8": 0,
+            "fourgram_count_ge4": 0
+          }
+        },
+        "different_examples": []
+      },
+      "librispeech_long/<=30s": {
+        "samples": 1,
+        "agreement": {
+          "tokens": {
+            "equal": 0,
+            "total": 0
+          },
+          "timestamp_tokens": {
+            "equal": 0,
+            "total": 0
+          },
+          "segments": {
+            "equal": 1,
+            "total": 1
+          },
+          "text": {
+            "equal": 1,
+            "total": 1
+          }
+        },
+        "quality": {
+          "reference": {
+            "errors": 0,
+            "reference_units": 64,
+            "metrics": {
+              "WER": 1
+            },
+            "excluded_nonspeech_samples": 0,
+            "excluded_nonspeech_errors": 0,
+            "rate": 0.0,
+            "note": "Speech-only WER or CER; generated nonspeech probes are excluded and counted separately. Combined unlike units are not a single accuracy metric."
+          },
+          "candidate": {
+            "errors": 0,
+            "reference_units": 64,
+            "metrics": {
+              "WER": 1
+            },
+            "excluded_nonspeech_samples": 0,
+            "excluded_nonspeech_errors": 0,
+            "rate": 0.0,
+            "note": "Speech-only WER or CER; generated nonspeech probes are excluded and counted separately. Combined unlike units are not a single accuracy metric."
+          }
+        },
+        "flags": {
+          "reference": {
+            "empty_segments": 0,
+            "recorded_invalid_segments": 0,
+            "invalid_segments": 0,
+            "timestamp_token_records": 0,
+            "nonmonotonic_segment_boundaries": 0,
+            "empty_text": 0,
+            "identical_token_run_ge8": 0,
+            "fourgram_count_ge4": 0
+          },
+          "candidate": {
+            "empty_segments": 0,
+            "recorded_invalid_segments": 0,
+            "invalid_segments": 0,
+            "timestamp_token_records": 0,
+            "nonmonotonic_segment_boundaries": 0,
+            "empty_text": 0,
+            "identical_token_run_ge8": 0,
+            "fourgram_count_ge4": 0
+          }
+        },
+        "different_examples": []
+      },
+      "duration:<=20s": {
+        "samples": 1,
+        "agreement": {
+          "tokens": {
+            "equal": 0,
+            "total": 0
+          },
+          "timestamp_tokens": {
+            "equal": 0,
+            "total": 0
+          },
+          "segments": {
+            "equal": 1,
+            "total": 1
+          },
+          "text": {
+            "equal": 1,
+            "total": 1
+          }
+        },
+        "quality": {
+          "reference": {
+            "errors": 0,
+            "reference_units": 49,
+            "metrics": {
+              "WER": 1
+            },
+            "excluded_nonspeech_samples": 0,
+            "excluded_nonspeech_errors": 0,
+            "rate": null,
+            "note": "Speech-only WER or CER; generated nonspeech probes are excluded and counted separately. Combined unlike units are not a single accuracy metric."
+          },
+          "candidate": {
+            "errors": 0,
+            "reference_units": 49,
+            "metrics": {
+              "WER": 1
+            },
+            "excluded_nonspeech_samples": 0,
+            "excluded_nonspeech_errors": 0,
+            "rate": null,
+            "note": "Speech-only WER or CER; generated nonspeech probes are excluded and counted separately. Combined unlike units are not a single accuracy metric."
+          }
+        },
+        "flags": {
+          "reference": {
+            "empty_segments": 0,
+            "recorded_invalid_segments": 0,
+            "invalid_segments": 0,
+            "timestamp_token_records": 0,
+            "nonmonotonic_segment_boundaries": 0,
+            "empty_text": 0,
+            "identical_token_run_ge8": 0,
+            "fourgram_count_ge4": 0
+          },
+          "candidate": {
+            "empty_segments": 0,
+            "recorded_invalid_segments": 0,
+            "invalid_segments": 0,
+            "timestamp_token_records": 0,
+            "nonmonotonic_segment_boundaries": 0,
+            "empty_text": 0,
+            "identical_token_run_ge8": 0,
+            "fourgram_count_ge4": 0
+          }
+        },
+        "different_examples": []
+      },
+      "librispeech_long/<=20s": {
+        "samples": 1,
+        "agreement": {
+          "tokens": {
+            "equal": 0,
+            "total": 0
+          },
+          "timestamp_tokens": {
+            "equal": 0,
+            "total": 0
+          },
+          "segments": {
+            "equal": 1,
+            "total": 1
+          },
+          "text": {
+            "equal": 1,
+            "total": 1
+          }
+        },
+        "quality": {
+          "reference": {
+            "errors": 0,
+            "reference_units": 49,
+            "metrics": {
+              "WER": 1
+            },
+            "excluded_nonspeech_samples": 0,
+            "excluded_nonspeech_errors": 0,
+            "rate": 0.0,
+            "note": "Speech-only WER or CER; generated nonspeech probes are excluded and counted separately. Combined unlike units are not a single accuracy metric."
+          },
+          "candidate": {
+            "errors": 0,
+            "reference_units": 49,
+            "metrics": {
+              "WER": 1
+            },
+            "excluded_nonspeech_samples": 0,
+            "excluded_nonspeech_errors": 0,
+            "rate": 0.0,
+            "note": "Speech-only WER or CER; generated nonspeech probes are excluded and counted separately. Combined unlike units are not a single accuracy metric."
+          }
+        },
+        "flags": {
+          "reference": {
+            "empty_segments": 0,
+            "recorded_invalid_segments": 0,
+            "invalid_segments": 0,
+            "timestamp_token_records": 0,
+            "nonmonotonic_segment_boundaries": 0,
+            "empty_text": 0,
+            "identical_token_run_ge8": 0,
+            "fourgram_count_ge4": 0
+          },
+          "candidate": {
+            "empty_segments": 0,
+            "recorded_invalid_segments": 0,
+            "invalid_segments": 0,
+            "timestamp_token_records": 0,
+            "nonmonotonic_segment_boundaries": 0,
+            "empty_text": 0,
+            "identical_token_run_ge8": 0,
+            "fourgram_count_ge4": 0
+          }
+        },
+        "different_examples": []
+      }
+    },
+    "timestamp_diagnostics": "Invalid segments recomputed from saved boundaries/input duration; 20ms endpoint allowance with 1ns floating-point tolerance. Original flags retained as recorded_invalid_segments.",
+    "timestamp_reference": "unavailable; agreement/invalidity only, not boundary accuracy",
+    "repetition": "heuristic diagnostics only; repeated text can be legitimate",
+    "timing": "regression pass includes I/O, cold graphs and warm calls; no speedup claimed"
+  },
+  "diagnostic_cases": [
+    {
+      "key": "librispeech_long--121-127105",
+      "dataset": "librispeech_long",
+      "language": "eng",
+      "chunk": "chunk-00000.jsonl.gz",
+      "input_seconds": 231.695,
+      "reasons": [
+        "outside_input_or_invalid_segment"
+      ],
+      "invalid_segments": 1,
+      "recorded_invalid_segments": 1,
+      "segment_times": [
+        {
+          "start": 0.1,
+          "end": 19.54
+        },
+        {
+          "start": 19.68,
+          "end": 49.54
+        },
+        {
+          "start": 49.54,
+          "end": 52.4
+        },
+        {
+          "start": 52.4,
+          "end": 54.9
+        },
+        {
+          "start": 54.9,
+          "end": 57.14
+        },
+        {
+          "start": 57.14,
+          "end": 59.3
+        },
+        {
+          "start": 59.3,
+          "end": 61.0
+        },
+        {
+          "start": 61.0,
+          "end": 63.16
+        },
+        {
+          "start": 63.16,
+          "end": 65.64
+        },
+        {
+          "start": 65.64,
+          "end": 67.9
+        },
+        {
+          "start": 67.9,
+          "end": 69.74
+        },
+        {
+          "start": 69.74,
+          "end": 72.3
+        },
+        {
+          "start": 72.9,
+          "end": 76.48
+        },
+        {
+          "start": 76.48,
+          "end": 78.88
+        },
+        {
+          "start": 78.88,
+          "end": 89.3
+        },
+        {
+          "start": 89.36,
+          "end": 108.78
+        },
+        {
+          "start": 109.0,
+          "end": 138.76
+        },
+        {
+          "start": 138.76,
+          "end": 152.0
+        },
+        {
+          "start": 152.0,
+          "end": 168.6
+        },
+        {
+          "start": 168.68,
+          "end": 185.7
+        },
+        {
+          "start": 185.76,
+          "end": 197.76
+        },
+        {
+          "start": 197.84,
+          "end": 215.44
+        },
+        {
+          "start": 215.62,
+          "end": 231.84
+        }
+      ],
+      "reference_characters": 3390,
+      "predicted_text_characters": 3491,
+      "repetition": {
+        "max_identical_token_run": 0,
+        "max_fourgram_count": 0,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "output_differences": []
+    },
+    {
+      "key": "librispeech_long--2300-131720",
+      "dataset": "librispeech_long",
+      "language": "eng",
+      "chunk": "chunk-00017.jsonl.gz",
+      "input_seconds": 491.195,
+      "reasons": [
+        "outside_input_or_invalid_segment"
+      ],
+      "invalid_segments": 1,
+      "recorded_invalid_segments": 1,
+      "segment_times": [
+        {
+          "start": 0.0,
+          "end": 19.54
+        },
+        {
+          "start": 19.88,
+          "end": 32.94
+        },
+        {
+          "start": 33.0,
+          "end": 35.56
+        },
+        {
+          "start": 35.58,
+          "end": 38.78
+        },
+        {
+          "start": 38.78,
+          "end": 40.94
+        },
+        {
+          "start": 40.94,
+          "end": 43.2
+        },
+        {
+          "start": 43.2,
+          "end": 45.84
+        },
+        {
+          "start": 45.84,
+          "end": 50.74
+        },
+        {
+          "start": 50.74,
+          "end": 53.22
+        },
+        {
+          "start": 53.22,
+          "end": 55.46
+        },
+        {
+          "start": 55.46,
+          "end": 57.88
+        },
+        {
+          "start": 58.06,
+          "end": 60.92
+        },
+        {
+          "start": 60.94,
+          "end": 62.92
+        },
+        {
+          "start": 63.5,
+          "end": 66.46
+        },
+        {
+          "start": 66.46,
+          "end": 68.78
+        },
+        {
+          "start": 69.6,
+          "end": 72.64
+        },
+        {
+          "start": 72.74,
+          "end": 75.36
+        },
+        {
+          "start": 75.36,
+          "end": 78.5
+        },
+        {
+          "start": 78.5,
+          "end": 81.54
+        },
+        {
+          "start": 81.54,
+          "end": 83.7
+        },
+        {
+          "start": 83.7,
+          "end": 85.8
+        },
+        {
+          "start": 85.8,
+          "end": 88.92
+        },
+        {
+          "start": 88.92,
+          "end": 92.18
+        },
+        {
+          "start": 92.18,
+          "end": 94.36
+        },
+        {
+          "start": 94.38,
+          "end": 96.68
+        },
+        {
+          "start": 96.68,
+          "end": 99.5
+        },
+        {
+          "start": 99.5,
+          "end": 102.54
+        },
+        {
+          "start": 102.88,
+          "end": 105.5
+        },
+        {
+          "start": 105.5,
+          "end": 107.92
+        },
+        {
+          "start": 107.92,
+          "end": 110.16
+        },
+        {
+          "start": 110.16,
+          "end": 113.62
+        },
+        {
+          "start": 113.62,
+          "end": 116.58
+        },
+        {
+          "start": 116.92,
+          "end": 118.98
+        },
+        {
+          "start": 119.56,
+          "end": 121.96
+        },
+        {
+          "start": 121.96,
+          "end": 123.96
+        },
+        {
+          "start": 123.96,
+          "end": 126.04
+        },
+        {
+          "start": 126.04,
+          "end": 129.02
+        },
+        {
+          "start": 129.02,
+          "end": 131.34
+        },
+        {
+          "start": 131.68,
+          "end": 135.04
+        },
+        {
+          "start": 135.06,
+          "end": 137.92
+        },
+        {
+          "start": 137.92,
+          "end": 138.72
+        },
+        {
+          "start": 139.3,
+          "end": 142.26
+        },
+        {
+          "start": 142.36,
+          "end": 144.98
+        },
+        {
+          "start": 144.98,
+          "end": 147.84
+        },
+        {
+          "start": 147.94,
+          "end": 151.22
+        },
+        {
+          "start": 151.22,
+          "end": 153.3
+        },
+        {
+          "start": 153.3,
+          "end": 155.8
+        },
+        {
+          "start": 155.8,
+          "end": 157.64
+        },
+        {
+          "start": 157.64,
+          "end": 161.0
+        },
+        {
+          "start": 161.0,
+          "end": 163.18
+        },
+        {
+          "start": 163.18,
+          "end": 166.06
+        },
+        {
+          "start": 166.06,
+          "end": 169.52
+        },
+        {
+          "start": 169.52,
+          "end": 171.76
+        },
+        {
+          "start": 171.76,
+          "end": 175.02
+        },
+        {
+          "start": 175.02,
+          "end": 177.6
+        },
+        {
+          "start": 177.6,
+          "end": 180.24
+        },
+        {
+          "start": 180.24,
+          "end": 183.22
+        },
+        {
+          "start": 183.22,
+          "end": 185.78
+        },
+        {
+          "start": 185.8,
+          "end": 188.52
+        },
+        {
+          "start": 188.52,
+          "end": 190.52
+        },
+        {
+          "start": 190.52,
+          "end": 193.32
+        },
+        {
+          "start": 193.32,
+          "end": 196.06
+        },
+        {
+          "start": 196.06,
+          "end": 199.26
+        },
+        {
+          "start": 199.26,
+          "end": 217.06
+        },
+        {
+          "start": 217.06,
+          "end": 229.48
+        },
+        {
+          "start": 229.68,
+          "end": 247.86
+        },
+        {
+          "start": 247.92,
+          "end": 265.24
+        },
+        {
+          "start": 265.96,
+          "end": 279.16
+        },
+        {
+          "start": 279.3,
+          "end": 295.24
+        },
+        {
+          "start": 295.44,
+          "end": 314.18
+        },
+        {
+          "start": 314.18,
+          "end": 333.9
+        },
+        {
+          "start": 333.9,
+          "end": 363.88
+        },
+        {
+          "start": 363.88,
+          "end": 367.22
+        },
+        {
+          "start": 367.22,
+          "end": 369.56
+        },
+        {
+          "start": 369.74,
+          "end": 372.04
+        },
+        {
+          "start": 372.04,
+          "end": 374.86
+        },
+        {
+          "start": 374.86,
+          "end": 377.58
+        },
+        {
+          "start": 377.58,
+          "end": 380.8
+        },
+        {
+          "start": 380.8,
+          "end": 384.0
+        },
+        {
+          "start": 384.18,
+          "end": 386.64
+        },
+        {
+          "start": 386.64,
+          "end": 389.38
+        },
+        {
+          "start": 389.38,
+          "end": 391.94
+        },
+        {
+          "start": 391.94,
+          "end": 407.28
+        },
+        {
+          "start": 407.28,
+          "end": 424.84
+        },
+        {
+          "start": 424.84,
+          "end": 444.26
+        },
+        {
+          "start": 444.26,
+          "end": 459.06
+        },
+        {
+          "start": 459.52,
+          "end": 473.98
+        },
+        {
+          "start": 474.18,
+          "end": 491.22
+        }
+      ],
+      "reference_characters": 7070,
+      "predicted_text_characters": 7083,
+      "repetition": {
+        "max_identical_token_run": 0,
+        "max_fourgram_count": 0,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "output_differences": []
+    }
+  ],
+  "diagnostic_scope": "Both variants have exactly the same generated outputs. Flags are baseline/data diagnostics, not new combined optimization regressions. Endpoint allowance20ms with1ns numerical tolerance; raw diagnostic flags retained. No human timestamp annotations. Repetition thresholds are heuristic. Generated nonspeech excluded from speech WER/CER."
+}
