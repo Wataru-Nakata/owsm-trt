@@ -370,7 +370,10 @@ class OWSM:
         ``"ring"`` on a Hopper GPU when the kernels build and match the decoder on a test call, TensorRT
         otherwise; True / ``"1"``: the Gluon kernel only; ``"triton"``: every decode/verify call as the
         (slower) Triton megakernel (Ampere or newer); False / ``"0"``: TensorRT only. Kernels that fail leave
-        TensorRT (logged). None: the ``OWSM_TRT_MEGAKERNEL`` environment variable (auto / ring / 1 / triton /
+        TensorRT (logged). ``"ring:rr"`` uses Ring also for up to8 rows/32 total tokens. On H200/102M,
+        its R5..8 schedule uses one CTA per attention head with unchanged split count; sampled
+        outputs match the old Ring schedule, but Ring can differ numerically from TensorRT.
+        None: the ``OWSM_TRT_MEGAKERNEL`` environment variable (auto / ring / 1 / triton /
         0), ``"auto"`` if unset.
         """
         if type(draft_token_budget) is not int or draft_token_budget < 1:

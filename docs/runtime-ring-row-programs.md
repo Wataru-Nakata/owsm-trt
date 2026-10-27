@@ -62,7 +62,7 @@ combined current public route needs its own measurement against auto. [Full firs
 Raw artifacts: `outputs/runtime-2775986/`; Stageout_status1 retained despite complete exit0 output.
 
 
-## Public integration under independent verification
+## Adopted public integration, independently verified2776082
 
 The Ring constructor now selects the heads schedule automatically only for H200 (132 SM),
 D384/F1536/H6/L6 with four warps and no explicit `row_programs`. R5/6/7/8 use30/36/42/48 CTAs;
@@ -75,5 +75,34 @@ writes. `auto`102M multi-row dispatch remains TensorRT; this only accelerates ex
 including instrumented kernels/graph reuse and11 public/edge cases, then independently repeats
 all five English/Japanese conditions via `--public-policy`. The new profiler explicitly creates
 a legacy24 reference, so loading the updated public model cannot accidentally benchmark its new
-policy against itself. Pending this independent result, the original measurement above remains
-an isolated profiler experiment, not completed public-path validation.
+policy against itself. Job2776082 completed the independent public-path verification below.
+
+
+Frozen daab832 passed30 GPU/CPU tests, including real default construction, TS buffer bounds,
+logit/KV/prediction equality and repeated CUDA graphs. All11 API/edge cases and English/Japanese
+five-condition comparisons were exact; each corpus also passed28 finite/exact real-checkpoint
+shape checks. Eleven independent alternating whole-list pairs gave these aggregate RTFx changes
+against an explicit24-CTA Ring reference:
+
+|Condition|English|Japanese|
+|---|---:|---:|
+|Plain ASR B3 (schedule unchanged)|-0.42%|+0.38%|
+|Timestamp ASR B3 (schedule unchanged)|-0.27%|+0.31%|
+|Translation B8|+18.81%|+21.18%|
+|Timestamp beam5 B1|+17.60%|+19.44%|
+|Drafted timestamp ASR B8|+2.42% (mixed)|+16.21%|
+
+All translation/beam and Japanese drafted pairs improved. English drafted ranged-0.41..+14.65%
+and was noisy in the first run too; no robust improvement claim there. B3 uses the same schedule
+in both modes, so its small changes are measurement variation. Decoder calls and all full output
+fields matched. The11 edge/API checks include silence/noise, full windows, long prompts, encoder
+lookahead, drafted decoding, reuse and110s beam transcription. Long-form parity covers public
+joined text/segments, not unavailable raw window tokens. Translation output quality remains as
+poor as the original Ring baseline on some Japanese inputs; its speed is not a quality claim.
+
+The constrained default is adopted. `auto`102M retains TensorRT multi-row dispatch. Other models,
+GPUs, warp settings and explicit row budgets retain their previous schedules. Same-engine public
+Ring improvements do not imply new fp32 accuracy or make this numerical route equivalent to auto.
+[Independent report and public API manifest](runtime-ring-row-api-2776082.json); complete artifacts
+at `outputs/runtime-2776082/`. Stageout_status1 is retained with exit0/full publication. No isolated
+cold/VRAM or per-request p95 claim is made from these whole-list measurements.

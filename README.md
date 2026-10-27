@@ -243,6 +243,11 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   All sampled timestamp IDs matched, but some text/token outputs changed. Japanese translation
   repeated badly in both routes; its timing is not a quality recommendation. Auto is unchanged.
   [Measurements, full differences and numerical gate limitations](docs/runtime-102m-ring-rows.md).
+  On H200/102M, the Ring route now gives R5–8 attention heads enough CTAs while preserving its
+  arithmetic and split count. Independent English/Japanese tests gained17.6–19.4% RTFx for
+  timestamp beam5 B1 and18.8–21.2% for translation B8 versus the previous Ring schedule, with
+  exact outputs and11 edge/API checks. This does not resolve the Ring-versus-auto quality
+  differences above or change auto's TensorRT row routing. [Verified scheduling results](docs/runtime-ring-row-programs.md).
 * **Cached-engine model loading.** Frontend/decoder helpers privately map supported ZIP checkpoints
   and read only needed tensors. On H200 with node-local files and warmed OS/JIT caches, fresh-process
   load medians fell from6.75 to4.61 s for1B and1.87 to1.61 s for102M (five alternating pairs, exact
