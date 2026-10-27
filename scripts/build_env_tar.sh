@@ -27,13 +27,15 @@ esac
 mkdir -p "$BUILD_ROOT" "$OUT_DIR"
 # Only this invocation owns WORK_DIR; concurrent builds never share caches or delete each other's files.
 WORK_DIR=$(mktemp -d "$BUILD_ROOT/$NAME.XXXXXXXX")
-ARCHIVE_TMP="$OUT_DIR/$NAME.tar.zst.tmp.$BASHPID"
+# PIDs can coincide on different compute nodes; reuse the private build's random identity on Lustre.
+BUILD_ID="${WORK_DIR##*/}"
+ARCHIVE_TMP="$OUT_DIR/$NAME.tar.zst.tmp.$BUILD_ID"
 cleanup() {
     local status=$?
     trap - EXIT
     if [ -f "$WORK_DIR/$NAME.txt" ]; then
         # Keep failed-build inputs without replacing metadata belonging to a previous archive.
-        cp "$WORK_DIR/$NAME.txt" "$OUT_DIR/$NAME.$BASHPID.requirements.txt" || status=1
+        cp "$WORK_DIR/$NAME.txt" "$OUT_DIR/$BUILD_ID.requirements.txt" || status=1
     fi
     # A failed metadata publication must not prevent releasing the much larger build/cache tree.
     rm -f -- "$ARCHIVE_TMP" || status=1
