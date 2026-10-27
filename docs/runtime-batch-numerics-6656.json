@@ -1,0 +1,1692 @@
+{
+  "samples": 6656,
+  "expected": 13232,
+  "complete": false,
+  "classification": "N: batch shape and default decoder dispatch together; not an isolated kernel or upper-bound ablation.",
+  "compared_variant": "Upperbound OFF in both batches. Within each batch OFF/ON outputs must match before this comparison.",
+  "configs": [
+    {
+      "schema": 1,
+      "commit": "8151703a60ba41b65a8f651f25b9934fdbbc082e",
+      "mode": "beam_bound",
+      "case": "beam_b1",
+      "index_sha256": "213a5e54cf891cefdcfebffb4c2dbac392867f64bcecc9cc60c3bdf7e5057211",
+      "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+      "selected_keys_sha256": "9e3b3aaf48d058ef6b2174dd89026bacc39b06c7551729bfd054ff80d36e9987",
+      "chunk_size": 128,
+      "selected_samples": 13232,
+      "datasets": null,
+      "scope": "Full output/quality regression, one pass per variant. Includes warmup/capture/I/O; no steady-state latency or speedup claim. Long-form has joined text/segments only. No human timestamp or reference translation annotation.",
+      "beam_variants": {
+        "reference": {
+          "beam_upper_bound": false,
+          "beam_kernels": true
+        },
+        "candidate": {
+          "beam_upper_bound": true,
+          "beam_kernels": true
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "commit": "773f8279ef49f31c2aecaf6d959cf5c9b22a5c84",
+      "mode": "beam_bound",
+      "case": "beam_b3",
+      "index_sha256": "213a5e54cf891cefdcfebffb4c2dbac392867f64bcecc9cc60c3bdf7e5057211",
+      "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+      "selected_keys_sha256": "9e3b3aaf48d058ef6b2174dd89026bacc39b06c7551729bfd054ff80d36e9987",
+      "chunk_size": 128,
+      "selected_samples": 13232,
+      "datasets": null,
+      "scope": "Full output/quality regression, one pass per variant. Includes warmup/capture/I/O; no steady-state latency or speedup claim. Long-form has joined text/segments only. No human timestamp or reference translation annotation.",
+      "beam_variants": {
+        "reference": {
+          "beam_upper_bound": false,
+          "beam_kernels": true
+        },
+        "candidate": {
+          "beam_upper_bound": true,
+          "beam_kernels": true
+        }
+      }
+    }
+  ],
+  "agreement": {
+    "tokens": {
+      "equal": 6550,
+      "total": 6648
+    },
+    "timestamp_tokens": {
+      "equal": 6627,
+      "total": 6648
+    },
+    "segments": {
+      "equal": 6560,
+      "total": 6656
+    },
+    "text": {
+      "equal": 6577,
+      "total": 6656
+    }
+  },
+  "different_inputs": 98,
+  "quality": {
+    "jpn": {
+      "samples": 3966,
+      "reference_units": 111347,
+      "b1_errors": 8637,
+      "b3_errors": 8638,
+      "metric": "CER",
+      "b1_rate": 0.0775683224514356,
+      "b3_rate": 0.07757730338491382,
+      "error_delta": 1
+    },
+    "eng": {
+      "samples": 2676,
+      "reference_units": 49162,
+      "b1_errors": 2490,
+      "b3_errors": 2495,
+      "metric": "WER",
+      "b1_rate": 0.05064887514747162,
+      "b3_rate": 0.05075057971604084,
+      "error_delta": 5
+    }
+  },
+  "changed_inputs": [
+    {
+      "key": "fleurs_ja_validation--ja_jp-3502985659381719550",
+      "language": "jpn",
+      "chunk": "chunk-00000.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "fleurs_ja_validation--ja_jp-12933541646402186784",
+        "fleurs_ja_validation--ja_jp-3502985659381719550",
+        "fleurs_ja_validation--ja_jp-9357846642885703446"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "fleurs_ja_validation--ja_jp-8432487110292314572",
+      "language": "jpn",
+      "chunk": "chunk-00000.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "fleurs_ja_validation--ja_jp-8432487110292314572",
+        "fleurs_ja_validation--ja_jp-17909876413120349502",
+        "fleurs_ja_validation--ja_jp-3032699500128816119"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "fleurs_ja_validation--ja_jp-5939145425220339547",
+      "language": "jpn",
+      "chunk": "chunk-00001.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "fleurs_ja_validation--ja_jp-6123063241077131652",
+        "fleurs_ja_validation--ja_jp-3109924382206632509",
+        "fleurs_ja_validation--ja_jp-5939145425220339547"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "fleurs_ja_validation--ja_jp-11219978938531927059",
+      "language": "jpn",
+      "chunk": "chunk-00001.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "fleurs_ja_validation--ja_jp-7316372300104839561",
+        "fleurs_ja_validation--ja_jp-11219978938531927059",
+        "fleurs_ja_validation--ja_jp-5468114667575805339"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "fleurs_ja_validation--ja_jp-18146068393309246703",
+      "language": "jpn",
+      "chunk": "chunk-00001.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "fleurs_ja_validation--ja_jp-18146068393309246703",
+        "fleurs_ja_validation--ja_jp-4718390369645757845",
+        "fleurs_ja_validation--ja_jp-6966244244941274896"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs042-BASIC5000_3007",
+      "language": "jpn",
+      "chunk": "chunk-00002.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs090-UT-PARAPHRASE-sent060-phrase2",
+        "jvs_nonpara90--jvs018-TRAVEL1000_0914",
+        "jvs_nonpara90--jvs042-BASIC5000_3007"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs042-BASIC5000_0119",
+      "language": "jpn",
+      "chunk": "chunk-00004.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs085-BASIC5000_1608",
+        "jvs_nonpara90--jvs042-BASIC5000_0119",
+        "jvs_nonpara90--jvs075-BASIC5000_0107"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs048-ONOMATOPEE300_073",
+      "language": "jpn",
+      "chunk": "chunk-00005.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs069-UT-PARAPHRASE-sent249-phrase2",
+        "jvs_nonpara90--jvs048-ONOMATOPEE300_073",
+        "jvs_nonpara90--jvs061-TRAVEL1000_0162"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs013-BASIC5000_0774",
+      "language": "jpn",
+      "chunk": "chunk-00005.jsonl.gz",
+      "fields": [
+        "tokens",
+        "timestamp_tokens",
+        "segments"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs058-LOANWORD128_023",
+        "jvs_nonpara90--jvs013-BASIC5000_0774",
+        "jvs_nonpara90--jvs031-TRAVEL1000_0503"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs013-BASIC5000_1458",
+      "language": "jpn",
+      "chunk": "chunk-00005.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs014-BASIC5000_2562",
+        "jvs_nonpara90--jvs009-BASIC5000_1526",
+        "jvs_nonpara90--jvs013-BASIC5000_1458"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs026-ONOMATOPEE300_184",
+      "language": "jpn",
+      "chunk": "chunk-00005.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs026-TRAVEL1000_0997",
+        "jvs_nonpara90--jvs035-ONOMATOPEE300_209",
+        "jvs_nonpara90--jvs026-ONOMATOPEE300_184"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs018-BASIC5000_3047",
+      "language": "jpn",
+      "chunk": "chunk-00006.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs009-BASIC5000_1910",
+        "jvs_nonpara90--jvs084-BASIC5000_0062",
+        "jvs_nonpara90--jvs018-BASIC5000_3047"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs033-UT-PARAPHRASE-sent014-phrase1",
+      "language": "jpn",
+      "chunk": "chunk-00006.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs011-TRAVEL1000_0806",
+        "jvs_nonpara90--jvs033-UT-PARAPHRASE-sent014-phrase1",
+        "jvs_nonpara90--jvs087-TRAVEL1000_0899"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs053-UT-PARAPHRASE-sent035-phrase2",
+      "language": "jpn",
+      "chunk": "chunk-00006.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs080-UT-PARAPHRASE-sent003-phrase2",
+        "jvs_nonpara90--jvs044-BASIC5000_0763",
+        "jvs_nonpara90--jvs053-UT-PARAPHRASE-sent035-phrase2"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs034-TRAVEL1000_0606",
+      "language": "jpn",
+      "chunk": "chunk-00006.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs062-BASIC5000_2821",
+        "jvs_nonpara90--jvs034-TRAVEL1000_0606"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs006-BASIC5000_1693",
+      "language": "jpn",
+      "chunk": "chunk-00007.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs038-LOANWORD128_032",
+        "jvs_nonpara90--jvs006-BASIC5000_1693",
+        "jvs_nonpara90--jvs010-BASIC5000_1009"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs027-BASIC5000_2137",
+      "language": "jpn",
+      "chunk": "chunk-00007.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs046-BASIC5000_1076",
+        "jvs_nonpara90--jvs027-BASIC5000_2137",
+        "jvs_nonpara90--jvs042-BASIC5000_1399"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs013-BASIC5000_1744",
+      "language": "jpn",
+      "chunk": "chunk-00008.jsonl.gz",
+      "fields": [
+        "tokens",
+        "timestamp_tokens",
+        "segments"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs039-TRAVEL1000_0543",
+        "jvs_nonpara90--jvs013-BASIC5000_1744",
+        "jvs_nonpara90--jvs067-BASIC5000_1502"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs029-TRAVEL1000_0270",
+      "language": "jpn",
+      "chunk": "chunk-00008.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs017-BASIC5000_2913",
+        "jvs_nonpara90--jvs011-BASIC5000_2190",
+        "jvs_nonpara90--jvs029-TRAVEL1000_0270"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs064-BASIC5000_0216",
+      "language": "jpn",
+      "chunk": "chunk-00009.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs026-UT-PARAPHRASE-sent101-phrase2",
+        "jvs_nonpara90--jvs006-BASIC5000_1945",
+        "jvs_nonpara90--jvs064-BASIC5000_0216"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs004-BASIC5000_0856",
+      "language": "jpn",
+      "chunk": "chunk-00010.jsonl.gz",
+      "fields": [
+        "tokens",
+        "timestamp_tokens",
+        "segments"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs004-BASIC5000_0856",
+        "jvs_nonpara90--jvs029-BASIC5000_2790",
+        "jvs_nonpara90--jvs046-BASIC5000_0163"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs057-UT-PARAPHRASE-sent261-phrase2",
+      "language": "jpn",
+      "chunk": "chunk-00010.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs086-BASIC5000_1095",
+        "jvs_nonpara90--jvs037-TRAVEL1000_0431",
+        "jvs_nonpara90--jvs057-UT-PARAPHRASE-sent261-phrase2"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs060-TRAVEL1000_0881",
+      "language": "jpn",
+      "chunk": "chunk-00011.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs003-BASIC5000_2939",
+        "jvs_nonpara90--jvs060-TRAVEL1000_0881",
+        "jvs_nonpara90--jvs028-ONOMATOPEE300_066"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs036-ONOMATOPEE300_119",
+      "language": "jpn",
+      "chunk": "chunk-00012.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs076-BASIC5000_1517",
+        "jvs_nonpara90--jvs036-ONOMATOPEE300_119",
+        "jvs_nonpara90--jvs035-BASIC5000_2077"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs039-TRAVEL1000_0835",
+      "language": "jpn",
+      "chunk": "chunk-00012.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs043-BASIC5000_2080",
+        "jvs_nonpara90--jvs022-BASIC5000_1996",
+        "jvs_nonpara90--jvs039-TRAVEL1000_0835"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs037-BASIC5000_1565",
+      "language": "jpn",
+      "chunk": "chunk-00012.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs045-BASIC5000_2932",
+        "jvs_nonpara90--jvs037-BASIC5000_1565",
+        "jvs_nonpara90--jvs014-BASIC5000_2010"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs018-BASIC5000_2223",
+      "language": "jpn",
+      "chunk": "chunk-00012.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs029-BASIC5000_2412",
+        "jvs_nonpara90--jvs018-BASIC5000_2223",
+        "jvs_nonpara90--jvs018-BASIC5000_2700"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs008-BASIC5000_2033",
+      "language": "jpn",
+      "chunk": "chunk-00013.jsonl.gz",
+      "fields": [
+        "tokens"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs079-LOANWORD128_101",
+        "jvs_nonpara90--jvs040-TRAVEL1000_0573",
+        "jvs_nonpara90--jvs008-BASIC5000_2033"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs075-BASIC5000_0424",
+      "language": "jpn",
+      "chunk": "chunk-00013.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs002-TRAVEL1000_0292",
+        "jvs_nonpara90--jvs002-TRAVEL1000_0639",
+        "jvs_nonpara90--jvs075-BASIC5000_0424"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs016-ONOMATOPEE300_037",
+      "language": "jpn",
+      "chunk": "chunk-00013.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs016-ONOMATOPEE300_037",
+        "jvs_nonpara90--jvs048-UT-PARAPHRASE-sent033-phrase2",
+        "jvs_nonpara90--jvs049-LOANWORD128_049"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs039-UT-PARAPHRASE-sent152-phrase2",
+      "language": "jpn",
+      "chunk": "chunk-00014.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs039-UT-PARAPHRASE-sent152-phrase2",
+        "jvs_nonpara90--jvs059-TRAVEL1000_0466",
+        "jvs_nonpara90--jvs038-BASIC5000_1885"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs088-BASIC5000_0799",
+      "language": "jpn",
+      "chunk": "chunk-00014.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs088-BASIC5000_0284",
+        "jvs_nonpara90--jvs006-BASIC5000_0069",
+        "jvs_nonpara90--jvs088-BASIC5000_0799"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs017-TRAVEL1000_0865",
+      "language": "jpn",
+      "chunk": "chunk-00015.jsonl.gz",
+      "fields": [
+        "tokens",
+        "timestamp_tokens",
+        "segments"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs059-LOANWORD128_110",
+        "jvs_nonpara90--jvs017-TRAVEL1000_0865",
+        "jvs_nonpara90--jvs004-TRAVEL1000_0962"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs063-TRAVEL1000_0280",
+      "language": "jpn",
+      "chunk": "chunk-00015.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs081-BASIC5000_1298",
+        "jvs_nonpara90--jvs004-BASIC5000_1090",
+        "jvs_nonpara90--jvs063-TRAVEL1000_0280"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs048-BASIC5000_1130",
+      "language": "jpn",
+      "chunk": "chunk-00015.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs049-BASIC5000_2454",
+        "jvs_nonpara90--jvs021-BASIC5000_0153",
+        "jvs_nonpara90--jvs048-BASIC5000_1130"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs090-BASIC5000_1413",
+      "language": "jpn",
+      "chunk": "chunk-00016.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs028-UT-PARAPHRASE-sent264-phrase1",
+        "jvs_nonpara90--jvs090-BASIC5000_1413",
+        "jvs_nonpara90--jvs008-UT-PARAPHRASE-sent086-phrase2"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs059-UT-PARAPHRASE-sent231-phrase1",
+      "language": "jpn",
+      "chunk": "chunk-00017.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs059-UT-PARAPHRASE-sent231-phrase1",
+        "jvs_nonpara90--jvs012-TRAVEL1000_0996",
+        "jvs_nonpara90--jvs008-BASIC5000_2513"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs011-BASIC5000_1330",
+      "language": "jpn",
+      "chunk": "chunk-00017.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs079-BASIC5000_1973",
+        "jvs_nonpara90--jvs085-TRAVEL1000_0179",
+        "jvs_nonpara90--jvs011-BASIC5000_1330"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs054-BASIC5000_3070",
+      "language": "jpn",
+      "chunk": "chunk-00018.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs054-BASIC5000_3070",
+        "jvs_nonpara90--jvs077-UT-PARAPHRASE-sent161-phrase1",
+        "jvs_nonpara90--jvs020-BASIC5000_2702"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs044-BASIC5000_0364",
+      "language": "jpn",
+      "chunk": "chunk-00019.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs068-BASIC5000_1435",
+        "jvs_nonpara90--jvs044-BASIC5000_0364",
+        "jvs_nonpara90--jvs069-BASIC5000_0427"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs060-ONOMATOPEE300_110",
+      "language": "jpn",
+      "chunk": "chunk-00019.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs060-ONOMATOPEE300_110",
+        "jvs_nonpara90--jvs044-BASIC5000_1211",
+        "jvs_nonpara90--jvs019-BASIC5000_0462"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs061-BASIC5000_0415",
+      "language": "jpn",
+      "chunk": "chunk-00020.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs082-BASIC5000_1422",
+        "jvs_nonpara90--jvs052-BASIC5000_2105",
+        "jvs_nonpara90--jvs061-BASIC5000_0415"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs018-TRAVEL1000_0989",
+      "language": "jpn",
+      "chunk": "chunk-00020.jsonl.gz",
+      "fields": [
+        "tokens",
+        "timestamp_tokens",
+        "segments"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs084-BASIC5000_1798",
+        "jvs_nonpara90--jvs075-BASIC5000_1008",
+        "jvs_nonpara90--jvs018-TRAVEL1000_0989"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs052-UT-PARAPHRASE-sent023-phrase1",
+      "language": "jpn",
+      "chunk": "chunk-00021.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs039-ONOMATOPEE300_269",
+        "jvs_nonpara90--jvs062-BASIC5000_2738",
+        "jvs_nonpara90--jvs052-UT-PARAPHRASE-sent023-phrase1"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs033-ONOMATOPEE300_203",
+      "language": "jpn",
+      "chunk": "chunk-00022.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs057-TRAVEL1000_0866",
+        "jvs_nonpara90--jvs013-TRAVEL1000_0863",
+        "jvs_nonpara90--jvs033-ONOMATOPEE300_203"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_nonpara90--jvs084-BASIC5000_2017",
+      "language": "jpn",
+      "chunk": "chunk-00022.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_nonpara90--jvs084-BASIC5000_2017",
+        "jvs_nonpara90--jvs089-TRAVEL1000_0489",
+        "jvs_nonpara90--jvs036-BASIC5000_2170"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_parallel10--jvs007-VOICEACTRESS100_044",
+      "language": "jpn",
+      "chunk": "chunk-00024.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_parallel10--jvs008-VOICEACTRESS100_042",
+        "jvs_parallel10--jvs007-VOICEACTRESS100_044",
+        "jvs_parallel10--jvs001-VOICEACTRESS100_035"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_parallel10--jvs009-VOICEACTRESS100_001",
+      "language": "jpn",
+      "chunk": "chunk-00024.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_parallel10--jvs009-VOICEACTRESS100_001",
+        "jvs_parallel10--jvs006-VOICEACTRESS100_024",
+        "jvs_parallel10--jvs009-VOICEACTRESS100_063"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_parallel10--jvs009-VOICEACTRESS100_067",
+      "language": "jpn",
+      "chunk": "chunk-00024.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_parallel10--jvs008-VOICEACTRESS100_092",
+        "jvs_parallel10--jvs002-VOICEACTRESS100_098",
+        "jvs_parallel10--jvs009-VOICEACTRESS100_067"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_parallel10--jvs006-VOICEACTRESS100_041",
+      "language": "jpn",
+      "chunk": "chunk-00026.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_parallel10--jvs006-VOICEACTRESS100_041",
+        "jvs_parallel10--jvs007-VOICEACTRESS100_018",
+        "jvs_parallel10--jvs004-VOICEACTRESS100_094"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_parallel10--jvs007-VOICEACTRESS100_031",
+      "language": "jpn",
+      "chunk": "chunk-00027.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_parallel10--jvs010-VOICEACTRESS100_024",
+        "jvs_parallel10--jvs007-VOICEACTRESS100_031",
+        "jvs_parallel10--jvs005-VOICEACTRESS100_049"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_parallel10--jvs004-VOICEACTRESS100_096",
+      "language": "jpn",
+      "chunk": "chunk-00027.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_parallel10--jvs004-VOICEACTRESS100_096",
+        "jvs_parallel10--jvs005-VOICEACTRESS100_037",
+        "jvs_parallel10--jvs001-VOICEACTRESS100_030"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_parallel10--jvs008-VOICEACTRESS100_089",
+      "language": "jpn",
+      "chunk": "chunk-00027.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_parallel10--jvs005-VOICEACTRESS100_086",
+        "jvs_parallel10--jvs008-VOICEACTRESS100_089",
+        "jvs_parallel10--jvs010-VOICEACTRESS100_014"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_parallel10--jvs009-VOICEACTRESS100_043",
+      "language": "jpn",
+      "chunk": "chunk-00028.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_parallel10--jvs010-VOICEACTRESS100_069",
+        "jvs_parallel10--jvs009-VOICEACTRESS100_041",
+        "jvs_parallel10--jvs009-VOICEACTRESS100_043"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_parallel10--jvs003-VOICEACTRESS100_093",
+      "language": "jpn",
+      "chunk": "chunk-00029.jsonl.gz",
+      "fields": [
+        "tokens",
+        "timestamp_tokens",
+        "segments"
+      ],
+      "b3_input_group": [
+        "jvs_parallel10--jvs005-VOICEACTRESS100_005",
+        "jvs_parallel10--jvs005-VOICEACTRESS100_050",
+        "jvs_parallel10--jvs003-VOICEACTRESS100_093"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_parallel10--jvs010-VOICEACTRESS100_053",
+      "language": "jpn",
+      "chunk": "chunk-00029.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "jvs_parallel10--jvs010-VOICEACTRESS100_076",
+        "jvs_parallel10--jvs002-VOICEACTRESS100_061",
+        "jvs_parallel10--jvs010-VOICEACTRESS100_053"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "jvs_parallel10--jvs004-VOICEACTRESS100_043",
+      "language": "jpn",
+      "chunk": "chunk-00030.jsonl.gz",
+      "fields": [
+        "tokens"
+      ],
+      "b3_input_group": [
+        "jvs_parallel10--jvs001-VOICEACTRESS100_012",
+        "jvs_parallel10--jvs008-VOICEACTRESS100_056",
+        "jvs_parallel10--jvs004-VOICEACTRESS100_043"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "stress--jpn-noise-30s-0p1",
+      "language": "jpn",
+      "chunk": "chunk-00030.jsonl.gz",
+      "fields": [
+        "tokens",
+        "timestamp_tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "stress--jpn-noise-30s-0p1",
+        "stress--jpn-tone-1s"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "stress--jpn-silence-0p1s",
+      "language": "jpn",
+      "chunk": "chunk-00031.jsonl.gz",
+      "fields": [
+        "tokens",
+        "timestamp_tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "stress--jpn-silence-0p1s",
+        "stress--jpn-noise-2s-0p1",
+        "stress--jpn-tone-30s"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "stress--jpn-silence-0p5s",
+      "language": "jpn",
+      "chunk": "chunk-00031.jsonl.gz",
+      "fields": [
+        "tokens",
+        "timestamp_tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "stress--jpn-silence-0p5s",
+        "stress--jpn-silence-30s",
+        "stress--jpn-noise-10s-0p1"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "stress--jpn-silence-30s",
+      "language": "jpn",
+      "chunk": "chunk-00031.jsonl.gz",
+      "fields": [
+        "tokens",
+        "timestamp_tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "stress--jpn-silence-0p5s",
+        "stress--jpn-silence-30s",
+        "stress--jpn-noise-10s-0p1"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "stress--jpn-noise-30s-0p01",
+      "language": "jpn",
+      "chunk": "chunk-00031.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "stress--jpn-noise-30s-0p01",
+        "stress--jpn-tone-10s",
+        "stress--jpn-noise-10s-0p01"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "fleurs_en_validation--en_us-6048950654071186425",
+      "language": "eng",
+      "chunk": "chunk-00031.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "fleurs_en_validation--en_us-6048950654071186425",
+        "fleurs_en_validation--en_us-5710220425952785052",
+        "fleurs_en_validation--en_us-6615452215796933088"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "fleurs_en_validation--en_us-1298409023920250606",
+      "language": "eng",
+      "chunk": "chunk-00032.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "fleurs_en_validation--en_us-11909868287041540501",
+        "fleurs_en_validation--en_us-1298409023920250606",
+        "fleurs_en_validation--en_us-1317055409880056194"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "fleurs_en_validation--en_us-13188441730885751421",
+      "language": "eng",
+      "chunk": "chunk-00032.jsonl.gz",
+      "fields": [
+        "tokens",
+        "timestamp_tokens",
+        "segments"
+      ],
+      "b3_input_group": [
+        "fleurs_en_validation--en_us-2699451722157462043",
+        "fleurs_en_validation--en_us-13188441730885751421",
+        "fleurs_en_validation--en_us-4597829414184879457"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "fleurs_en_validation--en_us-2122127445238804615",
+      "language": "eng",
+      "chunk": "chunk-00032.jsonl.gz",
+      "fields": [
+        "tokens",
+        "timestamp_tokens",
+        "segments"
+      ],
+      "b3_input_group": [
+        "fleurs_en_validation--en_us-6538398155791771629",
+        "fleurs_en_validation--en_us-2122127445238804615",
+        "fleurs_en_validation--en_us-17928171511082320095"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "fleurs_en_validation--en_us-6439816423643859905",
+      "language": "eng",
+      "chunk": "chunk-00032.jsonl.gz",
+      "fields": [
+        "tokens",
+        "timestamp_tokens",
+        "segments"
+      ],
+      "b3_input_group": [
+        "fleurs_en_validation--en_us-13708313266857391848",
+        "fleurs_en_validation--en_us-6439816423643859905",
+        "fleurs_en_validation--en_us-665062717314476757"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "fleurs_en_validation--en_us-7805913550318242839",
+      "language": "eng",
+      "chunk": "chunk-00032.jsonl.gz",
+      "fields": [
+        "tokens",
+        "timestamp_tokens",
+        "segments"
+      ],
+      "b3_input_group": [
+        "fleurs_en_validation--en_us-9487488453437322587",
+        "fleurs_en_validation--en_us-7805913550318242839",
+        "fleurs_en_validation--en_us-7138115560110965584"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "fleurs_en_validation--en_us-7387066245031034472",
+      "language": "eng",
+      "chunk": "chunk-00033.jsonl.gz",
+      "fields": [
+        "tokens",
+        "timestamp_tokens",
+        "segments"
+      ],
+      "b3_input_group": [
+        "fleurs_en_validation--en_us-15436994428923327335",
+        "fleurs_en_validation--en_us-7387066245031034472",
+        "fleurs_en_validation--en_us-10835833846156512763"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "fleurs_en_validation--en_us-11119334765887977448",
+      "language": "eng",
+      "chunk": "chunk-00033.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "fleurs_en_validation--en_us-5570899521134143454",
+        "fleurs_en_validation--en_us-9925774476761884993",
+        "fleurs_en_validation--en_us-11119334765887977448"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "fleurs_en_validation--en_us-12256847595142167900",
+      "language": "eng",
+      "chunk": "chunk-00033.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "fleurs_en_validation--en_us-16091676904582653474",
+        "fleurs_en_validation--en_us-10796058897134434902",
+        "fleurs_en_validation--en_us-12256847595142167900"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--5849-50873-0001",
+      "language": "eng",
+      "chunk": "chunk-00034.jsonl.gz",
+      "fields": [
+        "tokens",
+        "timestamp_tokens",
+        "segments"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--5849-50873-0001",
+        "librispeech_dev_other--3915-98647-0028"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--6455-67803-0010",
+      "language": "eng",
+      "chunk": "chunk-00034.jsonl.gz",
+      "fields": [
+        "tokens",
+        "timestamp_tokens",
+        "segments"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--6455-67803-0010",
+        "librispeech_dev_other--3660-172182-0012",
+        "librispeech_dev_other--8254-115543-0025"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--1585-157660-0006",
+      "language": "eng",
+      "chunk": "chunk-00035.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--1585-157660-0006",
+        "librispeech_dev_other--4153-186222-0029",
+        "librispeech_dev_other--5543-27761-0097"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--6467-62797-0004",
+      "language": "eng",
+      "chunk": "chunk-00035.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--6467-62797-0004",
+        "librispeech_dev_other--3663-172528-0040",
+        "librispeech_dev_other--4153-185072-0015"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--4572-64670-0012",
+      "language": "eng",
+      "chunk": "chunk-00039.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--1701-141759-0018",
+        "librispeech_dev_other--4572-64670-0012",
+        "librispeech_dev_other--7601-291468-0003"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--8254-115543-0004",
+      "language": "eng",
+      "chunk": "chunk-00039.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--5543-27761-0035",
+        "librispeech_dev_other--1630-102884-0010",
+        "librispeech_dev_other--8254-115543-0004"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--4570-56594-0013",
+      "language": "eng",
+      "chunk": "chunk-00040.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--2506-11278-0010",
+        "librispeech_dev_other--1255-74899-0018",
+        "librispeech_dev_other--4570-56594-0013"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--4570-14911-0003",
+      "language": "eng",
+      "chunk": "chunk-00040.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--4570-14911-0003",
+        "librispeech_dev_other--4515-11057-0110",
+        "librispeech_dev_other--4831-18525-0011"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--4831-18525-0009",
+      "language": "eng",
+      "chunk": "chunk-00040.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--6841-88294-0063",
+        "librispeech_dev_other--4831-18525-0009",
+        "librispeech_dev_other--1585-131718-0044"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--4570-56594-0016",
+      "language": "eng",
+      "chunk": "chunk-00041.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--4570-56594-0016",
+        "librispeech_dev_other--1701-141760-0022",
+        "librispeech_dev_other--6841-88294-0053"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--1701-141760-0001",
+      "language": "eng",
+      "chunk": "chunk-00041.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--6267-65525-0040",
+        "librispeech_dev_other--1701-141760-0001",
+        "librispeech_dev_other--4153-186222-0005"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--6467-94831-0034",
+      "language": "eng",
+      "chunk": "chunk-00042.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--1686-142278-0054",
+        "librispeech_dev_other--6467-94831-0034",
+        "librispeech_dev_other--1686-142278-0091"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--4515-11057-0037",
+      "language": "eng",
+      "chunk": "chunk-00043.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--1585-131718-0051",
+        "librispeech_dev_other--4515-11057-0037",
+        "librispeech_dev_other--700-122868-0026"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--700-122868-0020",
+      "language": "eng",
+      "chunk": "chunk-00043.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--1650-167613-0013",
+        "librispeech_dev_other--700-122868-0020",
+        "librispeech_dev_other--3660-6517-0033"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--4515-11057-0103",
+      "language": "eng",
+      "chunk": "chunk-00044.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--5849-50964-0012",
+        "librispeech_dev_other--4515-11057-0103",
+        "librispeech_dev_other--4153-186222-0013"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--3663-172528-0021",
+      "language": "eng",
+      "chunk": "chunk-00044.jsonl.gz",
+      "fields": [
+        "tokens",
+        "timestamp_tokens",
+        "segments"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--4323-55228-0038",
+        "librispeech_dev_other--7697-105815-0021",
+        "librispeech_dev_other--3663-172528-0021"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--700-122868-0012",
+      "language": "eng",
+      "chunk": "chunk-00044.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--700-122868-0012",
+        "librispeech_dev_other--7697-105815-0001",
+        "librispeech_dev_other--1701-141759-0014"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--4570-14911-0014",
+      "language": "eng",
+      "chunk": "chunk-00045.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--4570-14911-0014",
+        "librispeech_dev_other--1701-141759-0023",
+        "librispeech_dev_other--8173-294714-0058"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--4572-64670-0019",
+      "language": "eng",
+      "chunk": "chunk-00047.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--1585-157660-0004",
+        "librispeech_dev_other--7641-96684-0028",
+        "librispeech_dev_other--4572-64670-0019"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--1650-167613-0021",
+      "language": "eng",
+      "chunk": "chunk-00048.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--1650-167613-0021",
+        "librispeech_dev_other--8254-84205-0058",
+        "librispeech_dev_other--3660-172182-0007"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--4570-14911-0008",
+      "language": "eng",
+      "chunk": "chunk-00048.jsonl.gz",
+      "fields": [
+        "tokens",
+        "timestamp_tokens",
+        "segments"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--116-288045-0003",
+        "librispeech_dev_other--1255-138279-0003",
+        "librispeech_dev_other--4570-14911-0008"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--4515-11057-0082",
+      "language": "eng",
+      "chunk": "chunk-00048.jsonl.gz",
+      "fields": [
+        "tokens",
+        "timestamp_tokens",
+        "segments"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--4515-11057-0082",
+        "librispeech_dev_other--116-288047-0017",
+        "librispeech_dev_other--1255-74899-0015"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--6123-59150-0027",
+      "language": "eng",
+      "chunk": "chunk-00048.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--6455-67804-0021",
+        "librispeech_dev_other--4153-186222-0001",
+        "librispeech_dev_other--6123-59150-0027"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--1630-73710-0011",
+      "language": "eng",
+      "chunk": "chunk-00049.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--6455-66379-0006",
+        "librispeech_dev_other--1630-73710-0011",
+        "librispeech_dev_other--1701-141760-0053"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--4515-11057-0087",
+      "language": "eng",
+      "chunk": "chunk-00049.jsonl.gz",
+      "fields": [
+        "tokens",
+        "timestamp_tokens",
+        "segments"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--1701-141759-0006",
+        "librispeech_dev_other--1701-141759-0025",
+        "librispeech_dev_other--4515-11057-0087"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--6599-38591-0001",
+      "language": "eng",
+      "chunk": "chunk-00051.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--6267-65525-0013",
+        "librispeech_dev_other--6599-38591-0001",
+        "librispeech_dev_other--7641-96252-0010"
+      ],
+      "b3_api": "transcribe"
+    },
+    {
+      "key": "librispeech_dev_other--1630-96099-0023",
+      "language": "eng",
+      "chunk": "chunk-00051.jsonl.gz",
+      "fields": [
+        "tokens",
+        "segments",
+        "text"
+      ],
+      "b3_input_group": [
+        "librispeech_dev_other--4515-11057-0056",
+        "librispeech_dev_other--1701-141759-0017",
+        "librispeech_dev_other--1630-96099-0023"
+      ],
+      "b3_api": "transcribe"
+    }
+  ],
+  "timestamps": "No human timing annotations; boundary differences are not correctness errors by themselves.",
+  "timing": "No timing claim; these are saved-output regression artifacts.",
+  "environments": [
+    {
+      "engine_sha256": {
+        "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+        "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+        "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+      },
+      "gpu": "NVIDIA H200",
+      "torch": "2.14.1+cu130",
+      "cuda": "13.0",
+      "job": "2780523.pbs1",
+      "nvidia_smi": "name, uuid, driver_version\nNVIDIA H200, GPU-02264d06-e62e-ac13-3c4e-9877e69aa361, 595.71.05"
+    },
+    {
+      "engine_sha256": {
+        "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+        "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+        "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+      },
+      "gpu": "NVIDIA H200",
+      "torch": "2.14.1+cu130",
+      "cuda": "13.0",
+      "job": "2780636.pbs1",
+      "nvidia_smi": "name, uuid, driver_version\nNVIDIA H200, GPU-e3396bce-fb52-314b-b9cb-8cb7c80a66fe, 595.71.05"
+    }
+  ],
+  "runtime_tree": "a9ab5a575ef33008f254fac7c010af1bc817a765"
+}

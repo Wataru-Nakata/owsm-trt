@@ -51,6 +51,16 @@ not enabled in this audit and is not assumed to solve it.
 B3 job2780636 follows with frozen773f827 source and language/API-preserving input groups; its
 results remain pending.
 
+A separate [partial cross-batch comparison](runtime-batch-numerics-6656.json) checks6,656 matched
+inputs with identical runtime source trees, checkpoint/engine hashes, Torch/CUDA and GPU type.
+Upper-bound OFF/ON agrees within each batch. Comparing B1 against B3 instead changes batch shapes
+and default decoder routing together:98 inputs differ, including79 texts and21 available timestamp
+sequences. Of6,648 available full token sequences,6,550 match; the8 long-form outputs have no IDs.
+On this matched subset, Japanese CER edit totals are8,637 versus8,638 per111,347 reference characters;
+English WER edit totals are2,490 versus2,495 per49,162 reference words. This is an N comparison,
+not an upper-bound regression or an isolated kernel experiment. Full cross-batch results and
+attribution of individual differences remain pending; no time-boundary accuracy is inferred.
+
 Job2780055 was stopped after a fresh account query showed200 GPUs (the session cancelled only its
 own1GPU job). PBS exit271 is not a successful full audit. Its
 [validated partial result](runtime-large-regression-2780055-partial.json) contains3,584 Japanese
@@ -133,6 +143,8 @@ does not switch an ordinary short input to long-form semantics or remove its tok
 therefore have1/2/3 inputs; each future record stores its group keys, API and requested batch size.
 This grouping change has small fixture coverage; B3 GPU results remain pending. The completed B1
 continuation stayed frozen at8151703.
+Each call in this audit handles one such group. Large multi-batch request behavior, row refill,
+encoder lookahead and file-prefetch coverage require separate cases; this audit does not establish them.
 
 Subsequent ablations also include `beam_kernels` (upper bound ON in both, search/state/cache kernels OFF/ON)
 and `beam_combined` (upper bound and beam kernels both OFF/ON), to cover bugs shared by both sides
