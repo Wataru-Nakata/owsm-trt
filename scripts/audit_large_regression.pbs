@@ -34,7 +34,10 @@ publish() {
     exit "$status"
 }
 interrupt() {
-    [ -z "$WORKER" ] || kill -TERM "$WORKER" 2>/dev/null || true
+    if [ -n "$WORKER" ]; then
+        kill -TERM "$WORKER" 2>/dev/null || true
+        wait "$WORKER" || true
+    fi
     exit 143
 }
 trap publish EXIT

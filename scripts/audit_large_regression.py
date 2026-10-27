@@ -58,6 +58,26 @@ def capture_failure(call, context: dict, out: Path, publish: Path):
         raise
 
 
+def load_completed(publish: Path, rows: list[dict], chunk_size: int, config_digest: str) -> dict:
+    prior_chunks = {}
+    if (publish/'progress.json').exists():
+        prior_chunks = json.loads((publish/'progress.json').read_text())['chunks']
+    completed = {}
+    for path in sorted(publish.glob('chunk-*.jsonl.gz')):
+        if path.name in prior_chunks:
+            assert sha256(path)==prior_chunks[path.name]['sha256'],path
+        with gzip.open(path,'rt') as f:
+            records = [json.loads(line) for line in f]
+        expected = rows[int(path.name.split('-')[1].split('.')[0])*chunk_size:][:chunk_size]
+        assert expected and [r['key'] for r in records]==[r['key'] for r in expected],path
+        assert all(r['config_sha256']==config_digest for r in records),path
+        for record in records:
+            assert all(set(FIELDS).issubset(record[v]) for v in ('reference','candidate')),path
+            assert record['differences']==record_differences(record['reference'],record['candidate']),path
+        completed[path.name] = dict(samples=len(records),sha256=sha256(path),differences=sum(bool(r['differences']) for r in records))
+    return completed
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--model',required=True)
@@ -104,19 +124,7 @@ def main():
         publish_file(args.out/'config.json',config_path)
     config_digest = sha256(config_path)
     # Each published chunk is a complete compressed JSONL with all variants; incomplete chunks remain local.
-    prior_chunks = {}
-    if (args.publish/'progress.json').exists():
-        prior_chunks = json.loads((args.publish/'progress.json').read_text())['chunks']
-    completed = {}
-    for path in sorted(args.publish.glob('chunk-*.jsonl.gz')):
-        if path.name in prior_chunks:
-            assert sha256(path)==prior_chunks[path.name]['sha256'],path
-        with gzip.open(path,'rt') as f:
-            records = [json.loads(line) for line in f]
-        expected = rows[int(path.name.split('-')[1].split('.')[0])*args.chunk_size:][:args.chunk_size]
-        assert [r['key'] for r in records]==[r['key'] for r in expected],path
-        assert all(r['config_sha256']==config_digest for r in records),path
-        completed[path.name] = dict(samples=len(records),sha256=sha256(path),differences=sum(bool(r['differences']) for r in records))
+    completed = load_completed(args.publish,rows,args.chunk_size,config_digest)
     stop = [False]
     signal.signal(signal.SIGTERM,lambda *_:stop.__setitem__(0,True))
     started = time.monotonic()
@@ -167,6 +175,8 @@ def main():
                 records = []
                 # Keep a chunk one language at a time for the same primer; B3 intentionally mixes lengths.
                 for begin in range(0,len(subset),3 if args.case=='beam_b3' else 1):
+                    if stop[0]:
+                        break
                     group = subset[begin:begin+(3 if args.case=='beam_b3' else 1)]
                     # Corpus boundaries in a chunk cannot share a language primer.
                     groups = [group] if len({r['lang'] for r in group})==1 else [[r] for r in group]
@@ -212,6 +222,9 @@ def main():
                                 audio_sha256=row['audio_sha256'],reference_text=row['text']),
                                 config_sha256=config_digest,reference=ref,candidate=actual,
                                 differences=record_differences(ref,actual)))
+                if len(records)!=len(subset):
+                    assert stop[0], 'partial chunk without interruption'
+                    break  # Complete published chunks remain valid; retry this chunk after termination.
                 path = args.out/name
                 with gzip.open(path,'wt',encoding='utf-8') as f:
                     for record in records:

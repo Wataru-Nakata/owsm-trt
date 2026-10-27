@@ -1,11 +1,18 @@
 """Small byte/metadata fixtures cover shard integrity and regression accounting, without audio/model work."""
 
+import gzip
 import hashlib
 import json
 import tarfile
 
 import pytest
-from audit_large_regression import capture_failure, record_differences, repetition, select_rows
+from audit_large_regression import (
+    capture_failure,
+    load_completed,
+    record_differences,
+    repetition,
+    select_rows,
+)
 from prepare_large_regression import safe_key, write_shard
 
 
@@ -64,3 +71,29 @@ def test_failure_keeps_reproduction_context_and_reraises(tmp_path,monkeypatch):
     data = json.loads((published/'failure-synthetic.json').read_text())
     assert data['inputs']==context['inputs'] and data['error_type']=='RuntimeError'
     assert (out/'failure-synthetic.json').read_bytes()==(published/'failure-synthetic.json').read_bytes()
+
+
+def test_resume_rejects_partial_wrong_config_and_changed_chunks(tmp_path):
+    rows = [dict(key=str(i)) for i in range(3)]
+    value = dict(tokens=[],timestamp_tokens=[],segments=[],text='')
+    records = [dict(key=str(i),config_sha256='digest',differences=[],reference=value,candidate=value) for i in range(2)]
+    path = tmp_path/'chunk-00000.jsonl.gz'
+    def write(values):
+        with gzip.open(path,'wt') as f:
+            for row in values:
+                f.write(json.dumps(row)+'\n')
+    write(records)
+    completed = load_completed(tmp_path,rows,2,'digest')
+    assert completed[path.name]['samples']==2
+    with pytest.raises(AssertionError):
+        load_completed(tmp_path,rows,2,'different config')
+    write(records[:1])
+    with pytest.raises(AssertionError):
+        load_completed(tmp_path,rows,2,'digest')
+    write(records)
+    (tmp_path/'progress.json').write_text(json.dumps(dict(chunks=completed)))
+    records[0]['candidate'] = value|dict(text='changed')
+    records[0]['differences'] = ['text']
+    write(records)
+    with pytest.raises(AssertionError):
+        load_completed(tmp_path,rows,2,'digest')
