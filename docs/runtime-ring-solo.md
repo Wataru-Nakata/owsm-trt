@@ -105,3 +105,23 @@ an intermediate control and24as reference (`--solo-programs 24 48 64 96`). This 
 NS2or concurrent12budget. Six GPU graph/state tests now also check64/96; each corpus requires24actual
 checkpoint cases and every output/call to agree. These budgets are unmeasured until their artifacts
 are published. The production default is still24.
+
+Extended pilot2778290 used four resident pools (its environment prose incorrectly says three;
+the saved budget dictionary, samples and memory accounting include all four). This run (f7bf820) passed5CPU/6GPU checks and24actual-checkpoint comparisons per language.
+All11conditions match frozen2778131outputs; actual graph replay counts and decoder calls match too.
+No sample is dropped. Every64/96paired total improved in all11repeats for each changed condition.
+
+| Condition | English48 /64 /96 RTFx change | Japanese48 /64 /96 RTFx change |
+|---|---:|---:|
+| Plain ASR B1 | +2.83% /+4.23% /+4.57% | +3.01% /+4.57% /+4.69% |
+| Plain timestamp ASR B1 | +3.52% /+3.68% /+4.09% | +3.98% /+4.34% /+2.91% |
+| Translation B1 | +4.45% /+4.44% /+5.33% | +4.39% /+5.21% /+4.12% |
+| CTC-drafted timestamp B1 | +1.01% /+5.37% /+5.51% | +5.72% /+6.90% /+7.08% |
+| CTC-drafted timestamp B8 (unchanged control) | +0.35% /+0.34% /+0.24% | -0.02% /+0.12% /+0.74% |
+| 110s long-form | +6.75% /+8.15% /+7.88% | not measured |
+
+64is the adoption candidate: it improves all changed conditions over24, while96gives back some
+Japanese timestamp/translation benefit and does not improve110s over64. This is a measured compromise,
+not proof that64is globally optimal. H200132SM/102M default64is prepared with explicit24rollback,
+unchanged concurrent12/NS2and unchanged row dispatch. Independent timing/public-API verification
+is pending before documenting it as adopted. [Pilot results](runtime-ring-solo-more-2778290.json).

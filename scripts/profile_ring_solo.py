@@ -60,6 +60,7 @@ def check_solo(kernels, out):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--model',required=True)
+    ap.add_argument('--baseline-results',type=Path,help='require outputs/checkpoint/engines to match a frozen run')
     ap.add_argument('--manifest',type=Path,required=True)
     ap.add_argument('--long-audio',type=Path)
     ap.add_argument('--lang',default='eng')
@@ -86,15 +87,21 @@ def main():
     if not isinstance(base,megakernel.MegaBackend) or not isinstance(base.kernel,megakernel_ring.RingDecoder):
         raise RuntimeError('existing auto Ring backend required')
     original,m = base.kernel,base.kernel.m
-    if ((m.D,m.F,m.L,m.H,original.P,original.P_solo)!=(384,1536,6,6,12,24)
+    if ((m.D,m.F,m.L,m.H,original.P)!=(384,1536,6,6,12) or original.P_solo not in (24,64)
             or 'H200' not in torch.cuda.get_device_name() or torch.cuda.get_device_properties(model.device).multi_processor_count!=132):
-        raise RuntimeError('only the existing H200132SM102M12/24 schedule is in scope')
-    kernels = {'reference':original} | {f'solo{n}':megakernel_ring.RingDecoder(m,solo_programs=n) for n in args.solo_programs[1:]}
-    backends = {'reference':base} | {name:megakernel.MegaBackend(base.inner,kernel,base.max_tokens,base.max_rows,
-                 rows_kernel=base.rows_kernel,trial=True) for name,kernel in kernels.items() if name!='reference'}
+        raise RuntimeError('only H200132SM102M with concurrent12 and serial24/64 is in scope')
+    kernels = {('reference' if n==24 else f'solo{n}'):
+               original if n==original.P_solo else megakernel_ring.RingDecoder(m,solo_programs=n)
+               for n in args.solo_programs}
+    backends = {name:base if kernel is original else megakernel.MegaBackend(base.inner,kernel,base.max_tokens,base.max_rows,
+                 rows_kernel=base.rows_kernel,trial=True) for name,kernel in kernels.items()}
     check_solo(kernels,args.out)
     files = hub.resolve(args.model)
     engines = hub.cache_dir()/files.name.replace('/', '--')/engine_tag(model.opts)
+    if args.baseline_results:
+        previous = json.loads((args.baseline_results/'environment.json').read_text())
+        assert previous['checkpoint_sha256']==sha256(files.checkpoint)
+        assert previous['engine_sha256']=={p.name:sha256(p) for p in engines.glob('*.engine')}
     save(args.out/'environment.json',dict(commit=os.environ.get('OWSM_PROFILE_COMMIT'),
          checkpoint_sha256=sha256(files.checkpoint),engine_sha256={p.name:sha256(p) for p in engines.glob('*.engine')},
          gpu=torch.cuda.get_device_name(),sm_count=torch.cuda.get_device_properties(model.device).multi_processor_count,
@@ -102,10 +109,11 @@ def main():
          nvidia_smi=command(['nvidia-smi','--query-gpu=name,uuid,driver_version,compute_cap,memory.total','--format=csv']),
          manifest_sha256=sha256(args.manifest),load_ms=load_ms,
          host_diagnostics=args.host_diagnostics,variant_order=args.variants,
+         actual_public_default=original.P_solo,public_variant=next((k for k,v in backends.items() if v is base),None),
          budgets={k:dict(concurrent=v.P,solo=v.P_solo,rows=v.P_rows) for k,v in kernels.items()},
          scope='E intent versus existing same Ring arithmetic: only serialR1 CTAcount changes. '
-               'Concurrent12 and cross-attention splits unchanged; no productiondefaultchange. '
-               'Three residentpools, cold/JITorder shared. Loadedinputs. Longformjoinedtext/segments only.'))
+               'Concurrent12 and cross-attention splits unchanged; actual publicdefault/variant recorded. '
+               f'{len(kernels)} resident pools, cold/JITorder shared. Loadedinputs. Longformjoinedtext/segments only.'))
     items = json.loads(args.manifest.read_text())
     waves = [load_audio(item['path']) for item in items]
 
@@ -143,6 +151,10 @@ def main():
         if host:
             samples = json.loads((args.out/case/'wall.json').read_text())
             save(args.out/case/'host.json',host.report(samples))
+        if args.baseline_results:
+            previous = json.loads((args.baseline_results/case/'tokens.json').read_text())['reference']
+            current = json.loads((args.out/case/'tokens.json').read_text())
+            assert all(v==previous for v in current.values()), f'frozen output drift: {case}'
         save(args.out/'summary.json',summary)
         assert all(v['equal']==v['total'] for mode in summary[case].values() for v in mode['agreement'].values())
         assert all(not b.failed for b in backends.values())
