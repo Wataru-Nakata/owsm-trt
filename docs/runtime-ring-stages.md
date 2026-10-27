@@ -106,5 +106,5 @@ and adopted with unchanged arithmetic/splits ([results](runtime-ring-row-program
 plain calls now select the existing solo budget only without encoder lookahead; independent1B/102M
 request measurements support that dispatch change ([results](runtime-plain-solo.md)). These are
 separate same-route comparisons, not multiplicative gains over the earlier counter measurements.
-The existing weight-ring capacity128/64/32 experiment is prepared separately, still unmeasured
-([protocol](runtime-ring-buffer.md)); all runtime buffer defaults remain unchanged.
+The existing weight-ring capacity128/64/32 comparison subsequently rejected both smaller settings
+([results](runtime-ring-buffer.md)); all runtime buffer defaults remain unchanged.
