@@ -12,6 +12,13 @@ its transcript before packing. Other missing datasets fail visibly instead of si
 The verified download is retained as one shared archive; extracted audio stays node-local and is
 deleted after shard publication. This repair and its small archive/metadata tests are implemented;
 successful full preparation and inference remain pending.
+Second job2780026 also stopped before inference: the first inventory treated all JVS nonpara30
+transcript lines as recordings. The original ZIP member index confirms2,700 recorded files across
+the selected90 speakers (30 each), while the1,800 extra transcript entries have no audio member in
+that ZIP. Inventory now uses the original ZIP's member list, retains the unused transcript IDs in
+provenance, and still fails if an actually recorded input is missing on disk. The adjacent original
+`jvs_ver1.zip` is therefore required as well as the extracted JVS directory. A byte-only fixture
+checks the distinction between unrecorded text and a genuinely missing recording.
 Cold preparation has a20-minute limit; the remaining allocation determines the inference budget
 (at most2600seconds), with time reserved for publishing results. If too little time remains even
 for model startup, the completed corpus is retained and the audit is explicitly deferred.

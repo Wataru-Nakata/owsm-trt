@@ -5,6 +5,7 @@ import hashlib
 import io
 import json
 import tarfile
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -16,6 +17,7 @@ from audit_large_regression import (
     select_rows,
 )
 from prepare_large_regression import (
+    jvs_nonpara_inventory,
     missing_inputs,
     recover_missing_inputs,
     restore_dev_other,
@@ -154,6 +156,22 @@ def test_missing_preflight_reports_all_missing_inputs_before_any_download(tmp_pa
     report = json.loads((published/'preflight.json').read_text())
     assert len(report['before_restore'])==2
     assert report['missing_by_dataset']=={'librispeech_dev_other':1,'fleurs_ja_validation':1}
+
+
+def test_jvs_archive_distinguishes_unused_transcripts_from_missing_recordings(tmp_path):
+    jvs = tmp_path/'jvs_ver1'
+    root = jvs/'jvs001/nonpara30'
+    wavs = root/'wav24kHz16bit'
+    wavs.mkdir(parents=True)
+    (root/'transcripts_utf8.txt').write_text('RECORDED:hello\nDELETED:missing file\nUNRECORDED:extra text\n')
+    (wavs/'RECORDED.wav').write_bytes(b'fixture')
+    with zipfile.ZipFile(jvs.with_suffix('.zip'),'w') as archive:
+        for name in ('RECORDED','DELETED'):
+            archive.writestr('jvs_ver1/jvs001/nonpara30/wav24kHz16bit/'+name+'.wav',b'fixture')
+    rows,provenance = jvs_nonpara_inventory(jvs,range(1,2))
+    assert {r['id'] for r in rows}=={'jvs001-RECORDED','jvs001-DELETED'}
+    assert provenance['transcript_entries_without_audio']=={'jvs001':['UNRECORDED']}
+    assert [r['key'] for r in missing_inputs(rows)]==['jvs_nonpara90--jvs001-DELETED']
 
 
 def test_resume_rejects_partial_wrong_config_and_changed_chunks(tmp_path):

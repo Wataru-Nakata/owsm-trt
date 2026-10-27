@@ -9,6 +9,7 @@ import re
 import shutil
 import subprocess
 import tarfile
+import zipfile
 from collections import Counter
 from pathlib import Path
 
@@ -161,6 +162,41 @@ def recover_missing_inputs(rows: list[dict], repo: Path, out: Path, publish: Pat
     return report
 
 
+def jvs_nonpara_inventory(jvs: Path, speakers: range = range(1,91)) -> tuple[list[dict],dict]:
+    # The release has50 transcript lines but30 recordings per speaker in nonpara30. Use the
+    # release archive's member index so extra transcript lines are not mistaken for deleted audio.
+    archive_path = jvs.with_suffix('.zip')
+    with zipfile.ZipFile(archive_path) as archive:
+        members = {m.filename:(m.CRC,m.file_size) for m in archive.infolist() if not m.is_dir()}
+    rows,hashes,unused,index = [],{},{},{}
+    for speaker in speakers:
+        speaker_id = f'jvs{speaker:03d}'
+        root = jvs/speaker_id/'nonpara30'
+        transcript = root/'transcripts_utf8.txt'
+        hashes[str(transcript)] = sha256(transcript)
+        texts = dict(line.split(':',1) for line in transcript.read_text(encoding='utf-8').splitlines() if ':' in line)
+        prefix = f'{jvs.name}/{speaker_id}/nonpara30/wav24kHz16bit/'
+        names = sorted(name for name in members if name.startswith(prefix) and name.endswith('.wav'))
+        if not names:
+            raise ValueError(f'no nonpara30 audio in original archive for {speaker_id}')
+        recorded = set()
+        for member in names:
+            name = member[len(prefix):-4]
+            key = safe_key(f'jvs_nonpara90--{speaker_id}-{name}')
+            if name not in texts:
+                raise ValueError(f'archive audio has no transcript: {member}')
+            recorded.add(name)
+            index[member] = members[member]
+            rows.append(dict(key=key,id=f'{speaker_id}-{name}',dataset='jvs_nonpara90',lang='jpn',
+                source_path=str(root/'wav24kHz16bit'/f'{name}.wav'),text=texts[name],speaker=speaker_id,
+                screening_overlap=False,long_form=False))
+        unused[speaker_id] = sorted(set(texts)-recorded)
+    return rows,dict(transcript_sha256=hashes,samples=len(rows),archive=str(archive_path),
+        archive_member_index_sha256=hashlib.sha256(json.dumps(index,sort_keys=True).encode()).hexdigest(),
+        transcript_entries_without_audio=unused,
+        note='Original ZIP member list defines recorded inputs; unused transcript lines are retained as metadata, not missing recordings.')
+
+
 def inventory(repo: Path, jvs: Path) -> tuple[list[dict],dict]:
     rows,provenance = [],{}
     screening = {
@@ -179,20 +215,8 @@ def inventory(repo: Path, jvs: Path) -> tuple[list[dict],dict]:
                 long_form=dataset=='librispeech_long'))
     # JVS parallel100 contributes many repeated sentences; add different sentences from90 speakers.
     # Speakers91..100/nonpara30 were used by the existing calibration study, so exclude that partition.
-    hashes = {}
-    for speaker in range(1,91):
-        root = jvs/f'jvs{speaker:03d}'/'nonpara30'
-        transcript = root/'transcripts_utf8.txt'
-        hashes[str(transcript)] = sha256(transcript)
-        for line in transcript.read_text(encoding='utf-8').splitlines():
-            if ':' not in line:
-                continue
-            name,text = line.split(':',1)
-            key = f'jvs_nonpara90--jvs{speaker:03d}-{name}'
-            rows.append(dict(key=safe_key(key),id=f'jvs{speaker:03d}-{name}',dataset='jvs_nonpara90',lang='jpn',
-                source_path=str(root/'wav24kHz16bit'/f'{name}.wav'),text=text,speaker=f'jvs{speaker:03d}',
-                screening_overlap=False,long_form=False))
-    provenance['jvs_nonpara90'] = dict(transcript_sha256=hashes,samples=sum(r['dataset']=='jvs_nonpara90' for r in rows))
+    extra,provenance['jvs_nonpara90'] = jvs_nonpara_inventory(jvs)
+    rows.extend(extra)
     assert len({r['key'] for r in rows})==len(rows)
     return rows,provenance
 
