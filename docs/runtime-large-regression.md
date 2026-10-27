@@ -9,6 +9,9 @@ full large-corpus correctness and timing results are still pending. Its
 (5,194,571,795 bytes including the index). The initial audit selects13,232 inputs;41 ordinary corpus
 recordings exceed30seconds and use the long-form API, whose token IDs are unavailable. The87 long
 chapters reuse test-clean speech and are reserved for the separate long-context case.
+The prepared `beam_long` case runs the87 chapters through beam5 `transcribe_long`, independently
+of the greedy `long` case. Its GPU results are pending; the initial B1 continuation still selects
+the13,232 ordinary/stress inputs, including41 recordings longer than one window.
 
 Job2780055 was stopped after a fresh account query showed200 GPUs (the session cancelled only its
 own1GPU job). PBS exit271 is not a successful full audit. Its

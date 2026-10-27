@@ -108,6 +108,7 @@ def test_deterministic_selection_and_separate_long_form():
     assert [r['lang'] for r in selected]==['jpn','eng','deu']
     assert selected==select_rows(rows[::-1],'beam_b1',None)
     assert select_rows(rows,'long',None)==[rows[2]]
+    assert select_rows(rows,'beam_long',None)==[rows[2]]
     assert select_rows(rows,'beam_b1',['clean'])==[rows[0]]
 
 

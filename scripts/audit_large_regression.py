@@ -39,7 +39,7 @@ def repetition(tokens: list[int]) -> dict:
 def select_rows(rows: list[dict], case: str, datasets: list[str] | None,
                 prompt_window_seconds: float | None = None) -> list[dict]:
     selected = [r for r in rows if (not datasets or r['dataset'] in datasets)
-                and (r['long_form'] if case=='long' else not r['long_form'])]
+                and (r['long_form'] if case in ('long','beam_long') else not r['long_form'])]
     if case=='beam_prompt':
         if prompt_window_seconds is None or prompt_window_seconds<=0:
             raise ValueError('prompt regression requires the model input-window limit')
@@ -102,7 +102,7 @@ def main():
     ap.add_argument('--publish',type=Path,required=True)
     ap.add_argument('--mode',choices=['beam_bound','beam_kernels','beam_combined','ring_split','serial64'],
                     default='beam_bound')
-    ap.add_argument('--case',choices=['beam_b1','beam_b3','beam_prompt','plain_ts','draft_ts','translation','long'],default='beam_b1')
+    ap.add_argument('--case',choices=['beam_b1','beam_b3','beam_prompt','beam_long','plain_ts','draft_ts','translation','long'],default='beam_b1')
     ap.add_argument('--datasets',nargs='+')
     ap.add_argument('--budget-seconds',type=int,default=2700)
     ap.add_argument('--chunk-size',type=int,default=128)
@@ -204,7 +204,7 @@ def main():
                 # B3 mixes lengths within the same language and supported API. A >window neighbour
                 # must not switch an ordinary short input to long-form semantics/token availability.
                 for batch,joined in input_groups(subset,3 if args.case=='beam_b3' else 1,
-                                                 model.cfg.speech_seconds,args.case=='long'):
+                                                 model.cfg.speech_seconds,args.case in ('long','beam_long')):
                     if stop[0]:
                         break
                     waves = [wave(r) for r in batch]
