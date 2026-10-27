@@ -685,6 +685,24 @@ class MegaDecoder:
         return run
 
 
+class WideRingBackend:
+    """Opt-in N routing for reviewed102M/H200 one-token shapes; other calls retain auto dispatch."""
+
+    def __init__(self, base, routes):
+        self.base, self.routes = base, routes
+
+    def __getattr__(self, key):
+        return getattr(self.base, key)
+
+    @property
+    def failed(self):
+        return self.base.failed.union(*(backend.failed for backend in self.routes.values()))
+
+    def step_fn(self, tokens, *args, kind="decode", **kwargs):
+        route = self.routes.get(tokens.shape[0]) if tokens.shape[1] == 1 and kind == "decode" else None
+        return (route or self.base).step_fn(tokens, *args, kind=kind, **kwargs)
+
+
 class MegaBackend:
     """A backend whose decoder calls (decode, verify) of up to ``max_tokens`` tokens (rows x window) and
     ``max_rows`` rows run as a megakernel (``kernel.step_fn``); everything else (encoder, prompt prefill, larger

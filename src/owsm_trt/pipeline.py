@@ -313,6 +313,12 @@ class OWSM:
         startup improvements cover H200, v4 1B/102M,
         node-local files and warmed OS/JIT caches.
 
+        ``decoder_kernel="ring:wide"``: experimental N route for H200132SM with the102M decoder.
+        Only R10/15/16 one-token decode calls use Ring with60/90/96 programs; prefill, other
+        rows/windows and unsupported GPU/model combinations retain auto routing. Kernel setup
+        failures fall back with a warning. Same-engine measurements show throughput gains but
+        punctuation, translation and silence outputs can differ. The default remains ``auto``.
+
         ``ctc_draft``: for greedy ASR, let the encoder's CTC head propose the transcript and check up
         to 31 proposed tokens per utterance and decoder call. The output is the greedy output; only the
         number of decoder calls changes.
@@ -1321,7 +1327,8 @@ def _decoder_kernel(runner, cfg, checkpoint: Path, dev: torch.device, which):
                 *megakernel_gluon.TESTED,
             )
         return runner
-    auto = which == "auto"
+    wide_ring = which == "ring:wide"
+    auto = which == "auto" or wide_ring
     try:
         decoder = _load_decoder(cfg, checkpoint, skip_init=True)
         mega = megakernel.MegaDecoder(decoder, dev)
@@ -1383,7 +1390,21 @@ def _decoder_kernel(runner, cfg, checkpoint: Path, dev: torch.device, which):
         torch.cuda.empty_cache()
         return runner
     torch.cuda.empty_cache()  # (the fp32 copies the weights were folded in)
-    return megakernel.MegaBackend(runner, kernel, *route, rows_kernel=rows_kernel, trial=True)
+    backend = megakernel.MegaBackend(runner, kernel, *route, rows_kernel=rows_kernel, trial=True)
+    if wide_ring:
+        m = kernel.m
+        gpu = torch.cuda.get_device_properties(dev)
+        if ((m.D, m.F, m.L, m.H) != (384, 1536, 6, 6) or "H200" not in gpu.name
+                or gpu.multi_processor_count != 132):
+            log.warning("wide Ring routing requires102M/H200132SM; retaining auto dispatch")
+            return backend
+        try:
+            routes = {r: megakernel.MegaBackend(runner, megakernel_ring.RingDecoder(m, row_programs=r*6),
+                      max_tokens=r, max_rows=r, trial=True) for r in (10, 15, 16)}
+            return megakernel.WideRingBackend(backend, routes)
+        except Exception as e:  # noqa: BLE001 (opt-in setup must retain a usable auto backend)
+            log.warning("wide Ring setup failed (%s: %s); retaining auto dispatch", type(e).__name__, e)
+    return backend
 
 
 @torch.no_grad()
