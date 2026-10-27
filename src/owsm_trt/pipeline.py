@@ -331,8 +331,8 @@ class OWSM:
         autocast load synchronously. Worker setup/join is per request. More workers can regress
         small/cheap inputs, so select using file-inclusive measurements. Single batches, encoder
         lookahead, CTC-only and long-form paths are unchanged. Greedy streaming is verified on
-        H200/1B/102M; the fixed-batch extension is pending GPU validation. See
-        docs/runtime-audio-prefetch.md for measured gains and limits.
+        H200/1B/102M; fixed batches also pass public/GPU checks, with timing replication pending.
+        See docs/runtime-audio-prefetch.md and docs/runtime-fixed-prefetch.md for measured limits.
 
         ``beam_fused_lse`` (default False): fuse full-vocabulary beam normalization with candidate
         scoring when CUDA beam kernels are available and enabled. This changes fp32 reduction order
