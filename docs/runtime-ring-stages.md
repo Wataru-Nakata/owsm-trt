@@ -97,3 +97,14 @@ precision and single-row route. No speed gain for that change has been measured 
 samples in `outputs/runtime-2775955/{real,synthetic}/`. First-prefill states cover only the initial
 step; synthetic offset32 is a separate diagnostic. Stageout_status1 was reported despite full
 publication/exit0. The earlier broad group-guard regression was removed before this measurement.
+
+
+## Subsequent measured decisions
+
+The row attribution above led to the guarded H200/102M R5..8 head schedule, independently verified
+and adopted with unchanged arithmetic/splits ([results](runtime-ring-row-programs.md)). Single-row
+plain calls now select the existing solo budget only without encoder lookahead; independent1B/102M
+request measurements support that dispatch change ([results](runtime-plain-solo.md)). These are
+separate same-route comparisons, not multiplicative gains over the earlier counter measurements.
+The existing weight-ring capacity128/64/32 experiment is prepared separately, still unmeasured
+([protocol](runtime-ring-buffer.md)); all runtime buffer defaults remain unchanged.
