@@ -17,6 +17,7 @@ import torch.nn.functional as F
 from . import fp8 as fp8_mod
 from . import hub, megakernel
 from .audio import AudioLike, duration, load_audio
+from .audio_prefetch import prefetch_batches
 from .build import DTYPES, BuildOptions, build_engines, buildable, check_config, engine_tag
 from .config import load_espnet_config, parse_config
 from .modeling import (
@@ -235,6 +236,7 @@ class OWSM:
         self.frontend_graph = frontend_graph
         self._frontend_graph_batch_limit = frontend_graph_max_batch
         self._frontend_reuse_warmup_stream = True
+        self._audio_prefetch_workers = 0  # Experimental file-only streaming ablation; no default change.
         self.greedy_skip_finished = greedy_kernels
         self.greedy_plain_solo = greedy_kernels
         self.greedy_fused_select = greedy_kernels
@@ -642,11 +644,16 @@ class OWSM:
                 # (same output, RTFx +1.5% on the 73 test utterances and +2-6% on test-clean)
                 order = [order[-1 - i // 2] if i % 2 == 0 else order[i // 2] for i in range(len(order))]
             chunks = (order[i : i + bs] for i in range(0, len(order), bs))
-            batches = (self._features([self._wave(items[j], sr) for j in chunk]) for chunk in chunks)
-            outs, calls = sess.decode_stream(
-                primer, batches, self._ctc_drafts, self._max_new(), self.tokenizer.not_drafted,
-                priority=self.stream_priority,
-            )  # fmt: skip
+            workers = self._audio_prefetch_workers
+            if workers and not all(isinstance(x, (str, os.PathLike)) for x in items):
+                workers = 0
+            audio_batches = ([items[j] for j in chunk] for chunk in chunks)
+            with prefetch_batches(audio_batches, lambda x: self._wave(x, sr), workers) as waves:
+                batches = (self._features(batch) for batch in waves)
+                outs, calls = sess.decode_stream(
+                    primer, batches, self._ctc_drafts, self._max_new(), self.tokenizer.not_drafted,
+                    priority=self.stream_priority,
+                )  # fmt: skip
             self.draft_stats[0] += sum(len(o) + 1 for o in outs)
             self.draft_stats[1] += calls
             results = [None] * len(items)
