@@ -16,7 +16,19 @@ own1GPU job). PBS exit271 is not a successful full audit. Its
 inputs in28 complete chunks, with exact tokens/timestamp tokens/segments/text and zero differing
 outputs. `complete=false` and `interrupted=true` are retained. Resume validation checks every chunk
 hash, selected key, source/config digest and output difference. Job2780199 resumes the remaining
-9,648 inputs with the exact same8151703 code/checkpoint/engines/corpus; its results are pending.
+9,648 inputs with the exact same8151703 code/checkpoint/engines/corpus. It too was stopped after a
+fresh query showed193 GPUs. Strict resume validation now covers4,224 outputs in33 chunks, all
+returned tokens/timestamps/segments/text equal, leaving9,008 inputs pending. Neither stopped job
+establishes full-corpus acceptance or a new latency result.
+
+The [4,224-input diagnostic catalogue](runtime-large-regression-cases-4224.json) retains30 distinct
+flagged inputs, identically flagged on both variants: all14 Japanese nonspeech probes generated
+text,21 inputs had out-of-range/invalid segment times, and2 had repeated-fourgram indicators
+(these groups overlap). Three JVS flags involve0.587–0.611second recordings with17–43 character
+references. Their sizes agree with the original ZIP members, but audio/transcript correspondence
+has not been reviewed. They remain in the audit; no difficult cases were removed to improve scores.
+The nonspeech cases are excluded from speech CER/WER and counted separately. These are baseline
+quality/data diagnostics, not newly introduced upper-bound differences or human timing annotations.
 
 First job2779853
 exited1 after53seconds during preparation: the dev-other manifest remained but its source directory

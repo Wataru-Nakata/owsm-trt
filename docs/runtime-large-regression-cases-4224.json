@@ -1,0 +1,799 @@
+{
+  "completed": 4224,
+  "complete": false,
+  "case": "1B beam5 timestamp B1 upperboundOFF/ON",
+  "cases": [
+    {
+      "key": "jvs_nonpara90--jvs009-TRAVEL1000_0787",
+      "dataset": "jvs_nonpara90",
+      "language": "jpn",
+      "chunk": "chunk-00018.jsonl.gz",
+      "input_seconds": 0.593875,
+      "reference_characters": 21,
+      "predicted_text_characters": 2,
+      "segment_times": [
+        {
+          "start": 0.0,
+          "end": 1.16
+        }
+      ],
+      "reference_invalid_segments": 1,
+      "candidate_invalid_segments": 1,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "outside_input_or_invalid_segment"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "jvs_nonpara90--jvs009-BASIC5000_2571",
+      "dataset": "jvs_nonpara90",
+      "language": "jpn",
+      "chunk": "chunk-00021.jsonl.gz",
+      "input_seconds": 0.611125,
+      "reference_characters": 17,
+      "predicted_text_characters": 3,
+      "segment_times": [
+        {
+          "start": 0.0,
+          "end": 0.78
+        }
+      ],
+      "reference_invalid_segments": 1,
+      "candidate_invalid_segments": 1,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "outside_input_or_invalid_segment"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "jvs_parallel10--jvs009-VOICEACTRESS100_095",
+      "dataset": "jvs_parallel10",
+      "language": "jpn",
+      "chunk": "chunk-00027.jsonl.gz",
+      "input_seconds": 0.5867916666666667,
+      "reference_characters": 43,
+      "predicted_text_characters": 4,
+      "segment_times": [
+        {
+          "start": 0.0,
+          "end": 0.74
+        }
+      ],
+      "reference_invalid_segments": 1,
+      "candidate_invalid_segments": 1,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "outside_input_or_invalid_segment"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "stress--jpn-noise-30s-0p1",
+      "dataset": "stress",
+      "language": "jpn",
+      "chunk": "chunk-00030.jsonl.gz",
+      "input_seconds": 30.0,
+      "reference_characters": 0,
+      "predicted_text_characters": 114,
+      "segment_times": [
+        {
+          "start": 0.0,
+          "end": 12.36
+        },
+        {
+          "start": 12.36,
+          "end": 30.0
+        }
+      ],
+      "reference_invalid_segments": 0,
+      "candidate_invalid_segments": 0,
+      "repetition": {
+        "max_identical_token_run": 7,
+        "max_fourgram_count": 4,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "text_generated_on_nonspeech_probe",
+        "repeated_fourgram_indicator"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "stress--jpn-tone-1s",
+      "dataset": "stress",
+      "language": "jpn",
+      "chunk": "chunk-00030.jsonl.gz",
+      "input_seconds": 1.0,
+      "reference_characters": 0,
+      "predicted_text_characters": 3,
+      "segment_times": [
+        {
+          "start": 0.0,
+          "end": 1.08
+        }
+      ],
+      "reference_invalid_segments": 1,
+      "candidate_invalid_segments": 1,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "outside_input_or_invalid_segment",
+        "text_generated_on_nonspeech_probe"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "stress--jpn-silence-2s",
+      "dataset": "stress",
+      "language": "jpn",
+      "chunk": "chunk-00031.jsonl.gz",
+      "input_seconds": 2.0,
+      "reference_characters": 0,
+      "predicted_text_characters": 2,
+      "segment_times": [
+        {
+          "start": 26.54,
+          "end": 29.96
+        }
+      ],
+      "reference_invalid_segments": 1,
+      "candidate_invalid_segments": 1,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "outside_input_or_invalid_segment",
+        "text_generated_on_nonspeech_probe"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "stress--jpn-silence-10s",
+      "dataset": "stress",
+      "language": "jpn",
+      "chunk": "chunk-00031.jsonl.gz",
+      "input_seconds": 10.0,
+      "reference_characters": 0,
+      "predicted_text_characters": 2,
+      "segment_times": [
+        {
+          "start": 26.54,
+          "end": 29.96
+        }
+      ],
+      "reference_invalid_segments": 1,
+      "candidate_invalid_segments": 1,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "outside_input_or_invalid_segment",
+        "text_generated_on_nonspeech_probe"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "stress--jpn-noise-2s-0p01",
+      "dataset": "stress",
+      "language": "jpn",
+      "chunk": "chunk-00031.jsonl.gz",
+      "input_seconds": 2.0,
+      "reference_characters": 0,
+      "predicted_text_characters": 3,
+      "segment_times": [
+        {
+          "start": 0.0,
+          "end": 2.0
+        }
+      ],
+      "reference_invalid_segments": 0,
+      "candidate_invalid_segments": 0,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "text_generated_on_nonspeech_probe"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "stress--jpn-silence-0p1s",
+      "dataset": "stress",
+      "language": "jpn",
+      "chunk": "chunk-00031.jsonl.gz",
+      "input_seconds": 0.1,
+      "reference_characters": 0,
+      "predicted_text_characters": 2,
+      "segment_times": [
+        {
+          "start": 26.54,
+          "end": 29.96
+        }
+      ],
+      "reference_invalid_segments": 1,
+      "candidate_invalid_segments": 1,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "outside_input_or_invalid_segment",
+        "text_generated_on_nonspeech_probe"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "stress--jpn-noise-2s-0p1",
+      "dataset": "stress",
+      "language": "jpn",
+      "chunk": "chunk-00031.jsonl.gz",
+      "input_seconds": 2.0,
+      "reference_characters": 0,
+      "predicted_text_characters": 3,
+      "segment_times": [
+        {
+          "start": 0.0,
+          "end": 2.0
+        }
+      ],
+      "reference_invalid_segments": 0,
+      "candidate_invalid_segments": 0,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "text_generated_on_nonspeech_probe"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "stress--jpn-tone-30s",
+      "dataset": "stress",
+      "language": "jpn",
+      "chunk": "chunk-00031.jsonl.gz",
+      "input_seconds": 30.0,
+      "reference_characters": 0,
+      "predicted_text_characters": 3,
+      "segment_times": [
+        {
+          "start": 0.0,
+          "end": 30.0
+        }
+      ],
+      "reference_invalid_segments": 0,
+      "candidate_invalid_segments": 0,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "text_generated_on_nonspeech_probe"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "stress--jpn-silence-0p5s",
+      "dataset": "stress",
+      "language": "jpn",
+      "chunk": "chunk-00031.jsonl.gz",
+      "input_seconds": 0.5,
+      "reference_characters": 0,
+      "predicted_text_characters": 2,
+      "segment_times": [
+        {
+          "start": 26.54,
+          "end": 29.96
+        }
+      ],
+      "reference_invalid_segments": 1,
+      "candidate_invalid_segments": 1,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "outside_input_or_invalid_segment",
+        "text_generated_on_nonspeech_probe"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "stress--jpn-silence-30s",
+      "dataset": "stress",
+      "language": "jpn",
+      "chunk": "chunk-00031.jsonl.gz",
+      "input_seconds": 30.0,
+      "reference_characters": 0,
+      "predicted_text_characters": 2,
+      "segment_times": [
+        {
+          "start": 26.54,
+          "end": 29.96
+        }
+      ],
+      "reference_invalid_segments": 0,
+      "candidate_invalid_segments": 0,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "text_generated_on_nonspeech_probe"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "stress--jpn-noise-10s-0p1",
+      "dataset": "stress",
+      "language": "jpn",
+      "chunk": "chunk-00031.jsonl.gz",
+      "input_seconds": 10.0,
+      "reference_characters": 0,
+      "predicted_text_characters": 3,
+      "segment_times": [
+        {
+          "start": 0.0,
+          "end": 10.0
+        }
+      ],
+      "reference_invalid_segments": 0,
+      "candidate_invalid_segments": 0,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "text_generated_on_nonspeech_probe"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "stress--jpn-noise-30s-0p01",
+      "dataset": "stress",
+      "language": "jpn",
+      "chunk": "chunk-00031.jsonl.gz",
+      "input_seconds": 30.0,
+      "reference_characters": 0,
+      "predicted_text_characters": 119,
+      "segment_times": [
+        {
+          "start": 0.0,
+          "end": 30.0
+        }
+      ],
+      "reference_invalid_segments": 0,
+      "candidate_invalid_segments": 0,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 6,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "text_generated_on_nonspeech_probe",
+        "repeated_fourgram_indicator"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "stress--jpn-tone-10s",
+      "dataset": "stress",
+      "language": "jpn",
+      "chunk": "chunk-00031.jsonl.gz",
+      "input_seconds": 10.0,
+      "reference_characters": 0,
+      "predicted_text_characters": 3,
+      "segment_times": [
+        {
+          "start": 0.0,
+          "end": 10.0
+        }
+      ],
+      "reference_invalid_segments": 0,
+      "candidate_invalid_segments": 0,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "text_generated_on_nonspeech_probe"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "stress--jpn-noise-10s-0p01",
+      "dataset": "stress",
+      "language": "jpn",
+      "chunk": "chunk-00031.jsonl.gz",
+      "input_seconds": 10.0,
+      "reference_characters": 0,
+      "predicted_text_characters": 15,
+      "segment_times": [
+        {
+          "start": 0.0,
+          "end": 10.0
+        }
+      ],
+      "reference_invalid_segments": 0,
+      "candidate_invalid_segments": 0,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "text_generated_on_nonspeech_probe"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "fleurs_en_validation--en_us-13870674013435125016",
+      "dataset": "fleurs_en_validation",
+      "language": "eng",
+      "chunk": "chunk-00031.jsonl.gz",
+      "input_seconds": 8.28,
+      "reference_characters": 116,
+      "predicted_text_characters": 116,
+      "segment_times": [
+        {
+          "start": 0.0,
+          "end": 8.3
+        }
+      ],
+      "reference_invalid_segments": 1,
+      "candidate_invalid_segments": 1,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "outside_input_or_invalid_segment"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "fleurs_en_validation--en_us-6415341913845555034",
+      "dataset": "fleurs_en_validation",
+      "language": "eng",
+      "chunk": "chunk-00031.jsonl.gz",
+      "input_seconds": 4.38,
+      "reference_characters": 67,
+      "predicted_text_characters": 68,
+      "segment_times": [
+        {
+          "start": 0.0,
+          "end": 4.4
+        }
+      ],
+      "reference_invalid_segments": 1,
+      "candidate_invalid_segments": 1,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "outside_input_or_invalid_segment"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "fleurs_en_validation--en_us-16685771406658302555",
+      "dataset": "fleurs_en_validation",
+      "language": "eng",
+      "chunk": "chunk-00031.jsonl.gz",
+      "input_seconds": 8.04,
+      "reference_characters": 145,
+      "predicted_text_characters": 142,
+      "segment_times": [
+        {
+          "start": 0.02,
+          "end": 8.06
+        }
+      ],
+      "reference_invalid_segments": 1,
+      "candidate_invalid_segments": 1,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "outside_input_or_invalid_segment"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "fleurs_en_validation--en_us-15171241960492149561",
+      "dataset": "fleurs_en_validation",
+      "language": "eng",
+      "chunk": "chunk-00031.jsonl.gz",
+      "input_seconds": 5.76,
+      "reference_characters": 83,
+      "predicted_text_characters": 86,
+      "segment_times": [
+        {
+          "start": 0.02,
+          "end": 5.78
+        }
+      ],
+      "reference_invalid_segments": 1,
+      "candidate_invalid_segments": 1,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "outside_input_or_invalid_segment"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "fleurs_en_validation--en_us-11030046932175288954",
+      "dataset": "fleurs_en_validation",
+      "language": "eng",
+      "chunk": "chunk-00032.jsonl.gz",
+      "input_seconds": 4.92,
+      "reference_characters": 95,
+      "predicted_text_characters": 94,
+      "segment_times": [
+        {
+          "start": 0.02,
+          "end": 4.94
+        }
+      ],
+      "reference_invalid_segments": 1,
+      "candidate_invalid_segments": 1,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "outside_input_or_invalid_segment"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "fleurs_en_validation--en_us-10098964113747380446",
+      "dataset": "fleurs_en_validation",
+      "language": "eng",
+      "chunk": "chunk-00032.jsonl.gz",
+      "input_seconds": 4.14,
+      "reference_characters": 56,
+      "predicted_text_characters": 51,
+      "segment_times": [
+        {
+          "start": 0.02,
+          "end": 4.16
+        }
+      ],
+      "reference_invalid_segments": 1,
+      "candidate_invalid_segments": 1,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "outside_input_or_invalid_segment"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "fleurs_en_validation--en_us-1298409023920250606",
+      "dataset": "fleurs_en_validation",
+      "language": "eng",
+      "chunk": "chunk-00032.jsonl.gz",
+      "input_seconds": 5.22,
+      "reference_characters": 60,
+      "predicted_text_characters": 66,
+      "segment_times": [
+        {
+          "start": 0.0,
+          "end": 5.24
+        }
+      ],
+      "reference_invalid_segments": 1,
+      "candidate_invalid_segments": 1,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "outside_input_or_invalid_segment"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "fleurs_en_validation--en_us-12554742849849029631",
+      "dataset": "fleurs_en_validation",
+      "language": "eng",
+      "chunk": "chunk-00032.jsonl.gz",
+      "input_seconds": 5.1,
+      "reference_characters": 95,
+      "predicted_text_characters": 95,
+      "segment_times": [
+        {
+          "start": 0.02,
+          "end": 5.12
+        }
+      ],
+      "reference_invalid_segments": 1,
+      "candidate_invalid_segments": 1,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "outside_input_or_invalid_segment"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "fleurs_en_validation--en_us-2699451722157462043",
+      "dataset": "fleurs_en_validation",
+      "language": "eng",
+      "chunk": "chunk-00032.jsonl.gz",
+      "input_seconds": 9.36,
+      "reference_characters": 173,
+      "predicted_text_characters": 176,
+      "segment_times": [
+        {
+          "start": 0.02,
+          "end": 9.38
+        }
+      ],
+      "reference_invalid_segments": 1,
+      "candidate_invalid_segments": 1,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "outside_input_or_invalid_segment"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "fleurs_en_validation--en_us-6538398155791771629",
+      "dataset": "fleurs_en_validation",
+      "language": "eng",
+      "chunk": "chunk-00032.jsonl.gz",
+      "input_seconds": 7.26,
+      "reference_characters": 138,
+      "predicted_text_characters": 138,
+      "segment_times": [
+        {
+          "start": 0.02,
+          "end": 7.28
+        }
+      ],
+      "reference_invalid_segments": 1,
+      "candidate_invalid_segments": 1,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "outside_input_or_invalid_segment"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "fleurs_en_validation--en_us-1169013790597959793",
+      "dataset": "fleurs_en_validation",
+      "language": "eng",
+      "chunk": "chunk-00032.jsonl.gz",
+      "input_seconds": 5.52,
+      "reference_characters": 84,
+      "predicted_text_characters": 82,
+      "segment_times": [
+        {
+          "start": 0.02,
+          "end": 5.54
+        }
+      ],
+      "reference_invalid_segments": 1,
+      "candidate_invalid_segments": 1,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "outside_input_or_invalid_segment"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "fleurs_en_validation--en_us-15654985879045201103",
+      "dataset": "fleurs_en_validation",
+      "language": "eng",
+      "chunk": "chunk-00032.jsonl.gz",
+      "input_seconds": 5.88,
+      "reference_characters": 104,
+      "predicted_text_characters": 105,
+      "segment_times": [
+        {
+          "start": 0.02,
+          "end": 5.9
+        }
+      ],
+      "reference_invalid_segments": 1,
+      "candidate_invalid_segments": 1,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "outside_input_or_invalid_segment"
+      ],
+      "output_differences": []
+    },
+    {
+      "key": "fleurs_en_validation--en_us-3907900566906015878",
+      "dataset": "fleurs_en_validation",
+      "language": "eng",
+      "chunk": "chunk-00032.jsonl.gz",
+      "input_seconds": 6.3,
+      "reference_characters": 95,
+      "predicted_text_characters": 95,
+      "segment_times": [
+        {
+          "start": 0.0,
+          "end": 6.32
+        }
+      ],
+      "reference_invalid_segments": 1,
+      "candidate_invalid_segments": 1,
+      "repetition": {
+        "max_identical_token_run": 1,
+        "max_fourgram_count": 1,
+        "scope": "Diagnostic repetition indicators, not annotation-based error labels."
+      },
+      "reasons": [
+        "outside_input_or_invalid_segment"
+      ],
+      "output_differences": []
+    }
+  ],
+  "scope": "Same flags on both variants; these are existing output/data-quality diagnostics, not optimization regressions or human-annotated timing errors. Nonspeech probes have no speech; repetition thresholds are heuristic. The three subsecond JVS cases have the same file sizes as original ZIP members; transcript/audio correspondence is not verified."
+}
