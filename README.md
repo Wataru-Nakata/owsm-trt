@@ -236,6 +236,13 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   run the full decoder. On1B/H200, English B3/B8 whole-list RTFx improved1.92–3.66% with exact
   outputs; Japanese B8 was within noise. The102M multi-row TensorRT route is unchanged.
   [Group measurements and public-path verification](docs/runtime-finished-groups.md).
+* **Serial plain single-request scheduling.** With `greedy_kernels=True`, non-drafted B1 calls use
+  Ring's existing solo budget when encoder lookahead is disabled. Independent H200 measurements
+  show5.6–6.5% more RTFx on1B and12.2–16.0% on102M across plain ASR, timestamp ASR and
+  translation (English73/Japanese12,11 alternating repeats), with exact full outputs and unchanged
+  decoder calls. Pooled request p95 improved; one102M translation input's median regressed1.08%.
+  Drafted ASR has no corresponding speedup claim. Overlapping encoder calls retain their schedule.
+  [Public API validation and limitations](docs/runtime-plain-solo.md).
 * **Existing102M Ring row option.** `decoder_kernel="ring:rr"` remains an opt-in numerical
   change. On H200, English73/Japanese12 plain B3 ASR gained35–47% whole-list RTFx and
   timestamp beam5 B1 gained10.5–11.3%, against `auto` with the same engines (nine alternating

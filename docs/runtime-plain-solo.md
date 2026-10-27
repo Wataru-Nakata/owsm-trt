@@ -1,4 +1,4 @@
-# Plain single-row Ring solo scheduling: first measured comparison
+# Plain single-row Ring solo scheduling
 
 The existing Ring decoder has two budgets: a smaller one while an encoder can run concurrently,
 and a larger `solo` budget with the same cross-attention split count. Drafted verification already
@@ -12,7 +12,7 @@ Prefill, drafted verification, multi-row calls, scalar EOS guarding, host-check 
 search are unchanged. The experiment disables encoder lookahead and times separate single
 requests for plain ASR, timestamp ASR and translation. This is not a policy for overlapping
 encoding; any later runtime integration must retain the concurrent schedule in that path.
-The first measured result is below; public-path integration still needs independent validation.
+The public serial path is adopted after the independent validation2776245 below.
 
 The proposed `profile_plain_solo.pbs` runs on the compute node with both1B and102M, English73 /
 Japanese12,11 alternating repeats. Real-checkpoint synthetic-state checks require exact logits,
@@ -49,7 +49,7 @@ lookahead exclusion, drafted behavior, reuse and independent request timings bef
 No reference translation/boundary quality or isolated cold/VRAM improvement is claimed.
 
 
-## Public integration: independent validation pending
+## Public integration
 
 `GreedySession(..., plain_solo=False)` adds an optional single-row serial budget. The public
 factory enables it with `greedy_kernels=True` only when encoder lookahead is disabled and the
@@ -60,8 +60,7 @@ No per-token host branch/synchronization is added; the setting binds the constru
 `validate_plain_solo.pbs` checks both budgets' EOS/restart GPU behavior and actual public/default
 rollback, including encoder-lookahead exclusion, then independently repeats all12 request cases
 through `--public-policy`. Separate diagnostics assert and save every actual plain call's program
-budget and NS. It also fills the recently adopted row policy's W2 graph/cache coverage. The first
-profiler result above is not yet an independently verified public-default result.
+budget and NS. It also fills the recently adopted row policy's W2 graph/cache coverage. The independent public-default result is recorded below.
 
 
 ## Incomplete public validation2776203
@@ -78,3 +77,36 @@ A faulthandler watchdog will capture remaining stalls. Retained lazy-session/TRT
 at shutdown is a hypothesis, not an established root cause. The fix changes only validation
 lifetime management; it does not bypass process cleanup or weaken output checks. Retry required.
 Raw complete/partial artifacts: `outputs/runtime-2776203/`.
+
+
+## Independent public result2776245: adopted
+
+Frozen25254ed (runtime658fa45, validator lifetime fixcf87cba) completed with exit0. Both1B and102M
+public validators exited normally and matched all13 cases, including actual solo/concurrent dispatch,
+lookahead exclusion, drafted behavior, long prompt/audio and session reuse. The unchanged runtime's
+58 focused and seven additional Ring W2 GPU tests are retained from2776203 with hashes; they were
+not rerun. Eight real-checkpoint state checks per model/corpus again passed.
+
+All12 measured conditions matched full tokens, timestamp IDs, segments, text and decoder calls.
+Actual budgets were32→64 CTAs on1B and12→24 on102M, with NS2 unchanged. Eleven alternating
+single-request repeats gave aggregate RTFx changes:
+
+|Model/corpus|Plain ASR B1|Timestamp ASR B1|Translation B1|
+|---|---:|---:|---:|
+|1B English73|+5.62%|+6.14%|+5.58%|
+|1B Japanese12|+6.39%|+6.46%|+6.52%|
+|102M English73|+12.17%|+13.09%|+13.04%|
+|102M Japanese12|+13.99%|+14.59%|+16.04%|
+
+All11 paired corpus totals improved in every condition. Per-input medians improved for all inputs
+except one102M English translation (ID1272-141231-0016,−1.08%). Pooled single-request p95 decreased
+5.88–6.90% on1B and12.88–14.21% on102M; these percentiles mix durations/repeats. No separate
+drafted-ASR, overlapping-encoder, beam, cold-start or standalone VRAM gain is claimed.
+
+Keep the public default enabled through `greedy_kernels`, with encoder lookahead retaining the
+concurrent budget. The low-level `GreedySession` flag remains opt-in, because direct callers own
+their stream/overlap scheduling. `greedy_kernels=False` restores the old public plain budget.
+[Independent measurements, per-input results and actual dispatch](runtime-plain-solo-api-2776245.json).
+Raw artifacts: `outputs/runtime-2776245/`; reproduction: `scripts/validate_plain_solo_retry.pbs`,
+with `profile_plain_solo.py --public-policy`. The retry watchdog sampled1B JIT compilation at120s;
+both validators subsequently completed. The prior timeout's root cause remains unproven.
