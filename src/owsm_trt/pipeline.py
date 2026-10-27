@@ -218,7 +218,10 @@ class OWSM:
         encoder_lookahead: bool = False,
         frontend_graph_max_batch: int = 1,
         audio_prefetch_workers: int = 0,
+        beam_fused_lse: bool = False,
     ):
+        if type(beam_fused_lse) is not bool:
+            raise ValueError("beam_fused_lse must be a bool")
         if type(audio_prefetch_workers) is not int or audio_prefetch_workers not in (0, 1, 2):
             raise ValueError("audio_prefetch_workers must be 0, 1 or 2")
         if type(frontend_graph_max_batch) is not int or not 1 <= frontend_graph_max_batch <= 8:
@@ -232,6 +235,7 @@ class OWSM:
         self.lazy_drafts = lazy_drafts
         self.beam_upper_bound = beam_upper_bound
         self.beam_kernels = beam_kernels
+        self.beam_fused_lse = beam_fused_lse
         self.beam_compact_tail = beam_compact_tail
         self.beam_grouped_cross = beam_grouped_cross
         self._beam_backend = None
@@ -294,6 +298,7 @@ class OWSM:
         fp8_margin: float = 1.0,
         fp8_skip: str = "",
         audio_prefetch_workers: int = 0,
+        beam_fused_lse: bool = False,
     ) -> "OWSM":
         """Load an OWSM model from a Hugging Face repo id or local ESPnet model directory.
 
@@ -325,7 +330,13 @@ class OWSM:
         on the caller thread. Only all-file inputs are prefetched; mixed/waveform inputs and CPU
         autocast load synchronously. Worker setup/join is per request. More workers can regress
         small/cheap inputs, so select using file-inclusive measurements. Other decode paths are
-        unchanged. Public API checks pass on H200/1B/102M; see docs/runtime-audio-prefetch.md for measured gains and limits.
+        unchanged. Public API checks pass on H200/1B/102M; see docs/runtime-audio-prefetch.md
+        for measured gains and limits.
+
+        ``beam_fused_lse`` (default False): fuse full-vocabulary beam normalization with candidate
+        scoring when CUDA beam kernels are available and enabled. This changes fp32 reduction order
+        and can change near-tied token/timestamp choices. Greedy and unsupported paths keep their
+        existing normalization. See docs/beam-lse.md for same-engine measurements and quality checks.
 
         ``greedy_kernels`` (default True): split draft-window vocabulary selection across blocks and
         fuse the final argmax with draft acceptance, reuse short-primer flags for fixed-batch
@@ -400,6 +411,8 @@ class OWSM:
         None: the ``OWSM_TRT_MEGAKERNEL`` environment variable (auto / ring / 1 / triton /
         0), ``"auto"`` if unset.
         """
+        if type(beam_fused_lse) is not bool:
+            raise ValueError("beam_fused_lse must be a bool")
         if type(audio_prefetch_workers) is not int or audio_prefetch_workers not in (0, 1, 2):
             raise ValueError("audio_prefetch_workers must be 0, 1 or 2")
         if type(frontend_graph_max_batch) is not int or not 1 <= frontend_graph_max_batch <= 8:
@@ -452,7 +465,8 @@ class OWSM:
                        beam_upper_bound, beam_kernels, beam_compact_tail, beam_grouped_cross,
                        frontend_graph=frontend_graph, lazy_drafts=lazy_drafts, draft_token_budget=draft_token_budget,
                        greedy_kernels=greedy_kernels, encoder_lookahead=encoder_lookahead,
-                       frontend_graph_max_batch=frontend_graph_max_batch, audio_prefetch_workers=audio_prefetch_workers)
+                       frontend_graph_max_batch=frontend_graph_max_batch, audio_prefetch_workers=audio_prefetch_workers,
+                       beam_fused_lse=beam_fused_lse)
         if backend != "tensorrt":
             raise ValueError(f"unknown backend {backend!r} (use 'tensorrt' or 'torch')")
 
@@ -494,7 +508,8 @@ class OWSM:
                        beam_upper_bound, beam_kernels, beam_compact_tail, beam_grouped_cross,
                        frontend_graph=frontend_graph, lazy_drafts=lazy_drafts, draft_token_budget=draft_token_budget,
                        greedy_kernels=greedy_kernels, encoder_lookahead=encoder_lookahead,
-                       frontend_graph_max_batch=frontend_graph_max_batch, audio_prefetch_workers=audio_prefetch_workers)
+                       frontend_graph_max_batch=frontend_graph_max_batch, audio_prefetch_workers=audio_prefetch_workers,
+                       beam_fused_lse=beam_fused_lse)
 
     # ------------------------------------------------------------------ helpers
 
@@ -534,6 +549,7 @@ class OWSM:
                     kv_reorder="prefix" if self.beam_kernels else "torch",
                     share_cross_kv=self.beam_kernels, fused_state=self.beam_kernels,
                     compact_tail=self.beam_compact_tail,
+                    fused_lse=self.beam_fused_lse,
                 )
         self._sessions.move_to_end(key)
         return self._sessions[key]

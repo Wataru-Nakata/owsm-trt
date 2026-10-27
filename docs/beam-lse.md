@@ -75,3 +75,38 @@ exact graph-versus-eager state with the same arithmetic, and31 naive beam/greedy
 pass. [Per-step trajectories and numeric checks](beam-lse-diagnostic-2777145.json). The allocation's
 later independent audio API diagnosis fails, so the job is not globally successful. Full-model LSE
 performance remains unmeasured and the default stays off.
+
+
+## First full result2777366: public opt-in replication prepared
+
+Frozen6a15d1f finishes F/exit0 with149 focused and31 naive checks. The same checkpoint/engine
+comparison uses11 alternating repeats; native frontend capture is common to both variants.
+
+|Model / corpus|B|RTFx gain|Paired group median|Improved groups|Repeat-total gain range|
+|---|---:|---:|---:|---:|---:|
+|1B English73|1|1.158%|1.127%|72/73|0.830..1.369%|
+|1B English73|3|0.547%|0.841%|24/25|-1.199..1.242%|
+|1B Japanese12|1|1.217%|1.222%|12/12|0.852..1.503%|
+|1B Japanese12|3|0.871%|0.777%|4/4|0.547..2.268%|
+|102M English73|1|2.199%|2.147%|73/73|1.649..2.934%|
+|102M English73|3|2.674%|2.460%|25/25|1.865..3.227%|
+|102M Japanese12|1|2.282%|2.006%|12/12|1.360..3.217%|
+|102M Japanese12|3|2.422%|2.016%|4/4|1.773..5.406%|
+
+All full tokens, timestamp IDs, segments, text and decoder call counts match on the corpus cases.
+All additional no-timestamp, translation, prompt, silence/noise,30s repeated speech and110s cases
+also match with bound stopping on/off. WER/CER is unchanged (1B English45/1150 words, Japanese26/592
+characters;102M94/1150 and43/592). Timestamp quality is baseline agreement, with no time annotations.
+Pooled request p95 improves0.93–1.33% for1B and1.80–2.57% for102M. Aggregate peak allocated memory
+is essentially unchanged, but both sessions are resident; this is not standalone memory accounting.
+Extra partial-normalizer scratch remains5.7KiB forB3/K5/V50002. Cold/capture components are recorded,
+not attributed as clean standalone JIT differences. Eager instrumented event phases are not CUDA
+graph-node attribution. [All samples, hashes, quality, cold/dispatch and comparisons](beam-lse-results-2777366.json).
+
+`beam_fused_lse=False` is prepared as an explicit public opt-in, forwarded to beam sessions only.
+CUDA beam kernels must be enabled/available; otherwise the existing normalizer is retained. The
+first measured agreement does not turn this N-class reduction into an exact guarantee. Keep the
+default off. The independent `validate_beam_lse_api.pbs` tests public constructor routing, K2/3/5/8,
+repeat/session eviction, greedy, translation, long prompts and disabled-kernel fallback, then repeats
+all eight measured corpus conditions through `--verify-api`. Expanded public verification remains
+pending until that run completes; no extra default or combined optimization gain is claimed.

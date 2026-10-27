@@ -456,17 +456,20 @@ def run_batch(model, args, items, waves, batch, legacy):
         save(out / "phases.json", profile_eager(model, args, group, primer, out))
     if args.verify_api:
         # Exercise OWSM's production session factory, independently of profiler-supplied sessions.
-        original_options = model.beam_compact_tail, model.beam_grouped_cross, model._beam_backend
+        original_options = model.beam_compact_tail, model.beam_grouped_cross, model._beam_backend, model.beam_fused_lse
         model.beam_compact_tail = args.compact_tail
-        model.beam_grouped_cross = True
+        model.beam_grouped_cross = args.gluon_group_queries
+        model.beam_fused_lse = args.fused_lse
         model._beam_backend = None
         model._sessions.clear()
-        actual, api_dispatch = {}, {}
+        actual, api_dispatch, api_search = {}, {}, {}
         try:
             for indices in chunks:
                 results = model.transcribe([waves[i] for i in indices], **kw)
                 api_session = model._sessions[len(indices), args.beam]
+                assert api_session.fused_lse == args.fused_lse, "API normalizer differs"
                 api_dispatch[len(indices)] = dispatch(api_session)
+                api_search[len(indices)] = {"fused_lse": api_session.fused_lse, "chunk": api_session.chunk}
                 assert api_dispatch[len(indices)] == cold[f"fixed/b{len(indices)}"]["dispatch"], "API dispatch differs"
                 assert not getattr(api_session.backend, "failed", set()), "API decoder trial failed"
                 for i, result in zip(indices, results):
@@ -474,10 +477,11 @@ def run_batch(model, args, items, waves, batch, legacy):
             agreement = comparison(records["on"], actual)
             save(out / "api_agreement.json", agreement)
             save(out / "api_dispatch.json", api_dispatch)
+            save(out / "api_search.json", api_search)
             assert all(v["equal"] == v["total"] for v in agreement.values()), "public API and measured mode differ"
         finally:
             model._sessions.clear()
-            model.beam_compact_tail, model.beam_grouped_cross, model._beam_backend = original_options
+            model.beam_compact_tail, model.beam_grouped_cross, model._beam_backend, model.beam_fused_lse = original_options
     return summary
 
 
@@ -497,7 +501,7 @@ def extra_checks(model, args, waves, legacy):
         cases = [(name, audio + waves[:max(0, args.extra_batch - len(audio))], extra)
                  if not extra.get("long") else (name, audio, extra) for name, audio, extra in cases]
     original = model._session
-    original_options = model.beam_compact_tail, model.beam_grouped_cross, model._beam_backend
+    original_options = model.beam_compact_tail, model.beam_grouped_cross, model._beam_backend, model.beam_fused_lse
     results = {}
     for mode in (["baseline"] if legacy else []) + ["off", "on"] + (["api"] if args.verify_api else []):
         cache = {}
@@ -518,7 +522,8 @@ def extra_checks(model, args, waves, legacy):
         model._session = original if mode == "api" else get
         if mode == "api":
             model._sessions.clear()
-            model.beam_compact_tail, model.beam_grouped_cross, model._beam_backend = args.compact_tail, True, None
+            model.beam_compact_tail, model.beam_grouped_cross, model._beam_backend = args.compact_tail, args.gluon_group_queries, None
+            model.beam_fused_lse = args.fused_lse
         try:
             results[mode] = {}
             for name, audio, extra in cases:
@@ -536,7 +541,7 @@ def extra_checks(model, args, waves, legacy):
             model._session = original
             if mode == "api":
                 model._sessions.clear()
-                model.beam_compact_tail, model.beam_grouped_cross, model._beam_backend = original_options
+                model.beam_compact_tail, model.beam_grouped_cross, model._beam_backend, model.beam_fused_lse = original_options
         cache.clear()
         gc.collect()
         torch.cuda.empty_cache()
@@ -598,7 +603,7 @@ def main():
     ap.add_argument("--phases", action="store_true")
     ap.add_argument("--trace", action="store_true")
     ap.add_argument("--disk", action="store_true")
-    ap.add_argument("--verify-api", action="store_true", help="check production API with both measured opt-in options")
+    ap.add_argument("--verify-api", action="store_true", help="check production API for the measured grouped-row or fused-LSE opt-in")
     ap.add_argument("--extra-checks", action="store_true")
     ap.add_argument("--extra-batch", type=int, default=1, help="batch size for extra mixed-window cases")
     ap.add_argument("--long-audio")
@@ -615,8 +620,8 @@ def main():
               or args.gluon_cross_splits is not None or args.gluon_max_rows is not None or args.gluon_beam_splits)
     if (tuning or args.local_topk or args.prefill_shared or args.kv_clear_once or args.fused_lse) and not args.baseline_runtime:
         ap.error("experimental ablations require --baseline-runtime for the unchanged reference")
-    if args.verify_api and (args.local_topk or args.prefill_shared or args.kv_clear_once or args.fused_lse):
-        ap.error("local-topk, prefill-shared, kv-clear-once and fused-lse are not public API options")
+    if args.verify_api and (args.local_topk or args.prefill_shared or args.kv_clear_once):
+        ap.error("local-topk, prefill-shared and kv-clear-once are not public API options")
     if args.fused_lse and not args.fused_rank:
         ap.error("fused-lse requires fused-rank")
     if args.gluon_beam_splits and not (args.beam == 5 and args.gluon_max_rows == 16
@@ -624,9 +629,10 @@ def main():
         ap.error("gluon-beam-splits requires K5, grouped queries, max-rows16 and no fixed cross-splits")
     if args.verify_api and not (args.beam == 5 and args.upper_bound == "on" and args.fused_state
                                 and args.fused_rank and args.fused_finish and args.kv_reorder == "prefix"
-                                and args.share_cross_kv and args.gluon_group_queries
-                                and args.gluon_beam_splits):
-        ap.error("verify-api requires the current K5 grouped row preset with fused/prefix/shared upper-bound ON")
+                                and args.share_cross_kv
+                                and ((args.gluon_group_queries and args.gluon_beam_splits)
+                                     or (args.fused_lse and not tuning and not args.compact_tail))):
+        ap.error("verify-api requires K5 fused/prefix/shared upper-bound ON and grouped rows or standalone fused-lse")
     if not os.environ.get("PBS_JOBID") and os.uname().nodename.startswith("login"):
         ap.error("audio and inference must run in an allocated compute job")
     args.out.mkdir(parents=True, exist_ok=True)
@@ -650,7 +656,7 @@ def main():
             return result
         setattr(pipeline, name, measured)
     model, load_ms = wall(lambda: OWSM.from_pretrained(args.model, backend=args.backend,
-                          decoder_kernel=args.decoder_kernel, ctc_draft=False))
+                          decoder_kernel=args.decoder_kernel, ctc_draft=False, beam_fused_lse=args.fused_lse))
     for name, fn in originals.items():
         setattr(pipeline, name, fn)
     decoder_options = None
