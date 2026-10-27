@@ -65,3 +65,18 @@ def test_replay_labels_restore_all_captured_objects_even_after_error(error):
     assert session.graphs[64] is session._tail_graphs[64, 1] is graph
     assert session._enc_graphs['buffer', (1, 100, 80)][2] is graph
     assert bound.graph is bound.notime_graph is frontend.entries['shape'][2] is graph
+
+
+def test_ambiguous_correlation_is_not_assigned_by_event_order(tmp_path):
+    events = [
+        dict(cat='user_annotation', ph='X', name='graph/decoder/a', ts=10, dur=5, tid=1),
+        dict(cat='user_annotation', ph='X', name='graph/encoder/b', ts=10, dur=5, tid=2),
+        dict(cat='cuda_runtime', name='cudaGraphLaunch', ts=11, dur=1, tid=1, args={'correlation': 7}),
+        dict(cat='cuda_runtime', name='cudaGraphLaunch', ts=11, dur=1, tid=2, args={'correlation': 7}),
+        dict(cat='kernel', name='unknown', ts=50, dur=2, args={'correlation': 7}),
+    ]
+    path = tmp_path/'trace.json'
+    path.write_text(json.dumps({'traceEvents': events}))
+    result = trace_summary(path)
+    assert result['graph_correlated_kernel_sums_us'] == {'unattributed': 2}
+    assert result['ambiguous_launch_correlations'] == 1

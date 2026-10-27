@@ -15,8 +15,8 @@ change decoder mathematics, insert per-step synchronization, or time the wrapper
 
 The trace retains CUDA runtime API durations, kernel names/durations and replay counts. GPU sums
 are attributed only if their correlation ID matches a host launch wholly inside a replay annotation
-on the same CPU thread. Missing IDs remain unattributed; absent GPU activity is null, not zero cost.
-Four small synthetic tests verify these conditions and exception-safe restoration. Summed CPU API
+on the same CPU thread. Missing or ambiguous IDs remain unattributed; absent GPU activity is null, not zero cost.
+Five small synthetic tests verify these conditions and exception-safe restoration. Summed CPU API
 time can include waits and overlap GPU work. Summed kernel time can overlap other kernels/copies.
 Neither is a predicted wall-time saving or graph-node phase split. A profiler can also perturb gaps;
 any proposed optimization still needs its own uninstrumented same-engine ablation.

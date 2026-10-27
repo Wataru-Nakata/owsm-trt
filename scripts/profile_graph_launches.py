@@ -80,8 +80,18 @@ def trace_summary(path: Path) -> dict:
     for values in ranges.values():
         values.sort(key=lambda e: e['ts'])
     starts = {tid: [e['ts'] for e in values] for tid, values in ranges.items()}
-    launches = {e['args']['correlation']: e for e in events
-                if e.get('cat') in ('cuda_runtime', 'cuda_driver') and 'correlation' in e.get('args', {})}
+    launches = defaultdict(set)
+    for host in events:
+        if host.get('cat') not in ('cuda_runtime', 'cuda_driver') or 'correlation' not in host.get('args', {}):
+            continue
+        label = 'unattributed'
+        if host['tid'] in starts:
+            i = bisect.bisect_right(starts[host['tid']], host['ts']) - 1
+            if i >= 0:
+                outer = ranges[host['tid']][i]
+                if host['ts'] + host.get('dur', 0) <= outer['ts'] + outer['dur']:
+                    label = outer['name']
+        launches[host['args']['correlation']].add(label)
     api_times, gpu_times = defaultdict(list), defaultdict(list)
     graph_kernels = defaultdict(float)
     for event in events:
@@ -90,20 +100,15 @@ def trace_summary(path: Path) -> dict:
         if event.get('cat') != 'kernel' or 'dur' not in event:
             continue
         gpu_times[event['name']].append(event['dur'])
-        host = launches.get(event.get('args', {}).get('correlation'))
-        label = 'unattributed'
-        if host and host['tid'] in starts:
-            i = bisect.bisect_right(starts[host['tid']], host['ts']) - 1
-            if i >= 0:
-                outer = ranges[host['tid']][i]
-                if host['ts'] + host.get('dur', 0) <= outer['ts'] + outer['dur']:
-                    label = outer['name']
+        labels = launches.get(event.get('args', {}).get('correlation'), set())
+        label = next(iter(labels)) if len(labels) == 1 else 'unattributed'
         graph_kernels[label] += event['dur']
     total_gpu = sum(sum(v) for v in gpu_times.values())
     return dict(
         cuda_api={name: dict(total_us=sum(values), duration_us=stats(values)) for name, values in api_times.items()},
         gpu_kernels={name: dict(calls=len(values), total_us=sum(values)) for name, values in gpu_times.items()},
         gpu_kernel_sum_us=total_gpu or None,
+        ambiguous_launch_correlations=sum(len(labels) > 1 for labels in launches.values()),
         graph_correlated_kernel_sums_us=dict(graph_kernels) if total_gpu else None,
         graph_annotation_calls={name: sum(e['name'] == name for values in ranges.values() for e in values)
                                 for name in {e['name'] for values in ranges.values() for e in values}},
