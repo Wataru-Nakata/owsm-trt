@@ -31,7 +31,18 @@
       "recomputed_invalid_segments": 1,
       "recomputed_reasons": [
         "outside_input_or_invalid_segment"
-      ]
+      ],
+      "original_archive_integrity": {
+        "key": "jvs_nonpara90--jvs009-TRAVEL1000_0787",
+        "member": "jvs_ver1/jvs009/nonpara30/wav24kHz16bit/TRAVEL1000_0787.wav",
+        "bytes": 28550,
+        "archive_bytes": 28550,
+        "crc32": 4000431281,
+        "archive_crc32": 4000431281,
+        "matches": true,
+        "input_seconds": 0.593875,
+        "reference_characters": 21
+      }
     },
     {
       "key": "jvs_nonpara90--jvs009-BASIC5000_2571",
@@ -61,7 +72,18 @@
       "recomputed_invalid_segments": 1,
       "recomputed_reasons": [
         "outside_input_or_invalid_segment"
-      ]
+      ],
+      "original_archive_integrity": {
+        "key": "jvs_nonpara90--jvs009-BASIC5000_2571",
+        "member": "jvs_ver1/jvs009/nonpara30/wav24kHz16bit/BASIC5000_2571.wav",
+        "bytes": 29378,
+        "archive_bytes": 29378,
+        "crc32": 564085091,
+        "archive_crc32": 564085091,
+        "matches": true,
+        "input_seconds": 0.611125,
+        "reference_characters": 17
+      }
     },
     {
       "key": "jvs_parallel10--jvs009-VOICEACTRESS100_095",
@@ -91,7 +113,18 @@
       "recomputed_invalid_segments": 1,
       "recomputed_reasons": [
         "outside_input_or_invalid_segment"
-      ]
+      ],
+      "original_archive_integrity": {
+        "key": "jvs_parallel10--jvs009-VOICEACTRESS100_095",
+        "member": "jvs_ver1/jvs009/parallel100/wav24kHz16bit/VOICEACTRESS100_095.wav",
+        "bytes": 28210,
+        "archive_bytes": 28210,
+        "crc32": 3213004440,
+        "archive_crc32": 3213004440,
+        "matches": true,
+        "input_seconds": 0.5867916666666667,
+        "reference_characters": 43
+      }
     },
     {
       "key": "stress--jpn-noise-30s-0p1",
@@ -896,7 +929,7 @@
       "recomputed_reasons": []
     }
   ],
-  "scope": "Same flags on both variants; these are existing output/data-quality diagnostics, not optimization regressions or human-annotated timing errors. Nonspeech probes have no speech; repetition thresholds are heuristic. The three subsecond JVS cases have the same file sizes as original ZIP members; transcript/audio correspondence is not verified.",
+  "scope": "Same flags on both variants; these are existing output/data-quality diagnostics, not optimization regressions or human-annotated timing errors. Nonspeech probes have no speech; repetition thresholds are heuristic. The three subsecond JVS cases have the matching CRC32 and file sizes against the existing original ZIP members; transcript/audio correspondence is not verified.",
   "diagnostic_revision": {
     "previous_flagged_inputs": 30,
     "recomputed_flagged_inputs": 17,

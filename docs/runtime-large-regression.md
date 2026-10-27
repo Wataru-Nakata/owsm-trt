@@ -29,7 +29,7 @@ Original flags remain recorded; corrected diagnostics leave17 distinct inputs: a
 nonspeech probes generated text,8 inputs had out-of-range/invalid segment times, and2 had
 repeated-fourgram indicators (these groups overlap). Generation, CER/WER and output agreement are
 unchanged. Three JVS flags involve0.587–0.611second recordings with17–43 character
-references. Their sizes agree with the original ZIP members, but audio/transcript correspondence
+references. Their CRC32 values and sizes match the existing original ZIP members, but audio/transcript correspondence
 has not been reviewed. They remain in the audit; no difficult cases were removed to improve scores.
 The nonspeech cases are excluded from speech CER/WER and counted separately. These are baseline
 quality/data diagnostics, not newly introduced upper-bound differences or human timing annotations.
