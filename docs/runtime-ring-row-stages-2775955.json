@@ -1,0 +1,301 @@
+{
+  "source": {
+    "group": "gai51740",
+    "queue": "R9920261300",
+    "resource": "rt_HG",
+    "nodes": 1,
+    "gpus": 1,
+    "walltime": "01:00:00",
+    "account_gpu_cap": 192,
+    "approval": "Standing serial1GPU authorization, fresh<=192 and no duplicate required.",
+    "commit": "f2f243d113e91a304916a20dd8ce5fb539f5d6d4",
+    "experiment": "runtime_ring_row_stages",
+    "status": "approved_not_submitted",
+    "approved_jobs": 1,
+    "additional_jobs_submitted": 0,
+    "snapshot": "/groups/gai51740/acc12576tt/github.com/owsm_trt/outputs/runtime-ring-row-stages/snapshot-f2f243d1.tar",
+    "prepared_at": "2026-10-27T03:59:00.044754+00:00",
+    "depends_on": "2775878 complete107+31 tests/alloutputs exact butslow;Ring guardremoved f2f243d. Profile active unchanged102M Ring stages, no guard and no tuning change."
+  },
+  "inputs": {
+    "real": {
+      "environment": {
+        "commit": "f2f243d113e91a304916a20dd8ce5fb539f5d6d4",
+        "checkpoint_sha256": "4702713d44ab3e239101f09182903cd28f7b51e565bb632008af12beefb37752",
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0"
+        },
+        "nvidia_smi": "name, driver_version\nNVIDIA H200, 595.71.05",
+        "load_ms": 4067.740460857749,
+        "weight_prepare_ms": null,
+        "ncu": false,
+        "scope": "real audio/prefill fixed states; decoder-only timings exclude audio/encoder/prefill; not request latency",
+        "manifest_sha256": "6703881ff893c8cad6a6f8e6fc7f83bd8ea9779626254b25f807bc14175f5b40",
+        "engine_sha256": {
+          "encoder.engine": "f3da9563c8ef41b6252388c18d89fac46cc5781cfa505d6750837e0c12e0f481",
+          "decoder.engine": "b6065937220853d65633f6f59ce0edab80270717b8971c8afa53baf9a2bf5f72",
+          "verify.engine": "34a912836635a2c6928abef52e6ea5140c5215bc8fa178ee8b1af07bd5458dcb"
+        },
+        "default_ring": {
+          "programs": 12,
+          "solo": 24,
+          "rows": 24,
+          "warps": 4,
+          "chunk": 1
+        }
+      },
+      "cases": {
+        "rows3": {
+          "reference_kernel_us": {
+            "n": 15,
+            "p50": 199.08480644226074,
+            "p95": 199.39509550730386,
+            "min": 198.26666514078775,
+            "max": 199.51680501302084,
+            "stdev": 0.30392443038293376
+          },
+          "instrumented_kernel_us": {
+            "n": 15,
+            "p50": 198.20586840311685,
+            "p95": 198.50260734558105,
+            "min": 197.94452985127768,
+            "max": 198.5429286956787,
+            "stdev": 0.1753369326995104
+          },
+          "stage_share_median_percent": {
+            "embed": 1.3175230566534915,
+            "output": 12.434554973821989,
+            "qkv": 8.036890645586297,
+            "self": 10.144927536231885,
+            "out": 6.7620286085825745,
+            "crossq": 7.28218465539662,
+            "cross": 24.96732026143791,
+            "crossout": 6.887417218543047,
+            "ffn1": 7.822685788787483,
+            "ffn2": 14.492753623188406
+          },
+          "rows": 3,
+          "offset": 4,
+          "cache": 64,
+          "programs": 24,
+          "cross_splits": 1,
+          "outputs_and_cache_exact": true
+        },
+        "rows5": {
+          "reference_kernel_us": {
+            "n": 15,
+            "p50": 274.99094009399414,
+            "p95": 275.3642813364665,
+            "min": 274.67625935872394,
+            "max": 275.379212697347,
+            "stdev": 0.2078735437342818
+          },
+          "instrumented_kernel_us": {
+            "n": 15,
+            "p50": 275.95094045003253,
+            "p95": 276.12171173095703,
+            "min": 275.4677454630534,
+            "max": 276.201597849528,
+            "stdev": 0.17841191476816845
+          },
+          "stage_share_median_percent": {
+            "embed": 0.9380863039399624,
+            "output": 9.124767225325884,
+            "qkv": 5.942432683379759,
+            "self": 12.569832402234637,
+            "out": 5.183788878416588,
+            "crossq": 5.529522024367385,
+            "cross": 38.821328344246965,
+            "crossout": 5.2680221811460255,
+            "ffn1": 5.8604651162790695,
+            "ffn2": 10.810810810810812
+          },
+          "rows": 5,
+          "offset": 4,
+          "cache": 64,
+          "programs": 24,
+          "cross_splits": 1,
+          "outputs_and_cache_exact": true
+        },
+        "rows8": {
+          "reference_kernel_us": {
+            "n": 15,
+            "p50": 276.8191973368327,
+            "p95": 277.3319498697917,
+            "min": 276.44052505493164,
+            "max": 277.3983955383301,
+            "stdev": 0.2629865953742498
+          },
+          "instrumented_kernel_us": {
+            "n": 15,
+            "p50": 277.75786717732746,
+            "p95": 278.12607447306317,
+            "min": 277.48692830403644,
+            "max": 278.2261212666829,
+            "stdev": 0.21330625461447314
+          },
+          "stage_share_median_percent": {
+            "embed": 0.9389671361502347,
+            "output": 9.116022099447514,
+            "qkv": 5.7835820895522385,
+            "self": 12.861136999068036,
+            "out": 4.981549815498155,
+            "crossq": 5.420560747663552,
+            "cross": 39.07407407407407,
+            "crossout": 5.125815470643057,
+            "ffn1": 5.7835820895522385,
+            "ffn2": 10.88560885608856
+          },
+          "rows": 8,
+          "offset": 4,
+          "cache": 64,
+          "programs": 24,
+          "cross_splits": 1,
+          "outputs_and_cache_exact": true
+        }
+      }
+    },
+    "synthetic": {
+      "environment": {
+        "commit": "f2f243d113e91a304916a20dd8ce5fb539f5d6d4",
+        "checkpoint_sha256": "4702713d44ab3e239101f09182903cd28f7b51e565bb632008af12beefb37752",
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0"
+        },
+        "nvidia_smi": "name, driver_version\nNVIDIA H200, 595.71.05",
+        "load_ms": 236.34238820523024,
+        "weight_prepare_ms": 116.09733942896128,
+        "ncu": false,
+        "scope": "real weights, synthetic fixed states; decoder-only timings exclude audio/encoder/prefill; not request latency",
+        "manifest_sha256": null,
+        "engine_sha256": {},
+        "default_ring": {
+          "programs": 12,
+          "solo": 24,
+          "rows": 24,
+          "warps": 4,
+          "chunk": 1
+        }
+      },
+      "cases": {
+        "rows3": {
+          "reference_kernel_us": {
+            "n": 15,
+            "p50": 196.94612820943198,
+            "p95": 197.2918446858724,
+            "min": 196.74347241719565,
+            "max": 197.5210666656494,
+            "stdev": 0.18452633434491023
+          },
+          "instrumented_kernel_us": {
+            "n": 15,
+            "p50": 198.33599726359049,
+            "p95": 198.6135450998942,
+            "min": 197.96266555786133,
+            "max": 198.73600006103516,
+            "stdev": 0.18016223178705118
+          },
+          "stage_share_median_percent": {
+            "embed": 1.310615989515072,
+            "output": 12.435233160621761,
+            "qkv": 7.901554404145077,
+            "self": 10.209424083769633,
+            "out": 6.985769728331178,
+            "crossq": 7.208387942332896,
+            "cross": 24.675324675324674,
+            "crossout": 7.003891050583658,
+            "ffn1": 7.772020725388601,
+            "ffn2": 14.566929133858267
+          },
+          "rows": 3,
+          "offset": 32,
+          "cache": 128,
+          "programs": 24,
+          "cross_splits": 1,
+          "outputs_and_cache_exact": true
+        },
+        "rows5": {
+          "reference_kernel_us": {
+            "n": 15,
+            "p50": 274.71787134806317,
+            "p95": 274.9035867055257,
+            "min": 274.37651952107746,
+            "max": 274.9386787414551,
+            "stdev": 0.14815689735507775
+          },
+          "instrumented_kernel_us": {
+            "n": 15,
+            "p50": 276.03734334309894,
+            "p95": 276.3173230489095,
+            "min": 275.7941246032715,
+            "max": 276.3882637023926,
+            "stdev": 0.15367555261872884
+          },
+          "stage_share_median_percent": {
+            "embed": 0.9345794392523364,
+            "output": 9.150326797385622,
+            "qkv": 5.87138863000932,
+            "self": 13.108614232209739,
+            "out": 5.032618825722275,
+            "crossq": 5.524344569288389,
+            "cross": 38.78504672897196,
+            "crossout": 5.14018691588785,
+            "ffn1": 5.832549388523049,
+            "ffn2": 10.787992495309568
+          },
+          "rows": 5,
+          "offset": 32,
+          "cache": 128,
+          "programs": 24,
+          "cross_splits": 1,
+          "outputs_and_cache_exact": true
+        },
+        "rows8": {
+          "reference_kernel_us": {
+            "n": 15,
+            "p50": 276.79894765218097,
+            "p95": 277.0692221323649,
+            "min": 276.580270131429,
+            "max": 277.19465891520184,
+            "stdev": 0.18098753026090725
+          },
+          "instrumented_kernel_us": {
+            "n": 15,
+            "p50": 278.81174087524414,
+            "p95": 278.9312998453776,
+            "min": 278.46934000651044,
+            "max": 279.06347910563153,
+            "stdev": 0.13375793529614244
+          },
+          "stage_share_median_percent": {
+            "embed": 1.0091743119266052,
+            "output": 8.938547486033519,
+            "qkv": 5.84958217270195,
+            "self": 13.051470588235292,
+            "out": 4.981549815498155,
+            "crossq": 5.400372439478585,
+            "cross": 39.146567717996284,
+            "crossout": 5.013927576601672,
+            "ffn1": 5.8118081180811805,
+            "ffn2": 10.70110701107011
+          },
+          "rows": 8,
+          "offset": 32,
+          "cache": 128,
+          "programs": 24,
+          "cross_splits": 1,
+          "outputs_and_cache_exact": true
+        }
+      }
+    }
+  },
+  "limits": "Only fixed first-prefill/synthetic state kernel diagnostics; no per-request time or speed gain. Instrumented stage shares include overhead and are not uninstrumented time breakdown."
+}

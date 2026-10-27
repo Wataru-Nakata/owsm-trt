@@ -62,7 +62,7 @@ existing attention-prefetch and weight-chunk settings (runtime-ring-memory.md), 
 accumulation grouping explicitly separated from E-intent scheduling.
 
 
-## Prepared102M row attribution (not yet measured)
+## 102M row attribution2775955
 
 `profile_ring_stages.py --cases rows3 rows5 rows8 --manifest /local/manifest.json` now uses
 actual audio, the same cached encoder/prefill engines and the first selected token of each
@@ -76,3 +76,24 @@ contain instrumentation overhead; GPU-event values and graph replay samples rema
 This attribution targets the existing102M row route measured in2774140. It cannot establish
 request latency, numerical accuracy versus fp32, later-step behavior or a gain for any proposed
 parameter/kernel change. Those require separate same-route correctness and wall measurements.
+
+
+Frozenf2f243d, job2775955 exited0 with all six instrumented/uninstrumented logit/cache comparisons
+exact. The15-repeat uninstrumented CUDA-event medians (fixed state, not request latency) were:
+
+|State|R3|R5|R8|
+|---|---:|---:|---:|
+|Actual audio first-prefill|199.08µs|274.99µs|276.82µs|
+|Synthetic cache128/offset32|196.95µs|274.72µs|276.80µs|
+
+Instrumented cross-attention accounted for24.7–25.0% atR3 and38.8–39.2% atR5/R8; self-attention
+10.1–13.1%, FFN2 10.7–14.6%, output projection8.9–12.4%. These shares include instrumentation,
+not a decomposition of uninstrumented wall time. The default24 CTAs process R*6=30/48 attention
+heads atR5/R8, requiring some CTAs to handle a second head. A next isolated experiment will
+increase existing row program budgets while retaining the original attention split count, tile,
+precision and single-row route. No speed gain for that change has been measured yet.
+
+[Environment and compact attribution](runtime-ring-row-stages-2775955.json); raw stage/event
+samples in `outputs/runtime-2775955/{real,synthetic}/`. First-prefill states cover only the initial
+step; synthetic offset32 is a separate diagnostic. Stageout_status1 was reported despite full
+publication/exit0. The earlier broad group-guard regression was removed before this measurement.
