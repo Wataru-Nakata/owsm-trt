@@ -360,6 +360,10 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   change. Main text/WER/CER match;63 additional GPU/routing tests and eight production API/dispatch
   comparisons pass. Tail compaction adds12 graphs at B3; first real-shape setup/JIT/capture took23.40s
   versus0.63s reference in this run. [Earlier B1 measurements](docs/beam-fast.md) use a different baseline.
+  A [direct public-API composition comparison](docs/beam-presets.md#measured-composition2777500) with
+  `beam_fused_lse=True` measures7.99–8.72% more RTFx for B1 single requests and17.99–27.05% for
+  duration-sorted B2/B3 whole-corpus requests versus current defaults. The same opt-in limitations
+  apply: one English end shifts20ms at B2/B3, silence differs, and WER/CER stays equal on these samples.
 * **Timestamp rules.** Like ESPnet, every search applies its `ScoreFilter`: no timestamps after `<notimestamps>`;
   otherwise the output starts with a timestamp, timestamps come in increasing pairs, and `<eos>` only after a
   complete pair.
