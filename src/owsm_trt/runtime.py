@@ -1117,12 +1117,21 @@ class GreedySession(_Session):
             return (bool(pending) and not ended[0]) or not (ready[0].query() and ready[1].query())
 
         pending += [0, 1]
-        flush()
-        with torch.cuda.stream(dec) if cuda else nullcontext():
-            out, calls = self._drafted(
-                [None] * self.rows, refill, None, max_new_tokens, insertions, give_up, flush, finished,
-                concurrent if cuda else None,
-            )  # fmt: skip
+        try:
+            flush()
+            with torch.cuda.stream(dec) if cuda else nullcontext():
+                out, calls = self._drafted(
+                    [None] * self.rows, refill, None, max_new_tokens, insertions, give_up, flush, finished,
+                    concurrent if cuda else None,
+                )  # fmt: skip
+        except BaseException:
+            if cuda:
+                # Readers/callbacks can fail while verification or encoding is still in flight.
+                # Drain before the caller can reuse pinned inputs or release session buffers.
+                dec.synchronize()
+                for side in sides:
+                    side.synchronize()
+            raise
         if cuda:
             main.wait_stream(dec)
             for side in sides:
