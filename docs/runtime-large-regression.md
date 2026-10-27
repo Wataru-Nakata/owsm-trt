@@ -82,6 +82,13 @@ B1 returns63 tokens, one complete segment and14/53 character edits; B3 returns37
 no complete segment and214/53 edits. Both bound variants agree within each batch. The other944
 Chinese inputs net−4 edits. The exact input group and both outputs are retained for a targeted
 reproduction; numerical-path attribution and repeated-run stability remain unverified.
+`reproduce_batch_corner.py` and its PBS driver prepare that targeted check: the original three-input
+group, B1/B3, auto versus TensorRT-only dispatch, search kernels OFF/ON and bound OFF/ON, each repeated
+three times (48 calls). Checkpoint/corpus/engine/software identity is checked against the B3 artifact.
+Actual decoder dispatch, full outputs, original-output differences and fixed-configuration stability
+are retained. Fixed-route/fixed-batch kernel/bound controls require exact outputs; route/batch changes
+are reported as N. Small metadata fixtures pass; GPU reproduction remains pending. The public API
+may sort inputs internally, so this is not a test of arbitrary decoder-row permutations.
 
 For13,044 inputs with identical text and ordered segment labels/count, all26,516 boundary differences
 have median/p95 zero. The52 nonzero boundary displacements have median20ms, p95120ms and maximum740ms;
