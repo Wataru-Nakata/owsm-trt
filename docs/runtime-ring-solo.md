@@ -1,4 +1,4 @@
-# 102M serial Ring program budget (first measurement; default24 retained)
+# 102M serial Ring program budget (two measurements; default24 retained)
 
 Candidate31, E intent against the current Ring kernel, independent of wide-row N routing.
 Actual graph trace2777712 places the single-row Ring decoder at75.3%of102M English translation
@@ -59,3 +59,29 @@ The first pilot records calls, bound backend names and drafted program histogram
 profiler revision additionally counts actual graph replays and records each plain bucket's
 program/split configuration in a separate pass; this is not added to warm wall timing.
 [Complete first results and outliers](runtime-ring-solo-2778037.json).
+
+Independent repeat2778131 (1ac8b90) passed five graph-wrapper checks and repeated all18actual
+checkpoint comparisons per language. All11conditions remain output/call exact. Actual replay
+counts confirm B1solo Ring24/32/48with NS2; B8uses TensorRT throughout and is an unchanged control.
+
+| Condition | English32 /48 RTFx change | Japanese32 /48 RTFx change |
+|---|---:|---:|
+| Plain ASR B1 | +1.58% /+4.36% | +1.39% /+4.40% |
+| Plain timestamp ASR B1 | +2.31% /+3.29% | +1.22% /+3.20% |
+| Translation B1 | +2.86% /+3.26% | +2.71% /+4.75% |
+| CTC-drafted timestamp B1 | +3.37% /+0.74% | +3.53% /+6.28% |
+| CTC-drafted timestamp B8 (unchanged control) | -11.22% /+3.58% | +1.04% /+1.19% |
+| 110s long-form | +3.52% /+6.54% | not measured |
+
+The English solo48draftedB1 excursion recurred at the exact same repeat2/input1272-141231-0011:
+80.763ms versus its1.778ms median, after79.098ms versus1.848ms in the pilot. All samples are
+retained. B8also has large excursions despite identical dispatch and graph/call counts.
+This motivates separate GC/processCPU/context-switch diagnostics and an uninstrumented rotated
+variant-order run; a GC cause is not established by repeat/input coincidence alone. The production
+default stays24 pending diagnosis. [Repeat and raw outliers](runtime-ring-solo-2778131.json).
+
+`--host-diagnostics` records GC start/stop intervals, process CPU time, page faults and context
+switches for each measured call in `host.json`. These instrumented measurements are separate from
+ordinary wall results and do not alter GC policy. Overlap is reported, never subtracted to manufacture
+corrected timings. `--rotated-order` changes the starting order to48/24/32; alternating reversal still
+applies. `scripts/profile_ring_solo_host.pbs` runs these two diagnostics in separate fresh processes.
