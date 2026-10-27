@@ -21,6 +21,7 @@ from owsm_trt.runtime import GreedySession
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True)
+    ap.add_argument("--decoder-kernel", default="auto")
     ap.add_argument("--manifest", required=True)
     ap.add_argument("--lang", default="eng")
     ap.add_argument("--lazy-plain", action="store_true", help="Validate opt-in deferred plain setup")
@@ -33,7 +34,7 @@ def main():
     waves = [load_audio(x["path"]) for x in items]
     expected, records, engine_hashes = {}, {}, None
     for mode, options in (("serial", {"greedy_kernels": False, "lazy_drafts": False}), ("default", {})):
-        model, load_ms = wall(lambda: OWSM.from_pretrained(args.model, **options))
+        model, load_ms = wall(lambda: OWSM.from_pretrained(args.model, decoder_kernel=args.decoder_kernel, **options))
         if args.lazy_plain:
             model.greedy_lazy_plain = mode == "default"
         files = hub.resolve(args.model)
@@ -105,6 +106,7 @@ def main():
         args.out / "public_api.json",
         dict(
             all_equal=True,
+            decoder_kernel=args.decoder_kernel,
             lazy_plain=args.lazy_plain,
             finished_stop=args.finished_stop,
             checkpoint_sha256=sha256(files.checkpoint),

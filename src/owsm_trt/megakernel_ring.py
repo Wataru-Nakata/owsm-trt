@@ -694,15 +694,21 @@ if gluon is not None:
         NW: gl.constexpr, NSLOT: gl.constexpr, LNS: gl.constexpr, CK: gl.constexpr, MAXS: gl.constexpr, PFA: gl.constexpr,
         AHEAD: gl.constexpr = 0, TS: gl.constexpr = False, ARGMAX: gl.constexpr = False, PW: gl.constexpr = 1,
         NOTIME: gl.constexpr = False,
-        BM: gl.constexpr = 64, HAS_STOP: gl.constexpr = False,
+        BM: gl.constexpr = 64, HAS_STOP: gl.constexpr = False, STOP_ROWS: gl.constexpr = 0,
     ):  # fmt: skip
         """A decoder call (see the module docstring): shared memory, then the consumer warps and the producer
         warp."""
         if HAS_STOP:
-            # Every CTA reads the same immutable scalar before any producer/barrier starts.
-            # The caller must order flag writes before this launch, never change it in flight.
-            if gl.load(stop):
-                return
+            # Flags stay immutable during the call. Every CTA must take the same exit
+            # before producer/barrier setup; partial groups always run the full decoder.
+            if STOP_ROWS == 1:
+                if gl.load(stop):
+                    return
+            else:
+                rows = gl.arange(0, MTP, layout=gl.BlockedLayout([1], [32], [NW], [0]))
+                ended = gl.load(stop + rows, rows < STOP_ROWS, other=True)
+                if gl.min(ended.to(gl.int32), 0) != 0:
+                    return
         pid = gl.program_id(0)
         P = gl.num_programs(0)
         sl: gl.constexpr = gl.NVMMASharedLayout(swizzle_byte_width=128, element_bitwidth=16, rank=2)
@@ -754,7 +760,8 @@ class RingDecoder:
 
     name = "megakernel-ring"
     argmax = True  # step_fn takes pred
-    supports_finished_stop = True  # One immutable scalar may skip an entire R1/S1 call.
+    supports_finished_stop = True
+    supports_finished_groups = True
 
     def __init__(self, mega, programs: int | None = None, row_programs: int | None = None,
                  solo_programs: int | None = None, num_warps: int = 4, chunk: int = 2, ring_kb: int = 128,
@@ -805,9 +812,9 @@ class RingDecoder:
         encoder runs alongside (single-row calls take ``solo_programs`` then)."""
         m = self.m
         R, S = tokens.shape
-        if stop is not None and (R != 1 or S != 1 or stop.numel() != 1
+        if stop is not None and (S != 1 or stop.numel() != R or stop.ndim != 1 or not stop.is_contiguous()
                                  or stop.dtype != torch.bool or stop.device != tokens.device):
-            raise ValueError("finished-stop requires R1/S1 and one boolean on the decoder device")
+            raise ValueError("finished-stop requires S1 and a contiguous boolean per row on the decoder device")
         M = R * S
         if M > MAX_TOKENS:
             raise ValueError(f"the ring decoder kernel takes up to {MAX_TOKENS} tokens per call, not {M}")
@@ -855,7 +862,7 @@ class RingDecoder:
         const = dict(
             D=D, H=H, DK=D // H, F=F, LKS=_log2(F // D), MTP=mtp, LMTP=_log2(mtp), HL=hl, NL=nl, LNL=_log2(nl), N1=n1,
             LN1=_log2(n1), SP=max(16, _pow2(S)), BT=64, NS=ns, NW=self.nw, NSLOT=self.slots, LNS=_log2(self.slots), CK=self.ck,
-            MAXS=self.maxs, PFA=self.pfa, AHEAD=self.ahead, TS=bool(self.opts["TS"]), ARGMAX=argmax, PW=self.pw, BM=bm, NOTIME=argmax and notime is not None, HAS_STOP=stop is not None,
+            MAXS=self.maxs, PFA=self.pfa, AHEAD=self.ahead, TS=bool(self.opts["TS"]), ARGMAX=argmax, PW=self.pw, BM=bm, NOTIME=argmax and notime is not None, HAS_STOP=stop is not None, STOP_ROWS=R if stop is not None else 0,
         )  # fmt: skip
 
         def run() -> None:

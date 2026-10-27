@@ -1,12 +1,13 @@
 """Completed-group skipping must be uniform before persistent-kernel barriers start."""
 
+from dataclasses import replace
 from types import SimpleNamespace
 
 import pytest
 import torch
 from test_beam import CFG
 
-from owsm_trt import megakernel, megakernel_gluon
+from owsm_trt import megakernel, megakernel_gluon, megakernel_ring
 from owsm_trt.runtime import GreedySession, capture_graph
 
 
@@ -85,17 +86,20 @@ def test_gluon_rejects_invalid_group_stop(rows, window, dtype, count):
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="compute GPU required")
-@pytest.mark.parametrize("rows", [2, 3, 4, 5, 6, 7, 8])
+@pytest.mark.parametrize("kind,rows,argmax", [("gluon", r, False) for r in range(2, 9)]
+                         + [("ring", r, a) for r in range(2, 9) for a in (False, True)])
 @pytest.mark.parametrize("graphs", [False, True])
 @torch.inference_mode()
-def test_gluon_partial_full_done_and_restart_exact(rows, graphs):
-    from test_megakernel import CFG as BIG
-    from test_megakernel import _model
+def test_partial_full_done_and_restart_exact(kind, rows, argmax, graphs):
+    from test_megakernel import CFG, CFG384, _model
+
+    BIG = CFG if kind == "gluon" else replace(CFG384, dec_ffn=1536)
 
     if not megakernel_gluon.available(torch.device("cuda")):
         pytest.skip("Hopper Gluon required")
     model = _model(BIG)
-    kernel = megakernel_gluon.GluonDecoder(megakernel.MegaDecoder(model.decoder, torch.device("cuda")))
+    decoder = megakernel_gluon.GluonDecoder if kind == "gluon" else megakernel_ring.RingDecoder
+    kernel = decoder(megakernel.MegaDecoder(model.decoder, torch.device("cuda")))
     stop = torch.zeros(rows, dtype=torch.bool, device="cuda")
     shape = (BIG.dec_layers, rows, BIG.dec_heads, 64, BIG.d_model // BIG.dec_heads)
     k0 = torch.randn(shape, device="cuda", dtype=torch.float16)
@@ -111,10 +115,12 @@ def test_gluon_partial_full_done_and_restart_exact(rows, graphs):
         logits = torch.zeros(rows, 1, BIG.vocab_size, device="cuda")
         kv = torch.zeros(BIG.dec_layers, 2, rows, BIG.dec_heads, 1, BIG.d_model // BIG.dec_heads,
                          device="cuda", dtype=torch.float16)
-        run = kernel.step_fn(tok, offset, k, v, ck, cv, logits, kv, stop=stop if guarded else None)
+        pred = torch.zeros(rows, 1, dtype=torch.long, device="cuda") if argmax else None
+        run = kernel.step_fn(tok, offset, k, v, ck, cv, logits, kv, stop=stop if guarded else None,
+                             **({"pred": pred} if argmax else {}))
         run()
         owners.append(run)
-        buffers.append([k, v, logits, kv])
+        buffers.append([k, v, logits, kv] + ([pred] if pred is not None else []))
         runs.append(capture_graph(run).replay if graphs else run)
     expected = [v.clone() for v in buffers[0]]
     for flags in ([False]*rows, [True]+[False]*(rows-1), [True]*rows, [False]*rows,

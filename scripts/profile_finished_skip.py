@@ -23,6 +23,7 @@ from owsm_trt.runtime import GreedySession
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--model", required=True)
+    ap.add_argument("--decoder-kernel", default="auto")
     ap.add_argument("--manifest", type=Path, required=True)
     ap.add_argument("--lang", default="eng")
     ap.add_argument("--repeat", type=int, default=7)
@@ -39,7 +40,7 @@ def main():
     items = json.loads(args.manifest.read_text())
     assert len({it['id'] for it in items}) == len(items)
     waves, disk_ms = wall(lambda: [load_audio(it['path']) for it in items])
-    model, load_ms = wall(lambda: OWSM.from_pretrained(args.model, ctc_draft=False))
+    model, load_ms = wall(lambda: OWSM.from_pretrained(args.model, ctc_draft=False, decoder_kernel=args.decoder_kernel))
     if not getattr(model.backend, "supports_finished_stop", False):
         raise RuntimeError("single-row decoder does not support finished-stop; no silent no-op benchmark")
     if args.group_skip and not all(model.backend.supports_finished_groups(b) for b in (3, 8)):
@@ -58,7 +59,7 @@ def main():
          checkpoint_sha256=sha256(files.checkpoint), engine_sha256={p.name: sha256(p) for p in directory.glob('*.engine')},
          torch=torch.__version__, cuda=torch.version.cuda, gpu=torch.cuda.get_device_name(), group_skip=args.group_skip,
          nvidia_smi=command(['nvidia-smi', '--query-gpu=name,uuid,driver_version', '--format=csv']),
-         disk_ms=disk_ms, load_ms=load_ms,
+         disk_ms=disk_ms, load_ms=load_ms, decoder_kernel=args.decoder_kernel,
          note='Fixed batches, no CTC drafts; same host polling and graph replay counts. Whole-list warmed wall time. '
               'Cold observations share unequal compiler caches; all variants coexist in process peak. '
               'Separate device counters count graph calls and calls entered after EOS; no per-step host reads.'))
