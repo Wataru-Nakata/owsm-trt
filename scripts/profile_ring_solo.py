@@ -65,15 +65,22 @@ def main():
     ap.add_argument('--lang',default='eng')
     ap.add_argument('--repeat',type=int,default=11)
     ap.add_argument('--out',type=Path,required=True)
+    ap.add_argument('--solo-programs',nargs='+',type=int,default=[24,32,48],
+                    help='serial CTA budgets, beginning with the existing24 reference')
     ap.add_argument('--host-diagnostics',action='store_true',help='separate GC/CPU diagnostic; instrumented timings')
-    ap.add_argument('--rotated-order',action='store_true',help='rotate the initial order to48/24/32')
+    ap.add_argument('--rotated-order',action='store_true',help='start with the last budget, then alternate forward/reverse order')
     args = ap.parse_args()
     if not os.environ.get('PBS_JOBID'):
         ap.error('compute allocation required')
     if args.repeat < 1:
         ap.error('repeat must be positive')
-    args.trace,args.variants = False,(['solo48','reference','solo32'] if args.rotated_order
-                                      else ['reference','solo32','solo48'])
+    if (len(args.solo_programs)<2 or args.solo_programs[0]!=24
+            or len(set(args.solo_programs))!=len(args.solo_programs)
+            or any(not 1<=n<=132 for n in args.solo_programs)):
+        ap.error('unique budgets in1..132 must start with24 and include a comparison')
+    args.trace,args.variants = False,['reference']+[f'solo{n}' for n in args.solo_programs[1:]]
+    if args.rotated_order:
+        args.variants = args.variants[-1:]+args.variants[:-1]
     model,load_ms = wall(lambda: OWSM.from_pretrained(args.model))
     base = model.backend
     if not isinstance(base,megakernel.MegaBackend) or not isinstance(base.kernel,megakernel_ring.RingDecoder):
@@ -82,7 +89,7 @@ def main():
     if ((m.D,m.F,m.L,m.H,original.P,original.P_solo)!=(384,1536,6,6,12,24)
             or 'H200' not in torch.cuda.get_device_name() or torch.cuda.get_device_properties(model.device).multi_processor_count!=132):
         raise RuntimeError('only the existing H200132SM102M12/24 schedule is in scope')
-    kernels = {'reference':original} | {f'solo{n}':megakernel_ring.RingDecoder(m,solo_programs=n) for n in (32,48)}
+    kernels = {'reference':original} | {f'solo{n}':megakernel_ring.RingDecoder(m,solo_programs=n) for n in args.solo_programs[1:]}
     backends = {'reference':base} | {name:megakernel.MegaBackend(base.inner,kernel,base.max_tokens,base.max_rows,
                  rows_kernel=base.rows_kernel,trial=True) for name,kernel in kernels.items() if name!='reference'}
     check_solo(kernels,args.out)
@@ -96,7 +103,7 @@ def main():
          manifest_sha256=sha256(args.manifest),load_ms=load_ms,
          host_diagnostics=args.host_diagnostics,variant_order=args.variants,
          budgets={k:dict(concurrent=v.P,solo=v.P_solo,rows=v.P_rows) for k,v in kernels.items()},
-         scope='E intent versus existing same Ring arithmetic: only serialR1 CTAcount24/32/48. '
+         scope='E intent versus existing same Ring arithmetic: only serialR1 CTAcount changes. '
                'Concurrent12 and cross-attention splits unchanged; no productiondefaultchange. '
                'Three residentpools, cold/JITorder shared. Loadedinputs. Longformjoinedtext/segments only.'))
     items = json.loads(args.manifest.read_text())

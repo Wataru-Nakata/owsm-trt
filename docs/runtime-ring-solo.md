@@ -85,3 +85,23 @@ switches for each measured call in `host.json`. These instrumented measurements 
 ordinary wall results and do not alter GC policy. Overlap is reported, never subtracted to manufacture
 corrected timings. `--rotated-order` changes the starting order to48/24/32; alternating reversal still
 applies. `scripts/profile_ring_solo_host.pbs` runs these two diagnostics in separate fresh processes.
+
+Host diagnosis2778234 (5efd58a) passed8CPU checks and18actual-checkpoint comparisons per process.
+All outputs match the frozen2778131reference; decoder call totals and actual graph replay counts match.
+In the instrumented pass, a reference24draftedB1 request took86.077ms, overlapping a generation2GC
+collection for83.204ms. The slow event therefore also occurs on the existing24budget. The original
+79/81ms events were not instrumented; GC is the supported explanation, not a direct measurement
+of those earlier events. No runtime GC policy changes, samples removed or GC-subtracted times.
+
+The separate uninstrumented rotated48/24/32order pass retains all samples: English RTFx changes
+for48vs24are +4.10%plainASR, +4.00%plain timestamp, +2.68%translation, +3.60%CTC timestampB1,
+-0.61%unchangedB8control and +6.49%110s. Instrumented times are not used as adoption performance.
+The observed isolated full-heap GC pause motivates retaining raw extrema alongside p50/p95 and
+rotating order; neither callback instrumentation nor CPU process time measures GPU kernel duration.
+[Diagnosis, rotated comparison and evidence hashes](runtime-ring-solo-host-2778234.json).
+
+Before selecting the default, the same narrow E experiment extends to64/96serial CTAs, with48as
+an intermediate control and24as reference (`--solo-programs 24 48 64 96`). This changes no arithmetic,
+NS2or concurrent12budget. Six GPU graph/state tests now also check64/96; each corpus requires24actual
+checkpoint cases and every output/call to agree. These budgets are unmeasured until their artifacts
+are published. The production default is still24.

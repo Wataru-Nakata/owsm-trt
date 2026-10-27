@@ -1,0 +1,4126 @@
+{
+  "source": {
+    "group": "gai51740",
+    "queue": "R9920261300",
+    "resource": "rt_HG",
+    "nodes": 1,
+    "gpus": 1,
+    "walltime": "01:00:00",
+    "account_gpu_cap": 192,
+    "approval": "Standing serial1GPU authorization; fresh failclosed192 capacity/queue/no-duplicate guard.",
+    "classification": "Host diagnostics separate from warm wall; same Ring24/32/48 E intent, no productionchange or GCpolicychange.",
+    "commit": "5efd58a381eaa087282feb2a61b6519f161b42cd",
+    "snapshot": "/groups/gai51740/acc12576tt/github.com/owsm_trt/outputs/runtime-ring-solo-host/snapshot-5efd58a3.tar",
+    "experiment": "runtime_ring_solo_host",
+    "status": "approved_not_submitted",
+    "approved_jobs": 1,
+    "additional_jobs_submitted": 0,
+    "prepared_at": "2026-10-27T11:45:45.410852+00:00",
+    "purpose": "Separate fresh English processes: GC/CPU instrumentation and uninstrumented rotatedorder, all6cases11repeats each,18shapechecks each and8CPUchecks."
+  },
+  "scope": "Host instrumented pass is diagnostic only, not a replacement for uninstrumented latency. GC overlap not subtracted. Rotated pass retains all samples; plain B1first12, draft73, B8wholecorpus and110s longform. Samecheckpoint/engine and all outputs exact to prior2778131.",
+  "scheduler": {
+    "observed_at": "2026-10-27T11:50:55.757565+00:00",
+    "state": "F",
+    "project": "gai51740",
+    "queue": "R9920261300",
+    "resource": "rt_HG",
+    "nodes": 1,
+    "gpus": 1,
+    "requested_walltime": "01:00:00",
+    "walltime_used": "00:03:36",
+    "exit_status": 0,
+    "stageout_status": 1,
+    "terminal_verified": true
+  },
+  "passes": {
+    "host": {
+      "environment": {
+        "commit": "5efd58a381eaa087282feb2a61b6519f161b42cd",
+        "checkpoint_sha256": "4702713d44ab3e239101f09182903cd28f7b51e565bb632008af12beefb37752",
+        "engine_sha256": {
+          "encoder.engine": "f3da9563c8ef41b6252388c18d89fac46cc5781cfa505d6750837e0c12e0f481",
+          "decoder.engine": "b6065937220853d65633f6f59ce0edab80270717b8971c8afa53baf9a2bf5f72",
+          "verify.engine": "34a912836635a2c6928abef52e6ea5140c5215bc8fa178ee8b1af07bd5458dcb"
+        },
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106"
+        },
+        "nvidia_smi": "name, uuid, driver_version, compute_cap, memory.total [MiB]\nNVIDIA H200, GPU-ceface32-d865-d82a-4941-fb64aa2447c3, 595.71.05, 9.0, 143771 MiB",
+        "manifest_sha256": "9433fc4a6d1ce8f6f8d1d8988ac0b1bb7537f8ae05415d72fbdd94d10142006f",
+        "load_ms": 4434.743014979176,
+        "host_diagnostics": true,
+        "variant_order": [
+          "reference",
+          "solo32",
+          "solo48"
+        ],
+        "budgets": {
+          "reference": {
+            "concurrent": 12,
+            "solo": 24,
+            "rows": 24
+          },
+          "solo32": {
+            "concurrent": 12,
+            "solo": 32,
+            "rows": 24
+          },
+          "solo48": {
+            "concurrent": 12,
+            "solo": 48,
+            "rows": 24
+          }
+        },
+        "scope": "E intent versus existing same Ring arithmetic: only serialR1 CTAcount24/32/48. Concurrent12 and cross-attention splits unchanged; no productiondefaultchange. Three residentpools, cold/JITorder shared. Loadedinputs. Longformjoinedtext/segments only."
+      },
+      "cases": {
+        "plain_greedy": {
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 6.3663755,
+                "p95": 22.7154448,
+                "min": 4.705833,
+                "max": 23.665566,
+                "stdev": 4.891424161831898
+              },
+              "rtfx": 1243.0708147821758,
+              "peak_allocated_bytes": 2215684608,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 303,
+                "errors": 33,
+                "rate": 0.10891089108910891,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "solo32": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 6.335987,
+                "p95": 22.28366695,
+                "min": 4.738469,
+                "max": 22.35182,
+                "stdev": 4.770904123677421
+              },
+              "rtfx": 1257.6301449311024,
+              "peak_allocated_bytes": 2215684608,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 303,
+                "errors": 33,
+                "rate": 0.10891089108910891,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "solo48": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 6.1421135,
+                "p95": 21.73072655,
+                "min": 4.610427,
+                "max": 21.966563,
+                "stdev": 4.652236134083831
+              },
+              "rtfx": 1294.7369637529132,
+              "peak_allocated_bytes": 2215684608,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 303,
+                "errors": 33,
+                "rate": 0.10891089108910891,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "comparisons": {
+            "solo32": {
+              "rtfx_change_percent": 1.1712389974723791,
+              "paired": [
+                2.2923098051798485,
+                0.9546205245229533,
+                1.4525803953453487,
+                1.2407842540074654,
+                0.9039713231304702,
+                1.2084427501613426,
+                0.8439402493543913,
+                0.7737168458996413,
+                1.5167968901243833,
+                1.064235929972046,
+                0.6325029894284961
+              ],
+              "paired_positive": 11
+            },
+            "solo48": {
+              "rtfx_change_percent": 4.156331912578204,
+              "paired": [
+                5.884526923765532,
+                3.4993506717248213,
+                4.577927046158514,
+                4.338484969867196,
+                4.0134980827414735,
+                4.382032407221237,
+                3.471692401628701,
+                3.25099312562791,
+                4.87009099250173,
+                4.219943175771612,
+                3.238074578503669
+              ],
+              "paired_positive": 11
+            }
+          },
+          "outputs_exact_to_prior": true,
+          "call_counts_and_graph_replays_exact": true,
+          "gc_threshold": [
+            700,
+            10,
+            10
+          ],
+          "gc_enabled": true,
+          "gc_counts_by_generation": {
+            "0": 42,
+            "1": 3,
+            "2": 1
+          },
+          "largest_gc_overlap_samples": [
+            {
+              "variant": "solo32",
+              "repeat": 10,
+              "ids": [
+                "1272-128104-0002"
+              ],
+              "wall_ms": 10.113873,
+              "audio_seconds": 12.485,
+              "draft_decoder_calls": 0,
+              "peak_allocated_bytes": 2213726720,
+              "start_ns": 372876744457989,
+              "end_ns": 372876754571862,
+              "cpu_ms": 23.552906,
+              "gc_counts_before": [
+                657,
+                7,
+                3
+              ],
+              "gc_counts_after": [
+                1,
+                8,
+                3
+              ],
+              "voluntary_switches": 3,
+              "involuntary_switches": 0,
+              "minor_faults": 0,
+              "major_faults": 0,
+              "gc": [
+                {
+                  "start_ns": 372876746132670,
+                  "end_ns": 372876746253523,
+                  "generation": 0,
+                  "collected": 0,
+                  "uncollectable": 0
+                }
+              ],
+              "gc_overlap_ms": 0.120853
+            },
+            {
+              "variant": "solo48",
+              "repeat": 3,
+              "ids": [
+                "1272-128104-0002"
+              ],
+              "wall_ms": 9.76259,
+              "audio_seconds": 12.485,
+              "draft_decoder_calls": 0,
+              "peak_allocated_bytes": 2213726720,
+              "start_ns": 372874405744274,
+              "end_ns": 372874415506864,
+              "cpu_ms": 23.19074,
+              "gc_counts_before": [
+                657,
+                5,
+                3
+              ],
+              "gc_counts_after": [
+                1,
+                6,
+                3
+              ],
+              "voluntary_switches": 3,
+              "involuntary_switches": 0,
+              "minor_faults": 0,
+              "major_faults": 0,
+              "gc": [
+                {
+                  "start_ns": 372874407407225,
+                  "end_ns": 372874407517534,
+                  "generation": 0,
+                  "collected": 0,
+                  "uncollectable": 0
+                }
+              ],
+              "gc_overlap_ms": 0.110309
+            }
+          ],
+          "largest_relative_samples": [
+            {
+              "variant": "reference",
+              "repeat": 8,
+              "ids": [
+                "1272-128104-0001"
+              ],
+              "wall_ms": 5.359954,
+              "audio_seconds": 4.815,
+              "draft_decoder_calls": 0,
+              "peak_allocated_bytes": 2213066752,
+              "start_ns": 372875994990650,
+              "end_ns": 372876000350604,
+              "cpu_ms": 19.047435,
+              "gc_counts_before": [
+                232,
+                7,
+                3
+              ],
+              "gc_counts_after": [
+                237,
+                7,
+                3
+              ],
+              "voluntary_switches": 3,
+              "involuntary_switches": 0,
+              "minor_faults": 0,
+              "major_faults": 0,
+              "gc": [],
+              "gc_overlap_ms": 0.0,
+              "relative_to_median": 1.0699700545549675
+            },
+            {
+              "variant": "reference",
+              "repeat": 0,
+              "ids": [
+                "1272-128104-0000"
+              ],
+              "wall_ms": 6.540217,
+              "audio_seconds": 5.855,
+              "draft_decoder_calls": 0,
+              "peak_allocated_bytes": 2213066752,
+              "start_ns": 372873438266563,
+              "end_ns": 372873444806780,
+              "cpu_ms": 16.83048,
+              "gc_counts_before": [
+                8,
+                5,
+                3
+              ],
+              "gc_counts_after": [
+                12,
+                5,
+                3
+              ],
+              "voluntary_switches": 3,
+              "involuntary_switches": 0,
+              "minor_faults": 0,
+              "major_faults": 0,
+              "gc": [],
+              "gc_overlap_ms": 0.0,
+              "relative_to_median": 1.0500956053030317
+            },
+            {
+              "variant": "reference",
+              "repeat": 0,
+              "ids": [
+                "1272-128104-0004"
+              ],
+              "wall_ms": 23.665566,
+              "audio_seconds": 29.4,
+              "draft_decoder_calls": 0,
+              "peak_allocated_bytes": 2215684608,
+              "start_ns": 372873469378905,
+              "end_ns": 372873493044471,
+              "cpu_ms": 37.135692,
+              "gc_counts_before": [
+                46,
+                5,
+                3
+              ],
+              "gc_counts_after": [
+                51,
+                5,
+                3
+              ],
+              "voluntary_switches": 3,
+              "involuntary_switches": 0,
+              "minor_faults": 512,
+              "major_faults": 0,
+              "gc": [],
+              "gc_overlap_ms": 0.0,
+              "relative_to_median": 1.0414874399794778
+            }
+          ],
+          "raw_path": "outputs/runtime-2778234/host/plain_greedy",
+          "sha256": {
+            "wall.json": "628fb36c1371d998702197128d48b19eddb061aa7045d8023cfe5cb2210d77a8",
+            "tokens.json": "1304ed020a56304b5d5f14d893648ccbd69f42d3e0614e4156f8a4f9db39942d",
+            "actual_dispatch_reference.json": "0740ab5aac2ce297e4efb55d90d84cd1cbe9cad56415f946d29480ba6674e1d9"
+          }
+        },
+        "plain_ts": {
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 6.8597719999999995,
+                "p95": 23.85193255,
+                "min": 5.229326,
+                "max": 24.898006,
+                "stdev": 5.051333968232182
+              },
+              "rtfx": 1175.0178477578047,
+              "peak_allocated_bytes": 2216864256,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 303,
+                "errors": 33,
+                "rate": 0.10891089108910891,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "solo32": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 6.6940755,
+                "p95": 23.27797815,
+                "min": 5.134274,
+                "max": 23.359969,
+                "stdev": 4.905509958472997
+              },
+              "rtfx": 1198.9565742008972,
+              "peak_allocated_bytes": 2216864256,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 303,
+                "errors": 33,
+                "rate": 0.10891089108910891,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "solo48": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 6.6107985,
+                "p95": 22.9477873,
+                "min": 5.086732,
+                "max": 23.082428,
+                "stdev": 4.827260510350849
+              },
+              "rtfx": 1216.075113364579,
+              "peak_allocated_bytes": 2216864256,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 303,
+                "errors": 33,
+                "rate": 0.10891089108910891,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "comparisons": {
+            "solo32": {
+              "rtfx_change_percent": 2.0373074748415876,
+              "paired": [
+                3.2814927722733422,
+                2.8750030156743156,
+                1.2737456723972418,
+                1.6925550443019244,
+                2.6906056066019035,
+                1.9542860561945208,
+                1.875786163999238,
+                2.0322681458929237,
+                1.6557229846621668,
+                1.8662608942414005,
+                1.2215448542099772
+              ],
+              "paired_positive": 11
+            },
+            "solo48": {
+              "rtfx_change_percent": 3.4941822956239044,
+              "paired": [
+                4.1823597577569815,
+                3.6291353114725755,
+                3.1618116259997553,
+                3.107521514269518,
+                4.4588318544371175,
+                3.308706136112427,
+                3.214572243950631,
+                3.549940424353859,
+                3.3505304530456526,
+                3.47764113727953,
+                2.9936738517267747
+              ],
+              "paired_positive": 11
+            }
+          },
+          "outputs_exact_to_prior": true,
+          "call_counts_and_graph_replays_exact": true,
+          "gc_threshold": [
+            700,
+            10,
+            10
+          ],
+          "gc_enabled": true,
+          "gc_counts_by_generation": {
+            "0": 7,
+            "1": 0,
+            "2": 1
+          },
+          "largest_gc_overlap_samples": [
+            {
+              "variant": "reference",
+              "repeat": 4,
+              "ids": [
+                "1272-128104-0002"
+              ],
+              "wall_ms": 10.770953,
+              "audio_seconds": 12.485,
+              "draft_decoder_calls": 0,
+              "peak_allocated_bytes": 2214906368,
+              "start_ns": 372882866278439,
+              "end_ns": 372882877049392,
+              "cpu_ms": 24.443109,
+              "gc_counts_before": [
+                656,
+                3,
+                0
+              ],
+              "gc_counts_after": [
+                1,
+                4,
+                0
+              ],
+              "voluntary_switches": 3,
+              "involuntary_switches": 6,
+              "minor_faults": 0,
+              "major_faults": 0,
+              "gc": [
+                {
+                  "start_ns": 372882868067578,
+                  "end_ns": 372882868271888,
+                  "generation": 0,
+                  "collected": 0,
+                  "uncollectable": 0
+                }
+              ],
+              "gc_overlap_ms": 0.20431
+            },
+            {
+              "variant": "reference",
+              "repeat": 7,
+              "ids": [
+                "1272-128104-0002"
+              ],
+              "wall_ms": 10.647337,
+              "audio_seconds": 12.485,
+              "draft_decoder_calls": 0,
+              "peak_allocated_bytes": 2214906368,
+              "start_ns": 372884099212452,
+              "end_ns": 372884109859789,
+              "cpu_ms": 24.115615,
+              "gc_counts_before": [
+                657,
+                4,
+                0
+              ],
+              "gc_counts_after": [
+                1,
+                5,
+                0
+              ],
+              "voluntary_switches": 3,
+              "involuntary_switches": 0,
+              "minor_faults": 0,
+              "major_faults": 0,
+              "gc": [
+                {
+                  "start_ns": 372884100914360,
+                  "end_ns": 372884101072456,
+                  "generation": 0,
+                  "collected": 0,
+                  "uncollectable": 0
+                }
+              ],
+              "gc_overlap_ms": 0.158096
+            }
+          ],
+          "largest_relative_samples": [
+            {
+              "variant": "reference",
+              "repeat": 0,
+              "ids": [
+                "1272-128104-0000"
+              ],
+              "wall_ms": 7.015536,
+              "audio_seconds": 5.855,
+              "draft_decoder_calls": 0,
+              "peak_allocated_bytes": 2214215168,
+              "start_ns": 372881504675349,
+              "end_ns": 372881511690885,
+              "cpu_ms": 20.452422,
+              "gc_counts_before": [
+                449,
+                2,
+                0
+              ],
+              "gc_counts_after": [
+                454,
+                2,
+                0
+              ],
+              "voluntary_switches": 3,
+              "involuntary_switches": 0,
+              "minor_faults": 0,
+              "major_faults": 0,
+              "gc": [],
+              "gc_overlap_ms": 0.0,
+              "relative_to_median": 1.0558822294374932
+            },
+            {
+              "variant": "reference",
+              "repeat": 1,
+              "ids": [
+                "1272-128104-0007"
+              ],
+              "wall_ms": 7.193104,
+              "audio_seconds": 9.24,
+              "draft_decoder_calls": 0,
+              "peak_allocated_bytes": 2214560768,
+              "start_ns": 372882135913947,
+              "end_ns": 372882143107051,
+              "cpu_ms": 21.681261,
+              "gc_counts_before": [
+                261,
+                3,
+                0
+              ],
+              "gc_counts_after": [
+                266,
+                3,
+                0
+              ],
+              "voluntary_switches": 3,
+              "involuntary_switches": 2,
+              "minor_faults": 0,
+              "major_faults": 0,
+              "gc": [],
+              "gc_overlap_ms": 0.0,
+              "relative_to_median": 1.0464853628740645
+            },
+            {
+              "variant": "reference",
+              "repeat": 0,
+              "ids": [
+                "1272-128104-0004"
+              ],
+              "wall_ms": 24.898006,
+              "audio_seconds": 29.4,
+              "draft_decoder_calls": 0,
+              "peak_allocated_bytes": 2216864256,
+              "start_ns": 372881537332942,
+              "end_ns": 372881562230948,
+              "cpu_ms": 38.375809,
+              "gc_counts_before": [
+                492,
+                2,
+                0
+              ],
+              "gc_counts_after": [
+                498,
+                2,
+                0
+              ],
+              "voluntary_switches": 4,
+              "involuntary_switches": 0,
+              "minor_faults": 512,
+              "major_faults": 0,
+              "gc": [],
+              "gc_overlap_ms": 0.0,
+              "relative_to_median": 1.0427274842972138
+            }
+          ],
+          "raw_path": "outputs/runtime-2778234/host/plain_ts",
+          "sha256": {
+            "wall.json": "6d365fd991a51e6eb8be0e0b7153ca87123e1bd673071d6f8ab563220dbd04b7",
+            "tokens.json": "3794b44e19a368711217d970d37480e8b4ef42ee38359968fbb937174fac562f",
+            "actual_dispatch_reference.json": "29647a3660303cc4710f08a07d32a2f9a239eabb97b1359b77849adb689c837f"
+          }
+        },
+        "translation": {
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 6.325025,
+                "p95": 23.6289554,
+                "min": 4.94456,
+                "max": 24.713886,
+                "stdev": 5.083495252178816
+              },
+              "rtfx": 1233.9762116071524,
+              "peak_allocated_bytes": 2216864256,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": null,
+              "token_comparison_scope": "returned token IDs"
+            },
+            "solo32": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 6.1489525,
+                "p95": 22.91498205,
+                "min": 4.865504,
+                "max": 23.125372,
+                "stdev": 4.904835871010859
+              },
+              "rtfx": 1268.0088935048095,
+              "peak_allocated_bytes": 2216864256,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": null,
+              "token_comparison_scope": "returned token IDs"
+            },
+            "solo48": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 6.145735999999999,
+                "p95": 22.7838489,
+                "min": 4.855416,
+                "max": 22.986851,
+                "stdev": 4.874673771160946
+              },
+              "rtfx": 1272.480514581874,
+              "peak_allocated_bytes": 2216864256,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": null,
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "comparisons": {
+            "solo32": {
+              "rtfx_change_percent": 2.757969041666719,
+              "paired": [
+                4.221742819469698,
+                2.7148494757764263,
+                3.239780805831849,
+                1.6504879518820514,
+                2.4624621963307725,
+                2.7403117426279655,
+                2.4829472451663115,
+                2.0340320885744445,
+                3.218891334066143,
+                3.2409327236974095,
+                2.342402694484469
+              ],
+              "paired_positive": 11
+            },
+            "solo48": {
+              "rtfx_change_percent": 3.120344023858701,
+              "paired": [
+                4.89823083104568,
+                3.3478218398687476,
+                2.9518157403900513,
+                2.8510189054044233,
+                2.1687638341158166,
+                2.3953483705863254,
+                2.8136757654491973,
+                3.180959588053933,
+                3.1617393168059893,
+                3.6523872367485,
+                2.913132237891203
+              ],
+              "paired_positive": 11
+            }
+          },
+          "outputs_exact_to_prior": true,
+          "call_counts_and_graph_replays_exact": true,
+          "gc_threshold": [
+            700,
+            10,
+            10
+          ],
+          "gc_enabled": true,
+          "gc_counts_by_generation": {
+            "0": 7,
+            "1": 0,
+            "2": 1
+          },
+          "largest_gc_overlap_samples": [
+            {
+              "variant": "solo48",
+              "repeat": 0,
+              "ids": [
+                "1272-128104-0011"
+              ],
+              "wall_ms": 11.130015,
+              "audio_seconds": 15.115,
+              "draft_decoder_calls": 0,
+              "peak_allocated_bytes": 2215251968,
+              "start_ns": 372890100464127,
+              "end_ns": 372890111594142,
+              "cpu_ms": 24.599886,
+              "gc_counts_before": [
+                655,
+                2,
+                0
+              ],
+              "gc_counts_after": [
+                1,
+                3,
+                0
+              ],
+              "voluntary_switches": 3,
+              "involuntary_switches": 0,
+              "minor_faults": 0,
+              "major_faults": 0,
+              "gc": [
+                {
+                  "start_ns": 372890102171052,
+                  "end_ns": 372890102356559,
+                  "generation": 0,
+                  "collected": 0,
+                  "uncollectable": 0
+                }
+              ],
+              "gc_overlap_ms": 0.185507
+            },
+            {
+              "variant": "reference",
+              "repeat": 8,
+              "ids": [
+                "1272-128104-0009"
+              ],
+              "wall_ms": 12.40531,
+              "audio_seconds": 18.29,
+              "draft_decoder_calls": 0,
+              "peak_allocated_bytes": 2215597568,
+              "start_ns": 372892433091060,
+              "end_ns": 372892445496370,
+              "cpu_ms": 25.654867,
+              "gc_counts_before": [
+                657,
+                4,
+                0
+              ],
+              "gc_counts_after": [
+                1,
+                5,
+                0
+              ],
+              "voluntary_switches": 3,
+              "involuntary_switches": 2,
+              "minor_faults": 0,
+              "major_faults": 0,
+              "gc": [
+                {
+                  "start_ns": 372892434827354,
+                  "end_ns": 372892434973012,
+                  "generation": 0,
+                  "collected": 0,
+                  "uncollectable": 0
+                }
+              ],
+              "gc_overlap_ms": 0.145658
+            }
+          ],
+          "largest_relative_samples": [
+            {
+              "variant": "reference",
+              "repeat": 0,
+              "ids": [
+                "1272-128104-0000"
+              ],
+              "wall_ms": 6.748641,
+              "audio_seconds": 5.855,
+              "draft_decoder_calls": 0,
+              "peak_allocated_bytes": 2214246400,
+              "start_ns": 372889789149714,
+              "end_ns": 372889795898355,
+              "cpu_ms": 20.17852,
+              "gc_counts_before": [
+                394,
+                2,
+                0
+              ],
+              "gc_counts_after": [
+                398,
+                2,
+                0
+              ],
+              "voluntary_switches": 3,
+              "involuntary_switches": 0,
+              "minor_faults": 0,
+              "major_faults": 0,
+              "gc": [],
+              "gc_overlap_ms": 0.0,
+              "relative_to_median": 1.0775927191797916
+            },
+            {
+              "variant": "reference",
+              "repeat": 0,
+              "ids": [
+                "1272-128104-0001"
+              ],
+              "wall_ms": 5.377211,
+              "audio_seconds": 4.815,
+              "draft_decoder_calls": 0,
+              "peak_allocated_bytes": 2214246400,
+              "start_ns": 372889796304733,
+              "end_ns": 372889801681944,
+              "cpu_ms": 19.009082,
+              "gc_counts_before": [
+                414,
+                2,
+                0
+              ],
+              "gc_counts_after": [
+                419,
+                2,
+                0
+              ],
+              "voluntary_switches": 3,
+              "involuntary_switches": 0,
+              "minor_faults": 0,
+              "major_faults": 0,
+              "gc": [],
+              "gc_overlap_ms": 0.0,
+              "relative_to_median": 1.0721068755102874
+            },
+            {
+              "variant": "reference",
+              "repeat": 2,
+              "ids": [
+                "1272-128104-0007"
+              ],
+              "wall_ms": 6.627855,
+              "audio_seconds": 9.24,
+              "draft_decoder_calls": 0,
+              "peak_allocated_bytes": 2214560768,
+              "start_ns": 372890498959653,
+              "end_ns": 372890505587508,
+              "cpu_ms": 20.389883,
+              "gc_counts_before": [
+                228,
+                3,
+                0
+              ],
+              "gc_counts_after": [
+                233,
+                3,
+                0
+              ],
+              "voluntary_switches": 3,
+              "involuntary_switches": 2,
+              "minor_faults": 0,
+              "major_faults": 0,
+              "gc": [],
+              "gc_overlap_ms": 0.0,
+              "relative_to_median": 1.0603509345626934
+            }
+          ],
+          "raw_path": "outputs/runtime-2778234/host/translation",
+          "sha256": {
+            "wall.json": "ff3652b3f27bf17f493e70f3a32b32493be15f265de81ead1b70ed705d1ccccf",
+            "tokens.json": "f6ec3465ff1499456468b632bf2c29902adca61b94f8bc5126d6991c10aae5f7",
+            "actual_dispatch_reference.json": "3d871d8fbaaa166a8d075bbc8a8714b3205fb6c020248d2e7f8a0d2a54cb896d"
+          }
+        },
+        "single_ts": {
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 803,
+                "p50": 2.295489,
+                "p95": 3.5886239,
+                "min": 1.729515,
+                "max": 86.077052,
+                "stdev": 3.1313400496430086
+              },
+              "rtfx": 2429.2781632078504,
+              "peak_allocated_bytes": 2304338944,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 4499,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 100,
+                "rate": 0.08695652173913043,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "solo32": {
+              "wall_ms": {
+                "n": 803,
+                "p50": 2.242315,
+                "p95": 3.4828111,
+                "min": 1.709267,
+                "max": 8.877168,
+                "stdev": 1.0194358676749036
+              },
+              "rtfx": 2592.5279437812537,
+              "peak_allocated_bytes": 2304338944,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 4499,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 100,
+                "rate": 0.08695652173913043,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "solo48": {
+              "wall_ms": {
+                "n": 803,
+                "p50": 2.210607,
+                "p95": 3.3935351999999996,
+                "min": 1.680733,
+                "max": 8.658653,
+                "stdev": 0.9884265417664768
+              },
+              "rtfx": 2639.2839056625776,
+              "peak_allocated_bytes": 2304338944,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 4499,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 100,
+                "rate": 0.08695652173913043,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "comparisons": {
+            "solo32": {
+              "rtfx_change_percent": 6.720094184596492,
+              "paired": [
+                2.6224854492385097,
+                1.783332262641335,
+                47.49754085627744,
+                2.5260802081494838,
+                2.5059638219471436,
+                3.0223160991482034,
+                3.5476093230476957,
+                3.0523412993707533,
+                2.8482699677510492,
+                2.000169575969135,
+                2.4330403704667436
+              ],
+              "paired_positive": 11
+            },
+            "solo48": {
+              "rtfx_change_percent": 8.644779574250805,
+              "paired": [
+                5.1320845739802,
+                5.327495479673394,
+                50.67283531134128,
+                3.918234062699022,
+                4.343675924078494,
+                4.233491969053005,
+                4.283333261552547,
+                4.484817965398502,
+                4.345352695957949,
+                4.173643453102538,
+                4.251191687540823
+              ],
+              "paired_positive": 11
+            }
+          },
+          "outputs_exact_to_prior": true,
+          "call_counts_and_graph_replays_exact": true,
+          "gc_threshold": [
+            700,
+            10,
+            10
+          ],
+          "gc_enabled": true,
+          "gc_counts_by_generation": {
+            "0": 234,
+            "1": 21,
+            "2": 2
+          },
+          "largest_gc_overlap_samples": [
+            {
+              "variant": "reference",
+              "repeat": 2,
+              "ids": [
+                "1272-128104-0008"
+              ],
+              "wall_ms": 86.077052,
+              "audio_seconds": 5.12,
+              "draft_decoder_calls": 4,
+              "peak_allocated_bytes": 2301574656,
+              "start_ns": 372919427242455,
+              "end_ns": 372919513319507,
+              "cpu_ms": 100.104744,
+              "gc_counts_before": [
+                662,
+                0,
+                19
+              ],
+              "gc_counts_after": [
+                1,
+                0,
+                0
+              ],
+              "voluntary_switches": 5,
+              "involuntary_switches": 5,
+              "minor_faults": 0,
+              "major_faults": 0,
+              "gc": [
+                {
+                  "start_ns": 372919428179428,
+                  "end_ns": 372919511383071,
+                  "generation": 2,
+                  "collected": 16087,
+                  "uncollectable": 0
+                }
+              ],
+              "gc_overlap_ms": 83.203643
+            },
+            {
+              "variant": "solo32",
+              "repeat": 1,
+              "ids": [
+                "1272-141231-0003"
+              ],
+              "wall_ms": 3.357367,
+              "audio_seconds": 5.42,
+              "draft_decoder_calls": 3,
+              "peak_allocated_bytes": 2301574656,
+              "start_ns": 372919094868491,
+              "end_ns": 372919098225858,
+              "cpu_ms": 15.296486,
+              "gc_counts_before": [
+                661,
+                11,
+                18
+              ],
+              "gc_counts_after": [
+                1,
+                0,
+                19
+              ],
+              "voluntary_switches": 0,
+              "involuntary_switches": 0,
+              "minor_faults": 0,
+              "major_faults": 0,
+              "gc": [
+                {
+                  "start_ns": 372919095843567,
+                  "end_ns": 372919097212165,
+                  "generation": 1,
+                  "collected": 0,
+                  "uncollectable": 0
+                }
+              ],
+              "gc_overlap_ms": 1.368598
+            }
+          ],
+          "largest_relative_samples": [
+            {
+              "variant": "reference",
+              "repeat": 2,
+              "ids": [
+                "1272-128104-0008"
+              ],
+              "wall_ms": 86.077052,
+              "audio_seconds": 5.12,
+              "draft_decoder_calls": 4,
+              "peak_allocated_bytes": 2301574656,
+              "start_ns": 372919427242455,
+              "end_ns": 372919513319507,
+              "cpu_ms": 100.104744,
+              "gc_counts_before": [
+                662,
+                0,
+                19
+              ],
+              "gc_counts_after": [
+                1,
+                0,
+                0
+              ],
+              "voluntary_switches": 5,
+              "involuntary_switches": 5,
+              "minor_faults": 0,
+              "major_faults": 0,
+              "gc": [
+                {
+                  "start_ns": 372919428179428,
+                  "end_ns": 372919511383071,
+                  "generation": 2,
+                  "collected": 16087,
+                  "uncollectable": 0
+                }
+              ],
+              "gc_overlap_ms": 83.203643,
+              "relative_to_median": 39.404342316805646
+            },
+            {
+              "variant": "solo32",
+              "repeat": 1,
+              "ids": [
+                "1272-141231-0003"
+              ],
+              "wall_ms": 3.357367,
+              "audio_seconds": 5.42,
+              "draft_decoder_calls": 3,
+              "peak_allocated_bytes": 2301574656,
+              "start_ns": 372919094868491,
+              "end_ns": 372919098225858,
+              "cpu_ms": 15.296486,
+              "gc_counts_before": [
+                661,
+                11,
+                18
+              ],
+              "gc_counts_after": [
+                1,
+                0,
+                19
+              ],
+              "voluntary_switches": 0,
+              "involuntary_switches": 0,
+              "minor_faults": 0,
+              "major_faults": 0,
+              "gc": [
+                {
+                  "start_ns": 372919095843567,
+                  "end_ns": 372919097212165,
+                  "generation": 1,
+                  "collected": 0,
+                  "uncollectable": 0
+                }
+              ],
+              "gc_overlap_ms": 1.368598,
+              "relative_to_median": 1.757868441830706
+            },
+            {
+              "variant": "reference",
+              "repeat": 7,
+              "ids": [
+                "1272-135031-0008"
+              ],
+              "wall_ms": 3.434357,
+              "audio_seconds": 3.67,
+              "draft_decoder_calls": 5,
+              "peak_allocated_bytes": 2301344256,
+              "start_ns": 372923195549078,
+              "end_ns": 372923198983435,
+              "cpu_ms": 12.377261,
+              "gc_counts_before": [
+                662,
+                11,
+                0
+              ],
+              "gc_counts_after": [
+                1,
+                0,
+                1
+              ],
+              "voluntary_switches": 0,
+              "involuntary_switches": 0,
+              "minor_faults": 0,
+              "major_faults": 0,
+              "gc": [
+                {
+                  "start_ns": 372923196482995,
+                  "end_ns": 372923197521849,
+                  "generation": 1,
+                  "collected": 0,
+                  "uncollectable": 0
+                }
+              ],
+              "gc_overlap_ms": 1.038854,
+              "relative_to_median": 1.4503999165494377
+            }
+          ],
+          "raw_path": "outputs/runtime-2778234/host/single_ts",
+          "sha256": {
+            "wall.json": "495165917cae03cc11403f637070b52e635e31d9cbb5887f3a433abbff33fb28",
+            "tokens.json": "01a03d28ba14d8f57807bf0cbed780200dd630c9eced4335f0677ce33572bb83",
+            "actual_dispatch_reference.json": "6bd6573a73aec4e3a2f80a7651173ac7b86b73bfe5cae67e9ca66b10d53b4b02"
+          }
+        },
+        "stream_ts_b8": {
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 53.898156,
+                "p95": 56.3856915,
+                "min": 53.464703,
+                "max": 58.511041,
+                "stdev": 1.365242095197801
+              },
+              "rtfx": 8860.64728606881,
+              "peak_allocated_bytes": 4212179456,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 770,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 99,
+                "rate": 0.08608695652173913,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "solo32": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 53.873545,
+                "p95": 54.273616000000004,
+                "min": 53.489374,
+                "max": 54.283136,
+                "stdev": 0.23555629588632546
+              },
+              "rtfx": 8928.996261600245,
+              "peak_allocated_bytes": 4245733888,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 770,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 99,
+                "rate": 0.08608695652173913,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "solo48": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 53.631728,
+                "p95": 55.629071999999994,
+                "min": 52.544541,
+                "max": 57.103531,
+                "stdev": 1.1049282733082788
+              },
+              "rtfx": 8933.82761918425,
+              "peak_allocated_bytes": 4245733888,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 770,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 99,
+                "rate": 0.08608695652173913,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "comparisons": {
+            "solo32": {
+              "rtfx_change_percent": 0.7713767778444014,
+              "paired": [
+                7.788615970897483,
+                0.285148224019216,
+                -0.5587715189201758,
+                0.5977258499478166,
+                0.4870008733751652,
+                -1.4731527085607432,
+                0.3225582086828327,
+                -0.09538290187611764,
+                -0.5191925427321498,
+                0.9463389871670724,
+                0.6616754104449507
+              ],
+              "paired_positive": 7
+            },
+            "solo48": {
+              "rtfx_change_percent": 0.8259027896359017,
+              "paired": [
+                8.859731438462282,
+                -0.017121741659498202,
+                0.8111999954198978,
+                0.7813646450616885,
+                0.5139730476511506,
+                -1.2739634941163702,
+                1.0419261523701095,
+                0.4434494601059935,
+                -6.113453824773107,
+                1.3314714555376694,
+                3.207701443238409
+              ],
+              "paired_positive": 8
+            }
+          },
+          "outputs_exact_to_prior": true,
+          "call_counts_and_graph_replays_exact": true,
+          "gc_threshold": [
+            700,
+            10,
+            10
+          ],
+          "gc_enabled": true,
+          "gc_counts_by_generation": {
+            "0": 43,
+            "1": 3,
+            "2": 1
+          },
+          "largest_gc_overlap_samples": [
+            {
+              "variant": "reference",
+              "repeat": 0,
+              "ids": [
+                "1272-128104-0000",
+                "1272-128104-0001",
+                "1272-128104-0002",
+                "1272-128104-0003",
+                "1272-128104-0004",
+                "1272-128104-0005",
+                "1272-128104-0006",
+                "1272-128104-0007",
+                "1272-128104-0008",
+                "1272-128104-0009",
+                "1272-128104-0010",
+                "1272-128104-0011",
+                "1272-128104-0012",
+                "1272-128104-0013",
+                "1272-128104-0014",
+                "1272-135031-0000",
+                "1272-135031-0001",
+                "1272-135031-0002",
+                "1272-135031-0003",
+                "1272-135031-0004",
+                "1272-135031-0005",
+                "1272-135031-0006",
+                "1272-135031-0007",
+                "1272-135031-0008",
+                "1272-135031-0009",
+                "1272-135031-0010",
+                "1272-135031-0011",
+                "1272-135031-0012",
+                "1272-135031-0013",
+                "1272-135031-0014",
+                "1272-135031-0015",
+                "1272-135031-0016",
+                "1272-135031-0017",
+                "1272-135031-0018",
+                "1272-135031-0019",
+                "1272-135031-0020",
+                "1272-135031-0021",
+                "1272-135031-0022",
+                "1272-135031-0023",
+                "1272-135031-0024",
+                "1272-141231-0000",
+                "1272-141231-0001",
+                "1272-141231-0002",
+                "1272-141231-0003",
+                "1272-141231-0004",
+                "1272-141231-0005",
+                "1272-141231-0006",
+                "1272-141231-0007",
+                "1272-141231-0008",
+                "1272-141231-0009",
+                "1272-141231-0010",
+                "1272-141231-0011",
+                "1272-141231-0012",
+                "1272-141231-0013",
+                "1272-141231-0014",
+                "1272-141231-0015",
+                "1272-141231-0016",
+                "1272-141231-0017",
+                "1272-141231-0018",
+                "1272-141231-0019",
+                "1272-141231-0020",
+                "1272-141231-0021",
+                "1272-141231-0022",
+                "1272-141231-0023",
+                "1272-141231-0024",
+                "1272-141231-0025",
+                "1272-141231-0026",
+                "1272-141231-0027",
+                "1272-141231-0028",
+                "1272-141231-0029",
+                "1272-141231-0030",
+                "1272-141231-0031",
+                "1272-141231-0032"
+              ],
+              "wall_ms": 58.511041,
+              "audio_seconds": 481.034875,
+              "draft_decoder_calls": 70,
+              "peak_allocated_bytes": 3306209792,
+              "start_ns": 372944870451407,
+              "end_ns": 372944928962448,
+              "cpu_ms": 181.559229,
+              "gc_counts_before": [
+                547,
+                2,
+                3
+              ],
+              "gc_counts_after": [
+                136,
+                3,
+                3
+              ],
+              "voluntary_switches": 14,
+              "involuntary_switches": 12,
+              "minor_faults": 2052,
+              "major_faults": 0,
+              "gc": [
+                {
+                  "start_ns": 372944897678220,
+                  "end_ns": 372944898028775,
+                  "generation": 0,
+                  "collected": 416,
+                  "uncollectable": 0
+                }
+              ],
+              "gc_overlap_ms": 0.350555
+            },
+            {
+              "variant": "solo48",
+              "repeat": 7,
+              "ids": [
+                "1272-128104-0000",
+                "1272-128104-0001",
+                "1272-128104-0002",
+                "1272-128104-0003",
+                "1272-128104-0004",
+                "1272-128104-0005",
+                "1272-128104-0006",
+                "1272-128104-0007",
+                "1272-128104-0008",
+                "1272-128104-0009",
+                "1272-128104-0010",
+                "1272-128104-0011",
+                "1272-128104-0012",
+                "1272-128104-0013",
+                "1272-128104-0014",
+                "1272-135031-0000",
+                "1272-135031-0001",
+                "1272-135031-0002",
+                "1272-135031-0003",
+                "1272-135031-0004",
+                "1272-135031-0005",
+                "1272-135031-0006",
+                "1272-135031-0007",
+                "1272-135031-0008",
+                "1272-135031-0009",
+                "1272-135031-0010",
+                "1272-135031-0011",
+                "1272-135031-0012",
+                "1272-135031-0013",
+                "1272-135031-0014",
+                "1272-135031-0015",
+                "1272-135031-0016",
+                "1272-135031-0017",
+                "1272-135031-0018",
+                "1272-135031-0019",
+                "1272-135031-0020",
+                "1272-135031-0021",
+                "1272-135031-0022",
+                "1272-135031-0023",
+                "1272-135031-0024",
+                "1272-141231-0000",
+                "1272-141231-0001",
+                "1272-141231-0002",
+                "1272-141231-0003",
+                "1272-141231-0004",
+                "1272-141231-0005",
+                "1272-141231-0006",
+                "1272-141231-0007",
+                "1272-141231-0008",
+                "1272-141231-0009",
+                "1272-141231-0010",
+                "1272-141231-0011",
+                "1272-141231-0012",
+                "1272-141231-0013",
+                "1272-141231-0014",
+                "1272-141231-0015",
+                "1272-141231-0016",
+                "1272-141231-0017",
+                "1272-141231-0018",
+                "1272-141231-0019",
+                "1272-141231-0020",
+                "1272-141231-0021",
+                "1272-141231-0022",
+                "1272-141231-0023",
+                "1272-141231-0024",
+                "1272-141231-0025",
+                "1272-141231-0026",
+                "1272-141231-0027",
+                "1272-141231-0028",
+                "1272-141231-0029",
+                "1272-141231-0030",
+                "1272-141231-0031",
+                "1272-141231-0032"
+              ],
+              "wall_ms": 53.452991,
+              "audio_seconds": 481.034875,
+              "draft_decoder_calls": 70,
+              "peak_allocated_bytes": 3943744000,
+              "start_ns": 372946028839523,
+              "end_ns": 372946082292514,
+              "cpu_ms": 163.698105,
+              "gc_counts_before": [
+                473,
+                7,
+                3
+              ],
+              "gc_counts_after": [
+                2,
+                8,
+                3
+              ],
+              "voluntary_switches": 12,
+              "involuntary_switches": 11,
+              "minor_faults": 6,
+              "major_faults": 0,
+              "gc": [
+                {
+                  "start_ns": 372946081557884,
+                  "end_ns": 372946081804673,
+                  "generation": 0,
+                  "collected": 0,
+                  "uncollectable": 0
+                }
+              ],
+              "gc_overlap_ms": 0.246789
+            }
+          ],
+          "largest_relative_samples": [
+            {
+              "variant": "reference",
+              "repeat": 0,
+              "ids": [
+                "1272-128104-0000",
+                "1272-128104-0001",
+                "1272-128104-0002",
+                "1272-128104-0003",
+                "1272-128104-0004",
+                "1272-128104-0005",
+                "1272-128104-0006",
+                "1272-128104-0007",
+                "1272-128104-0008",
+                "1272-128104-0009",
+                "1272-128104-0010",
+                "1272-128104-0011",
+                "1272-128104-0012",
+                "1272-128104-0013",
+                "1272-128104-0014",
+                "1272-135031-0000",
+                "1272-135031-0001",
+                "1272-135031-0002",
+                "1272-135031-0003",
+                "1272-135031-0004",
+                "1272-135031-0005",
+                "1272-135031-0006",
+                "1272-135031-0007",
+                "1272-135031-0008",
+                "1272-135031-0009",
+                "1272-135031-0010",
+                "1272-135031-0011",
+                "1272-135031-0012",
+                "1272-135031-0013",
+                "1272-135031-0014",
+                "1272-135031-0015",
+                "1272-135031-0016",
+                "1272-135031-0017",
+                "1272-135031-0018",
+                "1272-135031-0019",
+                "1272-135031-0020",
+                "1272-135031-0021",
+                "1272-135031-0022",
+                "1272-135031-0023",
+                "1272-135031-0024",
+                "1272-141231-0000",
+                "1272-141231-0001",
+                "1272-141231-0002",
+                "1272-141231-0003",
+                "1272-141231-0004",
+                "1272-141231-0005",
+                "1272-141231-0006",
+                "1272-141231-0007",
+                "1272-141231-0008",
+                "1272-141231-0009",
+                "1272-141231-0010",
+                "1272-141231-0011",
+                "1272-141231-0012",
+                "1272-141231-0013",
+                "1272-141231-0014",
+                "1272-141231-0015",
+                "1272-141231-0016",
+                "1272-141231-0017",
+                "1272-141231-0018",
+                "1272-141231-0019",
+                "1272-141231-0020",
+                "1272-141231-0021",
+                "1272-141231-0022",
+                "1272-141231-0023",
+                "1272-141231-0024",
+                "1272-141231-0025",
+                "1272-141231-0026",
+                "1272-141231-0027",
+                "1272-141231-0028",
+                "1272-141231-0029",
+                "1272-141231-0030",
+                "1272-141231-0031",
+                "1272-141231-0032"
+              ],
+              "wall_ms": 58.511041,
+              "audio_seconds": 481.034875,
+              "draft_decoder_calls": 70,
+              "peak_allocated_bytes": 3306209792,
+              "start_ns": 372944870451407,
+              "end_ns": 372944928962448,
+              "cpu_ms": 181.559229,
+              "gc_counts_before": [
+                547,
+                2,
+                3
+              ],
+              "gc_counts_after": [
+                136,
+                3,
+                3
+              ],
+              "voluntary_switches": 14,
+              "involuntary_switches": 12,
+              "minor_faults": 2052,
+              "major_faults": 0,
+              "gc": [
+                {
+                  "start_ns": 372944897678220,
+                  "end_ns": 372944898028775,
+                  "generation": 0,
+                  "collected": 416,
+                  "uncollectable": 0
+                }
+              ],
+              "gc_overlap_ms": 0.350555,
+              "relative_to_median": 1.0855852100023606
+            },
+            {
+              "variant": "solo48",
+              "repeat": 8,
+              "ids": [
+                "1272-128104-0000",
+                "1272-128104-0001",
+                "1272-128104-0002",
+                "1272-128104-0003",
+                "1272-128104-0004",
+                "1272-128104-0005",
+                "1272-128104-0006",
+                "1272-128104-0007",
+                "1272-128104-0008",
+                "1272-128104-0009",
+                "1272-128104-0010",
+                "1272-128104-0011",
+                "1272-128104-0012",
+                "1272-128104-0013",
+                "1272-128104-0014",
+                "1272-135031-0000",
+                "1272-135031-0001",
+                "1272-135031-0002",
+                "1272-135031-0003",
+                "1272-135031-0004",
+                "1272-135031-0005",
+                "1272-135031-0006",
+                "1272-135031-0007",
+                "1272-135031-0008",
+                "1272-135031-0009",
+                "1272-135031-0010",
+                "1272-135031-0011",
+                "1272-135031-0012",
+                "1272-135031-0013",
+                "1272-135031-0014",
+                "1272-135031-0015",
+                "1272-135031-0016",
+                "1272-135031-0017",
+                "1272-135031-0018",
+                "1272-135031-0019",
+                "1272-135031-0020",
+                "1272-135031-0021",
+                "1272-135031-0022",
+                "1272-135031-0023",
+                "1272-135031-0024",
+                "1272-141231-0000",
+                "1272-141231-0001",
+                "1272-141231-0002",
+                "1272-141231-0003",
+                "1272-141231-0004",
+                "1272-141231-0005",
+                "1272-141231-0006",
+                "1272-141231-0007",
+                "1272-141231-0008",
+                "1272-141231-0009",
+                "1272-141231-0010",
+                "1272-141231-0011",
+                "1272-141231-0012",
+                "1272-141231-0013",
+                "1272-141231-0014",
+                "1272-141231-0015",
+                "1272-141231-0016",
+                "1272-141231-0017",
+                "1272-141231-0018",
+                "1272-141231-0019",
+                "1272-141231-0020",
+                "1272-141231-0021",
+                "1272-141231-0022",
+                "1272-141231-0023",
+                "1272-141231-0024",
+                "1272-141231-0025",
+                "1272-141231-0026",
+                "1272-141231-0027",
+                "1272-141231-0028",
+                "1272-141231-0029",
+                "1272-141231-0030",
+                "1272-141231-0031",
+                "1272-141231-0032"
+              ],
+              "wall_ms": 57.103531,
+              "audio_seconds": 481.034875,
+              "draft_decoder_calls": 70,
+              "peak_allocated_bytes": 4111516160,
+              "start_ns": 372946303136361,
+              "end_ns": 372946360239892,
+              "cpu_ms": 169.810723,
+              "gc_counts_before": [
+                315,
+                8,
+                3
+              ],
+              "gc_counts_after": [
+                540,
+                8,
+                3
+              ],
+              "voluntary_switches": 14,
+              "involuntary_switches": 6,
+              "minor_faults": 519,
+              "major_faults": 0,
+              "gc": [],
+              "gc_overlap_ms": 0.0,
+              "relative_to_median": 1.0647341252924014
+            },
+            {
+              "variant": "solo48",
+              "repeat": 5,
+              "ids": [
+                "1272-128104-0000",
+                "1272-128104-0001",
+                "1272-128104-0002",
+                "1272-128104-0003",
+                "1272-128104-0004",
+                "1272-128104-0005",
+                "1272-128104-0006",
+                "1272-128104-0007",
+                "1272-128104-0008",
+                "1272-128104-0009",
+                "1272-128104-0010",
+                "1272-128104-0011",
+                "1272-128104-0012",
+                "1272-128104-0013",
+                "1272-128104-0014",
+                "1272-135031-0000",
+                "1272-135031-0001",
+                "1272-135031-0002",
+                "1272-135031-0003",
+                "1272-135031-0004",
+                "1272-135031-0005",
+                "1272-135031-0006",
+                "1272-135031-0007",
+                "1272-135031-0008",
+                "1272-135031-0009",
+                "1272-135031-0010",
+                "1272-135031-0011",
+                "1272-135031-0012",
+                "1272-135031-0013",
+                "1272-135031-0014",
+                "1272-135031-0015",
+                "1272-135031-0016",
+                "1272-135031-0017",
+                "1272-135031-0018",
+                "1272-135031-0019",
+                "1272-135031-0020",
+                "1272-135031-0021",
+                "1272-135031-0022",
+                "1272-135031-0023",
+                "1272-135031-0024",
+                "1272-141231-0000",
+                "1272-141231-0001",
+                "1272-141231-0002",
+                "1272-141231-0003",
+                "1272-141231-0004",
+                "1272-141231-0005",
+                "1272-141231-0006",
+                "1272-141231-0007",
+                "1272-141231-0008",
+                "1272-141231-0009",
+                "1272-141231-0010",
+                "1272-141231-0011",
+                "1272-141231-0012",
+                "1272-141231-0013",
+                "1272-141231-0014",
+                "1272-141231-0015",
+                "1272-141231-0016",
+                "1272-141231-0017",
+                "1272-141231-0018",
+                "1272-141231-0019",
+                "1272-141231-0020",
+                "1272-141231-0021",
+                "1272-141231-0022",
+                "1272-141231-0023",
+                "1272-141231-0024",
+                "1272-141231-0025",
+                "1272-141231-0026",
+                "1272-141231-0027",
+                "1272-141231-0028",
+                "1272-141231-0029",
+                "1272-141231-0030",
+                "1272-141231-0031",
+                "1272-141231-0032"
+              ],
+              "wall_ms": 54.154613,
+              "audio_seconds": 481.034875,
+              "draft_decoder_calls": 70,
+              "peak_allocated_bytes": 3775971840,
+              "start_ns": 372945697973927,
+              "end_ns": 372945752128540,
+              "cpu_ms": 167.604814,
+              "gc_counts_before": [
+                4,
+                7,
+                3
+              ],
+              "gc_counts_after": [
+                231,
+                7,
+                3
+              ],
+              "voluntary_switches": 14,
+              "involuntary_switches": 7,
+              "minor_faults": 8,
+              "major_faults": 0,
+              "gc": [],
+              "gc_overlap_ms": 0.0,
+              "relative_to_median": 1.0097495460150006
+            }
+          ],
+          "raw_path": "outputs/runtime-2778234/host/stream_ts_b8",
+          "sha256": {
+            "wall.json": "819ee06611fff90482b37f7a97bfcff4c7f8833f9c0ca1089f8fee9e21eeee61",
+            "tokens.json": "9b9d50de5a49dcf8688ca93a9458f850b3909caa69909bf1e603b86d1bffe98b",
+            "actual_dispatch_reference.json": "83ac054385d5e1fdae877305a1c80e248ed6f609972ea1838ec98753d652e365"
+          }
+        },
+        "long_greedy": {
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 25.919013,
+                "p95": 26.328996500000002,
+                "min": 25.470366,
+                "max": 26.613986,
+                "stdev": 0.26808493629651686
+              },
+              "rtfx": 4449.354318620292,
+              "peak_allocated_bytes": 3317500416,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 715,
+              "agreement": {
+                "tokens": {
+                  "equal": 1,
+                  "total": 1,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 1,
+                  "total": 1,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 1,
+                  "total": 1,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 1,
+                  "total": 1,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 0,
+                "errors": 0,
+                "rate": null,
+                "annotated_utterances": 0,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "segment/text only; long-form returns no joined token IDs"
+            },
+            "solo32": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 24.89365,
+                "p95": 25.168056999999997,
+                "min": 24.814224,
+                "max": 25.298917,
+                "stdev": 0.1369282287367791
+              },
+              "rtfx": 4625.198705703258,
+              "peak_allocated_bytes": 3317500416,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 715,
+              "agreement": {
+                "tokens": {
+                  "equal": 1,
+                  "total": 1,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 1,
+                  "total": 1,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 1,
+                  "total": 1,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 1,
+                  "total": 1,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 0,
+                "errors": 0,
+                "rate": null,
+                "annotated_utterances": 0,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "segment/text only; long-form returns no joined token IDs"
+            },
+            "solo48": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 24.385225,
+                "p95": 24.547348,
+                "min": 24.139057,
+                "max": 24.566805,
+                "stdev": 0.12429520360751913
+              },
+              "rtfx": 4732.295430553592,
+              "peak_allocated_bytes": 3317500416,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 715,
+              "agreement": {
+                "tokens": {
+                  "equal": 1,
+                  "total": 1,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 1,
+                  "total": 1,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 1,
+                  "total": 1,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 1,
+                  "total": 1,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 0,
+                "errors": 0,
+                "rate": null,
+                "annotated_utterances": 0,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "segment/text only; long-form returns no joined token IDs"
+            }
+          },
+          "comparisons": {
+            "solo32": {
+              "rtfx_change_percent": 3.9521327026500686,
+              "paired": [
+                5.198123698338564,
+                2.920165187638335,
+                2.6202022068384956,
+                3.9282266762808993,
+                3.4726273640841354,
+                4.628265299410228,
+                4.021256852354527,
+                3.8921469959810384,
+                4.45224077932076,
+                4.63471857995037,
+                3.690195783114336
+              ],
+              "paired_positive": 11
+            },
+            "solo48": {
+              "rtfx_change_percent": 6.359149927646968,
+              "paired": [
+                8.504991317843015,
+                4.743844386765006,
+                3.981601195669171,
+                6.095100619329941,
+                5.8088788790896295,
+                7.135342702393821,
+                6.553718827706478,
+                6.679431479915499,
+                6.620628002135942,
+                7.18306349558766,
+                6.667058286493965
+              ],
+              "paired_positive": 11
+            }
+          },
+          "outputs_exact_to_prior": true,
+          "call_counts_and_graph_replays_exact": true,
+          "gc_threshold": [
+            700,
+            10,
+            10
+          ],
+          "gc_enabled": true,
+          "gc_counts_by_generation": {
+            "0": 12,
+            "1": 1,
+            "2": 1
+          },
+          "largest_gc_overlap_samples": [
+            {
+              "variant": "reference",
+              "repeat": 0,
+              "ids": [
+                "long_110s"
+              ],
+              "wall_ms": 26.613986,
+              "audio_seconds": 115.355,
+              "draft_decoder_calls": 65,
+              "peak_allocated_bytes": 3317500416,
+              "start_ns": 372953677523741,
+              "end_ns": 372953704137727,
+              "cpu_ms": 26.462687,
+              "gc_counts_before": [
+                588,
+                11,
+                0
+              ],
+              "gc_counts_after": [
+                611,
+                11,
+                0
+              ],
+              "voluntary_switches": 0,
+              "involuntary_switches": 2,
+              "minor_faults": 0,
+              "major_faults": 0,
+              "gc": [],
+              "gc_overlap_ms": 0.0
+            },
+            {
+              "variant": "solo32",
+              "repeat": 0,
+              "ids": [
+                "long_110s"
+              ],
+              "wall_ms": 25.298917,
+              "audio_seconds": 115.355,
+              "draft_decoder_calls": 65,
+              "peak_allocated_bytes": 3317500416,
+              "start_ns": 372953705969105,
+              "end_ns": 372953731268022,
+              "cpu_ms": 25.176703,
+              "gc_counts_before": [
+                8,
+                0,
+                1
+              ],
+              "gc_counts_after": [
+                28,
+                0,
+                1
+              ],
+              "voluntary_switches": 2,
+              "involuntary_switches": 1,
+              "minor_faults": 0,
+              "major_faults": 0,
+              "gc": [],
+              "gc_overlap_ms": 0.0
+            }
+          ],
+          "largest_relative_samples": [
+            {
+              "variant": "reference",
+              "repeat": 0,
+              "ids": [
+                "long_110s"
+              ],
+              "wall_ms": 26.613986,
+              "audio_seconds": 115.355,
+              "draft_decoder_calls": 65,
+              "peak_allocated_bytes": 3317500416,
+              "start_ns": 372953677523741,
+              "end_ns": 372953704137727,
+              "cpu_ms": 26.462687,
+              "gc_counts_before": [
+                588,
+                11,
+                0
+              ],
+              "gc_counts_after": [
+                611,
+                11,
+                0
+              ],
+              "voluntary_switches": 0,
+              "involuntary_switches": 2,
+              "minor_faults": 0,
+              "major_faults": 0,
+              "gc": [],
+              "gc_overlap_ms": 0.0,
+              "relative_to_median": 1.02681325095211
+            },
+            {
+              "variant": "solo32",
+              "repeat": 0,
+              "ids": [
+                "long_110s"
+              ],
+              "wall_ms": 25.298917,
+              "audio_seconds": 115.355,
+              "draft_decoder_calls": 65,
+              "peak_allocated_bytes": 3317500416,
+              "start_ns": 372953705969105,
+              "end_ns": 372953731268022,
+              "cpu_ms": 25.176703,
+              "gc_counts_before": [
+                8,
+                0,
+                1
+              ],
+              "gc_counts_after": [
+                28,
+                0,
+                1
+              ],
+              "voluntary_switches": 2,
+              "involuntary_switches": 1,
+              "minor_faults": 0,
+              "major_faults": 0,
+              "gc": [],
+              "gc_overlap_ms": 0.0,
+              "relative_to_median": 1.0162799348428213
+            },
+            {
+              "variant": "solo48",
+              "repeat": 1,
+              "ids": [
+                "long_110s"
+              ],
+              "wall_ms": 24.566805,
+              "audio_seconds": 115.355,
+              "draft_decoder_calls": 65,
+              "peak_allocated_bytes": 3317500416,
+              "start_ns": 372953756745732,
+              "end_ns": 372953781312537,
+              "cpu_ms": 24.4481,
+              "gc_counts_before": [
+                58,
+                0,
+                1
+              ],
+              "gc_counts_after": [
+                77,
+                0,
+                1
+              ],
+              "voluntary_switches": 0,
+              "involuntary_switches": 0,
+              "minor_faults": 0,
+              "major_faults": 0,
+              "gc": [],
+              "gc_overlap_ms": 0.0,
+              "relative_to_median": 1.0074463122649062
+            }
+          ],
+          "raw_path": "outputs/runtime-2778234/host/long_greedy",
+          "sha256": {
+            "wall.json": "667540ed82ea2a7b6854f1cf0741f7c00c4836a264b218176eb51d10ff51aa4e",
+            "tokens.json": "f19ea6c91b78a0f4605f0cc48719249acf6539924debc9294157d145f9138f9d",
+            "actual_dispatch_reference.json": "5d11a38dd09c768b1a0ac396fd8f43197be797801eb5bb9f4ae9222ef1d1f824"
+          }
+        }
+      },
+      "shape_checks": [
+        {
+          "window": 1,
+          "position": 0,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 1,
+          "position": 0,
+          "mode": "solo32",
+          "programs": 32,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 1,
+          "position": 0,
+          "mode": "solo48",
+          "programs": 48,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 1,
+          "position": 63,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 1,
+          "position": 63,
+          "mode": "solo32",
+          "programs": 32,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 1,
+          "position": 63,
+          "mode": "solo48",
+          "programs": 48,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 8,
+          "position": 0,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 8,
+          "position": 0,
+          "mode": "solo32",
+          "programs": 32,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 8,
+          "position": 0,
+          "mode": "solo48",
+          "programs": 48,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 8,
+          "position": 63,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 8,
+          "position": 63,
+          "mode": "solo32",
+          "programs": 32,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 8,
+          "position": 63,
+          "mode": "solo48",
+          "programs": 48,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 32,
+          "position": 0,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 32,
+          "position": 0,
+          "mode": "solo32",
+          "programs": 32,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 32,
+          "position": 0,
+          "mode": "solo48",
+          "programs": 48,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 32,
+          "position": 63,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 32,
+          "position": 63,
+          "mode": "solo32",
+          "programs": 32,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 32,
+          "position": 63,
+          "mode": "solo48",
+          "programs": 48,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        }
+      ]
+    },
+    "rotated": {
+      "environment": {
+        "commit": "5efd58a381eaa087282feb2a61b6519f161b42cd",
+        "checkpoint_sha256": "4702713d44ab3e239101f09182903cd28f7b51e565bb632008af12beefb37752",
+        "engine_sha256": {
+          "encoder.engine": "f3da9563c8ef41b6252388c18d89fac46cc5781cfa505d6750837e0c12e0f481",
+          "decoder.engine": "b6065937220853d65633f6f59ce0edab80270717b8971c8afa53baf9a2bf5f72",
+          "verify.engine": "34a912836635a2c6928abef52e6ea5140c5215bc8fa178ee8b1af07bd5458dcb"
+        },
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106"
+        },
+        "nvidia_smi": "name, uuid, driver_version, compute_cap, memory.total [MiB]\nNVIDIA H200, GPU-ceface32-d865-d82a-4941-fb64aa2447c3, 595.71.05, 9.0, 143771 MiB",
+        "manifest_sha256": "9433fc4a6d1ce8f6f8d1d8988ac0b1bb7537f8ae05415d72fbdd94d10142006f",
+        "load_ms": 1288.8056120136753,
+        "host_diagnostics": false,
+        "variant_order": [
+          "solo48",
+          "reference",
+          "solo32"
+        ],
+        "budgets": {
+          "reference": {
+            "concurrent": 12,
+            "solo": 24,
+            "rows": 24
+          },
+          "solo32": {
+            "concurrent": 12,
+            "solo": 32,
+            "rows": 24
+          },
+          "solo48": {
+            "concurrent": 12,
+            "solo": 48,
+            "rows": 24
+          }
+        },
+        "scope": "E intent versus existing same Ring arithmetic: only serialR1 CTAcount24/32/48. Concurrent12 and cross-attention splits unchanged; no productiondefaultchange. Three residentpools, cold/JITorder shared. Loadedinputs. Longformjoinedtext/segments only."
+      },
+      "cases": {
+        "plain_greedy": {
+          "summary": {
+            "solo48": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 6.204082514159381,
+                "p95": 21.810426455340348,
+                "min": 4.563029040582478,
+                "max": 22.81897602370009,
+                "stdev": 4.677390036235729
+              },
+              "rtfx": 1282.8859252743932,
+              "peak_allocated_bytes": 2215684608,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 303,
+                "errors": 33,
+                "rate": 0.10891089108910891,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "reference": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 6.437086005462334,
+                "p95": 22.748456057161093,
+                "min": 4.794123989995569,
+                "max": 22.848627995699644,
+                "stdev": 4.87924498283449
+              },
+              "rtfx": 1232.3921703742217,
+              "peak_allocated_bytes": 2215684608,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 303,
+                "errors": 33,
+                "rate": 0.10891089108910891,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "solo32": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 6.268331489991397,
+                "p95": 22.222105579567142,
+                "min": 4.6771729830652475,
+                "max": 22.295676986686885,
+                "stdev": 4.755945460996981
+              },
+              "rtfx": 1267.2129080747186,
+              "peak_allocated_bytes": 2215684608,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 303,
+                "errors": 33,
+                "rate": 0.10891089108910891,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "comparisons": {
+            "solo32": {
+              "rtfx_change_percent": 2.8254591791120776,
+              "paired": [
+                3.0780195908064245,
+                2.681773001877552,
+                3.442966701036454,
+                2.3515860103053177,
+                4.277176356483525,
+                2.7735332268755686,
+                2.667650114533382,
+                1.8043099257563977,
+                2.4313862437790323,
+                2.731260136329028,
+                2.854882583037721
+              ],
+              "paired_positive": 11
+            },
+            "solo48": {
+              "rtfx_change_percent": 4.097214840697894,
+              "paired": [
+                3.059540126518523,
+                4.218783397909731,
+                5.337229547225664,
+                2.6613437843522103,
+                3.386678765600948,
+                4.9187063506981765,
+                4.090407377529615,
+                4.004281861809655,
+                4.7824937469546525,
+                4.546458553231214,
+                4.128328914265067
+              ],
+              "paired_positive": 11
+            }
+          },
+          "outputs_exact_to_prior": true,
+          "call_counts_and_graph_replays_exact": true,
+          "raw_path": "outputs/runtime-2778234/rotated/plain_greedy",
+          "sha256": {
+            "wall.json": "557fd7c4ccbafda2be6ac964096976d7b48862b571d8931022e96800e26d6c12",
+            "tokens.json": "c6194375d3494c51ad0c5187fd45bd0689477260b359d8d07b97f3227c31e8f2",
+            "actual_dispatch_reference.json": "0740ab5aac2ce297e4efb55d90d84cd1cbe9cad56415f946d29480ba6674e1d9"
+          }
+        },
+        "plain_ts": {
+          "summary": {
+            "solo48": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 6.579069508006796,
+                "p95": 22.7255974750733,
+                "min": 4.996601026505232,
+                "max": 23.67007703287527,
+                "stdev": 4.7946393079886995
+              },
+              "rtfx": 1228.6699657795605,
+              "peak_allocated_bytes": 2216864256,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 303,
+                "errors": 33,
+                "rate": 0.10891089108910891,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "reference": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 6.781712989322841,
+                "p95": 23.69696932437364,
+                "min": 5.195367964915931,
+                "max": 23.810011975001544,
+                "stdev": 5.00131867974719
+              },
+              "rtfx": 1181.3804749149017,
+              "peak_allocated_bytes": 2216864256,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 303,
+                "errors": 33,
+                "rate": 0.10891089108910891,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "solo32": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 6.673720490653068,
+                "p95": 23.37233662547078,
+                "min": 5.133415979798883,
+                "max": 23.50673999171704,
+                "stdev": 4.926704670558204
+              },
+              "rtfx": 1199.3804337773392,
+              "peak_allocated_bytes": 2216864256,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 303,
+                "errors": 33,
+                "rate": 0.10891089108910891,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "comparisons": {
+            "solo32": {
+              "rtfx_change_percent": 1.523637747926565,
+              "paired": [
+                1.982242298482384,
+                2.33777634082708,
+                1.0396942222701488,
+                1.5945179083531658,
+                1.702740077607312,
+                0.9180101843944133,
+                1.486150387823093,
+                1.5800779350819916,
+                1.4189219802237751,
+                1.1541636964660373,
+                1.551088456364691
+              ],
+              "paired_positive": 11
+            },
+            "solo48": {
+              "rtfx_change_percent": 4.002901001734016,
+              "paired": [
+                2.8832159200469665,
+                4.994800733185301,
+                3.5797951931073158,
+                3.8393713616921454,
+                4.4615813997337606,
+                3.64633932645968,
+                4.162648813278591,
+                4.5553159183684855,
+                3.9791856161150108,
+                4.13766440636858,
+                3.816694363291284
+              ],
+              "paired_positive": 11
+            }
+          },
+          "outputs_exact_to_prior": true,
+          "call_counts_and_graph_replays_exact": true,
+          "raw_path": "outputs/runtime-2778234/rotated/plain_ts",
+          "sha256": {
+            "wall.json": "af5458e6d8bde43844284301a2e6b6ac5d646cc6b963365473d8f73606976734",
+            "tokens.json": "24fde1ae57f0cac7c8c34639683f352cc5b3b3ae3737ab142443d8e0837c0cb2",
+            "actual_dispatch_reference.json": "29647a3660303cc4710f08a07d32a2f9a239eabb97b1359b77849adb689c837f"
+          }
+        },
+        "translation": {
+          "summary": {
+            "solo48": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 6.091786024626344,
+                "p95": 22.557305492227897,
+                "min": 4.7690970241092145,
+                "max": 23.49752897862345,
+                "stdev": 4.838360089958005
+              },
+              "rtfx": 1283.068810241248,
+              "peak_allocated_bytes": 2216864256,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": null,
+              "token_comparison_scope": "returned token IDs"
+            },
+            "reference": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 6.2379475275520235,
+                "p95": 23.268905113218352,
+                "min": 4.875784972682595,
+                "max": 23.451091954484582,
+                "stdev": 4.985846452204651
+              },
+              "rtfx": 1249.552660670188,
+              "peak_allocated_bytes": 2216864256,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": null,
+              "token_comparison_scope": "returned token IDs"
+            },
+            "solo32": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 6.184377009049058,
+                "p95": 23.238416921230964,
+                "min": 4.905965994112194,
+                "max": 23.42567901359871,
+                "stdev": 4.981174226989451
+              },
+              "rtfx": 1255.9263594282493,
+              "peak_allocated_bytes": 2216864256,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": null,
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "comparisons": {
+            "solo32": {
+              "rtfx_change_percent": 0.5100784431640193,
+              "paired": [
+                0.3182493380939233,
+                0.010579619120054673,
+                0.6986774069721591,
+                0.852968999544168,
+                -0.06030674372874412,
+                0.6678680568027007,
+                0.1813992229604544,
+                0.9233794867740341,
+                0.49933655190057546,
+                0.09702431731828387,
+                1.4258849075531765
+              ],
+              "paired_positive": 10
+            },
+            "solo48": {
+              "rtfx_change_percent": 2.6822518670868822,
+              "paired": [
+                1.4498146749344354,
+                2.673216037380466,
+                3.221148981525679,
+                3.256370125735808,
+                3.5099504822823313,
+                2.39934914737725,
+                0.3492141235128532,
+                3.2811940399291473,
+                3.1343114073979716,
+                1.8769083030453881,
+                4.442155496660449
+              ],
+              "paired_positive": 11
+            }
+          },
+          "outputs_exact_to_prior": true,
+          "call_counts_and_graph_replays_exact": true,
+          "raw_path": "outputs/runtime-2778234/rotated/translation",
+          "sha256": {
+            "wall.json": "1618c6874faeab50a8252547b644bda5993ec963d32814cac4e7e5864ae94bf3",
+            "tokens.json": "0ab4fc1773e1a446f28e93f1b432e67d16e26c50baee4f0c8810615f5e351b3a",
+            "actual_dispatch_reference.json": "3d871d8fbaaa166a8d075bbc8a8714b3205fb6c020248d2e7f8a0d2a54cb896d"
+          }
+        },
+        "single_ts": {
+          "summary": {
+            "solo48": {
+              "wall_ms": {
+                "n": 803,
+                "p50": 2.192997024394572,
+                "p95": 3.3781061589252204,
+                "min": 1.676884014159441,
+                "max": 9.45557898376137,
+                "stdev": 0.997699471833302
+              },
+              "rtfx": 2649.874369806288,
+              "peak_allocated_bytes": 2304338944,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 4499,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 100,
+                "rate": 0.08695652173913043,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "reference": {
+              "wall_ms": {
+                "n": 803,
+                "p50": 2.2698999964632094,
+                "p95": 3.5376325657125562,
+                "min": 1.714397978503257,
+                "max": 9.178264008369297,
+                "stdev": 1.0594409181183748
+              },
+              "rtfx": 2557.7747943400773,
+              "peak_allocated_bytes": 2304338944,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 4499,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 100,
+                "rate": 0.08695652173913043,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "solo32": {
+              "wall_ms": {
+                "n": 803,
+                "p50": 2.2325849859043956,
+                "p95": 3.480659832712263,
+                "min": 1.7307630041614175,
+                "max": 8.93811701098457,
+                "stdev": 1.0254736802681812
+              },
+              "rtfx": 2598.7563949233017,
+              "peak_allocated_bytes": 2304338944,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 4499,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 100,
+                "rate": 0.08695652173913043,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "comparisons": {
+            "solo32": {
+              "rtfx_change_percent": 1.6022364703065284,
+              "paired": [
+                2.187433308726039,
+                1.4100288554551588,
+                1.9289830309277223,
+                0.6175538020284366,
+                1.6555475664141062,
+                2.2092692612048825,
+                2.201900720164285,
+                1.2143094161968904,
+                1.1956407374415834,
+                1.7613360632146913,
+                1.2561356537211132
+              ],
+              "paired_positive": 11
+            },
+            "solo48": {
+              "rtfx_change_percent": 3.6007695310005916,
+              "paired": [
+                3.0865348498727574,
+                3.5867502376029092,
+                3.7219330668074813,
+                2.9635287428069867,
+                3.1583999129437323,
+                3.737307545379176,
+                4.319735218879472,
+                3.1482417204129254,
+                4.393602367077221,
+                4.214114398526303,
+                3.2943566456950846
+              ],
+              "paired_positive": 11
+            }
+          },
+          "outputs_exact_to_prior": true,
+          "call_counts_and_graph_replays_exact": true,
+          "raw_path": "outputs/runtime-2778234/rotated/single_ts",
+          "sha256": {
+            "wall.json": "bca347191bc86845c6b9e5b7bb7a5b2949c0d8a6a4e40e34712c5f35b03bd8f3",
+            "tokens.json": "302978ba5b904a50af810f32f24f007912e5fb4dd7b37bbcb6f2816d8f6b1df3",
+            "actual_dispatch_reference.json": "6bd6573a73aec4e3a2f80a7651173ac7b86b73bfe5cae67e9ca66b10d53b4b02"
+          }
+        },
+        "stream_ts_b8": {
+          "summary": {
+            "solo48": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 53.78704401664436,
+                "p95": 56.106950010871515,
+                "min": 53.27146896161139,
+                "max": 57.996734976768494,
+                "stdev": 1.265469588988813
+              },
+              "rtfx": 8887.781453699754,
+              "peak_allocated_bytes": 4212179456,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 770,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 99,
+                "rate": 0.08608695652173913,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 53.786483011208475,
+                "p95": 54.10156448488124,
+                "min": 53.43689402798191,
+                "max": 54.122378991451114,
+                "stdev": 0.2084022116509902
+              },
+              "rtfx": 8942.081896971351,
+              "peak_allocated_bytes": 4245733888,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 770,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 99,
+                "rate": 0.08608695652173913,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "solo32": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 53.619323996827006,
+                "p95": 55.59224201715551,
+                "min": 52.12557699996978,
+                "max": 57.195525034330785,
+                "stdev": 1.1810175816421764
+              },
+              "rtfx": 8943.680861469344,
+              "peak_allocated_bytes": 4245733888,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 770,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 99,
+                "rate": 0.08608695652173913,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "comparisons": {
+            "solo32": {
+              "rtfx_change_percent": 0.017881344818970746,
+              "paired": [
+                0.5540800864921591,
+                -0.47101665493231026,
+                1.1495384940752418,
+                -0.2413359001426696,
+                0.17520986817862738,
+                1.3269559811702303,
+                0.223251144479919,
+                -0.004232757164135403,
+                -5.9603299752490795,
+                0.2160933808362575,
+                3.75088985267773
+              ],
+              "paired_positive": 7
+            },
+            "solo48": {
+              "rtfx_change_percent": -0.6072460965716342,
+              "paired": [
+                -7.03542533006003,
+                0.040720272103889066,
+                -0.9363013605234061,
+                0.5845927361868064,
+                1.1036453178358219,
+                0.27843467471393435,
+                0.4388127997833058,
+                -0.44961417096118783,
+                -0.25069144702375423,
+                0.26937527204837775,
+                -0.18727006047711825
+              ],
+              "paired_positive": 6
+            }
+          },
+          "outputs_exact_to_prior": true,
+          "call_counts_and_graph_replays_exact": true,
+          "raw_path": "outputs/runtime-2778234/rotated/stream_ts_b8",
+          "sha256": {
+            "wall.json": "04e07b1fdfd4c59228ea920406eca29d6a6aa4703065f0af22ad6fc2e22f4af9",
+            "tokens.json": "287cf25d7cc38c8ba191de7afbe973b6e3c99b929827aad3ba772ca3ad6caa35",
+            "actual_dispatch_reference.json": "83ac054385d5e1fdae877305a1c80e248ed6f609972ea1838ec98753d652e365"
+          }
+        },
+        "long_greedy": {
+          "summary": {
+            "solo48": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 24.293870956171304,
+                "p95": 24.66141799231991,
+                "min": 24.0575919742696,
+                "max": 24.72239197231829,
+                "stdev": 0.18071982727793603
+              },
+              "rtfx": 4741.129253161155,
+              "peak_allocated_bytes": 3317500416,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 715,
+              "agreement": {
+                "tokens": {
+                  "equal": 1,
+                  "total": 1,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 1,
+                  "total": 1,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 1,
+                  "total": 1,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 1,
+                  "total": 1,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 0,
+                "errors": 0,
+                "rate": null,
+                "annotated_utterances": 0,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "segment/text only; long-form returns no joined token IDs"
+            },
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 25.929669034667313,
+                "p95": 26.100307004526258,
+                "min": 25.60478902887553,
+                "max": 26.20228100568056,
+                "stdev": 0.1457197812698163
+              },
+              "rtfx": 4452.15149566203,
+              "peak_allocated_bytes": 3317500416,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 715,
+              "agreement": {
+                "tokens": {
+                  "equal": 1,
+                  "total": 1,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 1,
+                  "total": 1,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 1,
+                  "total": 1,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 1,
+                  "total": 1,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 0,
+                "errors": 0,
+                "rate": null,
+                "annotated_utterances": 0,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "segment/text only; long-form returns no joined token IDs"
+            },
+            "solo32": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 25.07481403881684,
+                "p95": 25.294755527283996,
+                "min": 24.866185034625232,
+                "max": 25.305690011009574,
+                "stdev": 0.1254615078542977
+              },
+              "rtfx": 4597.484446493828,
+              "peak_allocated_bytes": 3317500416,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 715,
+              "agreement": {
+                "tokens": {
+                  "equal": 1,
+                  "total": 1,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 1,
+                  "total": 1,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 1,
+                  "total": 1,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 1,
+                  "total": 1,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 0,
+                "errors": 0,
+                "rate": null,
+                "annotated_utterances": 0,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "segment/text only; long-form returns no joined token IDs"
+            }
+          },
+          "comparisons": {
+            "solo32": {
+              "rtfx_change_percent": 3.264330761731782,
+              "paired": [
+                3.6325995210132245,
+                3.223155140557976,
+                3.4423784848837347,
+                2.46576569690955,
+                3.30757457278803,
+                3.1018810499347182,
+                3.803800189868478,
+                2.97031488031565,
+                3.6180279766035772,
+                3.2148975158494686,
+                3.1300449835262256
+              ],
+              "paired_positive": 11
+            },
+            "solo48": {
+              "rtfx_change_percent": 6.490744031974005,
+              "paired": [
+                5.98602689828438,
+                6.623144904568945,
+                6.707938909549371,
+                5.403256224481212,
+                6.63487307187971,
+                6.41616146901447,
+                7.02189596566638,
+                6.431221612955729,
+                7.67127257897906,
+                6.031686107395906,
+                6.500401211233675
+              ],
+              "paired_positive": 11
+            }
+          },
+          "outputs_exact_to_prior": true,
+          "call_counts_and_graph_replays_exact": true,
+          "raw_path": "outputs/runtime-2778234/rotated/long_greedy",
+          "sha256": {
+            "wall.json": "408fdeff6d94c43ea57d220c6b18ef7bc2b624e0458763636855530035ce0414",
+            "tokens.json": "598ad85c29db97c03a607ca5a4ccd0ca4481e6def940b623dae54b0470775706",
+            "actual_dispatch_reference.json": "5d11a38dd09c768b1a0ac396fd8f43197be797801eb5bb9f4ae9222ef1d1f824"
+          }
+        }
+      },
+      "shape_checks": [
+        {
+          "window": 1,
+          "position": 0,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 1,
+          "position": 0,
+          "mode": "solo32",
+          "programs": 32,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 1,
+          "position": 0,
+          "mode": "solo48",
+          "programs": 48,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 1,
+          "position": 63,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 1,
+          "position": 63,
+          "mode": "solo32",
+          "programs": 32,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 1,
+          "position": 63,
+          "mode": "solo48",
+          "programs": 48,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 8,
+          "position": 0,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 8,
+          "position": 0,
+          "mode": "solo32",
+          "programs": 32,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 8,
+          "position": 0,
+          "mode": "solo48",
+          "programs": 48,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 8,
+          "position": 63,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 8,
+          "position": 63,
+          "mode": "solo32",
+          "programs": 32,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 8,
+          "position": 63,
+          "mode": "solo48",
+          "programs": 48,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 32,
+          "position": 0,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 32,
+          "position": 0,
+          "mode": "solo32",
+          "programs": 32,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 32,
+          "position": 0,
+          "mode": "solo48",
+          "programs": 48,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 32,
+          "position": 63,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 32,
+          "position": 63,
+          "mode": "solo32",
+          "programs": 32,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        },
+        {
+          "window": 32,
+          "position": 63,
+          "mode": "solo48",
+          "programs": 48,
+          "cross_splits": 2,
+          "all_finite": true,
+          "exact_to_existing_ring": true
+        }
+      ]
+    }
+  }
+}

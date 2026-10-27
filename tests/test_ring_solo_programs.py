@@ -29,7 +29,7 @@ def test_solo_budget_graph_logits_cache_stop_and_reuse(window,time):
     offset = torch.tensor([7],device='cuda')
     stop = torch.zeros(1,dtype=torch.bool,device='cuda') if window==1 else None
     graphs,owners,buffers = [],[],[]
-    for programs in (24,32,48):
+    for programs in (24,32,48,64,96):
         ring = megakernel_ring.RingDecoder(mega,solo_programs=programs)
         k,v = (x.clone() for x in initial)
         logits = torch.zeros(1,window,cfg.vocab_size,device='cuda')
