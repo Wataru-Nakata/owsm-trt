@@ -752,7 +752,9 @@ class RingDecoder:
     for R5..8, while an explicit value retains a fixed budget). ``chunk``: [64, 64] weight tiles per ring slot (and per
     wait / release); the ring holds ``ring_kb`` KB. ``ahead``: GEMM stages ahead whose weights the producer
     also prefetches into L2. ``exclusive``: 3 idle warps more, so that a program takes all of its SM's
-    registers (no other kernel's blocks beside it)."""
+    registers (no other kernel's blocks beside it). ``single_cross_splits`` is an experimental numerical
+    override for single-row cross-attention, applied identically to concurrent and solo calls; None
+    retains the program-derived split count."""
 
     name = "megakernel-ring"
     argmax = True  # step_fn takes pred
@@ -761,7 +763,10 @@ class RingDecoder:
     def __init__(self, mega, programs: int | None = None, row_programs: int | None = None,
                  solo_programs: int | None = None, num_warps: int = 4, chunk: int = 2, ring_kb: int = 128,
                  maxs: int = 1 << 24, ts: bool = False, prefetch_attention: bool = True, ahead: int = 0,
-                 exclusive: bool = False):  # fmt: skip
+                 exclusive: bool = False, single_cross_splits: int | None = None):  # fmt: skip
+        if single_cross_splits is not None and single_cross_splits not in (1, 2, 4, 8):
+            raise ValueError("single_cross_splits must be 1, 2, 4 or 8")
+        self.single_cross_splits = single_cross_splits  # Experimental N override, identical for solo/concurrent calls.
         self.m = mega
         d, f = mega.D, mega.F
         dev = mega.device
@@ -832,6 +837,8 @@ class RingDecoder:
         # cross-attention key slices: for single-row calls from the programs alongside an encoder, also when
         # solo (more programs), so that a call gives the same result either way
         ns = max(1, min(8, (self.P if R == 1 else self.P_rows) // (R * H)))
+        if R == 1 and self.single_cross_splits is not None:
+            ns = self.single_cross_splits
         f16 = {"device": dev, "dtype": torch.float16}
         i32 = {"device": dev, "dtype": torch.int32}
         x = torch.zeros(M, D, device=dev)
