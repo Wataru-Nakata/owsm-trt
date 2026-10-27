@@ -108,3 +108,17 @@ request measurements support that dispatch change ([results](runtime-plain-solo.
 separate same-route comparisons, not multiplicative gains over the earlier counter measurements.
 The existing weight-ring capacity128/64/32 comparison subsequently rejected both smaller settings
 ([results](runtime-ring-buffer.md)); all runtime buffer defaults remain unchanged.
+
+## Reprofile the current serial route
+
+After the H200/102M serial64 adoption, `plain_solo` explicitly profiles R1/S1 with argmax and
+solo dispatch. The old `plain` diagnostic retains its concurrent budget and no argmax; it is not
+silently relabelled as current plain-request execution. `scripts/profile_ring_serial_stages.pbs`
+runs both1B and102M at their current64serial CTAs: one actual audio/first-prefill state and
+separate synthetic W1/8/32,15repetitions each. Every instrumented/uninstrumented logit/cache/pred
+must match. No model/kernel arithmetic or runtime routing changes in this profiling step.
+
+Results are pending. CUDA-event graph averages include launch gaps and are not request latency;
+globaltimer stage sums include instrumentation and must not be subtracted as predicted speedups.
+The profile excludes feature/encoder/prefill and cannot establish corpus quality or later-step
+behavior. Its purpose is to select the next measured decoder bottleneck after the accepted schedule.

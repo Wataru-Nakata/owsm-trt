@@ -22,6 +22,7 @@ from owsm_trt.pipeline import _load_decoder
 STAGES = ("qkv", "self", "out", "crossq", "cross", "crossout", "ffn1", "ffn2")
 CASES = {
     "plain": (1, 1, False, False),
+    "plain_solo": (1, 1, True, True),
     "verify8": (1, 8, False, True),
     "verify8_solo": (1, 8, True, True),
     "verify32_solo": (1, 32, True, True),
