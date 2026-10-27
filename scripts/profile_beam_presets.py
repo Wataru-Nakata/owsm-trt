@@ -8,7 +8,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 import torch
-from profile_beam import dispatch, save, sha256, wall
+from profile_beam import command, dispatch, save, sha256, wall
 from profile_ring_programs import count_decoder_dispatch
 from profile_runtime import CASES, run_case
 
@@ -59,6 +59,9 @@ def main():
     save(args.out / 'environment.json', dict(
         commit=os.environ.get('OWSM_PROFILE_COMMIT'), gpu=gpu.name, sm_count=gpu.multi_processor_count,
         cuda=torch.version.cuda, versions={n: importlib.metadata.version(n) for n in ('torch', 'triton', 'tensorrt')},
+        nvidia_smi=command(['nvidia-smi', '--query-gpu=name,uuid,driver_version,compute_cap,memory.total', '--format=csv']),
+        runtime_environment={k: v for k, v in os.environ.items()
+                             if k.startswith(('OWSM_TRT_', 'CUDA_', 'TRITON_')) or k in ('OMP_NUM_THREADS', 'MKL_NUM_THREADS')},
         checkpoint_sha256=sha256(files.checkpoint), engine_sha256={p.name: sha256(p) for p in engines.glob('*.engine')},
         manifest_sha256=sha256(args.manifest), load_ms=load_ms, disk_load_ms=disk_ms, presets=PRESETS,
         scope='N-class existing public opt-ins. Same engine/checkpoint and resident audio for every mode. '

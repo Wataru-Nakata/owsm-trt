@@ -8,7 +8,7 @@ import threading
 from pathlib import Path
 
 import torch
-from profile_beam import save, sha256, wall
+from profile_beam import command, save, sha256, wall
 from profile_ring_programs import count_decoder_dispatch
 from profile_runtime import CASES, run_case
 
@@ -52,6 +52,9 @@ def main():
         gpu=torch.cuda.get_device_name(), sm_count=torch.cuda.get_device_properties(model.device).multi_processor_count,
         cuda=torch.version.cuda, versions={n: importlib.metadata.version(n) for n in ('torch', 'triton', 'tensorrt', 'soundfile')},
         load_ms=load_ms, first_audio_load_ms=first_load_ms, checkpoint_sha256=sha256(files.checkpoint),
+        nvidia_smi=command(['nvidia-smi', '--query-gpu=name,uuid,driver_version,compute_cap,memory.total', '--format=csv']),
+        runtime_environment={k: v for k, v in os.environ.items()
+                             if k.startswith(('OWSM_TRT_', 'CUDA_', 'TRITON_')) or k in ('OMP_NUM_THREADS', 'MKL_NUM_THREADS')},
         engine_sha256={p.name: sha256(p) for p in engines.glob('*.engine')}, manifest_sha256=sha256(args.manifest),
         input_mode='File paths for every variant; current public mono loader; no resident-input speed comparison.',
         workers={'reference': 0, 'worker1': 1, 'worker2': 2}, submitted_batch_bound=2, waveforms_equal=True,
