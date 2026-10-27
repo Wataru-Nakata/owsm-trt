@@ -1,0 +1,4430 @@
+{
+  "source": {
+    "group": "gai51740",
+    "queue": "R9920261300",
+    "resource": "rt_HG",
+    "nodes": 1,
+    "gpus": 1,
+    "walltime": "01:00:00",
+    "account_gpu_cap": 192,
+    "approval": "Standing serial1GPU authorization, no repeatedconfirmation, fresh<=192/no duplicate required.",
+    "commit": "33d7edf552e2e6a6bcf23f2935021d8bd525a7c7",
+    "snapshot": "/groups/gai51740/acc12576tt/github.com/owsm_trt/outputs/runtime-ring-row-programs/snapshot-33d7edf5.tar",
+    "experiment": "runtime_ring_row_programs",
+    "status": "approved_not_submitted",
+    "approved_jobs": 1,
+    "additional_jobs_submitted": 0,
+    "prepared_at": "2026-10-27T04:07:14.572532+00:00",
+    "depends_on": "2775955 exact6state profile:cross25-39%; testexistingrowprogramsettings preservingNS;16CPUguards passed. No runtime defaultchange."
+  },
+  "corpora": {
+    "english": {
+      "environment": {
+        "commit": "33d7edf552e2e6a6bcf23f2935021d8bd525a7c7",
+        "checkpoint_sha256": "4702713d44ab3e239101f09182903cd28f7b51e565bb632008af12beefb37752",
+        "engine_sha256": {
+          "encoder.engine": "f3da9563c8ef41b6252388c18d89fac46cc5781cfa505d6750837e0c12e0f481",
+          "decoder.engine": "b6065937220853d65633f6f59ce0edab80270717b8971c8afa53baf9a2bf5f72",
+          "verify.engine": "34a912836635a2c6928abef52e6ea5140c5215bc8fa178ee8b1af07bd5458dcb"
+        },
+        "manifest_sha256": "f485de3ad02c561c424aba58932fdf4c62d64347c3c1b0d65da5508169d1d60b",
+        "gpu": "NVIDIA H200",
+        "cuda": "13.0",
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106"
+        },
+        "load_ms": 742.1263176947832,
+        "nvidia_smi": "name, driver_version\nNVIDIA H200, 595.71.05",
+        "budgets": {
+          "heads": {
+            "2": 24,
+            "3": 24,
+            "4": 24,
+            "5": 30,
+            "6": 36,
+            "7": 42,
+            "8": 48
+          },
+          "tiles": {
+            "2": 32,
+            "3": 32,
+            "4": 32,
+            "5": 32,
+            "6": 48,
+            "7": 48,
+            "8": 48
+          }
+        },
+        "classification": "E intent versus same opt-in Ring route; existing Ring-versus-TRT N differences remain. All attention split counts, full outputs and cache checks must match. Cold/compiler ordering and shared resident variants prevent isolated cold/VRAM gains."
+      },
+      "shape_checks": [
+        {
+          "rows": 2,
+          "window": 1,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 2,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 2,
+          "window": 1,
+          "mode": "heads",
+          "programs": 24,
+          "cross_splits": 2,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 2,
+          "window": 1,
+          "mode": "tiles",
+          "programs": 32,
+          "cross_splits": 2,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 2,
+          "window": 4,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 2,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 2,
+          "window": 4,
+          "mode": "heads",
+          "programs": 24,
+          "cross_splits": 2,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 2,
+          "window": 4,
+          "mode": "tiles",
+          "programs": 32,
+          "cross_splits": 2,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 3,
+          "window": 1,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 3,
+          "window": 1,
+          "mode": "heads",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 3,
+          "window": 1,
+          "mode": "tiles",
+          "programs": 32,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 3,
+          "window": 4,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 3,
+          "window": 4,
+          "mode": "heads",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 3,
+          "window": 4,
+          "mode": "tiles",
+          "programs": 32,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 4,
+          "window": 1,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 4,
+          "window": 1,
+          "mode": "heads",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 4,
+          "window": 1,
+          "mode": "tiles",
+          "programs": 32,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 4,
+          "window": 4,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 4,
+          "window": 4,
+          "mode": "heads",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 4,
+          "window": 4,
+          "mode": "tiles",
+          "programs": 32,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 5,
+          "window": 1,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 5,
+          "window": 1,
+          "mode": "heads",
+          "programs": 30,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 5,
+          "window": 1,
+          "mode": "tiles",
+          "programs": 32,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 5,
+          "window": 4,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 5,
+          "window": 4,
+          "mode": "heads",
+          "programs": 30,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 5,
+          "window": 4,
+          "mode": "tiles",
+          "programs": 32,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 6,
+          "window": 1,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 6,
+          "window": 1,
+          "mode": "heads",
+          "programs": 36,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 6,
+          "window": 1,
+          "mode": "tiles",
+          "programs": 48,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 6,
+          "window": 4,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 6,
+          "window": 4,
+          "mode": "heads",
+          "programs": 36,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 6,
+          "window": 4,
+          "mode": "tiles",
+          "programs": 48,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 7,
+          "window": 1,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 7,
+          "window": 1,
+          "mode": "heads",
+          "programs": 42,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 7,
+          "window": 1,
+          "mode": "tiles",
+          "programs": 48,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 7,
+          "window": 4,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 7,
+          "window": 4,
+          "mode": "heads",
+          "programs": 42,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 7,
+          "window": 4,
+          "mode": "tiles",
+          "programs": 48,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 8,
+          "window": 1,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 8,
+          "window": 1,
+          "mode": "heads",
+          "programs": 48,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 8,
+          "window": 1,
+          "mode": "tiles",
+          "programs": 48,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 8,
+          "window": 4,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 8,
+          "window": 4,
+          "mode": "heads",
+          "programs": 48,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 8,
+          "window": 4,
+          "mode": "tiles",
+          "programs": 48,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        }
+      ],
+      "cases": {
+        "plain_b3": {
+          "comparisons": {
+            "heads": {
+              "rtfx_change_percent": 0.38627516518074945,
+              "paired_changes_percent": [
+                2.359404393900144,
+                0.2272475835201071,
+                -0.15982448315919884,
+                1.0938987349737639,
+                -0.06208984049080879,
+                -0.2031751622927347,
+                0.07052649506409381,
+                0.056080092572075024,
+                -0.2633439503636148,
+                0.953489887661374,
+                0.19404731436876155
+              ],
+              "paired_positive": 7,
+              "paired_median_percent": 0.07052649506409381
+            },
+            "tiles": {
+              "rtfx_change_percent": 1.4957673982128439,
+              "paired_changes_percent": [
+                2.528554389297266,
+                0.9949289388037963,
+                2.2303868455627818,
+                2.338875384089989,
+                1.0486676323350208,
+                0.9089772564754073,
+                0.6408495419589322,
+                1.2388668886931686,
+                0.776706479749234,
+                2.327836195029631,
+                1.437623622653117
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 1.2388668886931686
+            }
+          },
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 218.05807203054428,
+                "p95": 220.69315426051617,
+                "min": 216.92429948598146,
+                "max": 221.73449862748384,
+                "stdev": 1.3008865231640232
+              },
+              "rtfx": 2202.156674895889,
+              "peak_allocated_bytes": 2399616000,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 100,
+                "rate": 0.08695652173913043,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "heads": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 217.67414920032024,
+                "p95": 218.6210141517222,
+                "min": 216.50417894124985,
+                "max": 218.83488819003105,
+                "stdev": 0.705082133354601
+              },
+              "rtfx": 2210.663059229382,
+              "peak_allocated_bytes": 2398758912,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 100,
+                "rate": 0.08695652173913043,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "tiles": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 215.28140921145678,
+                "p95": 216.6932406835258,
+                "min": 213.3006425574422,
+                "max": 216.81004483252764,
+                "stdev": 1.0514609495846838
+              },
+              "rtfx": 2235.0958164965496,
+              "peak_allocated_bytes": 2398758912,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 100,
+                "rate": 0.08695652173913043,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "full_output_equal": true,
+          "plain_diagnostic_calls": 700,
+          "draft_diagnostic_calls": 0,
+          "cold": {
+            "reference": {
+              "warmup_ms": 8009.108861908317,
+              "captures": {
+                "(3, 1)": {
+                  "encode": 12,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "dispatch": {
+                "(3, 1)": {
+                  "megakernel-ring": 4
+                },
+                "(1, 1)": {
+                  "megakernel-ring": 4
+                }
+              },
+              "allocated_delta_bytes": 1616983040,
+              "reserved_delta_bytes": 1606418432,
+              "frontend_graph": {
+                "captures": 1,
+                "max_entries": 32,
+                "fallbacks": 0,
+                "input_output_bytes": 3456512,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 0.019917264580726624,
+              "full_verify_warmup_captures": {
+                "(3, 1)": {
+                  "encode": 12,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              }
+            },
+            "heads": {
+              "warmup_ms": 2711.6570780053735,
+              "captures": {
+                "(3, 1)": {
+                  "encode": 12,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "dispatch": {
+                "(3, 1)": {
+                  "megakernel-ring": 4
+                },
+                "(1, 1)": {
+                  "megakernel-ring": 4
+                }
+              },
+              "allocated_delta_bytes": 57859584,
+              "reserved_delta_bytes": 25165824,
+              "frontend_graph": {
+                "captures": 1,
+                "max_entries": 32,
+                "fallbacks": 0,
+                "input_output_bytes": 3456512,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 0.019006431102752686,
+              "full_verify_warmup_captures": {
+                "(3, 1)": {
+                  "encode": 12,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              }
+            },
+            "tiles": {
+              "warmup_ms": 2792.000414803624,
+              "captures": {
+                "(3, 1)": {
+                  "encode": 12,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "dispatch": {
+                "(3, 1)": {
+                  "megakernel-ring": 4
+                },
+                "(1, 1)": {
+                  "megakernel-ring": 4
+                }
+              },
+              "allocated_delta_bytes": 58339840,
+              "reserved_delta_bytes": 69206016,
+              "frontend_graph": {
+                "captures": 1,
+                "max_entries": 32,
+                "fallbacks": 0,
+                "input_output_bytes": 3456512,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 0.016711652278900146,
+              "full_verify_warmup_captures": {
+                "(3, 1)": {
+                  "encode": 12,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              }
+            }
+          }
+        },
+        "plain_ts_b3": {
+          "comparisons": {
+            "heads": {
+              "rtfx_change_percent": 0.8444049452946523,
+              "paired_changes_percent": [
+                2.4642644836387895,
+                0.5048060375171026,
+                0.3776064438210103,
+                1.4970906256229322,
+                0.7545518983128607,
+                0.6856615055202075,
+                -0.41959201409512703,
+                0.8546938306429386,
+                1.3005526770615727,
+                0.18158668987233728,
+                1.113305805385334
+              ],
+              "paired_positive": 10,
+              "paired_median_percent": 0.7545518983128607
+            },
+            "tiles": {
+              "rtfx_change_percent": 1.3214848498353415,
+              "paired_changes_percent": [
+                3.554731478743056,
+                2.0305599343161562,
+                0.8364407997818013,
+                1.3654393841353363,
+                1.1418680900474154,
+                1.5074870887950675,
+                -1.0188440750527383,
+                -0.7079467918508664,
+                2.673821553651301,
+                2.0185195171944725,
+                1.2614048879483697
+              ],
+              "paired_positive": 9,
+              "paired_median_percent": 1.3654393841353363
+            }
+          },
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 233.50720573216677,
+                "p95": 235.76867626979947,
+                "min": 232.21436887979507,
+                "max": 236.886627972126,
+                "stdev": 1.249976498934708
+              },
+              "rtfx": 2058.8873160638423,
+              "peak_allocated_bytes": 2398533120,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 100,
+                "rate": 0.08695652173913043,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "heads": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 231.59323167055845,
+                "p95": 233.745573554188,
+                "min": 230.47531303018332,
+                "max": 234.4911117106676,
+                "stdev": 1.1457754647429519
+              },
+              "rtfx": 2076.27266237873,
+              "peak_allocated_bytes": 2398533120,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 100,
+                "rate": 0.08695652173913043,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "tiles": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 230.2101468667388,
+                "p95": 235.0208405405283,
+                "min": 228.21852751076221,
+                "max": 235.91076862066984,
+                "stdev": 2.3079264327206084
+              },
+              "rtfx": 2086.0952000208076,
+              "peak_allocated_bytes": 2398533120,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 100,
+                "rate": 0.08695652173913043,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "full_output_equal": true,
+          "plain_diagnostic_calls": 761,
+          "draft_diagnostic_calls": 0,
+          "cold": {
+            "reference": {
+              "warmup_ms": 2464.1165379434824,
+              "captures": {
+                "(3, 1)": {
+                  "encode": 12,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "dispatch": {
+                "(3, 1)": {
+                  "megakernel-ring": 4
+                },
+                "(1, 1)": {
+                  "megakernel-ring": 4
+                }
+              },
+              "allocated_delta_bytes": 58771968,
+              "reserved_delta_bytes": 6291456,
+              "frontend_graph": {
+                "captures": 1,
+                "max_entries": 32,
+                "fallbacks": 0,
+                "input_output_bytes": 3456512,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 0.027047470211982727,
+              "full_verify_warmup_captures": {
+                "(3, 1)": {
+                  "encode": 12,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              }
+            },
+            "heads": {
+              "warmup_ms": 2507.0032607764006,
+              "captures": {
+                "(3, 1)": {
+                  "encode": 12,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "dispatch": {
+                "(3, 1)": {
+                  "megakernel-ring": 4
+                },
+                "(1, 1)": {
+                  "megakernel-ring": 4
+                }
+              },
+              "allocated_delta_bytes": 57515008,
+              "reserved_delta_bytes": 37748736,
+              "frontend_graph": {
+                "captures": 1,
+                "max_entries": 32,
+                "fallbacks": 0,
+                "input_output_bytes": 3456512,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 0.024965964257717133,
+              "full_verify_warmup_captures": {
+                "(3, 1)": {
+                  "encode": 12,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              }
+            },
+            "tiles": {
+              "warmup_ms": 2516.416873782873,
+              "captures": {
+                "(3, 1)": {
+                  "encode": 12,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "dispatch": {
+                "(3, 1)": {
+                  "megakernel-ring": 4
+                },
+                "(1, 1)": {
+                  "megakernel-ring": 4
+                }
+              },
+              "allocated_delta_bytes": 58211328,
+              "reserved_delta_bytes": 48234496,
+              "frontend_graph": {
+                "captures": 1,
+                "max_entries": 32,
+                "fallbacks": 0,
+                "input_output_bytes": 3456512,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 0.023451633751392365,
+              "full_verify_warmup_captures": {
+                "(3, 1)": {
+                  "encode": 12,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              }
+            }
+          }
+        },
+        "translation_b8": {
+          "comparisons": {
+            "heads": {
+              "rtfx_change_percent": 18.209415271583175,
+              "paired_changes_percent": [
+                21.082982560957042,
+                19.38779276145477,
+                15.498519990319991,
+                18.62944501326398,
+                17.33303042575487,
+                18.27900878464157,
+                19.181573883250813,
+                18.33252168077837,
+                17.220884812738912,
+                17.972894847482458,
+                17.44842811357841
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 18.27900878464157
+            },
+            "tiles": {
+              "rtfx_change_percent": 18.621532659205965,
+              "paired_changes_percent": [
+                21.656704693521746,
+                18.102982447985806,
+                17.415861553764934,
+                18.80578214410562,
+                17.787943196511048,
+                17.76333261597958,
+                19.157533972950546,
+                19.925543873182463,
+                17.999306509428713,
+                19.709254890271556,
+                16.562936325808764
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 18.102982447985806
+            }
+          },
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 142.27196015417576,
+                "p95": 145.08583582937717,
+                "min": 141.10262971371412,
+                "max": 146.89919259399176,
+                "stdev": 1.4583525781741355
+              },
+              "rtfx": 3370.892714873371,
+              "peak_allocated_bytes": 2672928768,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": null,
+              "token_comparison_scope": "returned token IDs"
+            },
+            "heads": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 120.59715948998928,
+                "p95": 122.18930898234248,
+                "min": 118.90655010938644,
+                "max": 123.02690744400024,
+                "stdev": 0.9925497267958518
+              },
+              "rtfx": 3984.712567684207,
+              "peak_allocated_bytes": 2672928768,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": null,
+              "token_comparison_scope": "returned token IDs"
+            },
+            "tiles": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 120.20010221749544,
+                "p95": 121.56891217455268,
+                "min": 118.84792055934668,
+                "max": 121.66136596351862,
+                "stdev": 0.8539275895137582
+              },
+              "rtfx": 3998.6046026803106,
+              "peak_allocated_bytes": 2672928768,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": null,
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "full_output_equal": true,
+          "plain_diagnostic_calls": 372,
+          "draft_diagnostic_calls": 0,
+          "cold": {
+            "reference": {
+              "warmup_ms": 4103.140405379236,
+              "captures": {
+                "(8, 1)": {
+                  "encode": 8,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "dispatch": {
+                "(8, 1)": {
+                  "megakernel-ring": 4
+                },
+                "(1, 1)": {
+                  "megakernel-ring": 4
+                }
+              },
+              "allocated_delta_bytes": 132516352,
+              "reserved_delta_bytes": 65011712,
+              "frontend_graph": {
+                "captures": 1,
+                "max_entries": 32,
+                "fallbacks": 0,
+                "input_output_bytes": 3456512,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 0.025657936930656433,
+              "full_verify_warmup_captures": {
+                "(8, 1)": {
+                  "encode": 8,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              }
+            },
+            "heads": {
+              "warmup_ms": 1627.9402505606413,
+              "captures": {
+                "(8, 1)": {
+                  "encode": 8,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "dispatch": {
+                "(8, 1)": {
+                  "megakernel-ring": 4
+                },
+                "(1, 1)": {
+                  "megakernel-ring": 4
+                }
+              },
+              "allocated_delta_bytes": 131171840,
+              "reserved_delta_bytes": 111149056,
+              "frontend_graph": {
+                "captures": 1,
+                "max_entries": 32,
+                "fallbacks": 0,
+                "input_output_bytes": 3456512,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 0.02229120582342148,
+              "full_verify_warmup_captures": {
+                "(8, 1)": {
+                  "encode": 8,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              }
+            },
+            "tiles": {
+              "warmup_ms": 1632.5310207903385,
+              "captures": {
+                "(8, 1)": {
+                  "encode": 8,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "dispatch": {
+                "(8, 1)": {
+                  "megakernel-ring": 4
+                },
+                "(1, 1)": {
+                  "megakernel-ring": 4
+                }
+              },
+              "allocated_delta_bytes": 130079232,
+              "reserved_delta_bytes": 134217728,
+              "frontend_graph": {
+                "captures": 1,
+                "max_entries": 32,
+                "fallbacks": 0,
+                "input_output_bytes": 3456512,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 0.022104941308498383,
+              "full_verify_warmup_captures": {
+                "(8, 1)": {
+                  "encode": 8,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(1, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              }
+            }
+          }
+        },
+        "beam_ts_b1": {
+          "comparisons": {
+            "heads": {
+              "rtfx_change_percent": 17.98680147168068,
+              "paired_changes_percent": [
+                18.481458493769875,
+                18.395355610357853,
+                18.112089612488468,
+                17.87762575071119,
+                17.794712918458977,
+                17.594700366204407,
+                17.93963658028477,
+                17.637278051478724,
+                18.3217068189631,
+                17.90662074235845,
+                17.797782327624347
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 17.90662074235845
+            },
+            "tiles": {
+              "rtfx_change_percent": 17.66836592705041,
+              "paired_changes_percent": [
+                17.992262410825788,
+                16.973478194799952,
+                17.919856653639975,
+                17.36605219115095,
+                17.89937584122441,
+                17.701923009776333,
+                17.775624383794984,
+                17.58658022897517,
+                18.277768731479902,
+                17.450290276941782,
+                17.42251457014543
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 17.701923009776333
+            }
+          },
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 858.8500740006566,
+                "p95": 862.403083126992,
+                "min": 856.4873561263084,
+                "max": 863.9706568792462,
+                "stdev": 1.926165214880188
+              },
+              "rtfx": 559.9734284997144,
+              "peak_allocated_bytes": 2999673856,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 94,
+                "rate": 0.0817391304347826,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "heads": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 728.4154770895839,
+                "p95": 730.3069862537086,
+                "min": 724.9157773330808,
+                "max": 730.8804010972381,
+                "stdev": 1.7048023540682327
+              },
+              "rtfx": 660.6947373781218,
+              "peak_allocated_bytes": 2999673856,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 94,
+                "rate": 0.0817391304347826,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "tiles": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 729.7573192045093,
+                "p95": 734.924741089344,
+                "min": 726.0139593854547,
+                "max": 738.6038871482015,
+                "stdev": 3.077437273600594
+              },
+              "rtfx": 658.9115829412939,
+              "peak_allocated_bytes": 2999673856,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 94,
+                "rate": 0.0817391304347826,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "full_output_equal": true,
+          "plain_diagnostic_calls": 1721,
+          "draft_diagnostic_calls": 0,
+          "cold": {
+            "reference": {
+              "warmup_ms": 3275.8451774716377,
+              "captures": {
+                "(1, 5)": {
+                  "encode": 17,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": null,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "dispatch": {
+                "(1, 5)": {
+                  "megakernel-ring": 4
+                }
+              },
+              "allocated_delta_bytes": 648353280,
+              "reserved_delta_bytes": 1251999744,
+              "frontend_graph": {
+                "captures": 17,
+                "max_entries": 32,
+                "fallbacks": 0,
+                "input_output_bytes": 21211712,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              }
+            },
+            "heads": {
+              "warmup_ms": 2379.6675568446517,
+              "captures": {
+                "(1, 5)": {
+                  "encode": 17,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": null,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "dispatch": {
+                "(1, 5)": {
+                  "megakernel-ring": 4
+                }
+              },
+              "allocated_delta_bytes": 95302144,
+              "reserved_delta_bytes": 446693376,
+              "frontend_graph": {
+                "captures": 17,
+                "max_entries": 32,
+                "fallbacks": 0,
+                "input_output_bytes": 21211712,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              }
+            },
+            "tiles": {
+              "warmup_ms": 2399.494300596416,
+              "captures": {
+                "(1, 5)": {
+                  "encode": 17,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": null,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "dispatch": {
+                "(1, 5)": {
+                  "megakernel-ring": 4
+                }
+              },
+              "allocated_delta_bytes": 95009280,
+              "reserved_delta_bytes": 459276288,
+              "frontend_graph": {
+                "captures": 17,
+                "max_entries": 32,
+                "fallbacks": 0,
+                "input_output_bytes": 21211712,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              }
+            }
+          }
+        },
+        "drafted_ts_b8": {
+          "comparisons": {
+            "heads": {
+              "rtfx_change_percent": 1.291113617805828,
+              "paired_changes_percent": [
+                7.304891208147235,
+                -0.40961238456123095,
+                2.067688156354941,
+                -0.0008622872170183093,
+                -0.2346030411977451,
+                3.0193186501426217,
+                0.15440149937659964,
+                1.8193393930961754,
+                0.8261580245812583,
+                -0.058925385313535195,
+                -0.33476797967948446
+              ],
+              "paired_positive": 6,
+              "paired_median_percent": 0.15440149937659964
+            },
+            "tiles": {
+              "rtfx_change_percent": 1.6904098770626153,
+              "paired_changes_percent": [
+                7.884889805947215,
+                -2.3612847676626525,
+                1.9427083243879428,
+                2.591990764231511,
+                0.24050202883949545,
+                2.505272673890402,
+                -0.3824505779913334,
+                1.5955852171492868,
+                1.5014710892595984,
+                0.4587473363405925,
+                2.663448082352615
+              ],
+              "paired_positive": 9,
+              "paired_median_percent": 1.5955852171492868
+            }
+          },
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 53.067341446876526,
+                "p95": 55.516169872134924,
+                "min": 52.231418900191784,
+                "max": 57.564384303987026,
+                "stdev": 1.3720300455227235
+              },
+              "rtfx": 9014.405920745503,
+              "peak_allocated_bytes": 4198868480,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 770,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 99,
+                "rate": 0.08608695652173913,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "heads": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 52.67673451453447,
+                "p95": 53.396917413920164,
+                "min": 51.9009018316865,
+                "max": 53.645629435777664,
+                "stdev": 0.4958005411106908
+              },
+              "rtfx": 9130.792143152543,
+              "peak_allocated_bytes": 4232422912,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 770,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 99,
+                "rate": 0.08608695652173913,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "tiles": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 52.353053353726864,
+                "p95": 53.46460314467549,
+                "min": 51.500292494893074,
+                "max": 53.49457822740078,
+                "stdev": 0.6480697171919307
+              },
+              "rtfx": 9166.786328788303,
+              "peak_allocated_bytes": 4232422912,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 770,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 99,
+                "rate": 0.08608695652173913,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "full_output_equal": true,
+          "plain_diagnostic_calls": 0,
+          "draft_diagnostic_calls": 70,
+          "cold": {
+            "reference": {
+              "warmup_ms": 9122.529175132513,
+              "captures": {
+                "(8, 1)": {
+                  "encode": 10,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 7,
+                  "normal_verify_graphs": 7,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "dispatch": {
+                "(8, 1)": {
+                  "uninitialized": 17,
+                  "megakernel-ring": 2,
+                  "tensorrt: shape limit": 5
+                }
+              },
+              "allocated_delta_bytes": 347014656,
+              "reserved_delta_bytes": 289406976,
+              "frontend_graph": {
+                "captures": 17,
+                "max_entries": 32,
+                "fallbacks": 0,
+                "input_output_bytes": 21211712,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 3811.7877217009664,
+              "full_verify_warmup_captures": {
+                "(8, 1)": {
+                  "encode": 10,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 24,
+                  "normal_verify_graphs": 24,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            },
+            "heads": {
+              "warmup_ms": 2254.80729714036,
+              "captures": {
+                "(8, 1)": {
+                  "encode": 10,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 7,
+                  "normal_verify_graphs": 7,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "dispatch": {
+                "(8, 1)": {
+                  "uninitialized": 17,
+                  "megakernel-ring": 2,
+                  "tensorrt: shape limit": 5
+                }
+              },
+              "allocated_delta_bytes": 318056960,
+              "reserved_delta_bytes": 320864256,
+              "frontend_graph": {
+                "captures": 17,
+                "max_entries": 32,
+                "fallbacks": 0,
+                "input_output_bytes": 21211712,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 786.9566231966019,
+              "full_verify_warmup_captures": {
+                "(8, 1)": {
+                  "encode": 10,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 24,
+                  "normal_verify_graphs": 24,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            },
+            "tiles": {
+              "warmup_ms": 2304.3664703145623,
+              "captures": {
+                "(8, 1)": {
+                  "encode": 10,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 7,
+                  "normal_verify_graphs": 7,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "dispatch": {
+                "(8, 1)": {
+                  "uninitialized": 17,
+                  "megakernel-ring": 2,
+                  "tensorrt: shape limit": 5
+                }
+              },
+              "allocated_delta_bytes": 283531264,
+              "reserved_delta_bytes": 287309824,
+              "frontend_graph": {
+                "captures": 17,
+                "max_entries": 32,
+                "fallbacks": 0,
+                "input_output_bytes": 21211712,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 777.1671498194337,
+              "full_verify_warmup_captures": {
+                "(8, 1)": {
+                  "encode": 10,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 24,
+                  "normal_verify_graphs": 24,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "japanese": {
+      "environment": {
+        "commit": "33d7edf552e2e6a6bcf23f2935021d8bd525a7c7",
+        "checkpoint_sha256": "4702713d44ab3e239101f09182903cd28f7b51e565bb632008af12beefb37752",
+        "engine_sha256": {
+          "encoder.engine": "f3da9563c8ef41b6252388c18d89fac46cc5781cfa505d6750837e0c12e0f481",
+          "decoder.engine": "b6065937220853d65633f6f59ce0edab80270717b8971c8afa53baf9a2bf5f72",
+          "verify.engine": "34a912836635a2c6928abef52e6ea5140c5215bc8fa178ee8b1af07bd5458dcb"
+        },
+        "manifest_sha256": "600a86b4c91b210959b725512623707d9cf0641b5ae235fdf8843ba4231f5c92",
+        "gpu": "NVIDIA H200",
+        "cuda": "13.0",
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106"
+        },
+        "load_ms": 732.5958656147122,
+        "nvidia_smi": "name, driver_version\nNVIDIA H200, 595.71.05",
+        "budgets": {
+          "heads": {
+            "2": 24,
+            "3": 24,
+            "4": 24,
+            "5": 30,
+            "6": 36,
+            "7": 42,
+            "8": 48
+          },
+          "tiles": {
+            "2": 32,
+            "3": 32,
+            "4": 32,
+            "5": 32,
+            "6": 48,
+            "7": 48,
+            "8": 48
+          }
+        },
+        "classification": "E intent versus same opt-in Ring route; existing Ring-versus-TRT N differences remain. All attention split counts, full outputs and cache checks must match. Cold/compiler ordering and shared resident variants prevent isolated cold/VRAM gains."
+      },
+      "shape_checks": [
+        {
+          "rows": 2,
+          "window": 1,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 2,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 2,
+          "window": 1,
+          "mode": "heads",
+          "programs": 24,
+          "cross_splits": 2,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 2,
+          "window": 1,
+          "mode": "tiles",
+          "programs": 32,
+          "cross_splits": 2,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 2,
+          "window": 4,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 2,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 2,
+          "window": 4,
+          "mode": "heads",
+          "programs": 24,
+          "cross_splits": 2,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 2,
+          "window": 4,
+          "mode": "tiles",
+          "programs": 32,
+          "cross_splits": 2,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 3,
+          "window": 1,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 3,
+          "window": 1,
+          "mode": "heads",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 3,
+          "window": 1,
+          "mode": "tiles",
+          "programs": 32,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 3,
+          "window": 4,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 3,
+          "window": 4,
+          "mode": "heads",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 3,
+          "window": 4,
+          "mode": "tiles",
+          "programs": 32,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 4,
+          "window": 1,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 4,
+          "window": 1,
+          "mode": "heads",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 4,
+          "window": 1,
+          "mode": "tiles",
+          "programs": 32,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 4,
+          "window": 4,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 4,
+          "window": 4,
+          "mode": "heads",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 4,
+          "window": 4,
+          "mode": "tiles",
+          "programs": 32,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 5,
+          "window": 1,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 5,
+          "window": 1,
+          "mode": "heads",
+          "programs": 30,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 5,
+          "window": 1,
+          "mode": "tiles",
+          "programs": 32,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 5,
+          "window": 4,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 5,
+          "window": 4,
+          "mode": "heads",
+          "programs": 30,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 5,
+          "window": 4,
+          "mode": "tiles",
+          "programs": 32,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 6,
+          "window": 1,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 6,
+          "window": 1,
+          "mode": "heads",
+          "programs": 36,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 6,
+          "window": 1,
+          "mode": "tiles",
+          "programs": 48,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 6,
+          "window": 4,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 6,
+          "window": 4,
+          "mode": "heads",
+          "programs": 36,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 6,
+          "window": 4,
+          "mode": "tiles",
+          "programs": 48,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 7,
+          "window": 1,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 7,
+          "window": 1,
+          "mode": "heads",
+          "programs": 42,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 7,
+          "window": 1,
+          "mode": "tiles",
+          "programs": 48,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 7,
+          "window": 4,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 7,
+          "window": 4,
+          "mode": "heads",
+          "programs": 42,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 7,
+          "window": 4,
+          "mode": "tiles",
+          "programs": 48,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 8,
+          "window": 1,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 8,
+          "window": 1,
+          "mode": "heads",
+          "programs": 48,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 8,
+          "window": 1,
+          "mode": "tiles",
+          "programs": 48,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 8,
+          "window": 4,
+          "mode": "reference",
+          "programs": 24,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 8,
+          "window": 4,
+          "mode": "heads",
+          "programs": 48,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        },
+        {
+          "rows": 8,
+          "window": 4,
+          "mode": "tiles",
+          "programs": 48,
+          "cross_splits": 1,
+          "finite": true,
+          "exact_to_ring": true
+        }
+      ],
+      "cases": {
+        "plain_b3": {
+          "comparisons": {
+            "heads": {
+              "rtfx_change_percent": 1.3034103878253767,
+              "paired_changes_percent": [
+                10.808651576511474,
+                -0.3434987207401985,
+                -0.8002817416080332,
+                1.037586833471904,
+                1.2598154290460517,
+                1.0673610674138079,
+                -0.16835461448476696,
+                -0.2690679792906159,
+                0.7608982968448696,
+                0.2314438801346741,
+                0.7688419757644782
+              ],
+              "paired_positive": 7,
+              "paired_median_percent": 0.7608982968448696
+            },
+            "tiles": {
+              "rtfx_change_percent": 2.8735175023162807,
+              "paired_changes_percent": [
+                12.414657810119412,
+                1.9802321200711681,
+                0.4706884359310326,
+                1.0688113830950918,
+                2.9225211632173176,
+                2.1472557152539817,
+                2.402292121462657,
+                2.455069166492918,
+                2.1252109289344734,
+                1.220627759257864,
+                2.4184705960286434
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 2.1472557152539817
+            }
+          },
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 44.569012708961964,
+                "p95": 47.116258181631565,
+                "min": 44.23949494957924,
+                "max": 49.266645684838295,
+                "stdev": 1.3568688664764241
+              },
+              "rtfx": 3497.4387133912865,
+              "peak_allocated_bytes": 2301499904,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 51,
+                "rate": 0.08614864864864864,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "heads": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 44.49099116027355,
+                "p95": 44.658662751317024,
+                "min": 44.16833817958832,
+                "max": 44.67315226793289,
+                "stdev": 0.16971876469523908
+              },
+              "rtfx": 3543.0246928894544,
+              "peak_allocated_bytes": 2301499392,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 51,
+                "rate": 0.08614864864864864,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "tiles": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 43.78962982445955,
+                "p95": 44.16463989764452,
+                "min": 43.48535556346178,
+                "max": 44.29703950881958,
+                "stdev": 0.24549360962501654
+              },
+              "rtfx": 3597.9382269533703,
+              "peak_allocated_bytes": 2301499392,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 51,
+                "rate": 0.08614864864864864,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "full_output_equal": true,
+          "plain_diagnostic_calls": 160,
+          "draft_diagnostic_calls": 0,
+          "cold": {
+            "reference": {
+              "warmup_ms": 915.1601623743773,
+              "captures": {
+                "(3, 1)": {
+                  "encode": 4,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "dispatch": {
+                "(3, 1)": {
+                  "megakernel-ring": 4
+                }
+              },
+              "allocated_delta_bytes": 1530918912,
+              "reserved_delta_bytes": 1512046592,
+              "frontend_graph": null,
+              "full_verify_warmup_ms": 0.011319294571876526,
+              "full_verify_warmup_captures": {
+                "(3, 1)": {
+                  "encode": 4,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              }
+            },
+            "heads": {
+              "warmup_ms": 845.1205883175135,
+              "captures": {
+                "(3, 1)": {
+                  "encode": 4,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "dispatch": {
+                "(3, 1)": {
+                  "megakernel-ring": 4
+                }
+              },
+              "allocated_delta_bytes": 42869760,
+              "reserved_delta_bytes": 2097152,
+              "frontend_graph": null,
+              "full_verify_warmup_ms": 0.009281560778617859,
+              "full_verify_warmup_captures": {
+                "(3, 1)": {
+                  "encode": 4,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              }
+            },
+            "tiles": {
+              "warmup_ms": 903.4779528155923,
+              "captures": {
+                "(3, 1)": {
+                  "encode": 4,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "dispatch": {
+                "(3, 1)": {
+                  "megakernel-ring": 4
+                }
+              },
+              "allocated_delta_bytes": 42698240,
+              "reserved_delta_bytes": 62914560,
+              "frontend_graph": null,
+              "full_verify_warmup_ms": 0.00846758484840393,
+              "full_verify_warmup_captures": {
+                "(3, 1)": {
+                  "encode": 4,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              }
+            }
+          }
+        },
+        "plain_ts_b3": {
+          "comparisons": {
+            "heads": {
+              "rtfx_change_percent": 1.3547509918836687,
+              "paired_changes_percent": [
+                7.4396564562799306,
+                -0.2832563309603131,
+                1.6602484701355946,
+                0.6111007625357434,
+                0.9170687611267825,
+                0.44487814937892445,
+                0.9253840681020975,
+                1.3919893629915636,
+                0.9017504891590145,
+                0.5517974614637211,
+                0.3280849799198071
+              ],
+              "paired_positive": 10,
+              "paired_median_percent": 0.9017504891590145
+            },
+            "tiles": {
+              "rtfx_change_percent": 2.722934445096503,
+              "paired_changes_percent": [
+                9.376750526090616,
+                0.8959160529583343,
+                2.7680378670330796,
+                2.3321413851733697,
+                2.6758682622658903,
+                2.20705169966815,
+                2.970322838355388,
+                2.7239600466569147,
+                0.7726334291919379,
+                1.9525377190831472,
+                1.30259873855878
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 2.3321413851733697
+            }
+          },
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 47.75253590196371,
+                "p95": 49.68885565176606,
+                "min": 47.36554902046919,
+                "max": 51.18998233228922,
+                "stdev": 1.0059906519678532
+              },
+              "rtfx": 3274.1218673990943,
+              "peak_allocated_bytes": 2301499904,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 51,
+                "rate": 0.08614864864864864,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "heads": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 47.479272820055485,
+                "p95": 47.738547902554274,
+                "min": 46.942247077822685,
+                "max": 47.79747035354376,
+                "stdev": 0.24039988470966897
+              },
+              "rtfx": 3318.478065873164,
+              "peak_allocated_bytes": 2301499392,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 51,
+                "rate": 0.08614864864864864,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "tiles": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 46.826948411762714,
+                "p95": 47.03041771426797,
+                "min": 46.47579789161682,
+                "max": 47.05844260752201,
+                "stdev": 0.16813697818021095
+              },
+              "rtfx": 3363.2740595009413,
+              "peak_allocated_bytes": 2301499392,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 51,
+                "rate": 0.08614864864864864,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "full_output_equal": true,
+          "plain_diagnostic_calls": 173,
+          "draft_diagnostic_calls": 0,
+          "cold": {
+            "reference": {
+              "warmup_ms": 720.395834185183,
+              "captures": {
+                "(3, 1)": {
+                  "encode": 4,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "dispatch": {
+                "(3, 1)": {
+                  "megakernel-ring": 4
+                }
+              },
+              "allocated_delta_bytes": 43025920,
+              "reserved_delta_bytes": 23068672,
+              "frontend_graph": null,
+              "full_verify_warmup_ms": 0.010722316801548004,
+              "full_verify_warmup_captures": {
+                "(3, 1)": {
+                  "encode": 4,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              }
+            },
+            "heads": {
+              "warmup_ms": 744.1417509689927,
+              "captures": {
+                "(3, 1)": {
+                  "encode": 4,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "dispatch": {
+                "(3, 1)": {
+                  "megakernel-ring": 4
+                }
+              },
+              "allocated_delta_bytes": 42869760,
+              "reserved_delta_bytes": 2097152,
+              "frontend_graph": null,
+              "full_verify_warmup_ms": 0.009135343134403229,
+              "full_verify_warmup_captures": {
+                "(3, 1)": {
+                  "encode": 4,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              }
+            },
+            "tiles": {
+              "warmup_ms": 751.1264821514487,
+              "captures": {
+                "(3, 1)": {
+                  "encode": 4,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "dispatch": {
+                "(3, 1)": {
+                  "megakernel-ring": 4
+                }
+              },
+              "allocated_delta_bytes": 42698240,
+              "reserved_delta_bytes": 62914560,
+              "frontend_graph": null,
+              "full_verify_warmup_ms": 0.00889413058757782,
+              "full_verify_warmup_captures": {
+                "(3, 1)": {
+                  "encode": 4,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              }
+            }
+          }
+        },
+        "translation_b8": {
+          "comparisons": {
+            "heads": {
+              "rtfx_change_percent": 21.616237058127563,
+              "paired_changes_percent": [
+                23.61556982486137,
+                21.37781274779229,
+                21.310542948186395,
+                21.460834025240814,
+                20.964906061125156,
+                22.190323405623257,
+                20.89234631165937,
+                21.54102128832922,
+                21.056502444493617,
+                21.548951936570138,
+                21.82201443749243
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 21.460834025240814
+            },
+            "tiles": {
+              "rtfx_change_percent": 22.457834654939248,
+              "paired_changes_percent": [
+                25.181101900297385,
+                21.854875169032105,
+                22.346568897895438,
+                21.81490020436403,
+                21.85543413791673,
+                22.273034164487715,
+                22.171855202465295,
+                21.97219024147683,
+                22.412519725164515,
+                22.947963642354253,
+                22.21904660129901
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 22.21904660129901
+            }
+          },
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 221.8769220635295,
+                "p95": 224.4793395511806,
+                "min": 221.2736839428544,
+                "max": 226.71999875456095,
+                "stdev": 1.429643690708843
+              },
+              "rtfx": 708.5832676252442,
+              "peak_allocated_bytes": 2711793664,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": null,
+              "token_comparison_scope": "returned token IDs"
+            },
+            "heads": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 182.95492138713598,
+                "p95": 183.3616141229868,
+                "min": 181.65551405400038,
+                "max": 183.40731598436832,
+                "stdev": 0.5392498388763194
+              },
+              "rtfx": 861.7523065093434,
+              "peak_allocated_bytes": 2711793664,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": null,
+              "token_comparison_scope": "returned token IDs"
+            },
+            "tiles": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 181.52595777064562,
+                "p95": 182.14174965396523,
+                "min": 180.71102537214756,
+                "max": 182.43965227156878,
+                "stdev": 0.42199143109863535
+              },
+              "rtfx": 867.7157262610872,
+              "peak_allocated_bytes": 2711793664,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": null,
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "full_output_equal": true,
+          "plain_diagnostic_calls": 746,
+          "draft_diagnostic_calls": 0,
+          "cold": {
+            "reference": {
+              "warmup_ms": 576.4743480831385,
+              "captures": {
+                "(8, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(4, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "dispatch": {
+                "(8, 1)": {
+                  "megakernel-ring": 4
+                },
+                "(4, 1)": {
+                  "megakernel-ring": 4
+                }
+              },
+              "allocated_delta_bytes": 174377472,
+              "reserved_delta_bytes": 134217728,
+              "frontend_graph": null,
+              "full_verify_warmup_ms": 0.014521181583404541,
+              "full_verify_warmup_captures": {
+                "(8, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(4, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              }
+            },
+            "heads": {
+              "warmup_ms": 543.6746077612042,
+              "captures": {
+                "(8, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(4, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "dispatch": {
+                "(8, 1)": {
+                  "megakernel-ring": 4
+                },
+                "(4, 1)": {
+                  "megakernel-ring": 4
+                }
+              },
+              "allocated_delta_bytes": 172900864,
+              "reserved_delta_bytes": 174063616,
+              "frontend_graph": null,
+              "full_verify_warmup_ms": 0.011145137250423431,
+              "full_verify_warmup_captures": {
+                "(8, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(4, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              }
+            },
+            "tiles": {
+              "warmup_ms": 533.8698728010058,
+              "captures": {
+                "(8, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(4, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "dispatch": {
+                "(8, 1)": {
+                  "megakernel-ring": 4
+                },
+                "(4, 1)": {
+                  "megakernel-ring": 4
+                }
+              },
+              "allocated_delta_bytes": 174143488,
+              "reserved_delta_bytes": 174063616,
+              "frontend_graph": null,
+              "full_verify_warmup_ms": 0.0082431361079216,
+              "full_verify_warmup_captures": {
+                "(8, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                },
+                "(4, 1)": {
+                  "encode": 1,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": true,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              }
+            }
+          }
+        },
+        "beam_ts_b1": {
+          "comparisons": {
+            "heads": {
+              "rtfx_change_percent": 18.681464310572625,
+              "paired_changes_percent": [
+                19.23794508866743,
+                18.718466428145653,
+                18.83964412064838,
+                18.7770156948325,
+                18.84357656572595,
+                18.400127256520427,
+                18.383970428214624,
+                18.80548534837134,
+                18.53122259698301,
+                18.235011665345734,
+                18.725857495960895
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 18.725857495960895
+            },
+            "tiles": {
+              "rtfx_change_percent": 19.16008399105118,
+              "paired_changes_percent": [
+                20.186648109312742,
+                18.53948129673899,
+                18.74843732078604,
+                18.827190637013768,
+                19.28588829364695,
+                19.268869246274267,
+                19.307941133992212,
+                19.064296102742073,
+                19.15404330325807,
+                19.695539994719823,
+                18.689146121385704
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 19.15404330325807
+            }
+          },
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 195.4493997618556,
+                "p95": 196.94592570886016,
+                "min": 194.69531532377005,
+                "max": 197.46203254908323,
+                "stdev": 0.6927497016570301
+              },
+              "rtfx": 805.0418309058614,
+              "peak_allocated_bytes": 2725537792,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 43,
+                "rate": 0.07263513513513513,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "heads": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 164.65389356017113,
+                "p95": 165.76468897983432,
+                "min": 163.91665861010551,
+                "max": 165.92602711170912,
+                "stdev": 0.5436239446005052
+              },
+              "rtfx": 955.4354332317204,
+              "peak_allocated_bytes": 2725537792,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 43,
+                "rate": 0.07263513513513513,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "tiles": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 164.29598443210125,
+                "p95": 164.74197106435895,
+                "min": 163.1279094144702,
+                "max": 164.84291572123766,
+                "stdev": 0.46081624171811497
+              },
+              "rtfx": 959.2885218705206,
+              "peak_allocated_bytes": 2725537792,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 0,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 43,
+                "rate": 0.07263513513513513,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "full_output_equal": true,
+          "plain_diagnostic_calls": 416,
+          "draft_diagnostic_calls": 0,
+          "cold": {
+            "reference": {
+              "warmup_ms": 1043.1541604921222,
+              "captures": {
+                "(1, 5)": {
+                  "encode": 8,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": null,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "dispatch": {
+                "(1, 5)": {
+                  "megakernel-ring": 4
+                }
+              },
+              "allocated_delta_bytes": 411244544,
+              "reserved_delta_bytes": 725614592,
+              "frontend_graph": {
+                "captures": 8,
+                "max_entries": 32,
+                "fallbacks": 0,
+                "input_output_bytes": 14406812,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              }
+            },
+            "heads": {
+              "warmup_ms": 951.1048281565309,
+              "captures": {
+                "(1, 5)": {
+                  "encode": 8,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": null,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "dispatch": {
+                "(1, 5)": {
+                  "megakernel-ring": 4
+                }
+              },
+              "allocated_delta_bytes": 94453760,
+              "reserved_delta_bytes": 257949696,
+              "frontend_graph": {
+                "captures": 8,
+                "max_entries": 32,
+                "fallbacks": 0,
+                "input_output_bytes": 14406812,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              }
+            },
+            "tiles": {
+              "warmup_ms": 1077.8501452878118,
+              "captures": {
+                "(1, 5)": {
+                  "encode": 8,
+                  "plain_select_fused": false,
+                  "ctc": 0,
+                  "decode": 4,
+                  "plain_ready": null,
+                  "plain_steps": 4,
+                  "verify": 0,
+                  "ready_verify_steps": 0,
+                  "normal_verify_graphs": 0,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 0,
+                  "selection_split_windows": 0
+                }
+              },
+              "dispatch": {
+                "(1, 5)": {
+                  "megakernel-ring": 4
+                }
+              },
+              "allocated_delta_bytes": 95877632,
+              "reserved_delta_bytes": 270532608,
+              "frontend_graph": {
+                "captures": 8,
+                "max_entries": 32,
+                "fallbacks": 0,
+                "input_output_bytes": 14406812,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              }
+            }
+          }
+        },
+        "drafted_ts_b8": {
+          "comparisons": {
+            "heads": {
+              "rtfx_change_percent": 16.12466409720039,
+              "paired_changes_percent": [
+                23.170319442903132,
+                15.069920114507184,
+                13.664734743767637,
+                15.734352700593202,
+                15.6737866869727,
+                15.711217066031068,
+                16.364830540625476,
+                15.60824312664424,
+                15.083795410839485,
+                16.727993274231913,
+                14.63883427474817
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 15.6737866869727
+            },
+            "tiles": {
+              "rtfx_change_percent": 16.32850539732271,
+              "paired_changes_percent": [
+                23.183183227468774,
+                16.237509417414884,
+                16.11963041614013,
+                15.920020177741057,
+                14.873295425774291,
+                13.975627654195666,
+                16.266991177286517,
+                14.494212832059006,
+                15.657093885187479,
+                15.077024830636642,
+                17.872658873861937
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 15.920020177741057
+            }
+          },
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 36.562949419021606,
+                "p95": 37.91159205138683,
+                "min": 36.19601484388113,
+                "max": 38.896881975233555,
+                "stdev": 0.7141315019279842
+              },
+              "rtfx": 4285.990164052186,
+              "peak_allocated_bytes": 4203764224,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 935,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 50,
+                "rate": 0.08445945945945946,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "heads": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 31.579752452671528,
+                "p95": 32.10536949336529,
+                "min": 31.281336210668087,
+                "max": 32.30465296655893,
+                "stdev": 0.29334834453404024
+              },
+              "rtfx": 4977.0916812446485,
+              "peak_allocated_bytes": 4237318656,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 935,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 50,
+                "rate": 0.08445945945945946,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "tiles": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 31.62169735878706,
+                "p95": 31.813785433769226,
+                "min": 30.98295722156763,
+                "max": 31.85498248785734,
+                "stdev": 0.23646332238073328
+              },
+              "rtfx": 4985.828299318167,
+              "peak_allocated_bytes": 4237318656,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 935,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 50,
+                "rate": 0.08445945945945946,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "full_output_equal": true,
+          "plain_diagnostic_calls": 0,
+          "draft_diagnostic_calls": 85,
+          "cold": {
+            "reference": {
+              "warmup_ms": 891.5450721979141,
+              "captures": {
+                "(8, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 7,
+                  "normal_verify_graphs": 7,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "dispatch": {
+                "(8, 1)": {
+                  "megakernel-ring": 2,
+                  "uninitialized": 17,
+                  "tensorrt: shape limit": 5
+                }
+              },
+              "allocated_delta_bytes": 389327872,
+              "reserved_delta_bytes": 358612992,
+              "frontend_graph": {
+                "captures": 8,
+                "max_entries": 32,
+                "fallbacks": 0,
+                "input_output_bytes": 14406812,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 774.1856258362532,
+              "full_verify_warmup_captures": {
+                "(8, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 24,
+                  "normal_verify_graphs": 24,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            },
+            "heads": {
+              "warmup_ms": 869.8202958330512,
+              "captures": {
+                "(8, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 7,
+                  "normal_verify_graphs": 7,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "dispatch": {
+                "(8, 1)": {
+                  "megakernel-ring": 2,
+                  "uninitialized": 17,
+                  "tensorrt: shape limit": 5
+                }
+              },
+              "allocated_delta_bytes": 326548480,
+              "reserved_delta_bytes": 352321536,
+              "frontend_graph": {
+                "captures": 8,
+                "max_entries": 32,
+                "fallbacks": 0,
+                "input_output_bytes": 14406812,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 759.5909954980016,
+              "full_verify_warmup_captures": {
+                "(8, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 24,
+                  "normal_verify_graphs": 24,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            },
+            "tiles": {
+              "warmup_ms": 891.4280999451876,
+              "captures": {
+                "(8, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 7,
+                  "normal_verify_graphs": 7,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "dispatch": {
+                "(8, 1)": {
+                  "megakernel-ring": 2,
+                  "uninitialized": 17,
+                  "tensorrt: shape limit": 5
+                }
+              },
+              "allocated_delta_bytes": 326548480,
+              "reserved_delta_bytes": 352321536,
+              "frontend_graph": {
+                "captures": 8,
+                "max_entries": 32,
+                "fallbacks": 0,
+                "input_output_bytes": 14406812,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 771.8978989869356,
+              "full_verify_warmup_captures": {
+                "(8, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 24,
+                  "normal_verify_graphs": 24,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "limits": "Same Ring route, not auto/TRT. Aggregate RTFx over all11 whole-list repeats; separate p50/p95, not request latency. Cold/compiler order and all resident variants preclude isolated startup/VRAM gains. No reference translations/times; existing Ring Nqualitydifferences remain.",
+  "verification": {
+    "gpu_tests_passed": 30,
+    "real_checkpoint_checks_per_corpus": 42,
+    "all_full_outputs_equal": true,
+    "exit_status": 0,
+    "scheduler_stageout_status": 1
+  },
+  "decision": "Select heads policy for independent public-path verification; changes only R5..8 for102M and preserves R2..4 budget24. Not yet adopted at this result commit."
+}
