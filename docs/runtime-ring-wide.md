@@ -53,3 +53,38 @@ wide one-token Ring forR10/15/16. Only those exact shapes change; smaller rows, 
 windows and unsupported configurations retain the base backend. Full outputs/quality must be
 reported, and any nonfinite/error/fallback aborts. No default or public option is changed.
 [Complete numerical evidence and source hashes](runtime-ring-wide-numerics-2777869.json).
+
+
+First corpus comparison2777897 (ea9d0ec), same engines/checkpoint and11alternating warmed pairs:
+
+| Condition | English RTFx change | Japanese RTFx change | Changed full outputs English/Japanese |
+|---|---:|---:|---:|
+| Beam5 timestamps B2 | +26.33% | +35.24% | 1/73, 0/12 |
+| Beam5 timestamps B3 | +24.52% | +35.41% | 1/73, 0/12 |
+| Translation B10 | +23.90% | +21.68% | 5/73, 7/12 |
+| Translation B16 | +15.99% | +0.09% unchanged R12control | 2/73, 0/12 |
+
+Every measured changed-shape condition improved in all11paired corpus totals. B1beam is an
+unchanged control (+0.88%English/+0.45%Japanese); these small shifts are not kernel gains.
+B2/B3/B10/B16 samples measure the whole corpus request, not individual utterance latency.
+English B3 p50/p95 was431.35/437.60ms→346.41/349.89ms; Japanese95.12/97.62→70.66/70.96ms.
+All warm captures/fallback/determinism checks and10route guards passed. Exit0; Stageout_status1
+is retained separately from the complete published artifacts.
+
+Both beam shapes retain all timestamp tokens and valid segment boundaries. The one English
+change is an inserted comma in1272-141231-0004. WER remains94/1150(8.17%); Japanese CER remains
+43/592(7.26%). Beam decoder calls change1032→1036 and752→756 in English,261→257 and173→169
+in Japanese; speed is therefore not purely a fixed-call kernel ratio. No reference time
+annotations exist, and these small corpora do not establish general quality parity.
+
+Translation changes include text and repetition differences; no translation references are
+available. English silence changes one repeated hallucinated transcript to another; both
+reference/candidate have empty segment lists. Noise/speech in that group match. Other extras
+(no timestamps, beam translation, long prompt, mixed30swindow) match for both languages;
+Japanese silence/noise also match. No claim of silence or translation quality improvement.
+
+Independent replication and public opt-in integration/verification remain pending. Auto and
+production routing stay unchanged. Both variant pools coexist, cold/JIT order is biased and
+allocation-wideGPU telemetry includes all phases. The result is an N experiment, not bitwise
+replacement of TensorRT or new model arithmetic.
+[Full differences, quality, timing and environment](runtime-ring-wide-results-2777897.json).
