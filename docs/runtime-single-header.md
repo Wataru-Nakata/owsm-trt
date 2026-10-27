@@ -35,3 +35,30 @@ No speed claim or other-optimization composition is established before the run c
 The allocation also independently repeats the fixed-prefetch comparison in separate processes.
 Those multi-item calls use the same duration ordering in both versions, so the singleton shortcut
 does not enter their timings. Keep the two result sets and their gain claims separate.
+
+
+## First result2777617: exact outputs, mixed timings; adoption pending
+
+Frozen9f2c6ce, H200, F/exit0. All14 conditions match full outputs and decoder-call totals. The
+reference performs one header lookup per singleton, the candidate performs zero. Scalar/list/
+loaded-tensor forms and missing-file/invalid-dimension errors match. First11-repeat RTFx changes:
+
+|Model / corpus|Greedy TS (CTC: no TS)|Beam TS first12|Translation first12|
+|---|---:|---:|---:|
+|1B English73|+0.956%|-0.264%|+1.383%|
+|1B Japanese12|+1.042%|+0.599%|-0.331%|
+|102M English73|+1.002%|-10.419%|+0.618%|
+|102M Japanese12|+1.620%|+1.096%|-0.369%|
+|CTC1B English73|+1.206%|not applicable|not applicable|
+|CTC1B Japanese12|+1.196%|not applicable|not applicable|
+
+102M English beam's aggregate−10.419% includes large candidate outliers in repeat2 (up to176.41ms);
+its per-input paired median is−0.059%, only5/12 input medians improve. The cause is undetermined;
+these samples are not removed. Japanese translation shows small regressions for both models.
+CTC improves every repeat total in both corpora; other conditions include negative repeats.
+Do not claim a universal speedup or adopt the broad shortcut on this single mixed result.
+An independent same-engine repeat is prepared alongside the separate graph-attribution diagnosis.
+
+[All samples, counts, errors, environment and coarse telemetry](runtime-single-header-2777617.json).
+The allocation also ran fixed-prefetch timing in separate processes; its multi-input gains do not
+include this singleton change. No graph-launch optimization is part of these measurements.

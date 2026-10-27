@@ -226,9 +226,12 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
 * **Optional file prefetch.** `audio_prefetch_workers=1` or `2` overlaps bounded CPU file reading
   with greedy ASR streaming. On H200, English73 file-inclusive timestamp B8 RTFx improves26–38%
   for1B (worker1) and64–67% for102M (worker2) across two measurements, with exact outputs.
-  Japanese12 B8 shows no consistent benefit; default0 remains. Mixed/loaded inputs, plain decoding,
-  beam and translation retain synchronous loading. These are warmed node-local file measurements.
-  [Public checks, paired timings and limits](docs/runtime-audio-prefetch.md).
+  The [verified fixed-batch extension](docs/runtime-fixed-prefetch.md) also applies to multi-file
+  beam/translation: English beam B3 improves8–9% for1B and22–24% for102M; translation B8 improves
+  22–23% and56–58%, with exact sampled outputs across two runs. Japanese shows no consistent broad
+  benefit; default0 remains. Mixed/loaded inputs, single batches, encoder lookahead, CTC-only and
+  long-form paths retain synchronous loading. These are warmed node-local whole-file-list measurements.
+  [Greedy streaming checks, paired timings and limits](docs/runtime-audio-prefetch.md).
 * **Greedy vocabulary selection and acceptance.** `greedy_kernels=True` (default) splits vocabulary
   argmax across blocks and fuses the final reduction with draft acceptance. Against the same engines
   with frontend graphs already enabled, timestamped single-request RTFx improved 4.3% English/4.8%

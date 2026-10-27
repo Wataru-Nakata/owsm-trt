@@ -331,7 +331,7 @@ class OWSM:
         autocast load synchronously. Worker setup/join is per request. More workers can regress
         small/cheap inputs, so select using file-inclusive measurements. Single batches, encoder
         lookahead, CTC-only and long-form paths are unchanged. Greedy streaming is verified on
-        H200/1B/102M; fixed batches also pass public/GPU checks, with timing replication pending.
+        H200/1B/102M; fixed batches also pass public/GPU checks and independent timing replication.
         See docs/runtime-audio-prefetch.md and docs/runtime-fixed-prefetch.md for measured limits.
 
         ``beam_fused_lse`` (default False): fuse full-vocabulary beam normalization with candidate

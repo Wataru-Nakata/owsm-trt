@@ -71,3 +71,34 @@ not reference translation quality. ASR WER/CER is unchanged; reference timestamp
 [All samples, quality, public API, hashes, cold/dispatch and coarse GPU telemetry](runtime-fixed-prefetch-2777564.json).
 PBS Stageout_status1 is separate from verified exit0 and complete artifacts. Raw outputs remain in
 `outputs/runtime-2777564/`. No single-file, loaded-input or combined-opt-in speedup is claimed.
+
+
+## Independent replication2777617: accept fixed-batch opt-in, retain default0
+
+Frozen9f2c6ce finishes F/exit0. All16 full token/time/text/segment and decoder-call comparisons
+match again with11 alternating file-inclusive repeats; actual reader dispatch is verified. The85
+tests and15 public API cases/model are retained by hash from2777564, not reported as rerun. The
+separate singleton-header guard does not change ordering or execution for these multi-input calls.
+
+|Model / corpus|Beam TS B1 workers1/2|Beam TS B3 workers1/2|Translation B1 workers1/2|Translation B8 workers1/2|
+|---|---:|---:|---:|---:|
+|1B English73|+5.58/+5.92%|+8.76/+8.95%|+8.90/+9.15%|+22.12/+22.64%|
+|102M English73|+10.76/+11.15%|+22.89/+22.33%|+24.65/+24.73%|+57.69/+56.17%|
+|1B Japanese12|+4.15/+4.25%|+0.58/+0.26%|+0.40/+0.34%|+1.32/+1.43%|
+|102M Japanese12|+0.89/+0.97%|+1.51/+0.88%|+0.21/-0.46%|+0.21/+0.01%|
+
+All English pairs improve again. For English translation B8 worker1,1B whole73-file p50 falls
+558.83→456.28ms and p95 569.48→467.89ms;102M p50 falls276.57→177.91ms and p95 288.54→178.75ms.
+Japanese remains unsuitable for a blanket recommendation:1B beam B1's +4.15% aggregate is
+outlier-heavy (paired median+0.534%);102M translation B8's earlier +16.79% collapses to+0.21%,
+paired median+0.167%. Worker2's102M Japanese translation B1 regresses in10/11 pairs.
+
+Accept this extension of the existing worker-count opt-in for sequential fixed beam/translation
+batches, keep default0 and all exclusions. Select worker counts using actual file-inclusive
+workloads; no automatic language/model/codec policy is added. Two independent English repetitions
+support the measured improvement, while Japanese negative/noisy samples are retained. This is
+not a single-request, loaded-waveform, cold-storage or composed-preset speed claim.
+
+[Replication pairs, quality, prior-check hashes, dispatch, cold and telemetry](runtime-fixed-prefetch-2777617.json).
+Full raw outputs are in `outputs/runtime-2777617/`. Stageout_status1 is separate from exit0 and
+verified complete artifacts. The singleton-header experiment in that allocation is separate.
