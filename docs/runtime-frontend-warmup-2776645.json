@@ -1,0 +1,3190 @@
+{
+  "source": {
+    "group": "gai51740",
+    "queue": "R9920261300",
+    "resource": "rt_HG",
+    "nodes": 1,
+    "gpus": 1,
+    "walltime": "01:00:00",
+    "account_gpu_cap": 192,
+    "approval": "Standing serial1GPU authorization, same approvedsettings, fresh failclosed192cap/queue/noduplicate beforeeachsubmit.",
+    "commit": "aa1d9c404399a704445c62b231cc77ee58f70e00",
+    "snapshot": "/groups/gai51740/acc12576tt/github.com/owsm_trt/outputs/runtime-frontend-warmup/snapshot-aa1d9c40.tar",
+    "experiment": "runtime_frontend_warmup",
+    "status": "approved_not_submitted",
+    "approved_jobs": 1,
+    "additional_jobs_submitted": 0,
+    "prepared_at": "2026-10-27T05:42:54.164814+00:00",
+    "depends_on": "2776464 terminalhandled733b400; capacitywatchmuststopwriting beforejobhandoff.",
+    "classification": "Eintent frontendonly dedicatedwarmupstreamreuse, defaultsFalse.19tests then1B102M English73/Jp12 B1/B8 freshprocessmemorycases and11pair warmrequestcases. Decoder/encoderwarmupsunchanged."
+  },
+  "corpora": {
+    "1b_english": {
+      "environment": {
+        "commit": "aa1d9c404399a704445c62b231cc77ee58f70e00",
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "manifest_sha256": "b08d586a52460fa0c049545798f03e19abcf08ad3ca6a492b6ed354d4d7af9dd",
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "cases": [
+          "single_ts",
+          "drafted_ts_b8"
+        ],
+        "isolated_cache_memory": false,
+        "warmup_reuse": true,
+        "memory_only": null,
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106"
+        },
+        "load_ms": 3030.113493965473,
+        "nvidia_smi": "name, driver_version\nNVIDIA H200, 595.71.05",
+        "classification": "E intent; only frontend warmup stream reuse, same graph arithmetic/batch shape and serialized replay. B1 graph remains on both modes.32-entry cap per variant. No runtime default expansion. Both variants resident: peak memory is not standalone deployment footprint."
+      },
+      "features": {
+        "3": {
+          "features_exact": true,
+          "shape": [
+            3,
+            1300,
+            128
+          ],
+          "cold_ms": 7.243042986374348,
+          "capture_allocated_delta_bytes": 74054656,
+          "cache": {
+            "captures": 1,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": false,
+            "fallbacks": 0,
+            "input_output_bytes": 4495500,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "samples_ms": {
+            "reference": [
+              1.948487013578415,
+              0.5016479990445077,
+              0.44381601037457585,
+              0.4727360210381448,
+              0.4570920136757195,
+              0.4524289979599416,
+              0.39780500810593367,
+              0.44841301860287786,
+              0.4047180409543216,
+              0.4285750328563154,
+              0.37784804590046406,
+              0.4020999767817557,
+              0.4470850108191371,
+              0.39555999683216214,
+              0.4168309969827533
+            ],
+            "graph": [
+              0.3505839849822223,
+              0.30063302256166935,
+              0.29539200477302074,
+              0.2967420150525868,
+              0.2615569974295795,
+              0.24851300986483693,
+              0.2657019649632275,
+              0.2693990245461464,
+              0.29740098398178816,
+              0.24521001614630222,
+              0.2891970216296613,
+              0.24752202443778515,
+              0.2487769816070795,
+              0.28071494307368994,
+              0.2532870275899768
+            ]
+          },
+          "warm_ms": {
+            "reference": {
+              "n": 15,
+              "p50": 0.44381601037457585,
+              "p95": 0.9356997034046783,
+              "min": 0.37784804590046406,
+              "max": 1.948487013578415,
+              "stdev": 0.37966585942575964
+            },
+            "graph": {
+              "n": 15,
+              "p50": 0.2693990245461464,
+              "p95": 0.3156183112878352,
+              "min": 0.24521001614630222,
+              "max": 0.3505839849822223,
+              "stdev": 0.02799100409974284
+            }
+          },
+          "scope": "Feature/H2D only, not decoder/request latency. Delta also includes one retained output and warmed library workspaces."
+        },
+        "8": {
+          "features_exact": true,
+          "shape": [
+            8,
+            3000,
+            128
+          ],
+          "cold_ms": 4.605060035828501,
+          "capture_allocated_delta_bytes": 107053056,
+          "cache": {
+            "captures": 1,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": false,
+            "fallbacks": 0,
+            "input_output_bytes": 27652096,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "samples_ms": {
+            "reference": [
+              2.3358730250038207,
+              0.6926830392330885,
+              0.7034360314719379,
+              0.7582390098832548,
+              0.6991679547354579,
+              0.6715769995935261,
+              0.6812699721194804,
+              0.675422023050487,
+              0.6805729935877025,
+              0.6716790376231074,
+              0.6780860130675137,
+              0.6703929975628853,
+              0.6655059987679124,
+              0.6817250396125019,
+              0.6760589894838631
+            ],
+            "graph": [
+              0.6945549976080656,
+              0.6760479882359505,
+              0.6872020312584937,
+              0.647174019832164,
+              0.6749230087734759,
+              0.6587230018340051,
+              0.648364017251879,
+              0.6601199856959283,
+              0.6597519968636334,
+              0.6638580234721303,
+              0.6619630148634315,
+              0.6587919779121876,
+              0.6578050088137388,
+              0.6802820134907961,
+              0.6613840232603252
+            ]
+          },
+          "warm_ms": {
+            "reference": {
+              "n": 15,
+              "p50": 0.6805729935877025,
+              "p95": 1.2315292144194228,
+              "min": 0.6655059987679124,
+              "max": 2.3358730250038207,
+              "stdev": 0.4120978762056558
+            },
+            "graph": {
+              "n": 15,
+              "p50": 0.6613840232603252,
+              "p95": 0.6894079211633652,
+              "min": 0.647174019832164,
+              "max": 0.6945549976080656,
+              "stdev": 0.013172523875574688
+            }
+          },
+          "scope": "Feature/H2D only, not decoder/request latency. Delta also includes one retained output and warmed library workspaces."
+        }
+      },
+      "cases": {
+        "single_ts": {
+          "rtfx_change_percent": -0.16579902641079558,
+          "paired_changes_percent": [
+            0.10980696596263329,
+            0.618884519524654,
+            -0.26118121117155724,
+            -0.011806913494338822,
+            -0.20570526807077716,
+            -0.7653615186594132,
+            -0.6555880716504037,
+            -0.40033661367664397,
+            -0.2075689988439322,
+            0.1531782844029994,
+            -0.18676760287753558
+          ],
+          "paired_positive": 3,
+          "paired_median_percent": -0.20570526807077716,
+          "full_outputs_and_calls_equal": true,
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 803,
+                "p50": 5.995529005303979,
+                "p95": 8.966524491552263,
+                "min": 5.058401031419635,
+                "max": 15.456638007890433,
+                "stdev": 1.4775462124662664
+              },
+              "rtfx": 1037.690885717878,
+              "peak_allocated_bytes": 6559640064,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 3454,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 45,
+                "rate": 0.0391304347826087,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "graph": {
+              "wall_ms": {
+                "n": 803,
+                "p50": 6.016628001816571,
+                "p95": 8.976869599428028,
+                "min": 5.062757001724094,
+                "max": 14.5427500247024,
+                "stdev": 1.4747728455752218
+              },
+              "rtfx": 1035.9704043322042,
+              "peak_allocated_bytes": 6559640064,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 3454,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 45,
+                "rate": 0.0391304347826087,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "cold": {
+            "reference": {
+              "warmup_ms": 22952.601527038496,
+              "allocated_delta_bytes": 4551000576,
+              "reserved_delta_bytes": 4754243584,
+              "frontend_graph": {
+                "captures": 17,
+                "max_entries": 32,
+                "max_batch": 8,
+                "reuse_warmup_stream": false,
+                "fallbacks": 0,
+                "input_output_bytes": 21211712,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 122.17700097244233
+            },
+            "graph": {
+              "warmup_ms": 5421.751529967878,
+              "allocated_delta_bytes": 180775936,
+              "reserved_delta_bytes": 381681664,
+              "frontend_graph": {
+                "captures": 17,
+                "max_entries": 32,
+                "max_batch": 8,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 21211712,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 125.2217969740741
+            }
+          }
+        },
+        "drafted_ts_b8": {
+          "rtfx_change_percent": -0.6439419456997997,
+          "paired_changes_percent": [
+            -1.2506558655093203,
+            -0.8783263494274163,
+            1.4236324883374785,
+            -1.616582167328795,
+            -3.39051286091272,
+            -0.19145220568170807,
+            -0.20842494022780267,
+            1.745771736558499,
+            -0.011456845400470428,
+            -1.8622493431648457,
+            -0.7875096569942008
+          ],
+          "paired_positive": 2,
+          "paired_median_percent": -0.7875096569942008,
+          "full_outputs_and_calls_equal": true,
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 190.7364659709856,
+                "p95": 196.25270849792287,
+                "min": 186.957812984474,
+                "max": 196.64921099320054,
+                "stdev": 2.879215711237317
+              },
+              "rtfx": 2516.250401505293,
+              "peak_allocated_bytes": 9461370368,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 539,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 45,
+                "rate": 0.0391304347826087,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "graph": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 192.380138032604,
+                "p95": 195.69361599860713,
+                "min": 189.32562501868233,
+                "max": 197.43036798899993,
+                "stdev": 2.216208943306543
+              },
+              "rtfx": 2500.047209711161,
+              "peak_allocated_bytes": 9461370368,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 539,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 45,
+                "rate": 0.0391304347826087,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "cold": {
+            "reference": {
+              "warmup_ms": 15700.867726991419,
+              "allocated_delta_bytes": 1730355712,
+              "reserved_delta_bytes": 1797259264,
+              "frontend_graph": {
+                "captures": 25,
+                "max_entries": 32,
+                "max_batch": 8,
+                "reuse_warmup_stream": false,
+                "fallbacks": 0,
+                "input_output_bytes": 82094912,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 22218.844782968517
+            },
+            "graph": {
+              "warmup_ms": 7277.665629982948,
+              "allocated_delta_bytes": 1478591488,
+              "reserved_delta_bytes": 1851785216,
+              "frontend_graph": {
+                "captures": 25,
+                "max_entries": 32,
+                "max_batch": 8,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 82094912,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 2838.997106999159
+            }
+          }
+        }
+      },
+      "caches": {
+        "single_ts": {
+          "reference": {
+            "captures": 17,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": false,
+            "fallbacks": 0,
+            "input_output_bytes": 21211712,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "graph": {
+            "captures": 17,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": true,
+            "fallbacks": 0,
+            "input_output_bytes": 21211712,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          }
+        },
+        "drafted_ts_b8": {
+          "reference": {
+            "captures": 25,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": false,
+            "fallbacks": 0,
+            "input_output_bytes": 82094912,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "graph": {
+            "captures": 25,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": true,
+            "fallbacks": 0,
+            "input_output_bytes": 82094912,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          }
+        }
+      }
+    },
+    "1b_japanese": {
+      "environment": {
+        "commit": "aa1d9c404399a704445c62b231cc77ee58f70e00",
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "manifest_sha256": "96dd8869093e16c894aae5858b6866741c3947bc2c4e9b496e0e8b235a11b421",
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "cases": [
+          "single_ts",
+          "drafted_ts_b8"
+        ],
+        "isolated_cache_memory": false,
+        "warmup_reuse": true,
+        "memory_only": null,
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106"
+        },
+        "load_ms": 3122.5922040175647,
+        "nvidia_smi": "name, driver_version\nNVIDIA H200, 595.71.05",
+        "classification": "E intent; only frontend warmup stream reuse, same graph arithmetic/batch shape and serialized replay. B1 graph remains on both modes.32-entry cap per variant. No runtime default expansion. Both variants resident: peak memory is not standalone deployment footprint."
+      },
+      "features": {
+        "3": {
+          "features_exact": true,
+          "shape": [
+            3,
+            2400,
+            128
+          ],
+          "cold_ms": 6.840687012299895,
+          "capture_allocated_delta_bytes": 79094272,
+          "cache": {
+            "captures": 1,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": false,
+            "fallbacks": 0,
+            "input_output_bytes": 8297100,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "samples_ms": {
+            "reference": [
+              1.968930009752512,
+              0.4026769893243909,
+              0.38511998718604445,
+              0.35689101787284017,
+              0.34587999107316136,
+              0.34602999221533537,
+              0.3450800431892276,
+              0.3475539851933718,
+              0.33089698990806937,
+              0.32918096985667944,
+              0.3221819642931223,
+              0.3372679930180311,
+              0.34189701545983553,
+              0.3400410059839487,
+              0.3523080376908183
+            ],
+            "graph": [
+              0.333517964463681,
+              0.2765560057014227,
+              0.27709396090358496,
+              0.25932397693395615,
+              0.27549697551876307,
+              0.2558630076237023,
+              0.2502360148355365,
+              0.24968100478872657,
+              0.2721319906413555,
+              0.2525249728932977,
+              0.2645769855007529,
+              0.26096601504832506,
+              0.2632590476423502,
+              0.24920899886637926,
+              0.27364701963961124
+            ]
+          },
+          "warm_ms": {
+            "reference": {
+              "n": 15,
+              "p50": 0.34587999107316136,
+              "p95": 0.8725528954528255,
+              "min": 0.3221819642931223,
+              "max": 1.968930009752512,
+              "stdev": 0.4046296750215688
+            },
+            "graph": {
+              "n": 15,
+              "p50": 0.2632590476423502,
+              "p95": 0.2940211619716137,
+              "min": 0.24920899886637926,
+              "max": 0.333517964463681,
+              "stdev": 0.02016815316687764
+            }
+          },
+          "scope": "Feature/H2D only, not decoder/request latency. Delta also includes one retained output and warmed library workspaces."
+        },
+        "8": {
+          "features_exact": true,
+          "shape": [
+            8,
+            3000,
+            128
+          ],
+          "cold_ms": 3.901361022144556,
+          "capture_allocated_delta_bytes": 107053056,
+          "cache": {
+            "captures": 1,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": false,
+            "fallbacks": 0,
+            "input_output_bytes": 27652096,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "samples_ms": {
+            "reference": [
+              2.2271680063568056,
+              0.6299259839579463,
+              0.6419369601644576,
+              0.7246449822559953,
+              0.6806420278735459,
+              0.7299300050362945,
+              0.7272129878401756,
+              0.6345249712467194,
+              0.6199809722602367,
+              0.6230539875105023,
+              0.6139660254120827,
+              0.6168339750729501,
+              0.6199830095283687,
+              0.6128009990788996,
+              0.6082580075599253
+            ],
+            "graph": [
+              0.6364839500747621,
+              0.628492038231343,
+              0.7184420246630907,
+              0.7138769724406302,
+              0.6363139837048948,
+              0.6179519696161151,
+              0.7325269980356097,
+              0.7442909991368651,
+              0.6168680265545845,
+              0.6160979974083602,
+              0.6261580274440348,
+              0.6156520103104413,
+              0.6237250054255128,
+              0.6164300139062107,
+              0.6212450098246336
+            ]
+          },
+          "warm_ms": {
+            "reference": {
+              "n": 15,
+              "p50": 0.6299259839579463,
+              "p95": 1.1791014054324462,
+              "min": 0.6082580075599253,
+              "max": 2.2271680063568056,
+              "stdev": 0.39603544810662394
+            },
+            "graph": {
+              "n": 15,
+              "p50": 0.6261580274440348,
+              "p95": 0.7360561983659863,
+              "min": 0.6156520103104413,
+              "max": 0.7442909991368651,
+              "stdev": 0.04686937777658696
+            }
+          },
+          "scope": "Feature/H2D only, not decoder/request latency. Delta also includes one retained output and warmed library workspaces."
+        }
+      },
+      "cases": {
+        "single_ts": {
+          "rtfx_change_percent": 0.14955528141922247,
+          "paired_changes_percent": [
+            1.8761850461621599,
+            -0.020003384090594434,
+            0.028149492484308425,
+            0.0646985737145167,
+            0.03291264096181301,
+            0.02991052133940464,
+            0.06183321307449141,
+            0.1441641116608272,
+            -0.2088317620132396,
+            -0.1721028246512546,
+            -0.18638080541006907
+          ],
+          "paired_positive": 7,
+          "paired_median_percent": 0.02991052133940464,
+          "full_outputs_and_calls_equal": true,
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 7.416812004521489,
+                "p95": 12.690019418369047,
+                "min": 5.35143498564139,
+                "max": 13.75017303507775,
+                "stdev": 1.9715076167530343
+              },
+              "rtfx": 1683.2955564432586,
+              "peak_allocated_bytes": 6410886656,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 792,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 29,
+                "rate": 0.048986486486486486,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "graph": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 7.480427506379783,
+                "p95": 12.680936741526239,
+                "min": 5.361332034226507,
+                "max": 12.741809012368321,
+                "stdev": 1.9505654476725718
+              },
+              "rtfx": 1685.8130138498148,
+              "peak_allocated_bytes": 6410886656,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 792,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 29,
+                "rate": 0.048986486486486486,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "cold": {
+            "reference": {
+              "warmup_ms": 2040.2023349888623,
+              "allocated_delta_bytes": 4408651264,
+              "reserved_delta_bytes": 4475322368,
+              "frontend_graph": {
+                "captures": 8,
+                "max_entries": 32,
+                "max_batch": 8,
+                "reuse_warmup_stream": false,
+                "fallbacks": 0,
+                "input_output_bytes": 14406812,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 130.68539300002158
+            },
+            "graph": {
+              "warmup_ms": 2300.627759017516,
+              "allocated_delta_bytes": 171720704,
+              "reserved_delta_bytes": 239075328,
+              "frontend_graph": {
+                "captures": 8,
+                "max_entries": 32,
+                "max_batch": 8,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 14406812,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 130.80347003415227
+            }
+          }
+        },
+        "drafted_ts_b8": {
+          "rtfx_change_percent": -0.0696492147548411,
+          "paired_changes_percent": [
+            0.7475885399710558,
+            0.7483482628454663,
+            0.9265349732086037,
+            -0.348614315749185,
+            -1.7470903201598054,
+            0.11535497409185247,
+            -1.4394076113242171,
+            0.26563632560452355,
+            -1.7453568805084085,
+            0.6381892093406671,
+            1.1408990630143556
+          ],
+          "paired_positive": 7,
+          "paired_median_percent": 0.26563632560452355,
+          "full_outputs_and_calls_equal": true,
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 48.93889301456511,
+                "p95": 49.75160353933461,
+                "min": 48.39570901822299,
+                "max": 50.084958027582616,
+                "stdev": 0.4439852717553517
+              },
+              "rtfx": 3211.5171772216368,
+              "peak_allocated_bytes": 9298305024,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 176,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 29,
+                "rate": 0.048986486486486486,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "graph": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 49.060760997235775,
+                "p95": 49.662553501548246,
+                "min": 48.03659295430407,
+                "max": 49.78959000436589,
+                "stdev": 0.47947020322068823
+              },
+              "rtfx": 3209.280380725985,
+              "peak_allocated_bytes": 9297307136,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 176,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 29,
+                "rate": 0.048986486486486486,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "cold": {
+            "reference": {
+              "warmup_ms": 2213.366436015349,
+              "allocated_delta_bytes": 1639725056,
+              "reserved_delta_bytes": 1470103552,
+              "frontend_graph": {
+                "captures": 10,
+                "max_entries": 32,
+                "max_batch": 8,
+                "reuse_warmup_stream": false,
+                "fallbacks": 0,
+                "input_output_bytes": 39299260,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 2771.0674370173365
+            },
+            "graph": {
+              "warmup_ms": 2282.7296649920754,
+              "allocated_delta_bytes": 1521977344,
+              "reserved_delta_bytes": 1658847232,
+              "frontend_graph": {
+                "captures": 10,
+                "max_entries": 32,
+                "max_batch": 8,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 39299260,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 2869.538630009629
+            }
+          }
+        }
+      },
+      "caches": {
+        "single_ts": {
+          "reference": {
+            "captures": 8,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": false,
+            "fallbacks": 0,
+            "input_output_bytes": 14406812,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "graph": {
+            "captures": 8,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": true,
+            "fallbacks": 0,
+            "input_output_bytes": 14406812,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          }
+        },
+        "drafted_ts_b8": {
+          "reference": {
+            "captures": 10,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": false,
+            "fallbacks": 0,
+            "input_output_bytes": 39299260,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "graph": {
+            "captures": 10,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": true,
+            "fallbacks": 0,
+            "input_output_bytes": 39299260,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          }
+        }
+      }
+    },
+    "102m_english": {
+      "environment": {
+        "commit": "aa1d9c404399a704445c62b231cc77ee58f70e00",
+        "checkpoint_sha256": "4702713d44ab3e239101f09182903cd28f7b51e565bb632008af12beefb37752",
+        "engine_sha256": {
+          "encoder.engine": "f3da9563c8ef41b6252388c18d89fac46cc5781cfa505d6750837e0c12e0f481",
+          "decoder.engine": "b6065937220853d65633f6f59ce0edab80270717b8971c8afa53baf9a2bf5f72",
+          "verify.engine": "34a912836635a2c6928abef52e6ea5140c5215bc8fa178ee8b1af07bd5458dcb"
+        },
+        "manifest_sha256": "b08d586a52460fa0c049545798f03e19abcf08ad3ca6a492b6ed354d4d7af9dd",
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "cases": [
+          "single_ts",
+          "drafted_ts_b8"
+        ],
+        "isolated_cache_memory": false,
+        "warmup_reuse": true,
+        "memory_only": null,
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106"
+        },
+        "load_ms": 1098.9222470088862,
+        "nvidia_smi": "name, driver_version\nNVIDIA H200, 595.71.05",
+        "classification": "E intent; only frontend warmup stream reuse, same graph arithmetic/batch shape and serialized replay. B1 graph remains on both modes.32-entry cap per variant. No runtime default expansion. Both variants resident: peak memory is not standalone deployment footprint."
+      },
+      "features": {
+        "3": {
+          "features_exact": true,
+          "shape": [
+            3,
+            1300,
+            128
+          ],
+          "cold_ms": 7.222165004350245,
+          "capture_allocated_delta_bytes": 74054656,
+          "cache": {
+            "captures": 1,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": false,
+            "fallbacks": 0,
+            "input_output_bytes": 4495500,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "samples_ms": {
+            "reference": [
+              1.7540259868837893,
+              0.35401899367570877,
+              0.35971897887066007,
+              0.36030501360073686,
+              0.3220670041628182,
+              0.31478801975026727,
+              0.3394120140001178,
+              0.3581700148060918,
+              0.3124740323983133,
+              0.32953103072941303,
+              0.3246900159865618,
+              0.3442040178924799,
+              0.3198389895260334,
+              0.32637204276397824,
+              0.32121100230142474
+            ],
+            "graph": [
+              0.32678397838026285,
+              0.31095300801098347,
+              0.21516502602025867,
+              0.23362500360235572,
+              0.24831295013427734,
+              0.23235799744725227,
+              0.23473001783713698,
+              0.19828701624646783,
+              0.2544919843785465,
+              0.20489300368353724,
+              0.21267996635288,
+              0.2351159928366542,
+              0.2517669927328825,
+              0.211448990739882,
+              0.2093709772452712
+            ]
+          },
+          "warm_ms": {
+            "reference": {
+              "n": 15,
+              "p50": 0.32953103072941303,
+              "p95": 0.778421305585651,
+              "min": 0.3124740323983133,
+              "max": 1.7540259868837893,
+              "stdev": 0.3543976063484302
+            },
+            "graph": {
+              "n": 15,
+              "p50": 0.23362500360235572,
+              "p95": 0.3157022991217673,
+              "min": 0.19828701624646783,
+              "max": 0.32678397838026285,
+              "stdev": 0.035773602378609756
+            }
+          },
+          "scope": "Feature/H2D only, not decoder/request latency. Delta also includes one retained output and warmed library workspaces."
+        },
+        "8": {
+          "features_exact": true,
+          "shape": [
+            8,
+            3000,
+            128
+          ],
+          "cold_ms": 4.429076972883195,
+          "capture_allocated_delta_bytes": 107343872,
+          "cache": {
+            "captures": 1,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": false,
+            "fallbacks": 0,
+            "input_output_bytes": 27652096,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "samples_ms": {
+            "reference": [
+              2.726696024183184,
+              0.7190349861048162,
+              0.6119640311226249,
+              0.5818459903821349,
+              0.5625400226563215,
+              0.6666950066573918,
+              0.6652830052189529,
+              0.692610046826303,
+              0.9289540466852486,
+              0.5878530209884048,
+              0.5759469931945205,
+              0.5773410084657371,
+              0.5765359965153039,
+              0.5697770393453538,
+              0.5768730188719928
+            ],
+            "graph": [
+              0.6462630117312074,
+              0.5681649781763554,
+              0.6014469545334578,
+              0.5579910357482731,
+              0.5760390195064247,
+              0.5607249913737178,
+              0.6552670383825898,
+              0.6446019979193807,
+              0.5888149607926607,
+              0.562836998142302,
+              0.555882987100631,
+              0.5520280101336539,
+              0.5651930114254355,
+              0.5518039688467979,
+              0.5672869738191366
+            ]
+          },
+          "warm_ms": {
+            "reference": {
+              "n": 15,
+              "p50": 0.5878530209884048,
+              "p95": 1.4682766399346274,
+              "min": 0.5625400226563215,
+              "max": 2.726696024183184,
+              "stdev": 0.5297803211807139
+            },
+            "graph": {
+              "n": 15,
+              "p50": 0.5672869738191366,
+              "p95": 0.6489642197266221,
+              "min": 0.5518039688467979,
+              "max": 0.6552670383825898,
+              "stdev": 0.03503931262769043
+            }
+          },
+          "scope": "Feature/H2D only, not decoder/request latency. Delta also includes one retained output and warmed library workspaces."
+        }
+      },
+      "cases": {
+        "single_ts": {
+          "rtfx_change_percent": -0.07273937754468385,
+          "paired_changes_percent": [
+            0.5987918978947127,
+            -0.5633557081205609,
+            -0.4256516799915344,
+            0.49813476906677145,
+            0.15896747892325536,
+            -0.2633786881253042,
+            -0.4723306639437208,
+            -0.023531956765399098,
+            -0.13554112002022167,
+            -0.14886081714174937,
+            -0.01727932353382533
+          ],
+          "paired_positive": 3,
+          "paired_median_percent": -0.13554112002022167,
+          "full_outputs_and_calls_equal": true,
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 803,
+                "p50": 2.210877020843327,
+                "p95": 3.508108604000881,
+                "min": 1.6321499715559185,
+                "max": 9.838318976107985,
+                "stdev": 1.0565383347640709
+              },
+              "rtfx": 2634.5058716376684,
+              "peak_allocated_bytes": 2921303040,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 4499,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 100,
+                "rate": 0.08695652173913043,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "graph": {
+              "wall_ms": {
+                "n": 803,
+                "p50": 2.217754954472184,
+                "p95": 3.5123021050821985,
+                "min": 1.6448730020783842,
+                "max": 9.007329004816711,
+                "stdev": 1.0486361682801828
+              },
+              "rtfx": 2632.589548465261,
+              "peak_allocated_bytes": 2921303040,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 4499,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 100,
+                "rate": 0.08695652173913043,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "cold": {
+            "reference": {
+              "warmup_ms": 14785.607027006336,
+              "allocated_delta_bytes": 2111351808,
+              "reserved_delta_bytes": 2407530496,
+              "frontend_graph": {
+                "captures": 17,
+                "max_entries": 32,
+                "max_batch": 8,
+                "reuse_warmup_stream": false,
+                "fallbacks": 0,
+                "input_output_bytes": 21211712,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 70.59211900923401
+            },
+            "graph": {
+              "warmup_ms": 2054.613924003206,
+              "allocated_delta_bytes": 86300160,
+              "reserved_delta_bytes": 379584512,
+              "frontend_graph": {
+                "captures": 17,
+                "max_entries": 32,
+                "max_batch": 8,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 21211712,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 67.35289603238925
+            }
+          }
+        },
+        "drafted_ts_b8": {
+          "rtfx_change_percent": 0.6945135717185913,
+          "paired_changes_percent": [
+            5.516856508881918,
+            -0.6694739872896038,
+            0.7044994492501955,
+            0.6245821225892678,
+            -0.1853921251838586,
+            0.14571401021339359,
+            -0.46146599656157195,
+            0.38899444649731496,
+            0.6058405554933977,
+            0.8627777651762703,
+            0.09494674507593004
+          ],
+          "paired_positive": 8,
+          "paired_median_percent": 0.38899444649731496,
+          "full_outputs_and_calls_equal": true,
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 51.44263198599219,
+                "p95": 53.13808951177634,
+                "min": 51.129448984283954,
+                "max": 54.454005032312125,
+                "stdev": 0.8951971387112219
+              },
+              "rtfx": 9303.10626637747,
+              "peak_allocated_bytes": 3604976640,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 770,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 99,
+                "rate": 0.08608695652173913,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "graph": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 51.47067800862715,
+                "p95": 51.65398051030934,
+                "min": 50.92544999206439,
+                "max": 51.70103599084541,
+                "stdev": 0.2560096122325834
+              },
+              "rtfx": 9367.717601988865,
+              "peak_allocated_bytes": 3604976640,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 770,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 99,
+                "rate": 0.08608695652173913,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "cold": {
+            "reference": {
+              "warmup_ms": 3443.335978954565,
+              "allocated_delta_bytes": 475651584,
+              "reserved_delta_bytes": 822083584,
+              "frontend_graph": {
+                "captures": 25,
+                "max_entries": 32,
+                "max_batch": 8,
+                "reuse_warmup_stream": false,
+                "fallbacks": 0,
+                "input_output_bytes": 82094912,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 1669.3789919954725
+            },
+            "graph": {
+              "warmup_ms": 3238.95446798997,
+              "allocated_delta_bytes": 344194560,
+              "reserved_delta_bytes": 738197504,
+              "frontend_graph": {
+                "captures": 25,
+                "max_entries": 32,
+                "max_batch": 8,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 82094912,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 1733.793911000248
+            }
+          }
+        }
+      },
+      "caches": {
+        "single_ts": {
+          "reference": {
+            "captures": 17,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": false,
+            "fallbacks": 0,
+            "input_output_bytes": 21211712,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "graph": {
+            "captures": 17,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": true,
+            "fallbacks": 0,
+            "input_output_bytes": 21211712,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          }
+        },
+        "drafted_ts_b8": {
+          "reference": {
+            "captures": 25,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": false,
+            "fallbacks": 0,
+            "input_output_bytes": 82094912,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "graph": {
+            "captures": 25,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": true,
+            "fallbacks": 0,
+            "input_output_bytes": 82094912,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          }
+        }
+      }
+    },
+    "102m_japanese": {
+      "environment": {
+        "commit": "aa1d9c404399a704445c62b231cc77ee58f70e00",
+        "checkpoint_sha256": "4702713d44ab3e239101f09182903cd28f7b51e565bb632008af12beefb37752",
+        "engine_sha256": {
+          "encoder.engine": "f3da9563c8ef41b6252388c18d89fac46cc5781cfa505d6750837e0c12e0f481",
+          "decoder.engine": "b6065937220853d65633f6f59ce0edab80270717b8971c8afa53baf9a2bf5f72",
+          "verify.engine": "34a912836635a2c6928abef52e6ea5140c5215bc8fa178ee8b1af07bd5458dcb"
+        },
+        "manifest_sha256": "96dd8869093e16c894aae5858b6866741c3947bc2c4e9b496e0e8b235a11b421",
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "cases": [
+          "single_ts",
+          "drafted_ts_b8"
+        ],
+        "isolated_cache_memory": false,
+        "warmup_reuse": true,
+        "memory_only": null,
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106"
+        },
+        "load_ms": 1197.5665939971805,
+        "nvidia_smi": "name, driver_version\nNVIDIA H200, 595.71.05",
+        "classification": "E intent; only frontend warmup stream reuse, same graph arithmetic/batch shape and serialized replay. B1 graph remains on both modes.32-entry cap per variant. No runtime default expansion. Both variants resident: peak memory is not standalone deployment footprint."
+      },
+      "features": {
+        "3": {
+          "features_exact": true,
+          "shape": [
+            3,
+            2400,
+            128
+          ],
+          "cold_ms": 7.317127019632608,
+          "capture_allocated_delta_bytes": 79989760,
+          "cache": {
+            "captures": 1,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": false,
+            "fallbacks": 0,
+            "input_output_bytes": 8297100,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "samples_ms": {
+            "reference": [
+              2.0587160252034664,
+              0.3917560097761452,
+              0.3824360319413245,
+              0.35821303026750684,
+              0.3473790129646659,
+              0.3448600182309747,
+              0.34379702992737293,
+              0.36036601522937417,
+              0.3604909870773554,
+              0.3579059848561883,
+              0.3422059817239642,
+              0.3338119713589549,
+              0.35799399483948946,
+              0.3312519984319806,
+              0.3541759797371924
+            ],
+            "graph": [
+              0.34101802157238126,
+              0.2716539893299341,
+              0.27257000328972936,
+              0.26998500106856227,
+              0.2723410143516958,
+              0.2486080047674477,
+              0.2723519573919475,
+              0.25748799089342356,
+              0.2740479540079832,
+              0.25445001665502787,
+              0.2599600120447576,
+              0.24670897983014584,
+              0.2645659842528403,
+              0.25420798920094967,
+              0.2667399821802974
+            ]
+          },
+          "warm_ms": {
+            "reference": {
+              "n": 15,
+              "p50": 0.3579059848561883,
+              "p95": 0.8918440144043398,
+              "min": 0.3312519984319806,
+              "max": 2.0587160252034664,
+              "stdev": 0.4253276456053744
+            },
+            "graph": {
+              "n": 15,
+              "p50": 0.2667399821802974,
+              "p95": 0.29413897427730257,
+              "min": 0.24670897983014584,
+              "max": 0.34101802157238126,
+              "stdev": 0.021343043425153776
+            }
+          },
+          "scope": "Feature/H2D only, not decoder/request latency. Delta also includes one retained output and warmed library workspaces."
+        },
+        "8": {
+          "features_exact": true,
+          "shape": [
+            8,
+            3000,
+            128
+          ],
+          "cold_ms": 4.705820989329368,
+          "capture_allocated_delta_bytes": 107343872,
+          "cache": {
+            "captures": 1,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": false,
+            "fallbacks": 0,
+            "input_output_bytes": 27652096,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "samples_ms": {
+            "reference": [
+              2.892024989705533,
+              0.879547034855932,
+              0.7374410051852465,
+              0.7207219605334103,
+              0.6884439499117434,
+              0.7167250150814652,
+              0.713460030965507,
+              0.7346079801209271,
+              0.9373750071972609,
+              0.736585003323853,
+              0.7181109976954758,
+              0.7100210059434175,
+              0.7295290124602616,
+              0.7018420146778226,
+              0.7016939925961196
+            ],
+            "graph": [
+              0.7105280528776348,
+              0.710024032741785,
+              0.7086960249580443,
+              0.707663013599813,
+              0.6915699923411012,
+              0.7143380353227258,
+              0.6961079780012369,
+              0.7159190136007965,
+              0.743198033887893,
+              0.7111650193110108,
+              0.6870659999549389,
+              0.6930429954081774,
+              0.727504026144743,
+              0.6951219984330237,
+              0.7218230166472495
+            ]
+          },
+          "warm_ms": {
+            "reference": {
+              "n": 15,
+              "p50": 0.7207219605334103,
+              "p95": 1.5237700019497402,
+              "min": 0.6884439499117434,
+              "max": 2.892024989705533,
+              "stdev": 0.5397758391482899
+            },
+            "graph": {
+              "n": 15,
+              "p50": 0.710024032741785,
+              "p95": 0.732212228467688,
+              "min": 0.6870659999549389,
+              "max": 0.743198033887893,
+              "stdev": 0.014516394931943085
+            }
+          },
+          "scope": "Feature/H2D only, not decoder/request latency. Delta also includes one retained output and warmed library workspaces."
+        }
+      },
+      "cases": {
+        "single_ts": {
+          "rtfx_change_percent": 0.5372180097567014,
+          "paired_changes_percent": [
+            3.042782809724698,
+            -0.2442107160782414,
+            -0.2644261945891957,
+            0.6641815290866493,
+            0.23095487653674862,
+            -0.029184284258920723,
+            -0.12408975778757103,
+            0.8774412437954737,
+            1.666046206858618,
+            0.027269271657637262,
+            0.07242915863301391
+          ],
+          "paired_positive": 7,
+          "paired_median_percent": 0.07242915863301391,
+          "full_outputs_and_calls_equal": true,
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 3.677452012198046,
+                "p95": 19.16401452908758,
+                "min": 2.632587042171508,
+                "max": 19.490481994580477,
+                "stdev": 4.417276185012162
+              },
+              "rtfx": 2403.701658568219,
+              "peak_allocated_bytes": 2639251456,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 2277,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 51,
+                "rate": 0.08614864864864864,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "graph": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 3.575658513000235,
+                "p95": 19.017881160834804,
+                "min": 2.643746032845229,
+                "max": 19.106119987554848,
+                "stdev": 4.365225887798977
+              },
+              "rtfx": 2416.614776778868,
+              "peak_allocated_bytes": 2639251456,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 2277,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 51,
+                "rate": 0.08614864864864864,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "cold": {
+            "reference": {
+              "warmup_ms": 980.0768249551766,
+              "allocated_delta_bytes": 1836111872,
+              "reserved_delta_bytes": 1994391552,
+              "frontend_graph": {
+                "captures": 8,
+                "max_entries": 32,
+                "max_batch": 8,
+                "reuse_warmup_stream": false,
+                "fallbacks": 0,
+                "input_output_bytes": 14406812,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 73.30416899640113
+            },
+            "graph": {
+              "warmup_ms": 948.7009479780681,
+              "allocated_delta_bytes": 78038528,
+              "reserved_delta_bytes": 236978176,
+              "frontend_graph": {
+                "captures": 8,
+                "max_entries": 32,
+                "max_batch": 8,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 14406812,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 74.22290003160015
+            }
+          }
+        },
+        "drafted_ts_b8": {
+          "rtfx_change_percent": 0.1798234188599812,
+          "paired_changes_percent": [
+            3.429863862944438,
+            0.13961536394673235,
+            -0.012563350731731315,
+            -0.13695088973119107,
+            -0.6038597966533166,
+            -0.25453411697032857,
+            0.08553302218792247,
+            -0.29158972194823773,
+            0.07360182090703216,
+            -0.24508071254688568,
+            -0.21402847381996049
+          ],
+          "paired_positive": 4,
+          "paired_median_percent": -0.13695088973119107,
+          "full_outputs_and_calls_equal": true,
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 38.93509501358494,
+                "p95": 39.71735399682075,
+                "min": 38.51161600323394,
+                "max": 40.32990103587508,
+                "stdev": 0.4596622335634924
+              },
+              "rtfx": 4041.137082347376,
+              "peak_allocated_bytes": 3265193984,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 935,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 50,
+                "rate": 0.08445945945945946,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "graph": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 38.93924999283627,
+                "p95": 39.085971511667594,
+                "min": 38.722054043319076,
+                "max": 39.09202601062134,
+                "stdev": 0.14911066400889203
+              },
+              "rtfx": 4048.403993209671,
+              "peak_allocated_bytes": 3265192448,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 935,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 50,
+                "rate": 0.08445945945945946,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "cold": {
+            "reference": {
+              "warmup_ms": 943.8069019815885,
+              "allocated_delta_bytes": 380633600,
+              "reserved_delta_bytes": 480247808,
+              "frontend_graph": {
+                "captures": 10,
+                "max_entries": 32,
+                "max_batch": 8,
+                "reuse_warmup_stream": false,
+                "fallbacks": 0,
+                "input_output_bytes": 39299260,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 1703.162005986087
+            },
+            "graph": {
+              "warmup_ms": 1004.8286250093952,
+              "allocated_delta_bytes": 318035968,
+              "reserved_delta_bytes": 463470592,
+              "frontend_graph": {
+                "captures": 10,
+                "max_entries": 32,
+                "max_batch": 8,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 39299260,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 1751.7371380236
+            }
+          }
+        }
+      },
+      "caches": {
+        "single_ts": {
+          "reference": {
+            "captures": 8,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": false,
+            "fallbacks": 0,
+            "input_output_bytes": 14406812,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "graph": {
+            "captures": 8,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": true,
+            "fallbacks": 0,
+            "input_output_bytes": 14406812,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          }
+        },
+        "drafted_ts_b8": {
+          "reference": {
+            "captures": 10,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": false,
+            "fallbacks": 0,
+            "input_output_bytes": 39299260,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "graph": {
+            "captures": 10,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": true,
+            "fallbacks": 0,
+            "input_output_bytes": 39299260,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          }
+        }
+      }
+    }
+  },
+  "isolated_memory": {
+    "1b_english_memory_b1": {
+      "environment": {
+        "commit": "aa1d9c404399a704445c62b231cc77ee58f70e00",
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "manifest_sha256": "b08d586a52460fa0c049545798f03e19abcf08ad3ca6a492b6ed354d4d7af9dd",
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "cases": [
+          "plain_ts_b3",
+          "translation_b8",
+          "beam_ts_b3",
+          "drafted_ts_b8"
+        ],
+        "isolated_cache_memory": false,
+        "warmup_reuse": true,
+        "memory_only": 1,
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106"
+        },
+        "load_ms": 8301.668928994332,
+        "nvidia_smi": "name, driver_version\nNVIDIA H200, 595.71.05",
+        "classification": "E intent; only frontend warmup stream reuse, same graph arithmetic/batch shape and serialized replay. B1 graph remains on both modes.32-entry cap per variant. No runtime default expansion. Both variants resident: peak memory is not standalone deployment footprint."
+      },
+      "measurement": {
+        "variants": {
+          "reference": {
+            "batch": 1,
+            "batches": 73,
+            "features_exact": true,
+            "cold_pass_ms": 53.20841004140675,
+            "cold_batch_ms": [
+              5.817782017402351,
+              0.34690997563302517,
+              2.3815580061636865,
+              0.16405299538746476,
+              0.1299590221606195,
+              0.2740190248005092,
+              0.11534703662618995,
+              0.12214301386848092,
+              0.11723500210791826,
+              0.11747499229386449,
+              2.1334380144253373,
+              0.22487802198156714,
+              0.1327070058323443,
+              0.12562505435198545,
+              0.12261205120012164,
+              0.13455498265102506,
+              2.084569016005844,
+              0.1609109458513558,
+              0.14821096556261182,
+              0.12649199925363064,
+              0.12785097351297736,
+              0.12272200547158718,
+              0.12551096733659506,
+              0.11181097943335772,
+              0.10914204176515341,
+              0.11464999988675117,
+              0.11412997264415026,
+              0.1266920007765293,
+              2.322972984984517,
+              0.15982298646122217,
+              0.1488760462962091,
+              0.12331001926213503,
+              0.13239000691100955,
+              0.11790700955316424,
+              0.13030704576522112,
+              0.12383796274662018,
+              0.12069498188793659,
+              0.11401099618524313,
+              0.13023399515077472,
+              0.11890899622812867,
+              2.3395390016958117,
+              0.1732899690978229,
+              0.13403798220679164,
+              0.12853200314566493,
+              0.12127100490033627,
+              0.13280799612402916,
+              2.3025530390441418,
+              0.16246503219008446,
+              0.13639498502016068,
+              0.1271379878744483,
+              0.13667502207681537,
+              0.1229740446433425,
+              0.13770203804597259,
+              0.12003799201920629,
+              0.11904601706191897,
+              2.4814619682729244,
+              0.16975501785054803,
+              0.14289695536717772,
+              0.16567896818742156,
+              2.5790000217966735,
+              0.1757059944793582,
+              0.14989404007792473,
+              2.300405001733452,
+              2.4628579849377275,
+              0.17697899602353573,
+              0.15115499263629317,
+              0.15181995695456862,
+              2.3339170147664845,
+              2.4615349830128253,
+              2.515782951377332,
+              2.5018329615704715,
+              3.515183983836323,
+              2.7018230175599456
+            ],
+            "retained_allocated_delta_bytes": 625896960,
+            "reserved_delta_bytes": 964689920,
+            "peak_allocated_delta_bytes": 643817984,
+            "cache": {
+              "captures": 17,
+              "max_entries": 32,
+              "max_batch": 1,
+              "reuse_warmup_stream": false,
+              "fallbacks": 0,
+              "input_output_bytes": 21211712,
+              "workspace_bytes": null,
+              "memory_note": "input/output only; captured intermediate private pools are additional"
+            },
+            "post_release_allocated_delta_bytes": 570425344
+          },
+          "graph": {
+            "batch": 1,
+            "batches": 73,
+            "features_exact": true,
+            "cold_pass_ms": 44.54826994333416,
+            "cold_batch_ms": [
+              2.9334070277400315,
+              0.16328698256984353,
+              1.5077199786901474,
+              0.15654100570827723,
+              0.12630101991817355,
+              0.32611103961244226,
+              0.11284596985206008,
+              0.11447799624875188,
+              0.12220995267853141,
+              0.11280999751761556,
+              1.6171260504052043,
+              0.1593200140632689,
+              0.1300990115851164,
+              0.12063002213835716,
+              0.11815200559794903,
+              0.13471400598064065,
+              1.5705759869888425,
+              0.1719249994494021,
+              0.14808698324486613,
+              0.12570800026878715,
+              0.11803198140114546,
+              0.13231998309493065,
+              0.11715403525158763,
+              0.11348299449309707,
+              0.11278397869318724,
+              0.11252600234001875,
+              0.11719501344487071,
+              0.1279059797525406,
+              1.8438849947415292,
+              0.1647040480747819,
+              0.1642900169827044,
+              0.13588997535407543,
+              0.15624798834323883,
+              0.12887798948213458,
+              0.21196698071435094,
+              0.12874399544671178,
+              0.12559001334011555,
+              0.11885503772646189,
+              0.14304200885817409,
+              0.11924398131668568,
+              1.9921979983337224,
+              0.16722799045965075,
+              0.1412919955328107,
+              0.1331379753537476,
+              0.15187897952273488,
+              0.12147397501394153,
+              1.9618000369518995,
+              0.16474700532853603,
+              0.13743602903559804,
+              0.13545301044359803,
+              0.1471359864808619,
+              0.12632401194423437,
+              0.1407819800078869,
+              0.12255203910171986,
+              0.12297998182475567,
+              2.165968995541334,
+              0.17958699027076364,
+              0.1482929801568389,
+              0.1438140170648694,
+              2.148041035979986,
+              0.16890896949917078,
+              0.14426501002162695,
+              1.9870339892804623,
+              2.11271399166435,
+              0.22273696959018707,
+              0.17844903049990535,
+              0.15764503041282296,
+              1.9739879644475877,
+              2.3619639687240124,
+              2.172722015529871,
+              2.177588001359254,
+              3.4182589733973145,
+              2.5550879654474556
+            ],
+            "retained_allocated_delta_bytes": 55471616,
+            "reserved_delta_bytes": 394264576,
+            "peak_allocated_delta_bytes": 73392640,
+            "cache": {
+              "captures": 17,
+              "max_entries": 32,
+              "max_batch": 1,
+              "reuse_warmup_stream": true,
+              "fallbacks": 0,
+              "input_output_bytes": 21211712,
+              "workspace_bytes": null,
+              "memory_note": "input/output only; captured intermediate private pools are additional"
+            },
+            "post_release_allocated_delta_bytes": 0
+          }
+        },
+        "reuse_comparison": true,
+        "scope": "Frontend cache only, one variant resident at a time; shared model and exact eager features remain fixed. PyTorch allocated/reserved memory, not total device process memory. Cold sums synchronized feature/H2D calls, excludes equality checks; not request latency. Batches match sorted B1 encoder supply; decoder/session memory excluded."
+      },
+      "retained_saved_bytes": 570425344,
+      "cold_saved_ms": 8.660140098072588
+    },
+    "1b_english_memory_b8": {
+      "environment": {
+        "commit": "aa1d9c404399a704445c62b231cc77ee58f70e00",
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "manifest_sha256": "b08d586a52460fa0c049545798f03e19abcf08ad3ca6a492b6ed354d4d7af9dd",
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "cases": [
+          "plain_ts_b3",
+          "translation_b8",
+          "beam_ts_b3",
+          "drafted_ts_b8"
+        ],
+        "isolated_cache_memory": false,
+        "warmup_reuse": true,
+        "memory_only": 8,
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106"
+        },
+        "load_ms": 3244.1325419931673,
+        "nvidia_smi": "name, driver_version\nNVIDIA H200, 595.71.05",
+        "classification": "E intent; only frontend warmup stream reuse, same graph arithmetic/batch shape and serialized replay. B1 graph remains on both modes.32-entry cap per variant. No runtime default expansion. Both variants resident: peak memory is not standalone deployment footprint."
+      },
+      "measurement": {
+        "variants": {
+          "reference": {
+            "batch": 8,
+            "batches": 10,
+            "features_exact": true,
+            "cold_pass_ms": 35.460621991660446,
+            "cold_batch_ms": [
+              6.7012719810009,
+              3.346355981193483,
+              2.6775409933179617,
+              2.502447983715683,
+              0.4666520399041474,
+              2.8299579862505198,
+              4.317704995628446,
+              4.265063034836203,
+              5.513579002581537,
+              2.8400479932315648
+            ],
+            "retained_allocated_delta_bytes": 401784320,
+            "reserved_delta_bytes": 763363328,
+            "peak_allocated_delta_bytes": 452409856,
+            "cache": {
+              "captures": 9,
+              "max_entries": 32,
+              "max_batch": 8,
+              "reuse_warmup_stream": false,
+              "fallbacks": 0,
+              "input_output_bytes": 64339712,
+              "workspace_bytes": null,
+              "memory_note": "input/output only; captured intermediate private pools are additional"
+            },
+            "post_release_allocated_delta_bytes": 301989888
+          },
+          "graph": {
+            "batch": 8,
+            "batches": 10,
+            "features_exact": true,
+            "cold_pass_ms": 28.561382147017866,
+            "cold_batch_ms": [
+              3.571578999981284,
+              2.2437029983848333,
+              2.3018299834802747,
+              2.30403000023216,
+              0.4830479738302529,
+              2.5594220496714115,
+              3.892169042956084,
+              3.8350620307028294,
+              5.253159033600241,
+              2.1173800341784954
+            ],
+            "retained_allocated_delta_bytes": 99794432,
+            "reserved_delta_bytes": 471859200,
+            "peak_allocated_delta_bytes": 183974400,
+            "cache": {
+              "captures": 9,
+              "max_entries": 32,
+              "max_batch": 8,
+              "reuse_warmup_stream": true,
+              "fallbacks": 0,
+              "input_output_bytes": 64339712,
+              "workspace_bytes": null,
+              "memory_note": "input/output only; captured intermediate private pools are additional"
+            },
+            "post_release_allocated_delta_bytes": 0
+          }
+        },
+        "reuse_comparison": true,
+        "scope": "Frontend cache only, one variant resident at a time; shared model and exact eager features remain fixed. PyTorch allocated/reserved memory, not total device process memory. Cold sums synchronized feature/H2D calls, excludes equality checks; not request latency. Batches match sorted B8 encoder supply; decoder/session memory excluded."
+      },
+      "retained_saved_bytes": 301989888,
+      "cold_saved_ms": 6.8992398446425796
+    },
+    "1b_japanese_memory_b1": {
+      "environment": {
+        "commit": "aa1d9c404399a704445c62b231cc77ee58f70e00",
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "manifest_sha256": "96dd8869093e16c894aae5858b6866741c3947bc2c4e9b496e0e8b235a11b421",
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "cases": [
+          "plain_ts_b3",
+          "translation_b8",
+          "beam_ts_b3",
+          "drafted_ts_b8"
+        ],
+        "isolated_cache_memory": false,
+        "warmup_reuse": true,
+        "memory_only": 1,
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106"
+        },
+        "load_ms": 2808.5108610102907,
+        "nvidia_smi": "name, driver_version\nNVIDIA H200, 595.71.05",
+        "classification": "E intent; only frontend warmup stream reuse, same graph arithmetic/batch shape and serialized replay. B1 graph remains on both modes.32-entry cap per variant. No runtime default expansion. Both variants resident: peak memory is not standalone deployment footprint."
+      },
+      "measurement": {
+        "variants": {
+          "reference": {
+            "batch": 1,
+            "batches": 12,
+            "features_exact": true,
+            "cold_pass_ms": 22.312582877930254,
+            "cold_batch_ms": [
+              5.3275200189091265,
+              2.691644011065364,
+              0.1693209633231163,
+              0.12321601388975978,
+              1.867698971182108,
+              0.1495269825682044,
+              2.0838609780184925,
+              0.14907901640981436,
+              2.095630974508822,
+              2.2041979827918112,
+              3.275046998169273,
+              2.175839967094362
+            ],
+            "retained_allocated_delta_bytes": 316397568,
+            "reserved_delta_bytes": 517996544,
+            "peak_allocated_delta_bytes": 334318592,
+            "cache": {
+              "captures": 8,
+              "max_entries": 32,
+              "max_batch": 1,
+              "reuse_warmup_stream": false,
+              "fallbacks": 0,
+              "input_output_bytes": 14406812,
+              "workspace_bytes": null,
+              "memory_note": "input/output only; captured intermediate private pools are additional"
+            },
+            "post_release_allocated_delta_bytes": 268435456
+          },
+          "graph": {
+            "batch": 1,
+            "batches": 12,
+            "features_exact": true,
+            "cold_pass_ms": 17.1712429728359,
+            "cold_batch_ms": [
+              3.0358509975485504,
+              1.6335960244759917,
+              0.1521690282970667,
+              0.12624298688024282,
+              1.5431279898621142,
+              0.14647695934399962,
+              1.8023329903371632,
+              0.1869910047389567,
+              2.0698580192402005,
+              1.9909209804609418,
+              2.3894220357760787,
+              2.094253955874592
+            ],
+            "retained_allocated_delta_bytes": 47962112,
+            "reserved_delta_bytes": 249561088,
+            "peak_allocated_delta_bytes": 65883136,
+            "cache": {
+              "captures": 8,
+              "max_entries": 32,
+              "max_batch": 1,
+              "reuse_warmup_stream": true,
+              "fallbacks": 0,
+              "input_output_bytes": 14406812,
+              "workspace_bytes": null,
+              "memory_note": "input/output only; captured intermediate private pools are additional"
+            },
+            "post_release_allocated_delta_bytes": 0
+          }
+        },
+        "reuse_comparison": true,
+        "scope": "Frontend cache only, one variant resident at a time; shared model and exact eager features remain fixed. PyTorch allocated/reserved memory, not total device process memory. Cold sums synchronized feature/H2D calls, excludes equality checks; not request latency. Batches match sorted B1 encoder supply; decoder/session memory excluded."
+      },
+      "retained_saved_bytes": 268435456,
+      "cold_saved_ms": 5.141339905094355
+    },
+    "1b_japanese_memory_b8": {
+      "environment": {
+        "commit": "aa1d9c404399a704445c62b231cc77ee58f70e00",
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "manifest_sha256": "96dd8869093e16c894aae5858b6866741c3947bc2c4e9b496e0e8b235a11b421",
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "cases": [
+          "plain_ts_b3",
+          "translation_b8",
+          "beam_ts_b3",
+          "drafted_ts_b8"
+        ],
+        "isolated_cache_memory": false,
+        "warmup_reuse": true,
+        "memory_only": 8,
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106"
+        },
+        "load_ms": 2933.344919991214,
+        "nvidia_smi": "name, driver_version\nNVIDIA H200, 595.71.05",
+        "classification": "E intent; only frontend warmup stream reuse, same graph arithmetic/batch shape and serialized replay. B1 graph remains on both modes.32-entry cap per variant. No runtime default expansion. Both variants resident: peak memory is not standalone deployment footprint."
+      },
+      "measurement": {
+        "variants": {
+          "reference": {
+            "batch": 8,
+            "batches": 2,
+            "features_exact": true,
+            "cold_pass_ms": 593.3491380419582,
+            "cold_batch_ms": [
+              586.4298490341753,
+              6.919289007782936
+            ],
+            "retained_allocated_delta_bytes": 125604352,
+            "reserved_delta_bytes": 264241152,
+            "peak_allocated_delta_bytes": 195956224,
+            "cache": {
+              "captures": 2,
+              "max_entries": 32,
+              "max_batch": 8,
+              "reuse_warmup_stream": false,
+              "fallbacks": 0,
+              "input_output_bytes": 24892448,
+              "workspace_bytes": null,
+              "memory_note": "input/output only; captured intermediate private pools are additional"
+            },
+            "post_release_allocated_delta_bytes": 67108864
+          },
+          "graph": {
+            "batch": 8,
+            "batches": 2,
+            "features_exact": true,
+            "cold_pass_ms": 10.16058400273323,
+            "cold_batch_ms": [
+              4.210278042592108,
+              5.950305960141122
+            ],
+            "retained_allocated_delta_bytes": 58495488,
+            "reserved_delta_bytes": 197132288,
+            "peak_allocated_delta_bytes": 128847360,
+            "cache": {
+              "captures": 2,
+              "max_entries": 32,
+              "max_batch": 8,
+              "reuse_warmup_stream": true,
+              "fallbacks": 0,
+              "input_output_bytes": 24892448,
+              "workspace_bytes": null,
+              "memory_note": "input/output only; captured intermediate private pools are additional"
+            },
+            "post_release_allocated_delta_bytes": 0
+          }
+        },
+        "reuse_comparison": true,
+        "scope": "Frontend cache only, one variant resident at a time; shared model and exact eager features remain fixed. PyTorch allocated/reserved memory, not total device process memory. Cold sums synchronized feature/H2D calls, excludes equality checks; not request latency. Batches match sorted B8 encoder supply; decoder/session memory excluded."
+      },
+      "retained_saved_bytes": 67108864,
+      "cold_saved_ms": 583.188554039225
+    },
+    "102m_english_memory_b1": {
+      "environment": {
+        "commit": "aa1d9c404399a704445c62b231cc77ee58f70e00",
+        "checkpoint_sha256": "4702713d44ab3e239101f09182903cd28f7b51e565bb632008af12beefb37752",
+        "engine_sha256": {
+          "encoder.engine": "f3da9563c8ef41b6252388c18d89fac46cc5781cfa505d6750837e0c12e0f481",
+          "decoder.engine": "b6065937220853d65633f6f59ce0edab80270717b8971c8afa53baf9a2bf5f72",
+          "verify.engine": "34a912836635a2c6928abef52e6ea5140c5215bc8fa178ee8b1af07bd5458dcb"
+        },
+        "manifest_sha256": "b08d586a52460fa0c049545798f03e19abcf08ad3ca6a492b6ed354d4d7af9dd",
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "cases": [
+          "plain_ts_b3",
+          "translation_b8",
+          "beam_ts_b3",
+          "drafted_ts_b8"
+        ],
+        "isolated_cache_memory": false,
+        "warmup_reuse": true,
+        "memory_only": 1,
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106"
+        },
+        "load_ms": 3551.989801984746,
+        "nvidia_smi": "name, driver_version\nNVIDIA H200, 595.71.05",
+        "classification": "E intent; only frontend warmup stream reuse, same graph arithmetic/batch shape and serialized replay. B1 graph remains on both modes.32-entry cap per variant. No runtime default expansion. Both variants resident: peak memory is not standalone deployment footprint."
+      },
+      "measurement": {
+        "variants": {
+          "reference": {
+            "batch": 1,
+            "batches": 73,
+            "features_exact": true,
+            "cold_pass_ms": 51.691513042896986,
+            "cold_batch_ms": [
+              5.606861028354615,
+              0.3071959945373237,
+              2.2262799902819097,
+              0.15039503341540694,
+              0.12150098336860538,
+              0.3068859805352986,
+              0.10898697655647993,
+              0.11528102913871408,
+              0.10655599180608988,
+              0.11959299445152283,
+              1.9019019673578441,
+              0.14918798115104437,
+              0.12203503865748644,
+              0.11411000741645694,
+              0.10899401968345046,
+              0.1073980238288641,
+              1.8173170392401516,
+              0.15828199684619904,
+              0.13237097300589085,
+              0.10480498895049095,
+              0.1203540014103055,
+              0.11986499885097146,
+              0.13484101509675384,
+              0.1201400300487876,
+              0.11860200902447104,
+              0.1251999638043344,
+              0.1324010081589222,
+              0.13115699402987957,
+              2.2875639842823148,
+              0.1427939860150218,
+              0.12978102313354611,
+              0.12474000686779618,
+              0.10919698979705572,
+              0.12738601071760058,
+              0.11038500815629959,
+              0.11317699681967497,
+              0.12195802992209792,
+              0.10248797480016947,
+              0.10808598017320037,
+              0.10164396371692419,
+              2.3294209968298674,
+              0.1785909989848733,
+              0.14259997988119721,
+              0.1400620094500482,
+              0.1552010071463883,
+              0.14760898193344474,
+              2.5239340029656887,
+              0.17265300266444683,
+              0.13947900151833892,
+              0.13816001592203975,
+              0.1410050317645073,
+              0.13925100211054087,
+              0.12708205031231046,
+              0.12107298243790865,
+              0.12692698510363698,
+              2.6144119910895824,
+              0.16870000399649143,
+              0.1412539859302342,
+              0.14458602527156472,
+              2.2412610123865306,
+              0.18005701713263988,
+              0.14557898975908756,
+              2.3618940031155944,
+              2.5354750105179846,
+              0.15582499327138066,
+              0.15322701074182987,
+              0.1539739896543324,
+              2.5080509949475527,
+              2.3888139985501766,
+              2.7524210163392127,
+              2.1552550024352968,
+              3.315752954222262,
+              2.384228981100023
+            ],
+            "retained_allocated_delta_bytes": 625484288,
+            "reserved_delta_bytes": 964689920,
+            "peak_allocated_delta_bytes": 643405312,
+            "cache": {
+              "captures": 17,
+              "max_entries": 32,
+              "max_batch": 1,
+              "reuse_warmup_stream": false,
+              "fallbacks": 0,
+              "input_output_bytes": 21211712,
+              "workspace_bytes": null,
+              "memory_note": "input/output only; captured intermediate private pools are additional"
+            },
+            "post_release_allocated_delta_bytes": 570425344
+          },
+          "graph": {
+            "batch": 1,
+            "batches": 73,
+            "features_exact": true,
+            "cold_pass_ms": 41.67688079178333,
+            "cold_batch_ms": [
+              2.271252975333482,
+              0.13843103079125285,
+              1.4381189830601215,
+              0.14407298294827342,
+              0.13924494851380587,
+              0.29956898652017117,
+              0.10527099948376417,
+              0.11339300544932485,
+              0.10405498323962092,
+              0.11155602987855673,
+              1.420103944838047,
+              0.1721869921311736,
+              0.1407309900969267,
+              0.20508799934759736,
+              0.13947900151833892,
+              0.22964400704950094,
+              1.6093499725684524,
+              0.14394096797332168,
+              0.14957401435822248,
+              0.11962896678596735,
+              0.12637197505682707,
+              0.12013502418994904,
+              0.10904896771535277,
+              0.11148798512294888,
+              0.10504300007596612,
+              0.12322497786954045,
+              0.13981101801618934,
+              0.13920897617936134,
+              1.9120019860565662,
+              0.14449103036895394,
+              0.12144801439717412,
+              0.12811500346288085,
+              0.11336000170558691,
+              0.12531300308182836,
+              0.1097829663194716,
+              0.11518999235704541,
+              0.12672197772189975,
+              0.11029199231415987,
+              0.10896299500018358,
+              0.10604900307953358,
+              1.6985429683700204,
+              0.14690699754282832,
+              0.1445729867555201,
+              0.14208594802767038,
+              0.14803302474319935,
+              0.11704396456480026,
+              2.143503981642425,
+              0.15628902474418283,
+              0.13560004299506545,
+              0.15512399841099977,
+              0.11957500828430057,
+              0.11533999349921942,
+              0.12714305194094777,
+              0.11345901293680072,
+              0.11340697528794408,
+              1.9188860314898193,
+              0.14750298578292131,
+              0.128718966152519,
+              0.1222349819727242,
+              1.7921079997904599,
+              0.159919960424304,
+              0.12843601871281862,
+              1.75628304714337,
+              1.8516029813326895,
+              0.18004904268309474,
+              0.16033300198614597,
+              0.1529440050944686,
+              2.146669023204595,
+              1.9152560271322727,
+              2.0404410315677524,
+              2.1302520181052387,
+              3.571577020920813,
+              2.4062879965640604
+            ],
+            "retained_allocated_delta_bytes": 55058944,
+            "reserved_delta_bytes": 394264576,
+            "peak_allocated_delta_bytes": 72979968,
+            "cache": {
+              "captures": 17,
+              "max_entries": 32,
+              "max_batch": 1,
+              "reuse_warmup_stream": true,
+              "fallbacks": 0,
+              "input_output_bytes": 21211712,
+              "workspace_bytes": null,
+              "memory_note": "input/output only; captured intermediate private pools are additional"
+            },
+            "post_release_allocated_delta_bytes": 0
+          }
+        },
+        "reuse_comparison": true,
+        "scope": "Frontend cache only, one variant resident at a time; shared model and exact eager features remain fixed. PyTorch allocated/reserved memory, not total device process memory. Cold sums synchronized feature/H2D calls, excludes equality checks; not request latency. Batches match sorted B1 encoder supply; decoder/session memory excluded."
+      },
+      "retained_saved_bytes": 570425344,
+      "cold_saved_ms": 10.014632251113653
+    },
+    "102m_english_memory_b8": {
+      "environment": {
+        "commit": "aa1d9c404399a704445c62b231cc77ee58f70e00",
+        "checkpoint_sha256": "4702713d44ab3e239101f09182903cd28f7b51e565bb632008af12beefb37752",
+        "engine_sha256": {
+          "encoder.engine": "f3da9563c8ef41b6252388c18d89fac46cc5781cfa505d6750837e0c12e0f481",
+          "decoder.engine": "b6065937220853d65633f6f59ce0edab80270717b8971c8afa53baf9a2bf5f72",
+          "verify.engine": "34a912836635a2c6928abef52e6ea5140c5215bc8fa178ee8b1af07bd5458dcb"
+        },
+        "manifest_sha256": "b08d586a52460fa0c049545798f03e19abcf08ad3ca6a492b6ed354d4d7af9dd",
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "cases": [
+          "plain_ts_b3",
+          "translation_b8",
+          "beam_ts_b3",
+          "drafted_ts_b8"
+        ],
+        "isolated_cache_memory": false,
+        "warmup_reuse": true,
+        "memory_only": 8,
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106"
+        },
+        "load_ms": 1112.360475002788,
+        "nvidia_smi": "name, driver_version\nNVIDIA H200, 595.71.05",
+        "classification": "E intent; only frontend warmup stream reuse, same graph arithmetic/batch shape and serialized replay. B1 graph remains on both modes.32-entry cap per variant. No runtime default expansion. Both variants resident: peak memory is not standalone deployment footprint."
+      },
+      "measurement": {
+        "variants": {
+          "reference": {
+            "batch": 8,
+            "batches": 10,
+            "features_exact": true,
+            "cold_pass_ms": 31.983971886802465,
+            "cold_batch_ms": [
+              5.734868987929076,
+              3.052663989365101,
+              2.452133980114013,
+              2.4299959768541157,
+              0.43551198905333877,
+              2.699271950405091,
+              3.835225012153387,
+              3.8350170361809433,
+              4.90989099489525,
+              2.5993919698521495
+            ],
+            "retained_allocated_delta_bytes": 400488448,
+            "reserved_delta_bytes": 784334848,
+            "peak_allocated_delta_bytes": 451757568,
+            "cache": {
+              "captures": 9,
+              "max_entries": 32,
+              "max_batch": 8,
+              "reuse_warmup_stream": false,
+              "fallbacks": 0,
+              "input_output_bytes": 64339712,
+              "workspace_bytes": null,
+              "memory_note": "input/output only; captured intermediate private pools are additional"
+            },
+            "post_release_allocated_delta_bytes": 301989888
+          },
+          "graph": {
+            "batch": 8,
+            "batches": 10,
+            "features_exact": true,
+            "cold_pass_ms": 26.201533095445484,
+            "cold_batch_ms": [
+              2.9703290201723576,
+              2.006140013691038,
+              2.383910003118217,
+              2.1103000035509467,
+              0.40978699689731,
+              2.2169610019773245,
+              3.76834103371948,
+              3.3577060094103217,
+              4.763155011460185,
+              2.2149040014483035
+            ],
+            "retained_allocated_delta_bytes": 98498560,
+            "reserved_delta_bytes": 492830720,
+            "peak_allocated_delta_bytes": 183322112,
+            "cache": {
+              "captures": 9,
+              "max_entries": 32,
+              "max_batch": 8,
+              "reuse_warmup_stream": true,
+              "fallbacks": 0,
+              "input_output_bytes": 64339712,
+              "workspace_bytes": null,
+              "memory_note": "input/output only; captured intermediate private pools are additional"
+            },
+            "post_release_allocated_delta_bytes": 0
+          }
+        },
+        "reuse_comparison": true,
+        "scope": "Frontend cache only, one variant resident at a time; shared model and exact eager features remain fixed. PyTorch allocated/reserved memory, not total device process memory. Cold sums synchronized feature/H2D calls, excludes equality checks; not request latency. Batches match sorted B8 encoder supply; decoder/session memory excluded."
+      },
+      "retained_saved_bytes": 301989888,
+      "cold_saved_ms": 5.782438791356981
+    },
+    "102m_japanese_memory_b1": {
+      "environment": {
+        "commit": "aa1d9c404399a704445c62b231cc77ee58f70e00",
+        "checkpoint_sha256": "4702713d44ab3e239101f09182903cd28f7b51e565bb632008af12beefb37752",
+        "engine_sha256": {
+          "encoder.engine": "f3da9563c8ef41b6252388c18d89fac46cc5781cfa505d6750837e0c12e0f481",
+          "decoder.engine": "b6065937220853d65633f6f59ce0edab80270717b8971c8afa53baf9a2bf5f72",
+          "verify.engine": "34a912836635a2c6928abef52e6ea5140c5215bc8fa178ee8b1af07bd5458dcb"
+        },
+        "manifest_sha256": "96dd8869093e16c894aae5858b6866741c3947bc2c4e9b496e0e8b235a11b421",
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "cases": [
+          "plain_ts_b3",
+          "translation_b8",
+          "beam_ts_b3",
+          "drafted_ts_b8"
+        ],
+        "isolated_cache_memory": false,
+        "warmup_reuse": true,
+        "memory_only": 1,
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106"
+        },
+        "load_ms": 1261.2100570113398,
+        "nvidia_smi": "name, driver_version\nNVIDIA H200, 595.71.05",
+        "classification": "E intent; only frontend warmup stream reuse, same graph arithmetic/batch shape and serialized replay. B1 graph remains on both modes.32-entry cap per variant. No runtime default expansion. Both variants resident: peak memory is not standalone deployment footprint."
+      },
+      "measurement": {
+        "variants": {
+          "reference": {
+            "batch": 1,
+            "batches": 12,
+            "features_exact": true,
+            "cold_pass_ms": 24.76503502111882,
+            "cold_batch_ms": [
+              6.5393089898861945,
+              2.8275439981371164,
+              0.1607129815965891,
+              0.12446497566998005,
+              2.1097459830343723,
+              0.15295599587261677,
+              1.9707989995367825,
+              0.15415402594953775,
+              2.034515026025474,
+              2.5638769729994237,
+              3.28953901771456,
+              2.8374180546961725
+            ],
+            "retained_allocated_delta_bytes": 316397568,
+            "reserved_delta_bytes": 517996544,
+            "peak_allocated_delta_bytes": 334318592,
+            "cache": {
+              "captures": 8,
+              "max_entries": 32,
+              "max_batch": 1,
+              "reuse_warmup_stream": false,
+              "fallbacks": 0,
+              "input_output_bytes": 14406812,
+              "workspace_bytes": null,
+              "memory_note": "input/output only; captured intermediate private pools are additional"
+            },
+            "post_release_allocated_delta_bytes": 268435456
+          },
+          "graph": {
+            "batch": 1,
+            "batches": 12,
+            "features_exact": true,
+            "cold_pass_ms": 16.889641992747784,
+            "cold_batch_ms": [
+              2.8407429927028716,
+              1.6517859767191112,
+              0.16027700621634722,
+              0.12510200031101704,
+              1.6957969637587667,
+              0.1501869992353022,
+              1.598013041075319,
+              0.16158900689333677,
+              1.738694030791521,
+              2.205324999522418,
+              2.631820971146226,
+              1.9303080043755472
+            ],
+            "retained_allocated_delta_bytes": 47962112,
+            "reserved_delta_bytes": 249561088,
+            "peak_allocated_delta_bytes": 65883136,
+            "cache": {
+              "captures": 8,
+              "max_entries": 32,
+              "max_batch": 1,
+              "reuse_warmup_stream": true,
+              "fallbacks": 0,
+              "input_output_bytes": 14406812,
+              "workspace_bytes": null,
+              "memory_note": "input/output only; captured intermediate private pools are additional"
+            },
+            "post_release_allocated_delta_bytes": 0
+          }
+        },
+        "reuse_comparison": true,
+        "scope": "Frontend cache only, one variant resident at a time; shared model and exact eager features remain fixed. PyTorch allocated/reserved memory, not total device process memory. Cold sums synchronized feature/H2D calls, excludes equality checks; not request latency. Batches match sorted B1 encoder supply; decoder/session memory excluded."
+      },
+      "retained_saved_bytes": 268435456,
+      "cold_saved_ms": 7.875393028371036
+    },
+    "102m_japanese_memory_b8": {
+      "environment": {
+        "commit": "aa1d9c404399a704445c62b231cc77ee58f70e00",
+        "checkpoint_sha256": "4702713d44ab3e239101f09182903cd28f7b51e565bb632008af12beefb37752",
+        "engine_sha256": {
+          "encoder.engine": "f3da9563c8ef41b6252388c18d89fac46cc5781cfa505d6750837e0c12e0f481",
+          "decoder.engine": "b6065937220853d65633f6f59ce0edab80270717b8971c8afa53baf9a2bf5f72",
+          "verify.engine": "34a912836635a2c6928abef52e6ea5140c5215bc8fa178ee8b1af07bd5458dcb"
+        },
+        "manifest_sha256": "96dd8869093e16c894aae5858b6866741c3947bc2c4e9b496e0e8b235a11b421",
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "cases": [
+          "plain_ts_b3",
+          "translation_b8",
+          "beam_ts_b3",
+          "drafted_ts_b8"
+        ],
+        "isolated_cache_memory": false,
+        "warmup_reuse": true,
+        "memory_only": 8,
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106"
+        },
+        "load_ms": 1182.6441260054708,
+        "nvidia_smi": "name, driver_version\nNVIDIA H200, 595.71.05",
+        "classification": "E intent; only frontend warmup stream reuse, same graph arithmetic/batch shape and serialized replay. B1 graph remains on both modes.32-entry cap per variant. No runtime default expansion. Both variants resident: peak memory is not standalone deployment footprint."
+      },
+      "measurement": {
+        "variants": {
+          "reference": {
+            "batch": 8,
+            "batches": 2,
+            "features_exact": true,
+            "cold_pass_ms": 14.513447997160256,
+            "cold_batch_ms": [
+              7.259197998791933,
+              7.254249998368323
+            ],
+            "retained_allocated_delta_bytes": 125604352,
+            "reserved_delta_bytes": 264241152,
+            "peak_allocated_delta_bytes": 195956224,
+            "cache": {
+              "captures": 2,
+              "max_entries": 32,
+              "max_batch": 8,
+              "reuse_warmup_stream": false,
+              "fallbacks": 0,
+              "input_output_bytes": 24892448,
+              "workspace_bytes": null,
+              "memory_note": "input/output only; captured intermediate private pools are additional"
+            },
+            "post_release_allocated_delta_bytes": 67108864
+          },
+          "graph": {
+            "batch": 8,
+            "batches": 2,
+            "features_exact": true,
+            "cold_pass_ms": 9.598898992408067,
+            "cold_batch_ms": [
+              4.148696025367826,
+              5.450202967040241
+            ],
+            "retained_allocated_delta_bytes": 58495488,
+            "reserved_delta_bytes": 197132288,
+            "peak_allocated_delta_bytes": 128847360,
+            "cache": {
+              "captures": 2,
+              "max_entries": 32,
+              "max_batch": 8,
+              "reuse_warmup_stream": true,
+              "fallbacks": 0,
+              "input_output_bytes": 24892448,
+              "workspace_bytes": null,
+              "memory_note": "input/output only; captured intermediate private pools are additional"
+            },
+            "post_release_allocated_delta_bytes": 0
+          }
+        },
+        "reuse_comparison": true,
+        "scope": "Frontend cache only, one variant resident at a time; shared model and exact eager features remain fixed. PyTorch allocated/reserved memory, not total device process memory. Cold sums synchronized feature/H2D calls, excludes equality checks; not request latency. Batches match sorted B8 encoder supply; decoder/session memory excluded."
+      },
+      "retained_saved_bytes": 67108864,
+      "cold_saved_ms": 4.914549004752189
+    }
+  },
+  "limits": "Same engines/checkpoint/frontend arithmetic; only warmupstream reuse,11alternating repeats. B1single-request and B8whole-list wall/RTFx are separate scopes. Both variant pools resident: not standalone VRAM; feature capture delta includes output/library workspace. No reference translation/timestamp quality. Cold order biased; no startup improvement claim.",
+  "validation": {
+    "exit_status": 0,
+    "tests": 19,
+    "request_conditions": 8,
+    "isolated_memory_conditions": 8,
+    "full_features_outputs_calls_exact": true
+  },
+  "decision": "Promising frontend memory/cold reduction; prepare public default reuse and optional batch limit validation plus reverse memory-order check before adoption. Warm RTFx \u22120.644..+0.695%,no warm-speed claim.1B Japanese B8referencecold593ms is outlier;no largecoldgainclaim."
+}
