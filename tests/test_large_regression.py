@@ -95,8 +95,8 @@ def test_recover_local_archive_verifies_transcript_and_rejects_links(tmp_path,mo
     path = tmp_path/'tiny.tar.gz'
     prefix = 'LibriSpeech/dev-other/116/288045/'
     with tarfile.open(path,'w:gz') as archive:
-        for name,data in [('116-288045.trans.txt',b'116-288045-0000 HELLO\n'),
-                          ('116-288045-0000.flac',b'original encoded bytes')]:
+        for name,data in [('116-288045-0000.flac',b'original encoded bytes'),
+                          ('116-288045.trans.txt',b'116-288045-0000 HELLO\n')]:
             info = tarfile.TarInfo(prefix+name)
             info.size = len(data)
             archive.addfile(info,io.BytesIO(data))

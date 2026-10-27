@@ -78,30 +78,42 @@ def publish_file(source: Path, target: Path) -> None:
 
 def restore_dev_other(rows: list[dict], archive_path: Path, out: Path) -> None:
     """Restore only named regular files locally, checking their official transcripts as well."""
-    transcripts = {}
-    with tarfile.open(archive_path) as archive:
-        for row in rows:
-            if not re.fullmatch(r'\d+-\d+-\d+',row['id']):
-                raise ValueError(f"invalid LibriSpeech id: {row['id']}")
-            speaker,chapter,_ = row['id'].split('-')
-            prefix = f'LibriSpeech/dev-other/{speaker}/{chapter}/'
-            if prefix not in transcripts:
-                member = archive.getmember(prefix+f'{speaker}-{chapter}.trans.txt')
-                if not member.isfile():
-                    raise ValueError('transcript must be a regular archive member')
-                transcripts[prefix] = dict(line.split(' ',1) for line in
+    audio,transcripts = {},{}
+    for row in rows:
+        if not re.fullmatch(r'\d+-\d+-\d+',row['id']):
+            raise ValueError(f"invalid LibriSpeech id: {row['id']}")
+        speaker,chapter,_ = row['id'].split('-')
+        prefix = f'LibriSpeech/dev-other/{speaker}/{chapter}/'
+        transcript = prefix+f'{speaker}-{chapter}.trans.txt'
+        transcripts[transcript] = None
+        audio[prefix+row['id']+'.flac'] = (row,out/speaker/chapter/(row['id']+'.flac'),transcript)
+    if len(audio)!=len(rows):
+        raise ValueError('duplicate LibriSpeech ids')
+    found = set()
+    # Sequential gzip reading avoids decompressing from the start for each backward member seek.
+    with tarfile.open(archive_path,'r|*') as archive:
+        for member in archive:
+            name = member.name
+            if name not in audio and name not in transcripts:
+                continue
+            if name in found or not member.isfile():
+                raise ValueError('expected a unique regular archive member')
+            found.add(name)
+            if name in transcripts:
+                transcripts[name] = dict(line.split(' ',1) for line in
                     archive.extractfile(member).read().decode().splitlines())
-            if transcripts[prefix].get(row['id'])!=row['text']:
-                raise ValueError(f"archive transcript differs from manifest: {row['id']}")
-            member = archive.getmember(prefix+row['id']+'.flac')
-            if not member.isfile():
-                raise ValueError('audio must be a regular archive member')
-            target = out/speaker/chapter/(row['id']+'.flac')
-            target.parent.mkdir(parents=True,exist_ok=True)
-            with archive.extractfile(member) as source, target.open('wb') as dest:
-                shutil.copyfileobj(source,dest)
-            row['original_source_path'] = row['source_path']
-            row['source_path'] = str(target)
+            else:
+                target = audio[name][1]
+                target.parent.mkdir(parents=True,exist_ok=True)
+                with archive.extractfile(member) as source, target.open('wb') as dest:
+                    shutil.copyfileobj(source,dest)
+    if found!=set(audio)|set(transcripts):
+        raise ValueError('required archive members missing')
+    for row,target,transcript in audio.values():
+        if transcripts[transcript].get(row['id'])!=row['text']:
+            raise ValueError(f"archive transcript differs from manifest: {row['id']}")
+        row['original_source_path'] = row['source_path']
+        row['source_path'] = str(target)
 
 
 def missing_inputs(rows: list[dict]) -> list[dict]:
