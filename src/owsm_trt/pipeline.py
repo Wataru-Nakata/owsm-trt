@@ -319,6 +319,12 @@ class OWSM:
         failures fall back with a warning. Same-engine measurements show throughput gains but
         punctuation, translation and silence outputs can differ. The default remains ``auto``.
 
+        ``decoder_kernel="ring:split"``: experimental N single-row attention grouping, with4 splits
+        for1B or8 for102M on H200132SM. Both solo and concurrent calls use the same grouping;
+        multi-row calls and unsupported GPU/models retain auto routing and numerical checks.
+        Intended for single-request latency; B1 streaming can regress. Timestamp boundaries can
+        differ. The default remains ``auto``. See docs/runtime-ring-cross-splits.md for validation.
+
         ``ctc_draft``: for greedy ASR, let the encoder's CTC head propose the transcript and check up
         to 31 proposed tokens per utterance and decoder call. The output is the greedy output; only the
         number of decoder calls changes.
@@ -1328,7 +1334,8 @@ def _decoder_kernel(runner, cfg, checkpoint: Path, dev: torch.device, which):
             )
         return runner
     wide_ring = which == "ring:wide"
-    auto = which == "auto" or wide_ring
+    split_ring = which == "ring:split"
+    auto = which == "auto" or wide_ring or split_ring
     try:
         decoder = _load_decoder(cfg, checkpoint, skip_init=True)
         mega = megakernel.MegaDecoder(decoder, dev)
@@ -1364,6 +1371,14 @@ def _decoder_kernel(runner, cfg, checkpoint: Path, dev: torch.device, which):
                         "w": "num_warps",
                     }
                     kw[key[o[0]]] = int(o[1:])
+            if split_ring:
+                gpu = torch.cuda.get_device_properties(dev)
+                splits = {(1024, 4096, 18, 16): 4, (384, 1536, 6, 6): 8}
+                ns = splits.get((mega.D, mega.F, mega.L, mega.H))
+                if ns and "H200" in gpu.name and gpu.multi_processor_count == 132:
+                    kw["single_cross_splits"] = ns
+                else:
+                    log.warning("split Ring requires1B/102M and H200132SM; retaining auto dispatch")
             kernel = megakernel_ring.RingDecoder(mega, **kw)
             if "rr" not in opts:
                 rows_kernel = (gk, *route)
