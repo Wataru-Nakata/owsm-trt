@@ -20,7 +20,8 @@ resampling, CUDA encoder lookahead and real-model API checks run only in an allo
 
 `scripts/profile_fixed_prefetch.pbs` stages code/environment/audio/models/unchanged engines on
 `$PBS_LOCALDIR`, runs focused checks and all15 public API cases per checkpoint/worker setting,
-including an injected second-fixed-batch read failure and reuse. It then measures11 alternating
+including an injected second-fixed-batch read failure and reuse, against saved pre-extension
+outputs from2777327. It then measures11 alternating
 file-inclusive comparisons of workers0/1/2 on1B/102M, English73/Japanese12, timestamped beam5 B1/B3
 and translation B1/B8. All are whole-corpus requests: B1 means sequential one-utterance batches,
 not individual-request p95. Loading, worker startup/join and duration sorting stay inside timing.

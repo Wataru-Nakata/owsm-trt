@@ -75,7 +75,7 @@ for SIZE in 1b 102m; do
     cp -a "$REPO/.cache/engines/$NAME/v621-NVIDIA_H200-sm90-trt11.4.0.106-float16-3d0cbdc9" "$OWSM_TRT_CACHE/$NAME/"
     timeout 550 "$PY" "$LOCAL/scripts/validate_audio_prefetch_api.py" \
         --model "$LOCAL/$NAME" --manifest "$LOCAL/manifest.json" --long-audio "$LOCAL/long_110s.wav" \
-        --out "$LOCAL/results/${SIZE}_api" > "$LOCAL/results/${SIZE}_api.log" 2>&1
+        --reference "$LOCAL/prior_${SIZE}_api.json" --out "$LOCAL/results/${SIZE}_api" > "$LOCAL/results/${SIZE}_api.log" 2>&1
     printf '%s public fixed/streaming prefetch and error/reuse checks complete\n' "$SIZE" >> "$OUT/progress.log"
     for CORPUS in english japanese; do
         MANIFEST="$LOCAL/manifest.json"
