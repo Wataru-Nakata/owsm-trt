@@ -77,7 +77,7 @@ def main():
     ap.add_argument("--repeat", type=int, default=7)
     ap.add_argument("--row-numerics", type=Path,
                     help="explicit N experiment: retain a diagnosed random-KV gate failure with matching evidence")
-    ap.add_argument("--sweep", choices=("programs", "prefetch", "attention", "chunk", "rows"), default="programs")
+    ap.add_argument("--sweep", choices=("programs", "prefetch", "attention", "chunk", "rows", "ring_buffer"), default="programs")
     ap.add_argument("--long-audio")
     ap.add_argument("--split-choose", action="store_true")
     ap.add_argument("--fuse-accept", action="store_true")
@@ -109,7 +109,7 @@ def main():
     if args.sweep == "rows" and (original.m.D != 384 or original.m.F != 1536 or original.m.L != 6
                                  or base.rows_kernel is None or base.rows_kernel[0] is not None):
         raise RuntimeError("row experiment requires102M and the actual unsupported Gluon row route")
-    if args.sweep != "rows" and (original.P != 32 or original.P_solo != 64 or original.nw != 4 or original.ck != 2):
+    if args.sweep not in ("rows", "ring_buffer") and (original.P != 32 or original.P_solo != 64 or original.nw != 4 or original.ck != 2):
         raise RuntimeError("experiment targets the 1B default ring32/solo64, four-warps, chunk2 shape")
     if torch.cuda.get_device_properties(model.device).multi_processor_count < 96:
         raise RuntimeError("cannot keep96 persistent CTAs resident on this GPU")
@@ -145,8 +145,9 @@ def main():
         "attention": {"reference": {}, "no_attention_prefetch": {"prefetch_attention": False}},
         "chunk": {"reference": {}, "chunk1": {"chunk": 1}, "chunk4": {"chunk": 4}},
         "rows": {"reference": {}, "ring_rows": {}},
+        "ring_buffer": {"reference": {}, "ring64": {"ring_kb": 64}, "ring32": {"ring_kb": 32}},
     }[args.sweep]
-    exact = args.sweep in ("prefetch", "attention")
+    exact = args.sweep in ("prefetch", "attention", "ring_buffer")
     args.variants = list(settings)
     backends, checks = {"reference": base}, {}
     for name, options in settings.items():
@@ -221,8 +222,12 @@ def main():
             engine_sha256={p.name: sha256(p) for p in engines.glob("*.engine")},
             nvidia_smi=command(["nvidia-smi", "--query-gpu=name,driver_version", "--format=csv"]),
             settings=settings,
+            ring_configuration={name: dict(programs=be.kernel.P, solo=be.kernel.P_solo,
+                warps=be.kernel.nw, chunk=be.kernel.ck, slots=be.kernel.slots,
+                weight_ring_bytes=be.kernel.slots*be.kernel.ck*be.kernel.bm*64*2)
+                for name,be in backends.items()},
             classification=(
-                "E intent; same arithmetic/programs/splits, only prefetch scheduling changes"
+                "E intent; same arithmetic/programs/splits; only weight scheduling/ring capacity changes"
                 if exact
                 else "N; existing ring:rr replaces multi-row TRT calls; arithmetic and near-tie outputs may differ"
                 if args.sweep == "rows"
@@ -246,7 +251,7 @@ def main():
     for name in args.cases:
         summary[name] = run_case(
             model, args, name, items, waves, configure=configure,
-            observe=count_decoder_dispatch if args.sweep == "rows" else count_draft_dispatch
+            observe=count_decoder_dispatch if args.sweep in ("rows", "ring_buffer") else count_draft_dispatch
         )
         if any(backend.failed for backend in backends.values()):
             raise RuntimeError(f"kernel failed during complete warmup/measurement: {name}; refusing fallback timing")
@@ -263,7 +268,7 @@ def main():
     ]
     save(args.out / "output_differences.json", differences)
     if exact and differences:
-        raise RuntimeError(f"prefetch scheduling changed outputs: {differences}")
+        raise RuntimeError(f"{args.sweep} scheduling changed outputs: {differences}")
     # N tuning differences are retained for quality analysis; dispatch failures are fatal.
 
 
