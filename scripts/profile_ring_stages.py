@@ -1,4 +1,4 @@
-"""Profile unchanged Ring stages with real weights and fixed synthetic decoder state.
+"""Profile unchanged Ring stages with real weights and fixed synthetic or actual-prefill states.
 
 Run in a compute allocation. Uninstrumented CUDA-event samples, instrumented globaltimer
 stages, and optional Nsight counters are separate measurements; none is request latency.
@@ -6,22 +6,28 @@ stages, and optional Nsight counters are separate measurements; none is request 
 
 import argparse
 import importlib.metadata
+import json
 import os
 from pathlib import Path
 
 import torch
 from profile_beam import command, save, sha256, stats, wall
 
-from owsm_trt import hub, megakernel, megakernel_ring
+from owsm_trt import OWSM, hub, megakernel, megakernel_ring
+from owsm_trt.audio import load_audio
+from owsm_trt.build import engine_tag
 from owsm_trt.config import load_espnet_config, parse_config
 from owsm_trt.pipeline import _load_decoder
 
 STAGES = ("qkv", "self", "out", "crossq", "cross", "crossout", "ffn1", "ffn2")
 CASES = {
-    "plain": (1, False, False),
-    "verify8": (8, False, True),
-    "verify8_solo": (8, True, True),
-    "verify32_solo": (32, True, True),
+    "plain": (1, 1, False, False),
+    "verify8": (1, 8, False, True),
+    "verify8_solo": (1, 8, True, True),
+    "verify32_solo": (1, 32, True, True),
+    "rows3": (3, 1, False, False),
+    "rows5": (5, 1, False, False),
+    "rows8": (8, 1, False, False),
 }
 
 
@@ -78,12 +84,15 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True)
     ap.add_argument("--out", required=True, type=Path)
-    ap.add_argument("--cases", nargs="+", choices=CASES, default=list(CASES))
+    ap.add_argument("--cases", nargs="+", choices=CASES, default=["plain", "verify8", "verify8_solo", "verify32_solo"])
     ap.add_argument("--repeat", type=int, default=11)
+    ap.add_argument("--manifest", type=Path, help="use real audio/prefill states; S1 cases only")
     ap.add_argument("--ncu", action="store_true", help="bracket one warmed launch per case for Nsight")
     args = ap.parse_args()
     if args.repeat < 1:
         ap.error("repeat must be positive")
+    if args.manifest and any(CASES[name][1] != 1 for name in args.cases):
+        ap.error("real-prefill profiling requires single-token cases")
     if not os.environ.get("PBS_JOBID") and os.uname().nodename.startswith("login"):
         ap.error("model work requires a compute allocation")
     dev = torch.device("cuda")
@@ -91,9 +100,22 @@ def main():
         raise RuntimeError("Ring profiling requires the supported Hopper/Triton environment")
     files = hub.resolve(args.model)
     cfg = parse_config(load_espnet_config(files.config))
-    decoder, load_ms = wall(lambda: _load_decoder(cfg, files.checkpoint))
-    mega, prepare_ms = wall(lambda dec=decoder: megakernel.MegaDecoder(dec, dev))
-    del decoder
+    model, waves, engines = None, None, {}
+    if args.manifest:
+        model, load_ms = wall(lambda: OWSM.from_pretrained(args.model, ctc_draft=False, use_cuda_graph=False))
+        if not isinstance(model.backend.kernel, megakernel_ring.RingDecoder):
+            raise RuntimeError("real-prefill profile requires the actual Ring main kernel")
+        mega, prepare_ms = model.backend.kernel.m, None
+        items = json.loads(args.manifest.read_text())[:max(CASES[name][0] for name in args.cases)]
+        if len(items) < max(CASES[name][0] for name in args.cases):
+            ap.error("manifest has too few inputs for requested rows")
+        waves = [load_audio(it["path"]) for it in items]
+        engine_dir = hub.cache_dir() / files.name.replace("/", "--") / engine_tag(model.opts)
+        engines = {p.name: sha256(p) for p in engine_dir.glob("*.engine")}
+    else:
+        decoder, load_ms = wall(lambda: _load_decoder(cfg, files.checkpoint))
+        mega, prepare_ms = wall(lambda dec=decoder: megakernel.MegaDecoder(dec, dev))
+        del decoder
     kernels = {"reference": megakernel_ring.RingDecoder(mega)}
     if not args.ncu:
         kernels["instrumented"] = megakernel_ring.RingDecoder(mega, ts=True)
@@ -110,10 +132,14 @@ def main():
             load_ms=load_ms,
             weight_prepare_ms=prepare_ms,
             ncu=args.ncu,
-            scope="real model weights, synthetic fixed self/cross state; no encoder, audio, or request timing",
+            scope=("real audio/prefill fixed states" if args.manifest else "real weights, synthetic fixed states")
+                  + "; decoder-only timings exclude audio/encoder/prefill; not request latency",
+            manifest_sha256=sha256(args.manifest) if args.manifest else None,
+            engine_sha256=engines,
             default_ring=dict(
                 programs=kernels["reference"].P,
                 solo=kernels["reference"].P_solo,
+                rows=kernels["reference"].P_rows,
                 warps=kernels["reference"].nw,
                 chunk=kernels["reference"].ck,
             ),
@@ -121,19 +147,41 @@ def main():
     )
     torch.manual_seed(18)
     layers, h, d, c = cfg.dec_layers, cfg.dec_heads, cfg.d_model // cfg.dec_heads, 128
-    cross = [torch.randn(layers, 1, h, cfg.enc_frames, d, device=dev, dtype=torch.float16) * 0.1 for _ in range(2)]
-    prefix = [torch.randn(layers, 1, h, c, d, device=dev, dtype=torch.float16) * 0.1 for _ in range(2)]
+    synthetic = {}
+    if model is None:
+        for rows in sorted({CASES[name][0] for name in args.cases}):
+            cross = [torch.randn(layers, rows, h, cfg.enc_frames, d, device=dev, dtype=torch.float16) * .1
+                     for _ in range(2)]
+            prefix = [torch.randn(layers, rows, h, c, d, device=dev, dtype=torch.float16) * .1
+                      for _ in range(2)]
+            synthetic[rows] = (prefix, cross)
     summary = {}
     for name in args.cases:
-        w, solo, argmax = CASES[name]
-        tokens = torch.randint(cfg.vocab_size, (1, w), device=dev)
-        offset = torch.full((1,), 32, device=dev, dtype=torch.long)
+        rows, w, solo, argmax = CASES[name]
+        if model is not None:
+            session = model._session(rows)
+            session.encode(model._features(waves[:rows]))
+            primer = torch.tensor([model._primer("eng", "asr", False, None)] * rows, device=dev)
+            logits, kv, c = session._prefill(primer, session.cross_k, session.cross_v)
+            length = primer.shape[1]
+            k, v = session.caches[c]
+            k[:, :, :, :length].copy_(kv[:, 0])
+            v[:, :, :, :length].copy_(kv[:, 1])
+            session._rules_start(primer)
+            tokens = session._rules_mask(logits).argmax(-1).unsqueeze(1)
+            offset = torch.full((rows,), length, device=dev, dtype=torch.long)
+            prefix, cross = (k, v), (session.cross_k, session.cross_v)
+        else:
+            length = 32
+            tokens = torch.randint(cfg.vocab_size, (rows, w), device=dev)
+            offset = torch.full((rows,), length, device=dev, dtype=torch.long)
+            prefix, cross = synthetic[rows]
         runs, state = {}, {}
         for mode, kernel in kernels.items():
             k, v = (x.clone() for x in prefix)
-            logits = torch.zeros(1, w, cfg.vocab_size, device=dev)
-            new = torch.zeros(layers, 2, 1, h, w, d, device=dev, dtype=torch.float16)
-            pred = torch.zeros(1, w, device=dev, dtype=torch.long) if argmax else None
+            logits = torch.zeros(rows, w, cfg.vocab_size, device=dev)
+            new = torch.zeros(layers, 2, rows, h, w, d, device=dev, dtype=torch.float16)
+            pred = torch.zeros(rows, w, device=dev, dtype=torch.long) if argmax else None
             runs[mode] = kernel.step_fn(tokens, offset, k, v, *cross, logits, new, solo=solo, pred=pred)
             state[mode] = (logits, k, v, pred)
             for _ in range(3):
@@ -146,7 +194,7 @@ def main():
             torch.cuda.synchronize()
             torch.cuda.profiler.stop()
             save(
-                args.out / f"{name}.json", dict(completed=True, window=w, programs=runs["reference"].programs)
+                args.out / f"{name}.json", dict(completed=True, rows=rows, window=w, programs=runs["reference"].programs)
             )
             continue
         for a, b in zip(state["reference"], state["instrumented"]):
@@ -171,12 +219,14 @@ def main():
             kernel.check()
             stages.append(stage_record(kernel.ts, layers, runs["instrumented"].programs, argmax))
         summary[name] = dict(
+            rows=rows,
             window=w,
             programs=runs["reference"].programs,
             cross_splits=runs["reference"].const["NS"],
             argmax=argmax,
             cache=c,
-            offset=32,
+            offset=length,
+            real_prefill=args.manifest is not None,
             outputs_and_cache_exact=True,
             kernel_us={mode: stats(x) for mode, x in samples.items()},
             samples_us=samples,

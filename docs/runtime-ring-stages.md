@@ -60,3 +60,19 @@ Greedy completion checks every1/2 steps also did not produce a broadly better la
 interval4 remains the default (runtime-greedy-checks.md). The next independent measurements use
 existing attention-prefetch and weight-chunk settings (runtime-ring-memory.md), with N-class
 accumulation grouping explicitly separated from E-intent scheduling.
+
+
+## Prepared102M row attribution (not yet measured)
+
+`profile_ring_stages.py --cases rows3 rows5 rows8 --manifest /local/manifest.json` now uses
+actual audio, the same cached encoder/prefill engines and the first selected token of each
+plain-ASR row. It times only the subsequent Ring decoder call, with fixed state; encoder,
+prefill and loading are excluded. `profile_ring_row_stages.pbs` compares these diagnostic states
+with separate synthetic cache128/offset32 states,15 repeats. The original single-row cases
+and default settings remain available. The main runtime and production routing are unchanged.
+
+Both instrumented and uninstrumented calls must have identical logits/cache. Stage clocks
+contain instrumentation overhead; GPU-event values and graph replay samples remain separate.
+This attribution targets the existing102M row route measured in2774140. It cannot establish
+request latency, numerical accuracy versus fp32, later-step behavior or a gain for any proposed
+parameter/kernel change. Those require separate same-route correctness and wall measurements.
