@@ -243,7 +243,6 @@ class OWSM:
         self.frontend_graph = frontend_graph
         self._frontend_graph_batch_limit = frontend_graph_max_batch
         self._frontend_reuse_warmup_stream = True
-        self._frontend_direct_input = False  # Experimental E path; warmed graphs only.
         self._audio_prefetch_workers = audio_prefetch_workers
         self.greedy_skip_finished = greedy_kernels
         self.greedy_plain_solo = greedy_kernels
@@ -602,11 +601,6 @@ class OWSM:
         # the padding after them is not transformed (the same frames: the reflection at the end of the
         # shorter input is past them).
         length = min(n, (frames - 1) * self.cfg.hop_length + self.cfg.n_fft // 2 + 1)
-        if (self._frontend_direct_input and self.frontend_graph and self.use_cuda_graph
-                and self._frontend_replay is not None and len(waves) <= self._frontend_graph_batch_limit):
-            direct = self._frontend_replay.try_waves(waves, length, self.device)
-            if direct is not None:
-                return direct[:, :frames]
         batch = torch.zeros(len(waves), length, device=self.device)  # pad on the device: copy only the audio
         for row, w in zip(batch, waves):
             w = w[:length]
