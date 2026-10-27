@@ -88,3 +88,23 @@ production routing stay unchanged. Both variant pools coexist, cold/JIT order is
 allocation-wideGPU telemetry includes all phases. The result is an N experiment, not bitwise
 replacement of TensorRT or new model arithmetic.
 [Full differences, quality, timing and environment](runtime-ring-wide-results-2777897.json).
+
+
+Independent frozen-code replication2777935 completed10route tests, all10conditions and all
+extras. Every baseline/candidate output exactly matches2777897, including all previously
+reported N differences. Changed-shape cases again improved in all11paired totals:
+
+| Condition | English repeat RTFx change | Japanese repeat RTFx change |
+|---|---:|---:|
+| Beam5 timestamps B2 | +27.32% | +36.05% |
+| Beam5 timestamps B3 | +24.09% | +35.64% |
+| Translation B10 | +24.38% | +21.98% |
+| Translation B16 | +16.21% | +0.16% unchanged R12control |
+
+Output/quality/decoder-count differences remain as above. B1beam and Japanese B16 are unchanged
+controls and their small timing shifts are not gains. Public `decoder_kernel="ring:wide"`
+integration is prepared, with26CPU routing/fallback checks passed; GPU API verification remains
+pending. It starts from the auto route (including its existing single-row numerical check),
+adds only the reviewed R10/15/16 S1 calls and retains logged auto fallback on unsupported
+configurations or setup errors. Auto/default and existing `ring:rr` remain unchanged.
+[Independent paired results](runtime-ring-wide-results-2777935.json).
