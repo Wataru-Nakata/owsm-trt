@@ -4,10 +4,12 @@ import argparse
 import importlib.metadata
 import json
 import os
+from collections import Counter
 from pathlib import Path
 
 import torch
 from profile_beam import command, save, sha256, wall
+from profile_graph_launches import LabelledGraph, graph_labels
 from profile_ring_programs import count_decoder_dispatch
 from profile_runtime import run_case
 
@@ -64,6 +66,8 @@ def main():
     args = ap.parse_args()
     if not os.environ.get('PBS_JOBID'):
         ap.error('compute allocation required')
+    if args.repeat < 1:
+        ap.error('repeat must be positive')
     args.trace,args.variants = False,['reference','solo32','solo48']
     model,load_ms = wall(lambda: OWSM.from_pretrained(args.model))
     base = model.backend
@@ -95,12 +99,32 @@ def main():
     def configure(m,mode):
         m.backend = backends[mode]
 
+    def observe(m, call):
+        counts = Counter()
+
+        class CountedGraph(LabelledGraph):
+            def replay(self):
+                counts[self.label] += 1
+                self.graph.replay()
+
+        with graph_labels(m, wrapper=CountedGraph):
+            result = count_decoder_dispatch(m, call)
+        result['actual_graph_replays'] = dict(counts)
+        result['plain_step_configuration'] = {
+            str(key): {str(c): dict(programs=getattr(fn,'programs',None),
+                                   cross_splits=getattr(fn,'const',{}).get('NS'),
+                                   dispatch=getattr(fn,'dispatch',None),
+                                   fallback=getattr(fn,'fallback_reason',None)) for c,fn in sess._steps.items()}
+            for key,sess in m._sessions.items()}
+        result['scope'] += ' Separate graph replay counts with prepared bucket configuration; no per-step GPU reads or CUPTI.'
+        return result
+
     summary = {}
     cases = ['plain_greedy','plain_ts','translation','single_ts','stream_ts_b8']
     if args.long_audio:
         cases.append('long_greedy')
     for case in cases:
-        summary[case] = run_case(model,args,case,items,waves,configure=configure,observe=count_decoder_dispatch)
+        summary[case] = run_case(model,args,case,items,waves,configure=configure,observe=observe)
         save(args.out/'summary.json',summary)
         assert all(v['equal']==v['total'] for mode in summary[case].values() for v in mode['agreement'].values())
         assert all(not b.failed for b in backends.values())
