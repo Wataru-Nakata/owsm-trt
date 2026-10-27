@@ -1,13 +1,31 @@
 """Preserve every original host check and bucket transition; GPU state comparisons run on compute."""
 
+import gc
+import weakref
 from types import SimpleNamespace
 
 import pytest
 import torch
-from graph_chunk_experiment import prepare, run_chunks
+from graph_chunk_experiment import install_runner, prepare, run_chunks
 from test_beam import CFG
 
 from owsm_trt.runtime import BeamSession, GreedySession, TimestampRules, _Session
+
+
+@pytest.mark.parametrize('kind', [GreedySession, BeamSession])
+def test_runner_does_not_defer_session_destruction_until_cyclic_gc(kind):
+    was_enabled = gc.isenabled()
+    gc.disable()
+    try:
+        session = object.__new__(kind)
+        install_runner(session, 4)
+        assert session._single_graph_run is kind._run
+        observed = weakref.ref(session)
+        del session
+        assert observed() is None
+    finally:
+        if was_enabled:
+            gc.enable()
 
 
 @pytest.mark.parametrize('start,steps,stop', [(2, 0, 50), (2, 1, 0), (2, 27, 50), (3, 20, 5), (7, 8, 0), (14, 12, 22)])
@@ -99,3 +117,6 @@ def test_four_steps_match_single_graph_state_buckets_limits_and_reuse(beam, batc
                     torch.testing.assert_close(getattr(candidate, key), getattr(reference, key), rtol=0, atol=0)
                 for b, end_at in enumerate(reference.best_end.tolist()):
                     torch.testing.assert_close(candidate.best_seq[b, :end_at], reference.best_seq[b, :end_at], rtol=0, atol=0)
+    lifetime = weakref.ref(candidate)
+    del candidate
+    assert lifetime() is None

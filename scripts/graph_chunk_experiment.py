@@ -1,14 +1,12 @@
 """Profiler-only four-step graph experiment; production sessions/defaults are not modified."""
 
-from types import MethodType
-
-from owsm_trt.runtime import GreedySession, capture_graph
+from owsm_trt.runtime import BeamSession, GreedySession, capture_graph
 
 
 def run_chunks(self, c, pos, steps, done):
     if (self.chunk != self._chunk_width or getattr(self, 'diagnostics', False)
             or getattr(self, 'compact_tail', False)):
-        return self._single_graph_run(c, pos, steps, done)
+        return self._single_graph_run(self, c, pos, steps, done)
     while steps > 0:
         if pos >= c:
             c = self._grow(c, pos + 1)
@@ -24,6 +22,24 @@ def run_chunks(self, c, pos, steps, done):
             break
 
 
+class ChunkGreedySession(GreedySession):
+    _run = run_chunks
+
+
+class ChunkBeamSession(BeamSession):
+    _run = run_chunks
+
+
+def install_runner(session, width):
+    # Instance-bound methods keep the session/graphs in a cycle. A later GC may destroy those
+    # graphs during another capture, where CUDA forbids graph destruction. Keep only an unbound
+    # fallback and use normal class binding so ordinary reference counting releases the graphs.
+    original = type(session)
+    session._single_graph_run = original._run
+    session._chunk_width = width
+    session.__class__ = {GreedySession: ChunkGreedySession, BeamSession: ChunkBeamSession}[original]
+
+
 def prepare(session, width=4):
     """Cold-only, before request prefill: retain original graphs for boundaries and small buckets."""
     if width != 4:
@@ -31,7 +47,9 @@ def prepare(session, width=4):
     if hasattr(session, '_chunk_graph_info'):
         return session._chunk_graph_info
     reason = None
-    if session.device.type != 'cuda' or not session.use_cuda_graph:
+    if type(session) not in (GreedySession, BeamSession):
+        reason = 'experiment supports the concrete greedy/beam session types only'
+    elif session.device.type != 'cuda' or not session.use_cuda_graph:
         reason = 'CUDA graphs required'
     elif session.chunk != width:
         reason = 'preserve existing host-check interval'
@@ -60,9 +78,7 @@ def prepare(session, width=4):
         session._chunk_graphs[c] = capture_graph(body)
         info['captures'].append(c)
     if session._chunk_graphs:
-        session._single_graph_run = session._run
-        session._chunk_width = width
-        session._run = MethodType(run_chunks, session)
+        install_runner(session, width)
     else:
         info['fallback_reason'] = 'buckets too small for cold warmup/capture'
     return info

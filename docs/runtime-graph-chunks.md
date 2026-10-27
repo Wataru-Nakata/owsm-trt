@@ -14,7 +14,7 @@ checks done at exactly the previous positions. It does not cross a cache bucket 
 limit, suppress EOS/history updates, change global top-K, or extend an interval1 beam request.
 Default B1 beam is an unchanged control. CTC-drafted decoding and compact-tail modes are excluded.
 
-Six synthetic CPU scheduling checks pass.48 compute-node state cases compare one/four-step graphs
+Eight synthetic CPU checks cover scheduling and cycle-free session lifetime.48 compute-node state cases compare one/four-step graphs
 for greedy/beam5, B1/B3, timestamp/notimestamp, partial/early/no natural EOS, fused/reference selection,
 prompt lengths3/7/14/29, limits1/5/capacity, bucket edges and request reuse. Comparisons cover returned
 outputs, stop/score/time state, valid sequence prefixes and written KV; uninitialized future slots
@@ -39,3 +39,11 @@ python scripts/profile_graph_chunks.py --model /local/owsm_v4_medium_1B \
 
 The PBS runner performs the GPU checks and stages all code, audio, environment, models and logs
 on `$PBS_LOCALDIR`. Any performance result remains pending; no graph-chunk speedup is claimed.
+
+First allocation2777825 exited1 after12 checks passed. A later reference-session capture failed
+with CUDA stream-capture invalidation and graph-reset warnings, before any performance phase.
+The experimental installer held two bound methods on its session, creating a reference cycle.
+The revised installer uses normal subclass binding and an unbound fallback, allowing reference
+counting to destroy session graphs outside subsequent captures. Two CPU lifetime guards and
+GPU end-of-case lifetime assertions cover this defect; confirming the complete GPU run remains
+pending. The failure is retained; no speed result was produced. Production runtime is unchanged.
