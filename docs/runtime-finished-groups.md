@@ -79,17 +79,42 @@ See [replication evidence](runtime-finished-groups-results-2774007.json) and
 `outputs/runtime-2774007/`. Shared-process VRAM/cold observations are not isolated improvements.
 
 
-## Ring groups: prepared, GPU verification pending
+## Ring groups: measured and rejected2775878
 
-The existing R1 Ring guard is extended to an immutable vector for S1 multi-row calls. All CTAs
+Frozen36940c8 extended the existing R1 Ring guard to an immutable vector for S1 multi-row calls. All CTAs
 reduce the same flags before producer/barrier setup; partial groups run the full decoder. The
-scalar R1 path is retained. Strided/non-vector flags are rejected. This uses the existing public
-`greedy_kernels` group capability; auto102M still routes multi-row calls to TensorRT.
+scalar R1 path is retained. Strided/non-vector flags are rejected. The experiment used the existing public `greedy_kernels` group capability. The Ring extension was
+removed after the regression below; the adopted single-row Ring and multi-row Gluon guards remain.
 
-`profile_ring_finished_groups.pbs` prepares D384/F1536 R2..8 active/partial/all-ended/restart,
+`profile_ring_finished_groups.pbs` at36940c8 ran D384/F1536 R2..8 active/partial/all-ended/restart,
 argmax/logits, eager/CUDA-graph tests and public Ring rollback checks. It compares group guard
 OFF/ON within the same explicit `decoder_kernel="ring:rr"` route, retaining the adopted B1 guard
 in both modes. English73/Japanese12, B3 ASR/timestamp/translation and B8 translation use11
 alternating whole-list pairs; English extras include silence/noise, prompts, full/long windows,
 drafted decoding and lookahead. This is an E comparison within Ring; the separately measured
-Ring-versus-auto numerical/quality differences still apply. No additional speed claim yet.
+Ring-versus-auto numerical/quality differences still apply. No additional speedup is adopted.
+
+
+Job2775878 completed107 focused tests and31 naive regressions. All eight English/Japanese
+conditions, seven English extras and the12-case public API rollback check had exact output.
+Eleven alternating warmed whole-list pairs, same engines/checkpoint:
+
+|102M / Ring:rr condition|English RTFx change|Japanese RTFx change|
+|---|---:|---:|
+|Plain ASR B3|-2.03%|-4.40%|
+|Timestamp ASR B3|-0.86%|-2.82%|
+|Translation B3|+0.11% (noise)|-5.13%|
+|Translation B8|+1.28% (mixed pairs)|-4.93%|
+
+Every pair was negative for both ASR conditions and Japanese translation. English translation
+B8 ranged-2.39..+2.98%; the small median gain does not offset broad regressions. Separate GPU
+counters showed some completed-group calls were skipped, but Japanese B8 had no all-ended call
+to skip. The added active-call guard cost outweighed the saved work in these measurements.
+The extension is rejected and removed from runtime; no additional opt-in flag is retained.
+The earlier Gluon result cannot be transferred to this smaller/faster Ring decoder.
+
+Reproduce with frozen36940c8 and its `scripts/profile_ring_finished_groups.pbs`; the current
+Ring route intentionally fails that profiler's unsupported-group preflight. Raw artifacts remain
+at `outputs/runtime-2775878/`; [timings, counters, exact agreements and environment](runtime-ring-finished-groups-results-2775878.json).
+Whole-list percentiles are not request p95; cold/cache order and co-resident variants prevent an
+isolated memory/startup claim. PBS Stageout_status1 is retained despite complete artifacts/exit0.

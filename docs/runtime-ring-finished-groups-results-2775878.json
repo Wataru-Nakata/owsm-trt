@@ -1,0 +1,828 @@
+{
+  "job": "2775878",
+  "requested_models": [
+    "102m"
+  ],
+  "conditions": [
+    {
+      "model": "102m",
+      "corpus": "english",
+      "case": "plain_b3",
+      "reference_p50_ms": 216.4472250151448,
+      "skip_p50_ms": 220.93105997191742,
+      "rtfx_percent": -2.0295176954035155,
+      "reference_p95_ms": 217.43758849333972,
+      "skip_p95_ms": 222.01098001096398,
+      "paired_rtfx_percent": {
+        "median": -2.1685801440904817,
+        "min": -2.9172433855132684,
+        "max": -1.3857821141952553,
+        "positive": 0,
+        "n": 11
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        }
+      },
+      "quality": {
+        "reference": {
+          "metric": "WER",
+          "reference_units": 1150,
+          "errors": 100,
+          "rate": 0.08695652173913043,
+          "annotated_utterances": 73,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "skip": {
+          "metric": "WER",
+          "reference_units": 1150,
+          "errors": 100,
+          "rate": 0.08695652173913043,
+          "annotated_utterances": 73,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "diagnostic_calls": {
+        "reference": {
+          "total": 700,
+          "after_eos": 31
+        },
+        "skip": {
+          "total": 700,
+          "after_eos": 31
+        }
+      },
+      "timing": {
+        "reference": {
+          "n": 11,
+          "p50": 216.4472250151448,
+          "p95": 217.43758849333972,
+          "min": 215.29905102215707,
+          "max": 217.51269901869819,
+          "stdev": 0.6613250757918188,
+          "rtfx": 2222.411837187296
+        },
+        "skip": {
+          "n": 11,
+          "p50": 220.93105997191742,
+          "p95": 222.01098001096398,
+          "min": 219.82755803037435,
+          "max": 222.28327102493495,
+          "stdev": 0.6838370642978189,
+          "rtfx": 2177.3075956868374
+        }
+      },
+      "shared_process_peak_cuda_bytes": 2341815296,
+      "full_equal": true,
+      "after_eos_call_percent": 4.428571428571429,
+      "group_skips": {
+        "incremental_group_skips": 29,
+        "multi_row_calls": 596,
+        "already_guarded_b1_skips": 2,
+        "reference_compute_calls": 698,
+        "candidate_compute_calls": 669,
+        "note": "Derived from actual separate done-entry counters and GPU-tested guard contracts. Both variants already skip B1 EOS calls; no per-CTA time attribution."
+      }
+    },
+    {
+      "model": "102m",
+      "corpus": "english",
+      "case": "plain_ts_b3",
+      "reference_p50_ms": 232.2990369866602,
+      "skip_p50_ms": 234.30949199246243,
+      "rtfx_percent": -0.8580339570139484,
+      "reference_p95_ms": 233.2714814983774,
+      "skip_p95_ms": 235.50178803270683,
+      "paired_rtfx_percent": {
+        "median": -0.9716625857469352,
+        "min": -1.7785851068514713,
+        "max": -0.08480874933476379,
+        "positive": 0,
+        "n": 11
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        }
+      },
+      "quality": {
+        "reference": {
+          "metric": "WER",
+          "reference_units": 1150,
+          "errors": 100,
+          "rate": 0.08695652173913043,
+          "annotated_utterances": 73,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "skip": {
+          "metric": "WER",
+          "reference_units": 1150,
+          "errors": 100,
+          "rate": 0.08695652173913043,
+          "annotated_utterances": 73,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "diagnostic_calls": {
+        "reference": {
+          "total": 761,
+          "after_eos": 40
+        },
+        "skip": {
+          "total": 761,
+          "after_eos": 40
+        }
+      },
+      "timing": {
+        "reference": {
+          "n": 11,
+          "p50": 232.2990369866602,
+          "p95": 233.2714814983774,
+          "min": 230.1954790018499,
+          "max": 233.33800700493157,
+          "stdev": 1.0416291155637567,
+          "rtfx": 2070.7570777730925
+        },
+        "skip": {
+          "n": 11,
+          "p50": 234.30949199246243,
+          "p95": 235.50178803270683,
+          "min": 232.68123500747606,
+          "max": 235.64891004934907,
+          "stdev": 0.7965780904922127,
+          "rtfx": 2052.9892788785296
+        }
+      },
+      "shared_process_peak_cuda_bytes": 2355288064,
+      "full_equal": true,
+      "after_eos_call_percent": 5.256241787122208,
+      "group_skips": {
+        "incremental_group_skips": 38,
+        "multi_row_calls": 652,
+        "already_guarded_b1_skips": 2,
+        "reference_compute_calls": 759,
+        "candidate_compute_calls": 721,
+        "note": "Derived from actual separate done-entry counters and GPU-tested guard contracts. Both variants already skip B1 EOS calls; no per-CTA time attribution."
+      }
+    },
+    {
+      "model": "102m",
+      "corpus": "english",
+      "case": "translation_b3",
+      "reference_p50_ms": 222.4360490217805,
+      "skip_p50_ms": 222.18598297331482,
+      "rtfx_percent": 0.11254807576934756,
+      "reference_p95_ms": 223.5507079749368,
+      "skip_p95_ms": 223.233467026148,
+      "paired_rtfx_percent": {
+        "median": 0.11725250214684735,
+        "min": -0.5596473763882837,
+        "max": 0.7719596239235793,
+        "positive": 8,
+        "n": 11
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        }
+      },
+      "quality": {
+        "reference": {
+          "unmeasured": "No reference English translations"
+        },
+        "skip": {
+          "unmeasured": "No reference English translations"
+        }
+      },
+      "diagnostic_calls": {
+        "reference": {
+          "total": 720,
+          "after_eos": 46
+        },
+        "skip": {
+          "total": 720,
+          "after_eos": 46
+        }
+      },
+      "timing": {
+        "reference": {
+          "n": 11,
+          "p50": 222.4360490217805,
+          "p95": 223.5507079749368,
+          "min": 220.92676104512066,
+          "max": 224.06928898999467,
+          "stdev": 0.8891902134855663,
+          "rtfx": 2162.5760622681173
+        },
+        "skip": {
+          "n": 11,
+          "p50": 222.18598297331482,
+          "p95": 223.233467026148,
+          "min": 220.84310103673488,
+          "max": 223.8917690119706,
+          "stdev": 0.8156505683284885,
+          "rtfx": 2165.010000013249
+        }
+      },
+      "shared_process_peak_cuda_bytes": 2356434432,
+      "full_equal": true,
+      "after_eos_call_percent": 6.388888888888889,
+      "group_skips": {
+        "incremental_group_skips": 44,
+        "multi_row_calls": 612,
+        "already_guarded_b1_skips": 2,
+        "reference_compute_calls": 718,
+        "candidate_compute_calls": 674,
+        "note": "Derived from actual separate done-entry counters and GPU-tested guard contracts. Both variants already skip B1 EOS calls; no per-CTA time attribution."
+      }
+    },
+    {
+      "model": "102m",
+      "corpus": "english",
+      "case": "translation_b8",
+      "reference_p50_ms": 142.52765901619568,
+      "skip_p50_ms": 140.7239029649645,
+      "rtfx_percent": 1.2817694884999398,
+      "reference_p95_ms": 144.5448735030368,
+      "skip_p95_ms": 143.26079800957814,
+      "paired_rtfx_percent": {
+        "median": 1.1946052079519598,
+        "min": -2.3872980081178774,
+        "max": 2.976688767878488,
+        "positive": 10,
+        "n": 11
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 73,
+          "total": 73,
+          "different_ids": []
+        }
+      },
+      "quality": {
+        "reference": {
+          "unmeasured": "No reference English translations"
+        },
+        "skip": {
+          "unmeasured": "No reference English translations"
+        }
+      },
+      "diagnostic_calls": {
+        "reference": {
+          "total": 372,
+          "after_eos": 22
+        },
+        "skip": {
+          "total": 372,
+          "after_eos": 22
+        }
+      },
+      "timing": {
+        "reference": {
+          "n": 11,
+          "p50": 142.52765901619568,
+          "p95": 144.5448735030368,
+          "min": 141.05537097202614,
+          "max": 145.94131999183446,
+          "stdev": 1.254404512213911,
+          "rtfx": 3375.0282458883235
+        },
+        "skip": {
+          "n": 11,
+          "p50": 140.7239029649645,
+          "p95": 143.26079800957814,
+          "min": 139.78399499319494,
+          "max": 144.78649001102895,
+          "stdev": 1.3246931591600069,
+          "rtfx": 3418.288328172375
+        }
+      },
+      "shared_process_peak_cuda_bytes": 2556763136,
+      "full_equal": true,
+      "after_eos_call_percent": 5.913978494623656,
+      "group_skips": {
+        "incremental_group_skips": 20,
+        "multi_row_calls": 264,
+        "already_guarded_b1_skips": 2,
+        "reference_compute_calls": 370,
+        "candidate_compute_calls": 350,
+        "note": "Derived from actual separate done-entry counters and GPU-tested guard contracts. Both variants already skip B1 EOS calls; no per-CTA time attribution."
+      }
+    },
+    {
+      "model": "102m",
+      "corpus": "japanese",
+      "case": "plain_b3",
+      "reference_p50_ms": 45.089570980053395,
+      "skip_p50_ms": 47.1649129758589,
+      "rtfx_percent": -4.400181967615957,
+      "reference_p95_ms": 45.796261983923614,
+      "skip_p95_ms": 47.36667749239132,
+      "paired_rtfx_percent": {
+        "median": -4.216441386002123,
+        "min": -4.53259523853049,
+        "max": -2.6655432454605,
+        "positive": 0,
+        "n": 11
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        }
+      },
+      "quality": {
+        "reference": {
+          "metric": "CER",
+          "reference_units": 592,
+          "errors": 51,
+          "rate": 0.08614864864864864,
+          "annotated_utterances": 12,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "skip": {
+          "metric": "CER",
+          "reference_units": 592,
+          "errors": 51,
+          "rate": 0.08614864864864864,
+          "annotated_utterances": 12,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "diagnostic_calls": {
+        "reference": {
+          "total": 160,
+          "after_eos": 3
+        },
+        "skip": {
+          "total": 160,
+          "after_eos": 3
+        }
+      },
+      "timing": {
+        "reference": {
+          "n": 11,
+          "p50": 45.089570980053395,
+          "p95": 45.796261983923614,
+          "min": 45.02249200595543,
+          "max": 45.944478013552725,
+          "stdev": 0.2860704074875041,
+          "rtfx": 3493.047207516666
+        },
+        "skip": {
+          "n": 11,
+          "p50": 47.1649129758589,
+          "p95": 47.36667749239132,
+          "min": 46.87967896461487,
+          "max": 47.45531000662595,
+          "stdev": 0.1375626679464105,
+          "rtfx": 3339.3467741712047
+        }
+      },
+      "shared_process_peak_cuda_bytes": 2258853888,
+      "full_equal": true,
+      "after_eos_call_percent": 1.875,
+      "group_skips": {
+        "incremental_group_skips": 3,
+        "multi_row_calls": 160,
+        "already_guarded_b1_skips": 0,
+        "reference_compute_calls": 160,
+        "candidate_compute_calls": 157,
+        "note": "Derived from actual separate done-entry counters and GPU-tested guard contracts. Both variants already skip B1 EOS calls; no per-CTA time attribution."
+      }
+    },
+    {
+      "model": "102m",
+      "corpus": "japanese",
+      "case": "plain_ts_b3",
+      "reference_p50_ms": 48.24550205375999,
+      "skip_p50_ms": 49.64564699912444,
+      "rtfx_percent": -2.8202773656855307,
+      "reference_p95_ms": 48.47055301070213,
+      "skip_p95_ms": 49.867345980601385,
+      "paired_rtfx_percent": {
+        "median": -3.0020626033584574,
+        "min": -3.3878447404117717,
+        "max": -1.8319579943048003,
+        "positive": 0,
+        "n": 11
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        }
+      },
+      "quality": {
+        "reference": {
+          "metric": "CER",
+          "reference_units": 592,
+          "errors": 51,
+          "rate": 0.08614864864864864,
+          "annotated_utterances": 12,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "skip": {
+          "metric": "CER",
+          "reference_units": 592,
+          "errors": 51,
+          "rate": 0.08614864864864864,
+          "annotated_utterances": 12,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "diagnostic_calls": {
+        "reference": {
+          "total": 173,
+          "after_eos": 6
+        },
+        "skip": {
+          "total": 173,
+          "after_eos": 6
+        }
+      },
+      "timing": {
+        "reference": {
+          "n": 11,
+          "p50": 48.24550205375999,
+          "p95": 48.47055301070213,
+          "min": 48.04379999404773,
+          "max": 48.59253502218053,
+          "stdev": 0.14912425193251252,
+          "rtfx": 3264.5530317934645
+        },
+        "skip": {
+          "n": 11,
+          "p50": 49.64564699912444,
+          "p95": 49.867345980601385,
+          "min": 49.121757969260216,
+          "max": 49.95868098922074,
+          "stdev": 0.1978073041088406,
+          "rtfx": 3172.4835815469924
+        }
+      },
+      "shared_process_peak_cuda_bytes": 2301326848,
+      "full_equal": true,
+      "after_eos_call_percent": 3.468208092485549,
+      "group_skips": {
+        "incremental_group_skips": 6,
+        "multi_row_calls": 173,
+        "already_guarded_b1_skips": 0,
+        "reference_compute_calls": 173,
+        "candidate_compute_calls": 167,
+        "note": "Derived from actual separate done-entry counters and GPU-tested guard contracts. Both variants already skip B1 EOS calls; no per-CTA time attribution."
+      }
+    },
+    {
+      "model": "102m",
+      "corpus": "japanese",
+      "case": "translation_b3",
+      "reference_p50_ms": 200.32343897037208,
+      "skip_p50_ms": 211.14989096531644,
+      "rtfx_percent": -5.127377497307217,
+      "reference_p95_ms": 201.13676600158215,
+      "skip_p95_ms": 211.3360099901911,
+      "paired_rtfx_percent": {
+        "median": -5.089316394590327,
+        "min": -5.326427094818397,
+        "max": -4.774435406959787,
+        "positive": 0,
+        "n": 11
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        }
+      },
+      "quality": {
+        "reference": {
+          "unmeasured": "No reference English translations"
+        },
+        "skip": {
+          "unmeasured": "No reference English translations"
+        }
+      },
+      "diagnostic_calls": {
+        "reference": {
+          "total": 830,
+          "after_eos": 6
+        },
+        "skip": {
+          "total": 830,
+          "after_eos": 6
+        }
+      },
+      "timing": {
+        "reference": {
+          "n": 11,
+          "p50": 200.32343897037208,
+          "p95": 201.13676600158215,
+          "min": 200.01284999307245,
+          "max": 201.29179599462077,
+          "stdev": 0.39322602225906716,
+          "rtfx": 786.2285152926828
+        },
+        "skip": {
+          "n": 11,
+          "p50": 211.14989096531644,
+          "p95": 211.3360099901911,
+          "min": 210.35604702774435,
+          "max": 211.38419798808172,
+          "stdev": 0.2691468562681878,
+          "rtfx": 745.9156113221532
+        }
+      },
+      "shared_process_peak_cuda_bytes": 2303244288,
+      "full_equal": true,
+      "after_eos_call_percent": 0.7228915662650602,
+      "group_skips": {
+        "incremental_group_skips": 6,
+        "multi_row_calls": 830,
+        "already_guarded_b1_skips": 0,
+        "reference_compute_calls": 830,
+        "candidate_compute_calls": 824,
+        "note": "Derived from actual separate done-entry counters and GPU-tested guard contracts. Both variants already skip B1 EOS calls; no per-CTA time attribution."
+      }
+    },
+    {
+      "model": "102m",
+      "corpus": "japanese",
+      "case": "translation_b8",
+      "reference_p50_ms": 223.00078300759196,
+      "skip_p50_ms": 234.5694589894265,
+      "rtfx_percent": -4.931876481991637,
+      "reference_p95_ms": 223.32252652267925,
+      "skip_p95_ms": 234.73362447111867,
+      "paired_rtfx_percent": {
+        "median": -4.9491614951529765,
+        "min": -5.350569432485686,
+        "max": -4.588291685839019,
+        "positive": 0,
+        "n": 11
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 12,
+          "total": 12,
+          "different_ids": []
+        }
+      },
+      "quality": {
+        "reference": {
+          "unmeasured": "No reference English translations"
+        },
+        "skip": {
+          "unmeasured": "No reference English translations"
+        }
+      },
+      "diagnostic_calls": {
+        "reference": {
+          "total": 746,
+          "after_eos": 0
+        },
+        "skip": {
+          "total": 746,
+          "after_eos": 0
+        }
+      },
+      "timing": {
+        "reference": {
+          "n": 11,
+          "p50": 223.00078300759196,
+          "p95": 223.32252652267925,
+          "min": 222.12267597205937,
+          "max": 223.52080402197316,
+          "stdev": 0.32394513427573673,
+          "rtfx": 706.2755469994829
+        },
+        "skip": {
+          "n": 11,
+          "p50": 234.5694589894265,
+          "p95": 234.73362447111867,
+          "min": 233.85416000382975,
+          "max": 234.7766129532829,
+          "stdev": 0.30934722366686157,
+          "rtfx": 671.4429093989577
+        }
+      },
+      "shared_process_peak_cuda_bytes": 2579926528,
+      "full_equal": true,
+      "after_eos_call_percent": 0.0,
+      "group_skips": {
+        "incremental_group_skips": 0,
+        "multi_row_calls": 746,
+        "already_guarded_b1_skips": 0,
+        "reference_compute_calls": 746,
+        "candidate_compute_calls": 746,
+        "note": "Derived from actual separate done-entry counters and GPU-tested guard contracts. Both variants already skip B1 EOS calls; no per-CTA time attribution."
+      }
+    }
+  ],
+  "missing_conditions": [],
+  "complete": true,
+  "note": "Whole-list and optional separate single-request measurements. Single-request percentiles pool mixed durations/repeats. B1 tails are guarded in BOTH modes; only multi-row skips are incremental. Diagnostic runs are separate from wall. Long form compares public joined text/segments, not unavailable raw tokens. No reference translation/times. Cold compiler caches and shared-process peak prevent isolated cold/memory comparisons.",
+  "source": {
+    "group": "gai51740",
+    "queue": "R9920261300",
+    "resource": "rt_HG",
+    "nodes": 1,
+    "gpus": 1,
+    "walltime": "01:00:00",
+    "account_gpu_cap": 192,
+    "approval": "Standing user authorization: serial 1 GPU same settings, cap192, no repeated confirmation.",
+    "commit": "36940c8d770288c39d01efb3392a898e562e91d8",
+    "experiment": "runtime_ring_finished_groups",
+    "status": "approved_not_submitted",
+    "approved_jobs": 1,
+    "additional_jobs_submitted": 0,
+    "snapshot": "/groups/gai51740/acc12576tt/github.com/owsm_trt/outputs/runtime-ring-finished-groups/snapshot-36940c8d.tar",
+    "prepared_at": "2026-10-27T03:48:55.549998+00:00",
+    "depends_on": "2774140 Ring rows N route documented. This comparison uses same explicit Ring route and requires full output equality. CPU48 checks pass; GPU uniform-barrier/capture/restart tests precede corpus."
+  },
+  "validation": {
+    "focused_tests": 107,
+    "naive_regressions": 31,
+    "public_api_all_equal": true,
+    "english_extras_equal": 7,
+    "exit_status": 0,
+    "scheduler_stageout_status": 1
+  },
+  "decision": "Reject Ring group guard; restore original single-row-only capability. All sampled outputs exact but most warm conditions regress. Reproduce frozen36940c8; no experimental runtime flag retained.",
+  "environments": {
+    "english": {
+      "commit": "36940c8d770288c39d01efb3392a898e562e91d8",
+      "checkpoint_sha256": "4702713d44ab3e239101f09182903cd28f7b51e565bb632008af12beefb37752",
+      "engine_sha256": {
+        "encoder.engine": "f3da9563c8ef41b6252388c18d89fac46cc5781cfa505d6750837e0c12e0f481",
+        "decoder.engine": "b6065937220853d65633f6f59ce0edab80270717b8971c8afa53baf9a2bf5f72",
+        "verify.engine": "34a912836635a2c6928abef52e6ea5140c5215bc8fa178ee8b1af07bd5458dcb"
+      },
+      "torch": "2.14.1+cu130",
+      "cuda": "13.0",
+      "gpu": "NVIDIA H200",
+      "group_skip": true,
+      "nvidia_smi": "name, uuid, driver_version\nNVIDIA H200, GPU-68220153-4f1d-ac13-2379-004619c5c7d2, 595.71.05",
+      "disk_ms": 125.01953297760338,
+      "load_ms": 837.1040180209093,
+      "decoder_kernel": "ring:rr",
+      "note": "Fixed batches, no CTC drafts; same host polling and graph replay counts. Whole-list warmed wall time. Cold observations share unequal compiler caches; all variants coexist in process peak. Separate device counters count graph calls and calls entered after EOS; no per-step host reads."
+    },
+    "japanese": {
+      "commit": "36940c8d770288c39d01efb3392a898e562e91d8",
+      "checkpoint_sha256": "4702713d44ab3e239101f09182903cd28f7b51e565bb632008af12beefb37752",
+      "engine_sha256": {
+        "encoder.engine": "f3da9563c8ef41b6252388c18d89fac46cc5781cfa505d6750837e0c12e0f481",
+        "decoder.engine": "b6065937220853d65633f6f59ce0edab80270717b8971c8afa53baf9a2bf5f72",
+        "verify.engine": "34a912836635a2c6928abef52e6ea5140c5215bc8fa178ee8b1af07bd5458dcb"
+      },
+      "torch": "2.14.1+cu130",
+      "cuda": "13.0",
+      "gpu": "NVIDIA H200",
+      "group_skip": true,
+      "nvidia_smi": "name, uuid, driver_version\nNVIDIA H200, GPU-68220153-4f1d-ac13-2379-004619c5c7d2, 595.71.05",
+      "disk_ms": 21.760881994850934,
+      "load_ms": 982.3353789979592,
+      "decoder_kernel": "ring:rr",
+      "note": "Fixed batches, no CTC drafts; same host polling and graph replay counts. Whole-list warmed wall time. Cold observations share unequal compiler caches; all variants coexist in process peak. Separate device counters count graph calls and calls entered after EOS; no per-step host reads."
+    }
+  }
+}

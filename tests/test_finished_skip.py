@@ -149,11 +149,3 @@ def test_public_factory_forwards_finished_skip_and_rollback(enabled, batch):
     assert session.decode(torch.tensor([[2, 3, 4]] * batch), 10) == [[1, 1]] * batch
     assert all(bool(getattr(fn, "skips_finished", False)) is (enabled and batch == 1)
                for fn in session._steps.values())
-
-
-@pytest.mark.parametrize("flags", [torch.zeros(3, 1, dtype=torch.bool), torch.zeros(6, dtype=torch.bool)[::2]])
-def test_ring_rejects_nonvector_or_strided_group_flags(flags):
-    ring = megakernel_ring.RingDecoder.__new__(megakernel_ring.RingDecoder)
-    ring.m = SimpleNamespace()
-    with pytest.raises(ValueError, match="finished-stop"):
-        ring.step_fn(torch.zeros(3, 1, dtype=torch.long), None, None, None, None, None, None, None, stop=flags)
