@@ -60,3 +60,20 @@ Ring WER/CER differences and poor translation output remain; matching those outp
 improve translation quality. Do not multiply this gain by the earlier Ring-route result: the
 combined current public route needs its own measurement against auto. [Full first result](runtime-ring-row-programs-2775986.json).
 Raw artifacts: `outputs/runtime-2775986/`; Stageout_status1 retained despite complete exit0 output.
+
+
+## Public integration under independent verification
+
+The Ring constructor now selects the heads schedule automatically only for H200 (132 SM),
+D384/F1536/H6/L6 with four warps and no explicit `row_programs`. R5/6/7/8 use30/36/42/48 CTAs;
+R1..4 and other model/GPU shapes retain their prior schedules. Attention NS still derives from
+the original row budget24. An explicit `RingDecoder(..., row_programs=24)` is the rollback.
+The timestamp instrumentation buffer includes the maximum48 programs to avoid out-of-bounds
+writes. `auto`102M multi-row dispatch remains TensorRT; this only accelerates existing Ring routes.
+
+`validate_ring_row_programs.pbs` checks actual default construction and explicit rollback,
+including instrumented kernels/graph reuse and11 public/edge cases, then independently repeats
+all five English/Japanese conditions via `--public-policy`. The new profiler explicitly creates
+a legacy24 reference, so loading the updated public model cannot accidentally benchmark its new
+policy against itself. Pending this independent result, the original measurement above remains
+an isolated profiler experiment, not completed public-path validation.

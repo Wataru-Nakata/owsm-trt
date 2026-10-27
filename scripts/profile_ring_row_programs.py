@@ -94,13 +94,14 @@ def main():
     ap.add_argument('--repeat', type=int, default=11)
     ap.add_argument('--out', type=Path, required=True)
     ap.add_argument('--cases', nargs='+', choices=ROW_CASES, default=list(ROW_CASES))
+    ap.add_argument('--public-policy', action='store_true', help='compare public Ring policy to explicit legacy24')
     args = ap.parse_args()
     if not os.environ.get('PBS_JOBID'):
         ap.error('model/audio work requires a compute allocation')
     if args.repeat < 1:
         ap.error('repeat must be positive')
     args.trace, args.long_audio = False, None
-    args.variants = ['reference', 'heads', 'tiles']
+    args.variants = ['reference', 'public'] if args.public_policy else ['reference', 'heads', 'tiles']
     model, load_ms = wall(lambda: OWSM.from_pretrained(args.model, decoder_kernel='ring:rr'))
     base = model.backend
     if not isinstance(base, megakernel.MegaBackend) or not isinstance(base.kernel, megakernel_ring.RingDecoder):
@@ -110,7 +111,12 @@ def main():
         raise RuntimeError('experiment targets102M default Ring row budget24')
     if torch.cuda.get_device_properties(model.device).multi_processor_count < 48:
         raise RuntimeError('cannot guarantee48 resident persistent CTAs')
-    backends = {'reference': base} | {p: backend_for(base, p) for p in ('heads', 'tiles')}
+    legacy = megakernel_ring.RingDecoder(m, row_programs=24)
+    reference = megakernel.MegaBackend(base.inner, legacy, base.max_tokens, base.max_rows, trial=True)
+    backends = ({'reference': reference, 'public': base} if args.public_policy else
+                {'reference': reference} | {p: backend_for(reference, p) for p in ('heads', 'tiles')})
+    if args.public_policy and not base.kernel.row_head_parallel:
+        raise RuntimeError('public policy did not activate on the measured H200/102M shape')
     files = hub.resolve(args.model)
     engine_dir = hub.cache_dir()/files.name.replace('/', '--')/engine_tag(model.opts)
     save(args.out/'environment.json', dict(commit=os.environ.get('OWSM_PROFILE_COMMIT'),
@@ -119,10 +125,11 @@ def main():
         versions={n:importlib.metadata.version(n) for n in ('torch','triton','tensorrt')}, load_ms=load_ms,
         nvidia_smi=command(['nvidia-smi','--query-gpu=name,driver_version','--format=csv']),
         budgets={p:{r:row_budget(r,p) for r in range(2,9)} for p in ('heads','tiles')},
+        public_policy=args.public_policy,
         classification='E intent versus same opt-in Ring route; existing Ring-versus-TRT N differences remain. '
                        'All attention split counts, full outputs and cache checks must match. '
                        'Cold/compiler ordering and shared resident variants prevent isolated cold/VRAM gains.'))
-    check_rows({'reference':base.kernel} | {p:backends[p].rows_kernel[0] for p in ('heads','tiles')}, args.out)
+    check_rows({v:(b.kernel if b.rows_kernel is None else b.rows_kernel[0]) for v,b in backends.items()}, args.out)
     items = json.loads(args.manifest.read_text())
     waves, disk_ms = wall(lambda: [load_audio(it['path']) for it in items])
     save(args.out/'disk_load.json', dict(aggregate_ms=disk_ms, included_in_wall=False))

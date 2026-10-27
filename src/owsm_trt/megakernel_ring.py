@@ -747,7 +747,8 @@ class RingDecoder:
     concurrently (decode_stream; default: half as many as the largest stage has units, 32 for the 1B model:
     the most SMs left to the encoder, at two units per program); ``solo_programs`` for single-row calls with
     nothing alongside (``step_fn(..., solo=True)``) and ``row_programs`` for calls of several rows (default:
-    as many as the largest stage has units, 64). ``chunk``: [64, 64] weight tiles per ring slot (and per
+    as many as the largest stage has units, 64; H200/102M automatically uses one CTA per head
+    for R5..8, while an explicit value retains a fixed budget). ``chunk``: [64, 64] weight tiles per ring slot (and per
     wait / release); the ring holds ``ring_kb`` KB. ``ahead``: GEMM stages ahead whose weights the producer
     also prefetches into L2. ``exclusive``: 3 idle warps more, so that a program takes all of its SM's
     registers (no other kernel's blocks beside it)."""
@@ -773,6 +774,11 @@ class RingDecoder:
         self.P = min(nsm, programs or f // bm // 2)
         self.P_solo = min(nsm, solo_programs or f // bm)
         self.P_rows = min(nsm, row_programs or f // bm)
+        # H200/102M R5..8 has more attention heads than the default24 CTAs. The
+        # measured schedule gives each head a CTA while retaining the original NS.
+        # An explicit row_programs value keeps the requested fixed schedule.
+        self.row_head_parallel = (row_programs is None and (d, f, mega.H, mega.L) == (384, 1536, 6, 6)
+                                  and num_warps == 4 and nsm == 132 and "H200" in torch.cuda.get_device_name(dev))
         while (d // 64) % (2 * chunk):  # (an even number of ring slots per unit: two accumulators)
             chunk //= 2
         self.ck = chunk
@@ -786,7 +792,7 @@ class RingDecoder:
         self.err = mega.err
         self.opts = {"TS": ts}
         self.programs = self.P
-        pmax = max(self.P, self.P_solo, self.P_rows)
+        pmax = max(self.P, self.P_solo, self.P_rows, 48 if self.row_head_parallel else 0)
         self.ts = torch.zeros((8 * mega.L + 3) * pmax * 8 if ts else 1, dtype=torch.int64, device=dev)
 
     def check(self) -> None:
@@ -813,6 +819,8 @@ class RingDecoder:
             raise ValueError(f"the ring decoder kernel takes up to {MAX_TOKENS} tokens per call, not {M}")
         D, F, L, H = m.D, m.F, m.L, m.H
         P = (self.P_solo if solo else self.P) if R == 1 else self.P_rows
+        if self.row_head_parallel and 5 <= R <= 8:
+            P = R * m.H
         dev = m.device
         mtp = max(4, _pow2(M))
         hl = 2 if mtp <= 16 else 1  # LayerNorm GEMMs: the residual stream as a hi/lo pair while it fits
