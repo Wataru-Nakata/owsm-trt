@@ -193,7 +193,7 @@ def dispatch(model):
     return result
 
 
-def run_case(model, args, name, items, waves, configure=None, observe=None, input_sources=None):
+def run_case(model, args, name, items, waves, configure=None, observe=None, input_sources=None, measure=None):
     batch, beam, timestamps, draft, stream, task, prompt, limit = CASES[name]
     model.ctc_draft = draft
     model._sessions.clear()
@@ -296,7 +296,7 @@ def run_case(model, args, name, items, waves, configure=None, observe=None, inpu
                 group = audio_inputs(v, chunk)
                 start_calls = model.draft_stats[1]
                 torch.cuda.reset_peak_memory_stats()
-                results, ms = wall(lambda: call(group))
+                results, ms = (measure or wall)(lambda: call(group))
                 current_frontend_captures = (
                     len(model._frontend_replay.entries) if model._frontend_replay else 0
                 )

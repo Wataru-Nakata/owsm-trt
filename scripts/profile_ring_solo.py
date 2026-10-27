@@ -5,9 +5,11 @@ import importlib.metadata
 import json
 import os
 from collections import Counter
+from contextlib import nullcontext
 from pathlib import Path
 
 import torch
+from host_latency import HostLatency
 from profile_beam import command, save, sha256, wall
 from profile_graph_launches import LabelledGraph, graph_labels
 from profile_ring_programs import count_decoder_dispatch
@@ -63,12 +65,15 @@ def main():
     ap.add_argument('--lang',default='eng')
     ap.add_argument('--repeat',type=int,default=11)
     ap.add_argument('--out',type=Path,required=True)
+    ap.add_argument('--host-diagnostics',action='store_true',help='separate GC/CPU diagnostic; instrumented timings')
+    ap.add_argument('--rotated-order',action='store_true',help='rotate the initial order to48/24/32')
     args = ap.parse_args()
     if not os.environ.get('PBS_JOBID'):
         ap.error('compute allocation required')
     if args.repeat < 1:
         ap.error('repeat must be positive')
-    args.trace,args.variants = False,['reference','solo32','solo48']
+    args.trace,args.variants = False,(['solo48','reference','solo32'] if args.rotated_order
+                                      else ['reference','solo32','solo48'])
     model,load_ms = wall(lambda: OWSM.from_pretrained(args.model))
     base = model.backend
     if not isinstance(base,megakernel.MegaBackend) or not isinstance(base.kernel,megakernel_ring.RingDecoder):
@@ -89,6 +94,7 @@ def main():
          cuda=torch.version.cuda,versions={n:importlib.metadata.version(n) for n in ('torch','triton','tensorrt')},
          nvidia_smi=command(['nvidia-smi','--query-gpu=name,uuid,driver_version,compute_cap,memory.total','--format=csv']),
          manifest_sha256=sha256(args.manifest),load_ms=load_ms,
+         host_diagnostics=args.host_diagnostics,variant_order=args.variants,
          budgets={k:dict(concurrent=v.P,solo=v.P_solo,rows=v.P_rows) for k,v in kernels.items()},
          scope='E intent versus existing same Ring arithmetic: only serialR1 CTAcount24/32/48. '
                'Concurrent12 and cross-attention splits unchanged; no productiondefaultchange. '
@@ -124,7 +130,12 @@ def main():
     if args.long_audio:
         cases.append('long_greedy')
     for case in cases:
-        summary[case] = run_case(model,args,case,items,waves,configure=configure,observe=observe)
+        with HostLatency() if args.host_diagnostics else nullcontext() as host:
+            summary[case] = run_case(model,args,case,items,waves,configure=configure,observe=observe,
+                                     measure=host.measure if host else None)
+        if host:
+            samples = json.loads((args.out/case/'wall.json').read_text())
+            save(args.out/case/'host.json',host.report(samples))
         save(args.out/'summary.json',summary)
         assert all(v['equal']==v['total'] for mode in summary[case].values() for v in mode['agreement'].values())
         assert all(not b.failed for b in backends.values())
