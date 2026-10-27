@@ -81,16 +81,26 @@ A retained [Chinese corner case](runtime-batch-corner-cases.json),
 B1 returns63 tokens, one complete segment and14/53 character edits; B3 returns374 tokens,
 478 raw text characters, a repeated fourgram58 times, one opening timestamp with no closing pair,
 no complete segment and214/53 edits. Both bound variants agree within each batch. The other944
-Chinese inputs net−4 edits. The exact input group and both outputs are retained for a targeted
-reproduction; numerical-path attribution and repeated-run stability remain unverified.
-`reproduce_batch_corner.py` and its PBS driver prepare that targeted check: the original three-input
-group, B1/B3, auto versus TensorRT-only dispatch, search kernels OFF/ON and bound OFF/ON, each repeated
-three times (48 calls). Checkpoint/corpus/engine/software identity is checked against the B3 artifact.
-Actual decoder dispatch, full outputs, original-output differences and fixed-configuration stability
-are retained. Fixed-route/fixed-batch kernel/bound controls require exact outputs; route/batch changes
-are reported as N. Small metadata fixtures pass; GPU reproduction job2780984 is running from frozen19d9b31 after
-the successful B1 search-kernel audit, with fresh account/queue/no-duplicate admission checks. The public API
-may sort inputs internally, so this is not a test of arbitrary decoder-row permutations.
+Chinese inputs net−4 edits. The exact input group and both outputs were tested again in
+[focused reproduction2780984](runtime-batch-corner-2780984.json), using identical checkpoint, engines,
+software and runtime source tree. All48 runs pass recomputed controls: three repeats per configuration
+are stable, and search-kernel/bound OFF/ON agree at each fixed route/batch. Auto B1 and B3 reproduce
+both original outputs exactly. Actual dispatch and full raw outputs are retained.
+
+| Decoder configuration | Target tokens | Character edits /53 | Timestamp IDs | Repeats |
+|---|---:|---:|---|---:|
+| Auto B1 (Gluon) |63|14|201,1147|Stable3/3|
+| Auto B3 (TRT shape fallback) |374|214|200 only|Stable3/3|
+| TensorRT-only B1 |63|14|200,1147|Stable3/3|
+| TensorRT-only B3 |374|214|200 only|Stable3/3|
+
+The B3 repetition persists without an auto decoder switch or the new search kernels/bound.
+The TensorRT-only B1 result has the same text as auto B1 with a20ms start-time difference. This
+rules out decoder-route switching alone as the explanation; it does not yet separate feature/encoder/
+cross-projection batch effects from decoder/prefill batch effects. No truncation, timestamp clamping,
+route default or model arithmetic was changed. `reproduce_batch_corner.py` and its PBS driver retain
+the48-call controls, exact group, dispatch, original-output differences and stability checks. Its small
+metadata fixtures pass. The public API sorts by duration, so this is not a decoder-row permutation test.
 
 For13,044 inputs with identical text and ordered segment labels/count, all26,516 boundary differences
 have median/p95 zero. The52 nonzero boundary displacements have median20ms, p95120ms and maximum740ms;
@@ -214,7 +224,8 @@ variants. It does not separately attribute each component's parity or establish 
 The [candidate-output repeat check](runtime-large-regression-repeat-2780923.json) also matches the
 candidate outputs from the earlier B1 bound audit on every available field, with identical runtime
 source tree, engines/checkpoint and software. B3 search kernels and combined bound/kernel ablations
-remain pending.
+remain pending. B3 search-kernel job2781006 is running with the same frozen9e87cfaf source as B1,
+after a fresh account/queue/no-duplicate guard.
 Other ablations are102M serial64 versus24 (E), and the explicit1B NS4/102M NS8 option versus NS2 (N),
 with plain/drafted ASR, translation and long-form cases. N differences remain visible, not treated
 as exact or silently accepted as accuracy improvements. New default adoption waits for relevant
