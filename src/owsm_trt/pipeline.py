@@ -326,12 +326,13 @@ class OWSM:
         with v4 medium 1B/base 102M; other GPUs/checkpoints are unmeasured.
 
         ``audio_prefetch_workers``: 0 (default),1 or2 CPU file readers for greedy ASR streaming
-        across multiple batches. At most two audio batches are submitted; feature/GPU work stays
-        on the caller thread. Only all-file inputs are prefetched; mixed/waveform inputs and CPU
+        and sequential fixed batches (beam, translation or long prompts). At most two audio batches
+        are submitted; feature/GPU work stays on the caller thread. Only all-file inputs are prefetched; mixed/waveform inputs and CPU
         autocast load synchronously. Worker setup/join is per request. More workers can regress
-        small/cheap inputs, so select using file-inclusive measurements. Other decode paths are
-        unchanged. Public API checks pass on H200/1B/102M; see docs/runtime-audio-prefetch.md
-        for measured gains and limits.
+        small/cheap inputs, so select using file-inclusive measurements. Single batches, encoder
+        lookahead, CTC-only and long-form paths are unchanged. Greedy streaming is verified on
+        H200/1B/102M; the fixed-batch extension is pending GPU validation. See
+        docs/runtime-audio-prefetch.md for measured gains and limits.
 
         ``beam_fused_lse`` (default False): fuse full-vocabulary beam normalization with candidate
         scoring when CUDA beam kernels are available and enabled. This changes fp32 reduction order
@@ -699,12 +700,16 @@ class OWSM:
             for j, ids in zip(order, outs):
                 results[j] = self._result(ids, offset=0.0)
             return results
-        for i in range(0, len(order), bs):
-            idx = order[i : i + bs]
-            waves = [self._wave(items[j], sr) for j in idx]
-            draft = task == "asr"  # the CTC head is trained on transcripts
-            for j, ids in zip(idx, self._decode(waves, [primer] * len(idx), beam_size, draft)):
-                results[j] = self._result(ids, offset=0.0)
+        chunks = [order[i:i + bs] for i in range(0, len(order), bs)]
+        workers = getattr(self, "_audio_prefetch_workers", 0)
+        if workers and (len(chunks) < 2 or not all(isinstance(x, (str, os.PathLike)) for x in items)):
+            workers = 0
+        audio_batches = ([items[j] for j in idx] for idx in chunks)
+        with prefetch_batches(audio_batches, lambda x: self._wave(x, sr), workers) as batches:
+            for idx, waves in zip(chunks, batches):
+                draft = task == "asr"  # the CTC head is trained on transcripts
+                for j, ids in zip(idx, self._decode(waves, [primer] * len(idx), beam_size, draft)):
+                    results[j] = self._result(ids, offset=0.0)
         return results[0] if single else results
 
     def _decode(

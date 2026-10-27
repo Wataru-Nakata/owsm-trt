@@ -10,7 +10,7 @@ from pathlib import Path
 import torch
 from profile_beam import save, sha256, wall
 from profile_ring_programs import count_decoder_dispatch
-from profile_runtime import run_case
+from profile_runtime import CASES, run_case
 
 from owsm_trt import OWSM, hub, pipeline
 from owsm_trt.audio import load_audio
@@ -26,6 +26,7 @@ def main():
     ap.add_argument('--lang', default='eng')
     ap.add_argument('--out', type=Path, required=True)
     ap.add_argument('--repeat', type=int, default=11)
+    ap.add_argument('--fixed', action='store_true', help='fixed beam/translation batches, excluding encoder lookahead')
     args = ap.parse_args()
     if not os.environ.get('PBS_JOBID'):
         ap.error('audio/model work requires a compute allocation')
@@ -54,7 +55,7 @@ def main():
         engine_sha256={p.name: sha256(p) for p in engines.glob('*.engine')}, manifest_sha256=sha256(args.manifest),
         input_mode='File paths for every variant; current public mono loader; no resident-input speed comparison.',
         workers={'reference': 0, 'worker1': 1, 'worker2': 2}, submitted_batch_bound=2, waveforms_equal=True,
-        frontend_graph_max_batch=model._frontend_graph_batch_limit,
+        frontend_graph_max_batch=model._frontend_graph_batch_limit, fixed_batches=args.fixed,
         scope='E/N intent: same model/engines/search/batch order, but CPU read timing may change concurrent decoder dispatch. '
               'All timed calls include thread startup/join, duration sorting and file reads; '
               'node-local warm OS cache after staging, not cold disk/Lustre/network. '
@@ -89,7 +90,16 @@ def main():
         counts['audio_prefetch_workers'] = m._audio_prefetch_workers
         return counts
 
-    for case in ('stream_greedy_b1', 'stream_greedy_b8', 'stream_ts_b8'):
+    cases = ('stream_greedy_b1', 'stream_greedy_b8', 'stream_ts_b8')
+    if args.fixed:
+        CASES.update({
+            'fixed_beam_ts_b1': (1, 5, True, False, True, 'asr', None, None),
+            'fixed_beam_ts_b3': (3, 5, True, False, True, 'asr', None, None),
+            'fixed_translation_b1': (1, 1, False, False, True, 'st_eng', None, None),
+            'fixed_translation_b8': (8, 1, False, False, True, 'st_eng', None, None),
+        })
+        cases = tuple(k for k in CASES if k.startswith('fixed_'))
+    for case in cases:
         summary[case] = run_case(model, args, case, items, waves, configure=configure,
             observe=observe, input_sources=inputs)
         save(args.out / 'summary.json', summary)

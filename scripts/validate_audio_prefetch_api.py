@@ -97,9 +97,9 @@ def main():
                 ('mixed', mixed, True, False, False, dict(batch_size=8, timestamps=True)),
                 ('loaded', waves, True, False, False, dict(batch_size=8, timestamps=True)),
                 ('plain3', paths[:3], False, False, False, dict(batch_size=3, timestamps=True)),
-                ('beam3', paths[:6], True, False, False, dict(batch_size=3, beam_size=5, timestamps=True)),
-                ('translation8', paths[:10], True, False, False, dict(batch_size=8, task='st_eng')),
-                ('long_prompt', paths[:2], True, False, False,
+                ('beam3', paths[:6], True, True, False, dict(batch_size=3, beam_size=5, timestamps=True)),
+                ('translation8', paths[:10], True, True, False, dict(batch_size=8, task='st_eng')),
+                ('long_prompt', paths[:2], True, True, False,
                  dict(batch_size=1, timestamps=True, prompt='Previous speech context. ' * 20)),
                 ('cpu_autocast', [paths[-1], paths[0]], True, False, True, dict(batch_size=1, timestamps=True)),
                 ('stream_again', paths, True, True, False, dict(batch_size=8, timestamps=True)),
@@ -153,6 +153,29 @@ def main():
             outputs['after_error'] = [asdict(x) for x in value]
             assert outputs['after_error'] == outputs['stream_ts_b8']
             progress(workers, 'after_error', 'complete')
+            # A later fixed-batch read may already be running while the first batch decodes.
+            # Observe its failure in order, close workers, then reuse the same beam session.
+            failing = sorted(paths[:6], key=lambda path: duration(path, 16000))[3]
+
+            def fail_fixed(audio, *args, **kwargs):
+                if os.fspath(audio) == failing:
+                    raise OSError('injected fixed audio read failure')
+                return original_loader(audio, *args, **kwargs)
+
+            progress(workers, 'fixed_reader_error', 'start')
+            pipeline.load_audio = fail_fixed
+            try:
+                model.transcribe(paths[:6], batch_size=3, beam_size=5, timestamps=True)
+            except OSError as error:
+                assert 'injected fixed' in str(error)
+            else:
+                raise AssertionError('expected fixed reader failure')
+            finally:
+                pipeline.load_audio = original_loader
+            assert not any(t.name.startswith('owsm-audio') for t in threading.enumerate())
+            recovered = model.transcribe(paths[:6], batch_size=3, beam_size=5, timestamps=True)
+            assert [asdict(x) for x in recovered] == outputs['beam3']
+            progress(workers, 'fixed_reader_error', 'cleanup_and_reuse_complete')
             progress(workers, 'long', 'start')
             outputs['long'] = asdict(model.transcribe_long(args.long_audio))
             progress(workers, 'long', 'complete')
