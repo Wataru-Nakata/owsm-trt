@@ -34,7 +34,7 @@ class LabelledGraph:
 
 
 @contextmanager
-def graph_labels(model):
+def graph_labels(model, wrapper=LabelledGraph):
     """Only label replay calls in the diagnostic pass; retain every captured graph and address."""
     restore = []
 
@@ -42,13 +42,13 @@ def graph_labels(model):
         original = table[key]
         graph = original[2] if tuple_entry else original
         if graph is not None:
-            proxy = LabelledGraph(graph, label)
+            proxy = wrapper(graph, label)
             table[key] = (original[0], original[1], proxy) if tuple_entry else proxy
             restore.append(lambda table=table, key=key, value=original: table.__setitem__(key, value))
 
     try:
         for key, sess in model._sessions.items():
-            for name in ('graphs', '_tail_graphs'):
+            for name in ('graphs', '_tail_graphs', '_chunk_graphs'):
                 table = getattr(sess, name, {})
                 for shape in list(table):
                     table_graph(table, shape, f'graph/decoder/{key}/{name}/{shape}')
@@ -59,7 +59,7 @@ def graph_labels(model):
                     for attr in ('graph', 'notime_graph'):
                         original = getattr(bound, attr, None)
                         if original is not None:
-                            setattr(bound, attr, LabelledGraph(original, f'graph/draft/{key}/{name}/{shape}/{attr}'))
+                            setattr(bound, attr, wrapper(original, f'graph/draft/{key}/{name}/{shape}/{attr}'))
                             restore.append(lambda bound=bound, attr=attr, value=original: setattr(bound, attr, value))
         if model._frontend_replay:
             for key in list(model._frontend_replay.entries):

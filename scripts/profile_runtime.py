@@ -139,6 +139,7 @@ def captures(model):
             "plain_select_fused": getattr(s, "select_workspace", None) is not None,
             "ctc": len(getattr(s, "_runs", {})),
             "decode": len(getattr(s, "graphs", {})),
+            "experimental_chunk_decode": len(getattr(s, "_chunk_graphs", {})),
             "plain_ready": getattr(s, "_plain_ready", None),
             "plain_steps": len(getattr(s, "_steps", {})),
             "verify": len(getattr(s, "_verify", {})) + len(getattr(s, "_verify_solo", {})),
