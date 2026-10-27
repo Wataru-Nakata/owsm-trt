@@ -80,9 +80,10 @@ def test_ring_rejects_nonuniform_stop_contract(rows, window, dtype, count):
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="compute GPU required")
 @pytest.mark.parametrize("argmax", [False, True])
+@pytest.mark.parametrize("solo", [False, True])
 @pytest.mark.parametrize("graphs", [False, True])
 @torch.inference_mode()
-def test_ring_stop_all_ctas_and_restart_exact(argmax, graphs):
+def test_ring_stop_all_ctas_and_restart_exact(argmax, graphs, solo):
     from test_megakernel import CFG as BIG
     from test_megakernel import _model
 
@@ -106,7 +107,7 @@ def test_ring_stop_all_ctas_and_restart_exact(argmax, graphs):
         kv = torch.zeros(BIG.dec_layers, 2, 1, BIG.dec_heads, 1, BIG.d_model // BIG.dec_heads,
                          device="cuda", dtype=torch.float16)
         pred = torch.zeros(1, 1, dtype=torch.long, device="cuda") if argmax else None
-        run = ring.step_fn(tok, offset, k, v, ck, cv, logits, kv, pred=pred, stop=stop if guarded else None)
+        run = ring.step_fn(tok, offset, k, v, ck, cv, logits, kv, pred=pred, stop=stop if guarded else None, solo=solo)
         run()
         owners.append(run)  # Keep context/workspaces bound into a graph alive through every replay.
         buffers.append([k, v, logits, kv] + ([pred] if pred is not None else []))
