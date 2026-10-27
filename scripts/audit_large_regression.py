@@ -45,6 +45,19 @@ def select_rows(rows: list[dict], case: str, datasets: list[str] | None) -> list
     return selected
 
 
+def capture_failure(call, context: dict, out: Path, publish: Path):
+    """Keep exact source/configuration evidence even if decoding invalidates the CUDA context."""
+    try:
+        return call()
+    except Exception as exc:
+        failure = context | dict(error_type=type(exc).__name__,error=str(exc),job=os.environ.get('PBS_JOBID'))
+        name = 'failure-'+os.environ.get('PBS_JOBID','local')+'.json'
+        path = out/name
+        path.write_text(json.dumps(failure,indent=2,ensure_ascii=False)+'\n')
+        publish_file(path,publish/name)
+        raise
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--model',required=True)
@@ -169,13 +182,15 @@ def main():
                                       task='st_eng' if args.case=='translation' else 'asr')
                             if args.case=='beam_prompt':
                                 kw['prompt'] = 'Previous speech context. '*20
-                            if args.case=='long' or any(r['seconds']>model.cfg.speech_seconds for r in batch):
-                                values = model.transcribe_long(waves,**kw)
-                                joined = True
-                            else:
-                                values = model.transcribe(waves,timestamps=True,**kw)
-                                joined = False
-                            assert not model.backend.failed,f'backend fallback: {mode}'
+                            joined = args.case=='long' or any(r['seconds']>model.cfg.speech_seconds for r in batch)
+                            def decode():
+                                values = (model.transcribe_long(waves,**kw) if joined
+                                          else model.transcribe(waves,timestamps=True,**kw))
+                                assert not model.backend.failed,f'backend fallback: {mode}'
+                                assert len(values)==len(batch),'output count mismatch'
+                                return values
+                            values = capture_failure(decode,dict(config=config,variant=mode,options=kw,
+                                joined=joined,inputs=batch,completed_variant_outputs=outputs),args.out,args.publish)
                             results = []
                             for row,value in zip(batch,values):
                                 record = result_record(model,value,row,row['seconds'])

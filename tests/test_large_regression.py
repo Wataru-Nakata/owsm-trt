@@ -5,7 +5,7 @@ import json
 import tarfile
 
 import pytest
-from audit_large_regression import record_differences, repetition, select_rows
+from audit_large_regression import capture_failure, record_differences, repetition, select_rows
 from prepare_large_regression import safe_key, write_shard
 
 
@@ -50,3 +50,17 @@ def test_deterministic_selection_and_separate_long_form():
     assert selected==select_rows(rows[::-1],'beam_b1',None)
     assert select_rows(rows,'long',None)==[rows[2]]
     assert select_rows(rows,'beam_b1',['clean'])==[rows[0]]
+
+
+def test_failure_keeps_reproduction_context_and_reraises(tmp_path,monkeypatch):
+    monkeypatch.setenv('PBS_JOBID','synthetic')
+    out,published = tmp_path/'local',tmp_path/'published'
+    out.mkdir()
+    context = dict(variant='candidate',inputs=[dict(key='sample',shard='audio-0001.tar')])
+    def fail():
+        raise RuntimeError('exhausted')
+    with pytest.raises(RuntimeError,match='exhausted'):
+        capture_failure(fail,context,out,published)
+    data = json.loads((published/'failure-synthetic.json').read_text())
+    assert data['inputs']==context['inputs'] and data['error_type']=='RuntimeError'
+    assert (out/'failure-synthetic.json').read_bytes()==(published/'failure-synthetic.json').read_bytes()
