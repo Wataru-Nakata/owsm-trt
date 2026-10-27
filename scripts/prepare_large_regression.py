@@ -235,8 +235,10 @@ def main():
         manifest = json.loads((args.publish/'complete.json').read_text())
         for record in manifest['files']:
             source = args.publish/record['name']
-            assert sha256(source)==record['sha256'],source
-            shutil.copyfile(source,args.out/source.name)
+            target = args.out/source.name
+            shutil.copyfile(source,target)
+            # Verify the bytes actually staged, while reading each shared shard only once.
+            assert sha256(target)==record['sha256'],target
         shutil.copyfile(args.publish/'complete.json',args.out/'complete.json')
         print('reused verified corpus',manifest['samples'],flush=True)
         return

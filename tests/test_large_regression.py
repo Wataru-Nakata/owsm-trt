@@ -4,10 +4,12 @@ import gzip
 import hashlib
 import io
 import json
+import shutil
 import tarfile
 import zipfile
 from pathlib import Path
 
+import prepare_large_regression
 import pytest
 from audit_large_regression import (
     capture_failure,
@@ -49,6 +51,34 @@ def test_shard_preserves_bytes_and_metadata(tmp_path):
         write_shard(tmp_path/'duplicate.tar',[row,row])
     with pytest.raises(ValueError):
         write_shard(tmp_path/'empty.tar',[])
+
+
+@pytest.mark.parametrize('corrupt_copy',[False,True])
+def test_reuse_verifies_staged_bytes_before_marking_local_corpus_complete(tmp_path,monkeypatch,corrupt_copy):
+    published,local = tmp_path/'published',tmp_path/'local'
+    published.mkdir()
+    shard = published/'audio-0000.tar'
+    shard.write_bytes(b'small encoded-shard fixture')
+    manifest = dict(samples=1,files=[dict(name=shard.name,sha256=hashlib.sha256(shard.read_bytes()).hexdigest())])
+    (published/'complete.json').write_text(json.dumps(manifest))
+    original_copy = shutil.copyfile
+    def copy(source,target):
+        result = original_copy(source,target)
+        if corrupt_copy and Path(source).suffix=='.tar':
+            Path(target).write_bytes(b'corrupt staged copy')
+        return result
+    monkeypatch.setattr(prepare_large_regression.shutil,'copyfile',copy)
+    monkeypatch.setenv('PBS_JOBID','synthetic')
+    monkeypatch.setattr('sys.argv',['prepare_large_regression','--repo',str(tmp_path),'--jvs',str(tmp_path/'jvs'),
+                                  '--out',str(local),'--publish',str(published)])
+    if corrupt_copy:
+        with pytest.raises(AssertionError):
+            prepare_large_regression.main()
+        assert not (local/'complete.json').exists()
+    else:
+        prepare_large_regression.main()
+        assert (local/shard.name).read_bytes()==shard.read_bytes()
+        assert json.loads((local/'complete.json').read_text())==manifest
 
 
 def test_differences_include_timestamps_and_segments_not_just_text():

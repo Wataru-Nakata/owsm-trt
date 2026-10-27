@@ -71,6 +71,9 @@ audio plus per-sample JSON into512-sample WebDataset tar shards under `$PBS_LOCA
 each member hash/count, then atomically publishes completed shards to `.cache/regression-expanded-v1`.
 The input index, source-manifest hashes and a final manifest make the corpus reusable. Audio decoding,
 resampling, model work and tests stay on compute nodes; no temporary waveform files go to Lustre.
+Future reuse copies each shared shard once and verifies its staged bytes before marking the local
+corpus complete. Good/corrupt-copy fixtures cover that check; no staging speedup is claimed, and
+the ongoing B1 continuation retains the original8151703 implementation.
 
 Twenty-eight generated silence/noise/tone probes (English/Japanese primers) complement real speech;
 they do not substitute for natural noise/music/conversation coverage. Prompt stress is a separate
