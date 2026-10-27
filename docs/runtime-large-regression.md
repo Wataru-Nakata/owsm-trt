@@ -64,6 +64,24 @@ English WER edit totals are2,490 versus2,495 per49,162 reference words. This is 
 not an upper-bound regression or an isolated kernel experiment. Full cross-batch results and
 attribution of individual differences remain pending; no time-boundary accuracy is inferred.
 
+Reproduce this saved-output comparison without loading models or audio:
+
+```bash
+python scripts/compare_regression_batches.py \
+  outputs/runtime-large-audit/owsm_v4_medium_1B_beam_bound_beam_b1 \
+  outputs/runtime-large-audit/owsm_v4_medium_1B_beam_bound_beam_b3 \
+  --out outputs/runtime-large-audit/cross-batch-results.json
+```
+
+The comparison verifies matching runtime trees, engines/checkpoints, corpus keys and per-record
+configuration digests, then groups results by actual B3 call size/API. Missing joined token IDs
+are excluded from token denominators. Nonspeech insertions are separate from speech WER/CER.
+Boundary displacement statistics include only outputs with identical text and ordered segment
+texts/count; changed text or segmentation is counted as excluded, not assigned an ordinal time error.
+All and nonzero displacements have separate medians/nearest-rank p95 values. These are differences
+between outputs, not reference timing accuracy. Six small metadata fixtures cover this accounting
+and rejection of corrupt/config-incompatible or internally nonmatching audit records.
+
 Job2780055 was stopped after a fresh account query showed200 GPUs (the session cancelled only its
 own1GPU job). PBS exit271 is not a successful full audit. Its
 [validated partial result](runtime-large-regression-2780055-partial.json) contains3,584 Japanese
