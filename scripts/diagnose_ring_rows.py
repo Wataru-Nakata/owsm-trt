@@ -3,12 +3,13 @@
 import argparse
 import copy
 import hashlib
+import importlib.metadata
 import json
 import os
 from pathlib import Path
 
 import torch
-from profile_beam import save, sha256
+from profile_beam import command, save, sha256
 
 from owsm_trt import OWSM, hub
 from owsm_trt.audio import load_audio
@@ -66,6 +67,10 @@ def main():
     report = dict(commit=os.environ.get('OWSM_PROFILE_COMMIT'), checkpoint_sha256=sha256(files.checkpoint),
                   engine_sha256={p.name:sha256(p) for p in engine_dir.glob('*.engine')},
                   gpu=torch.cuda.get_device_name(), torch=torch.__version__, cuda=torch.version.cuda,
+                  sm_count=torch.cuda.get_device_properties(dev).multi_processor_count,
+                  versions={n:importlib.metadata.version(n) for n in ('torch', 'triton', 'tensorrt')},
+                  nvidia_smi=command(['nvidia-smi', '--query-gpu=name,uuid,driver_version,compute_cap,memory.total', '--format=csv']),
+                  diagnostic_sha256=sha256(Path(__file__)),
                   ring_programs=dict(single=ring.P, solo=ring.P_solo, rows=ring.P_rows),
                   wide_one_token=args.wide_one_token, wide_programs={r:k.P_rows for r,k in wide.items()},
                   cases={}, note='Numerical diagnosis only. Existing 2%/50% gate is unchanged; failures are retained, '
