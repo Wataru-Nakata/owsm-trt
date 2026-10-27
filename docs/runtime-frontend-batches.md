@@ -67,4 +67,28 @@ at a time, records retained and peak allocated deltas, then releases it before t
 Model and eager expected features stay fixed. PyTorch allocator observations exclude non-PyTorch
 library/device allocations; post-release deltas reveal residual workspace. Cold feature/H2D calls
 are synchronized and timed separately from equality checks and whole-request measurements.
-This replication is pending; broad public expansion remains disabled.
+The completed replication below keeps broad public expansion disabled.
+
+
+## Independent102M result2776464
+
+Frozen214584a completed with exit0; prior11 tests retained byte-identically. Both corpora passed
+B3/B8 exact features and full output/call parity. Drafted timestamp B8 gains replicated at+5.27%
+English73 and+1.76% Japanese12; all11 paired totals improved in each corpus.
+
+With only one cache variant resident, sorted B8 supply retained381.94MiB for nine English graphs
+versus67.30MiB for the B1-only reference, and119.79MiB for two Japanese graphs versus zero.
+Summed synchronized cold feature/H2D calls were30.94/9.96ms versus9.44/1.69ms. These are frontend
+component observations with fixed model/expected features, not complete cold startup. After
+releasing the candidate cache,288MiB/64MiB remained; the reference released with32MiB/zero residual.
+
+`capture_graph` currently creates a new warm-up stream per shape. PyTorch documents retained
+workspaces per cuBLAS handle/stream pair ([CUDA semantics](https://docs.pytorch.org/docs/2.14/notes/cuda.html#cublas-workspaces)).
+The32MiB increments are consistent with that mechanism, but a controlled stream-reuse comparison
+is needed to attribute them. The next experiment will reuse only the frontend's already serialized
+capture stream for warm-up, leaving decoder/encoder warm-up and graph memory pools unchanged.
+No workspace-clearing private API or global environment override is proposed.
+
+[Independent throughput, memory and cold records](runtime-frontend-recheck-2776464.json);
+raw artifacts in `outputs/runtime-2776464/`. Keep public limit1 until the memory/stream experiment
+and any public option validation complete. File-inclusive audio I/O profiling remains a next task.
