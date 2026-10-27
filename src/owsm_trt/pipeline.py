@@ -215,7 +215,10 @@ class OWSM:
         draft_token_budget: int = DRAFT_TOKENS,
         greedy_kernels: bool = True,
         encoder_lookahead: bool = False,
+        frontend_graph_max_batch: int = 1,
     ):
+        if type(frontend_graph_max_batch) is not int or not 1 <= frontend_graph_max_batch <= 8:
+            raise ValueError("frontend_graph_max_batch must be an integer between 1 and 8")
         if type(draft_token_budget) is not int or draft_token_budget < 1:
             raise ValueError("draft_token_budget must be a positive integer")
         self.draft_token_budget = draft_token_budget
@@ -230,8 +233,8 @@ class OWSM:
         self._beam_backend = None
         self._encoder_lookahead = encoder_lookahead  # Staging resources are allocated only on eligible calls.
         self.frontend_graph = frontend_graph
-        self._frontend_graph_batch_limit = 1  # Larger graphs remain an isolated profiling experiment.
-        self._frontend_reuse_warmup_stream = False  # Validate workspace reuse before enabling it.
+        self._frontend_graph_batch_limit = frontend_graph_max_batch
+        self._frontend_reuse_warmup_stream = True
         self.greedy_skip_finished = greedy_kernels
         self.greedy_plain_solo = greedy_kernels
         self.greedy_fused_select = greedy_kernels
@@ -281,6 +284,7 @@ class OWSM:
         draft_token_budget: int = DRAFT_TOKENS,
         greedy_kernels: bool = True,
         encoder_lookahead: bool = False,
+        frontend_graph_max_batch: int = 1,
         fp8: bool | str = False,
         fp8_margin: float = 1.0,
         fp8_skip: str = "",
@@ -304,7 +308,9 @@ class OWSM:
 
         ``frontend_graph``: reuse CUDA graphs for single-utterance STFT/mel/normalization (default
         True with ``use_cuda_graph``). A bounded 32-shape cache retains private graph buffers; each
-        returned feature tensor has its own storage. Larger batches, CPU, autocast and cache saturation run
+        returned feature tensor has its own storage. ``frontend_graph_max_batch`` (integer1..8, default1)
+        permits wider captured batches as an opt-in. Each cache reuses its dedicated warm-up stream.
+        Batches above the selected limit, CPU, autocast and cache saturation run
         eagerly. False restores eager frontend execution. Exact features/output verified on H200
         with v4 medium 1B/base 102M; other GPUs/checkpoints are unmeasured.
 
@@ -381,6 +387,8 @@ class OWSM:
         None: the ``OWSM_TRT_MEGAKERNEL`` environment variable (auto / ring / 1 / triton /
         0), ``"auto"`` if unset.
         """
+        if type(frontend_graph_max_batch) is not int or not 1 <= frontend_graph_max_batch <= 8:
+            raise ValueError("frontend_graph_max_batch must be an integer between 1 and 8")
         if type(draft_token_budget) is not int or draft_token_budget < 1:
             raise ValueError("draft_token_budget must be a positive integer")
         files = hub.resolve(model)
@@ -428,7 +436,8 @@ class OWSM:
             return cls(cfg, tok, net.frontend, runner, opts, dev, graphs, ctc_draft,
                        beam_upper_bound, beam_kernels, beam_compact_tail, beam_grouped_cross,
                        frontend_graph=frontend_graph, lazy_drafts=lazy_drafts, draft_token_budget=draft_token_budget,
-                       greedy_kernels=greedy_kernels, encoder_lookahead=encoder_lookahead)
+                       greedy_kernels=greedy_kernels, encoder_lookahead=encoder_lookahead,
+                       frontend_graph_max_batch=frontend_graph_max_batch)
         if backend != "tensorrt":
             raise ValueError(f"unknown backend {backend!r} (use 'tensorrt' or 'torch')")
 
@@ -469,7 +478,8 @@ class OWSM:
             return cls(cfg, tok, frontend, runner, opts, dev, use_cuda_graph, ctc_draft,
                        beam_upper_bound, beam_kernels, beam_compact_tail, beam_grouped_cross,
                        frontend_graph=frontend_graph, lazy_drafts=lazy_drafts, draft_token_budget=draft_token_budget,
-                       greedy_kernels=greedy_kernels, encoder_lookahead=encoder_lookahead)
+                       greedy_kernels=greedy_kernels, encoder_lookahead=encoder_lookahead,
+                       frontend_graph_max_batch=frontend_graph_max_batch)
 
     # ------------------------------------------------------------------ helpers
 

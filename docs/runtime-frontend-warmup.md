@@ -50,3 +50,18 @@ public path independently. A bounded public batch-limit option may expose the se
 102M B8 gain, with default1 retained. [First measurements](runtime-frontend-warmup-2776645.json);
 raw artifacts `outputs/runtime-2776645/`. The earlier throughput gain and this memory reduction
 are separate ablations and must not be multiplied into a new speed claim.
+
+
+## Public integration prepared
+
+The frontend now selects dedicated-stream warm-up by default; the shared `capture_graph` helper's
+other callers retain their original behavior. `frontend_graph_max_batch` is a validated public
+integer1..8 option, with default1. Both constructor and `from_pretrained` reject invalid settings
+before loading. The independent job `validate_frontend_api.pbs` checks legacy/default/limit8 through
+plain, drafted, beam, translation, long-prompt, lookahead, silence/noise, reuse and110s calls on both
+models, then repeats isolated memory with the candidate first and batch-limit throughput with
+stream reuse on both variants. These public-path results are pending.
+
+The same allocation independently verifies the two-line public mono-file loader integration against
+a preserved legacy loader, with43 focused tests including the15 already-passing CPU option checks.
+This is a separate file-inclusive ablation; it must not be merged into the loaded-input frontend gain.

@@ -4,7 +4,7 @@ import torch
 
 
 class FrontendReplay:
-    def __init__(self, frontend, max_entries: int = 32, max_batch: int = 1, reuse_warmup_stream: bool = False):
+    def __init__(self, frontend, max_entries: int = 32, max_batch: int = 1, reuse_warmup_stream: bool = True):
         if max_entries < 1:
             raise ValueError("max_entries must be positive")
         if max_batch < 1:

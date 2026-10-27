@@ -58,7 +58,7 @@ def feature_check(model,waves,out):
 
 
 @torch.inference_mode()
-def cache_memory(model,waves,out,batch=8,reuse_comparison=False):
+def cache_memory(model,waves,out,batch=8,reuse_comparison=False,reverse=False):
     """One variant's frontend cache at a time; model and expected features are fixed residents."""
     order = sorted(waves,key=len)
     groups = [order[i:i+batch] for i in range(0,len(order),batch)]
@@ -67,7 +67,10 @@ def cache_memory(model,waves,out,batch=8,reuse_comparison=False):
     expected = [model._features(group) for group in groups]
     torch.cuda.synchronize()
     results = {}
-    for mode,limit in (('reference',batch if reuse_comparison else 1),('graph',batch if reuse_comparison else 8)):
+    policies = [('reference',batch if reuse_comparison else 1),('graph',batch if reuse_comparison else 8)]
+    if reverse:
+        policies.reverse()
+    for mode,limit in policies:
         model._frontend_replay = None
         gc.collect()
         torch.cuda.empty_cache()
@@ -97,7 +100,7 @@ def cache_memory(model,waves,out,batch=8,reuse_comparison=False):
     model.frontend_graph = True
     model._frontend_graph_batch_limit = 1
     model._frontend_reuse_warmup_stream = False
-    save(out/'isolated_cache_memory.json',dict(variants=results,reuse_comparison=reuse_comparison,
+    save(out/'isolated_cache_memory.json',dict(variants=results,reuse_comparison=reuse_comparison,order=[v for v,_ in policies],
         scope='Frontend cache only, one variant resident at a time; shared model and exact eager features '
               'remain fixed. PyTorch allocated/reserved memory, not total device process memory. '
               'Cold sums synchronized feature/H2D calls, excludes equality checks; not request latency. '
@@ -116,13 +119,17 @@ def main():
     ap.add_argument('--cache-memory',action='store_true',help='measure isolated B8 frontend cache allocation before request timings')
     ap.add_argument('--warmup-reuse',action='store_true',help='same graph batch limit8 on both modes; only warmup stream reuse differs')
     ap.add_argument('--memory-only',type=int,choices=[1,8],help='fresh-process memory comparison at one batch size; no request timing')
+    ap.add_argument('--memory-reverse',action='store_true',help='run candidate before reference for isolated memory comparison')
+    ap.add_argument('--public-batches',action='store_true',help='compare batch limits1/8 with public warmup reuse on both')
     args = ap.parse_args()
+    if args.public_batches and args.warmup_reuse:
+        ap.error('choose batch-limit or warmup-reuse ablation, not both')
     if not os.environ.get('PBS_JOBID'):
         ap.error('audio/model work requires a compute allocation')
     if args.repeat < 1:
         ap.error('repeat must be positive')
     args.trace,args.long_audio,args.variants = False,None,['reference','graph']
-    model,load_ms = wall(lambda:OWSM.from_pretrained(args.model))
+    model,load_ms = wall(lambda:OWSM.from_pretrained(args.model,frontend_graph_max_batch=8 if args.public_batches else 1))
     files = hub.resolve(args.model)
     engines = hub.cache_dir()/files.name.replace('/','--')/engine_tag(model.opts)
     save(args.out/'environment.json',dict(commit=os.environ.get('OWSM_PROFILE_COMMIT'),
@@ -130,7 +137,7 @@ def main():
         manifest_sha256=sha256(args.manifest),gpu=torch.cuda.get_device_name(),
         sm_count=torch.cuda.get_device_properties(model.device).multi_processor_count,cuda=torch.version.cuda,
         cases=args.cases,isolated_cache_memory=args.cache_memory,
-        warmup_reuse=args.warmup_reuse,memory_only=args.memory_only,
+        warmup_reuse=args.warmup_reuse,memory_only=args.memory_only,public_batches=args.public_batches,
         versions={n:importlib.metadata.version(n) for n in ('torch','triton','tensorrt')},load_ms=load_ms,
         nvidia_smi=command(['nvidia-smi','--query-gpu=name,driver_version','--format=csv']),
         classification=('E intent; only frontend warmup stream reuse, same graph arithmetic/batch shape and serialized replay. '
@@ -143,19 +150,19 @@ def main():
     waves,disk_ms = wall(lambda:[load_audio(it['path']) for it in items])
     save(args.out/'disk_load.json',dict(aggregate_ms=disk_ms,included_in_wall=False))
     if args.memory_only:
-        cache_memory(model,waves,args.out,batch=args.memory_only,reuse_comparison=args.warmup_reuse)
+        cache_memory(model,waves,args.out,batch=args.memory_only,reuse_comparison=args.warmup_reuse,reverse=args.memory_reverse)
         return
     feature_check(model,waves,args.out)
     if args.cache_memory:
-        cache_memory(model,waves,args.out,reuse_comparison=args.warmup_reuse)
+        cache_memory(model,waves,args.out,reuse_comparison=args.warmup_reuse,reverse=args.memory_reverse)
     pools = {mode:FrontendReplay(model.frontend,max_batch=8 if args.warmup_reuse or mode=='graph' else 1,
-                                reuse_warmup_stream=args.warmup_reuse and mode=='graph')
+                                reuse_warmup_stream=args.public_batches or (args.warmup_reuse and mode=='graph'))
              for mode in args.variants}
     summary,caches = {},{}
     def configure(m,mode):
         m.frontend_graph = True
         m._frontend_graph_batch_limit = 8 if args.warmup_reuse or mode=='graph' else 1
-        m._frontend_reuse_warmup_stream = args.warmup_reuse and mode=='graph'
+        m._frontend_reuse_warmup_stream = args.public_batches or (args.warmup_reuse and mode=='graph')
         m._frontend_replay = pools[mode]
     for name in args.cases:
         summary[name] = run_case(model,args,name,items,waves,configure=configure,observe=count_decoder_dispatch)

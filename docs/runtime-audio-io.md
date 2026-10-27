@@ -51,3 +51,9 @@ length mixes between corpora; they establish neither cold-Lustre nor arbitrary-r
 [Environment, phases and paired results](runtime-audio-io-2776693.json); raw artifacts
 `outputs/runtime-2776693/`. Integrate only the mono shortcut, keeping stereo/resampling/nonfile
 behavior, then independently compare the public loader against an explicit preserved legacy loader.
+
+
+The public loader's mono view is now implemented; independent verification is pending in
+`validate_frontend_api.pbs`. The profiler preserves explicit legacy file averaging and compares it
+against the actual imported public loader, so the baseline cannot silently become the candidate.
+All multichannel/nonfile/resampling behavior remains covered by the compute-node tests.
