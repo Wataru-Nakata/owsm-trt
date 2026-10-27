@@ -9468,5 +9468,24 @@
     "exit_status": 0,
     "stageout_status": 1,
     "walltime": "00:13:54"
+  },
+  "whole_allocation_gpu_sampling": {
+    "source": "outputs/runtime-2777441/gpu_utilization.csv",
+    "malformed_rows": 0,
+    "metrics": {
+      "utilization.gpu [%]": {
+        "samples": 158,
+        "mean": 41.69620253164557,
+        "median": 14.5,
+        "maximum": 100.0
+      },
+      "memory.used [MiB]": {
+        "samples": 158,
+        "mean": 10014.62658227848,
+        "median": 11027.0,
+        "maximum": 21375.0
+      }
+    },
+    "scope": "Entire sampled allocation: includes load/JIT/capture/diagnostics/idle and all resident variant pools. Five-second utilization snapshots are not a per-variant steady-state metric or kernel wall time."
   }
 }

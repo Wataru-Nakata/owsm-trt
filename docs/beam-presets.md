@@ -94,3 +94,7 @@ results = model.transcribe(audio_files, beam_size=5, batch_size=3, timestamps=Tr
 Raw full corpus tokens are in `outputs/runtime-2777500/`. Stageout_status1 is recorded separately
 from exit0; required artifacts were verified. This loaded-waveform benchmark does not measure file
 prefetch, encoder lookahead or colder filesystem behavior.
+
+Five-second GPU samples cover the entire allocation, including cold setup and diagnostics. Their
+summary is retained in the result JSON under `whole_allocation_gpu_sampling`; it must not be used
+as per-variant utilization. Reproduce with `scripts/summarize_gpu_util.py` on the saved CSV.
