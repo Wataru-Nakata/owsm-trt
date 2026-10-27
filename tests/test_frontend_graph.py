@@ -24,15 +24,16 @@ def test_invalid_capacity_and_cpu_fallback():
 @pytest.mark.parametrize("fused", [False, True])
 @pytest.mark.parametrize("normalize", ["global_mvn", "utterance_mvn"])
 @pytest.mark.parametrize("max_batch", [1, 8])
+@pytest.mark.parametrize("reuse", [False, True])
 @torch.inference_mode()
-def test_retained_outputs_cross_streams_and_cache_limit(fused, normalize, max_batch):
+def test_retained_outputs_cross_streams_and_cache_limit(fused, normalize, max_batch, reuse):
     frontend = Frontend(replace(TINY, normalize=normalize)).eval().cuda()
     frontend.melmat.uniform_(0, 1)
     if frontend.global_mvn:
         frontend.mean.normal_()
         frontend.std.uniform_(0.1, 2.0)
     frontend.fused_power = frontend.fused_logmel = fused
-    replay = FrontendReplay(frontend, max_entries=2, max_batch=max_batch)
+    replay = FrontendReplay(frontend, max_entries=2, max_batch=max_batch, reuse_warmup_stream=reuse)
     streams = [torch.cuda.Stream(), torch.cuda.Stream()]
     batches = [1]*6 if max_batch == 1 else [3,8,3,8,8,3]
     waves = [torch.randn(b,n,device="cuda") for b,n in zip(batches,(1601,3200,1601,2401,3200,1601))]

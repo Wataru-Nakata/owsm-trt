@@ -4,12 +4,13 @@ import torch
 
 
 class FrontendReplay:
-    def __init__(self, frontend, max_entries: int = 32, max_batch: int = 1):
+    def __init__(self, frontend, max_entries: int = 32, max_batch: int = 1, reuse_warmup_stream: bool = False):
         if max_entries < 1:
             raise ValueError("max_entries must be positive")
         if max_batch < 1:
             raise ValueError("max_batch must be positive")
         self.frontend = frontend
+        self.reuse_warmup_stream = reuse_warmup_stream
         self.max_batch = max_batch
         self.max_entries = max_entries
         self.entries = {}
@@ -53,7 +54,10 @@ class FrontendReplay:
                 nonlocal out
                 out = self.frontend(inp)
 
-            graph = capture_graph(body, self.capture_stream)
+            graph = capture_graph(
+                body, self.capture_stream,
+                warmup_stream=self.capture_stream if self.reuse_warmup_stream else None,
+            )
             self.entries[key] = (inp, out, graph)
         inp, out, graph = self.entries[key]
         stream = torch.cuda.current_stream(speech.device)
@@ -69,6 +73,7 @@ class FrontendReplay:
             "captures": len(self.entries),
             "max_entries": self.max_entries,
             "max_batch": self.max_batch,
+            "reuse_warmup_stream": self.reuse_warmup_stream,
             "fallbacks": self.fallbacks,
             "input_output_bytes": sum(
                 (inp.numel() * inp.element_size() + out.numel() * out.element_size())

@@ -426,10 +426,14 @@ ENCODER_LANES = os.environ.get("OWSM_TRT_ENCODER_LANES", "1") != "0"
 ENCODER_LANE_ROWS = 1
 
 
-def capture_graph(body: Callable[[], None], stream: torch.cuda.Stream | None = None) -> torch.cuda.CUDAGraph:
+def capture_graph(
+    body: Callable[[], None], stream: torch.cuda.Stream | None = None,
+    *, warmup_stream: torch.cuda.Stream | None = None,
+) -> torch.cuda.CUDAGraph:
     """Warm ``body`` up on a side stream (TensorRT shape setup, allocator), then capture it (on
-    ``stream``, by default PyTorch's capture stream)."""
-    side = torch.cuda.Stream()
+    ``stream``, by default PyTorch's capture stream). An explicitly owned warm-up stream can
+    reuse cuBLAS workspace; the caller must serialize all operations sharing it."""
+    side = warmup_stream if warmup_stream is not None else torch.cuda.Stream()
     side.wait_stream(torch.cuda.current_stream())
     with torch.cuda.stream(side):
         for _ in range(2):
