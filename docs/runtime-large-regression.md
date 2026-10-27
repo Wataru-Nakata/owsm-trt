@@ -12,6 +12,9 @@ its transcript before packing. Other missing datasets fail visibly instead of si
 The verified download is retained as one shared archive; extracted audio stays node-local and is
 deleted after shard publication. This repair and its small archive/metadata tests are implemented;
 successful full preparation and inference remain pending.
+Cold preparation has a20-minute limit; the remaining allocation determines the inference budget
+(at most2600seconds), with time reserved for publishing results. If too little time remains even
+for model startup, the completed corpus is retained and the audit is explicitly deferred.
 
 The available manifests contain10,504 short recordings across English, Japanese, Chinese, German,
 Spanish, French and Russian, plus87 concatenated LibriSpeech chapters. They include2,620 LibriSpeech
