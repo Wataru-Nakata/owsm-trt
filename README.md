@@ -223,6 +223,10 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   timestamped RTFx improved2.7–7.6% on English73/Japanese12. B8 gains varied and102M English p95
   regressed in one replication. Stereo/resampling semantics are unchanged; no cold disk/network
   speed claim. [Measurements and limits](docs/runtime-audio-io.md).
+* **Single-file metadata.** A singleton request skips duration sorting and the redundant file-header
+  lookup; decoding/resampling and multi-input ordering are unchanged. [Independent H200 measurements](docs/runtime-single-header.md)
+  show about0.9–2.0% more RTFx for sampled ASR/CTC single-file calls, with exact outputs. Beam and
+  translation results are mixed, including small Japanese translation regressions; no universal gain is claimed.
 * **Optional file prefetch.** `audio_prefetch_workers=1` or `2` overlaps bounded CPU file reading
   with greedy ASR streaming. On H200, English73 file-inclusive timestamp B8 RTFx improves26–38%
   for1B (worker1) and64–67% for102M (worker2) across two measurements, with exact outputs.

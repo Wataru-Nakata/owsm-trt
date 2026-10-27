@@ -1,4 +1,4 @@
-# Singleton header lookup (pending GPU measurement)
+# Singleton header lookup
 
 Candidate40, E intent. The earlier node-local warm-file profiler2776797 measured whole-corpus
 header lookup p50 values2.45–3.11ms for English73 and0.38–0.51ms for Japanese12 (about32–43µs per
@@ -30,7 +30,7 @@ python scripts/profile_single_header.py --model /local/owsm_v4_medium_1B \
   --repeat 11 --out /local/results
 ```
 
-No speed claim or other-optimization composition is established before the run completes.
+The completed comparison and independent replication are below; no composed speedup is inferred.
 
 The allocation also independently repeats the fixed-prefetch comparison in separate processes.
 Those multi-item calls use the same duration ordering in both versions, so the singleton shortcut
@@ -62,3 +62,30 @@ An independent same-engine repeat is prepared alongside the separate graph-attri
 [All samples, counts, errors, environment and coarse telemetry](runtime-single-header-2777617.json).
 The allocation also ran fixed-prefetch timing in separate processes; its multi-input gains do not
 include this singleton change. No graph-launch optimization is part of these measurements.
+
+
+## Independent replication2777712: adopt the ordering simplification with measured limits
+
+Frozen0fbc04c, H200, F/exit0. All14 full-output/call comparisons and input/error checks match again;
+the candidate performs no singleton header queries. Eleven alternating repetitions give:
+
+|Model / corpus|Greedy TS (CTC: no TS)|Beam TS first12|Translation first12|
+|---|---:|---:|---:|
+|1B English73|+0.888%|+0.118%|+0.925%|
+|1B Japanese12|+1.216%|+0.337%|-0.126%|
+|102M English73|+2.032%|+0.417%|+1.507%|
+|102M Japanese12|+1.474%|+1.025%|-0.212%|
+|CTC1B English73|+0.890%|not applicable|not applicable|
+|CTC1B Japanese12|+1.456%|not applicable|not applicable|
+
+ASR/CTC show small repeated improvements without new buffers, captures, threads or precision
+changes. Remove the redundant singleton ordering/header lookup as the default simplification.
+No workload-specific routing or extra option is needed. This is not a universal beam/translation
+speed claim: Japanese translation remains slightly slower in aggregate, and beam has mixed/small
+paired changes. The earlier102M English beam outliers are not reproduced here but remain in the
+first artifact; the cause is not established. All individual samples, negative pairs and errors
+are retained. These are warmed node-local file calls, not cold storage or loaded-waveform gains.
+
+[Replication samples, quality, metadata, header counts and error checks](runtime-single-header-2777712.json).
+The same allocation records separate instrumented graph traces; neither those durations nor the
+fixed-prefetch results are multiplied with this gain. Stageout_status1 is recorded independently.

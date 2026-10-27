@@ -1,4 +1,4 @@
-# Actual CUDA-graph launch attribution (pending measurement)
+# Actual CUDA-graph launch attribution
 
 Candidate28 investigation, with no runtime optimization or new search semantics. Existing eager
 phase events include host launch gaps and cannot quantify the cost of graph replay. Current plain
@@ -40,3 +40,42 @@ these observations; graph-internal costs that cannot be correlated remain explic
 The allocation also repeats the independent singleton-header ablation in separate processes for
 1B/102M/CTC1B. Those uninstrumented timing pairs are not graph-attribution results. Prior header
 correctness/artifact hashes are retained; the five attribution tests run in the new allocation.
+
+
+## Completed diagnostic2777712
+
+Frozen0fbc04c, H200, F/exit0; five attribution/restoration tests pass. All20 graph cases finish,
+with21 identical warm outputs and an identical separately traced output. CUDA graph launch
+correlations assign kernel sums to frontend/encoder/decoder/draft replay ranges. Prefill, eager
+work and missing correlations stay in the unattributed category. No graph-node phases are inferred.
+
+Representative English observations (milliseconds):
+
+|Model / request|Warm wall p50|Diagnostic decoder/draft kernel sum|Diagnostic encoder kernel sum|CUPTI graph-launch API sum|
+|---|---:|---:|---:|---:|
+|1B beam TS B1|25.207|19.102|2.860|2.070|
+|1B beam TS B3 mixed|172.900|140.626|8.465|38.418|
+|1B translation B1|17.749|11.760|2.860|0.928|
+|1B translation B8 mixed|113.656|89.903|17.334|2.345|
+|1B drafted TS B8 mixed|40.168|18.502|17.383|4.852|
+|102M beam TS B1|12.057|8.370|0.656|3.159|
+|102M beam TS B3 mixed|55.379|47.379|1.501|14.417|
+|102M translation B1|6.023|3.432|0.624|0.435|
+|102M translation B8 mixed|44.277|33.033|2.712|10.808|
+|102M drafted TS B8 mixed|19.480|11.390|2.699|3.937|
+
+The API sums include profiler overhead/possible driver waits and overlap device execution. They
+must not be subtracted from warm wall time to predict savings. Decoder work remains substantial;
+drafted1B B8 also has material encoder work. Japanese102M translation reaches374 tokens on the
+selected long example; it matches the existing output and is not a new truncation/decoding policy.
+
+A small profiler-only candidate28 ablation is prepared next: capture four existing `_body` calls
+and replay them only where the unchanged host-check interval permits exactly four steps in the
+same cache bucket. Original graphs cover boundaries and remainders; default B1 beam's interval1
+is retained as a control. Extra capture/memory costs and full outputs must be measured before any
+production change. A separate low-overhead CPU timer, without CUPTI, will characterize replay
+call duration; steady wall measurement remains uninstrumented. No multi-step speedup is yet known.
+
+[All20 traces' summaries, warm samples, dispatch, outputs, hashes and telemetry](runtime-graph-launches-2777712.json).
+Compressed raw traces remain under `outputs/runtime-2777712/`. Stageout_status1 is separate from
+exit0 and verified artifacts. The singleton-header comparison is a different experiment.
