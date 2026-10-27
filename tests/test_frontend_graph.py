@@ -13,6 +13,8 @@ from owsm_trt.modeling import Frontend
 def test_invalid_capacity_and_cpu_fallback():
     with pytest.raises(ValueError):
         FrontendReplay(None, max_entries=0)
+    with pytest.raises(ValueError):
+        FrontendReplay(None, max_batch=0)
     replay = FrontendReplay(lambda x: x + 1)
     assert replay(torch.tensor([[1.0]])).item() == 2
     assert replay.info()["captures"] == 0
@@ -21,17 +23,19 @@ def test_invalid_capacity_and_cpu_fallback():
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="compute allocation required")
 @pytest.mark.parametrize("fused", [False, True])
 @pytest.mark.parametrize("normalize", ["global_mvn", "utterance_mvn"])
+@pytest.mark.parametrize("max_batch", [1, 8])
 @torch.inference_mode()
-def test_retained_outputs_cross_streams_and_cache_limit(fused, normalize):
+def test_retained_outputs_cross_streams_and_cache_limit(fused, normalize, max_batch):
     frontend = Frontend(replace(TINY, normalize=normalize)).eval().cuda()
     frontend.melmat.uniform_(0, 1)
     if frontend.global_mvn:
         frontend.mean.normal_()
         frontend.std.uniform_(0.1, 2.0)
     frontend.fused_power = frontend.fused_logmel = fused
-    replay = FrontendReplay(frontend, max_entries=2)
+    replay = FrontendReplay(frontend, max_entries=2, max_batch=max_batch)
     streams = [torch.cuda.Stream(), torch.cuda.Stream()]
-    waves = [torch.randn(1, n, device="cuda") for n in (1601, 3200, 1601, 2401, 3200, 1601)]
+    batches = [1]*6 if max_batch == 1 else [3,8,3,8,8,3]
+    waves = [torch.randn(b,n,device="cuda") for b,n in zip(batches,(1601,3200,1601,2401,3200,1601))]
     expected = [frontend(w) for w in waves]
     torch.cuda.synchronize()
     actual = []
@@ -44,8 +48,8 @@ def test_retained_outputs_cross_streams_and_cache_limit(fused, normalize):
         torch.testing.assert_close(v, expected[i % len(waves)], rtol=0, atol=0)
     assert replay.info()["captures"] == 2 and replay.fallbacks == 3
     assert len({v.data_ptr() for v in actual}) == len(actual)
-    # Larger batches retain eager execution, including per-utterance normalization/strides.
-    two = torch.cat([waves[0], waves[0]])
+    # Unmeasured larger batches retain eager execution, with the same per-utterance normalization.
+    two = torch.randn(max_batch+1,1601,device="cuda")
     torch.testing.assert_close(replay(two), frontend(two), rtol=0, atol=0)
     assert replay.info()["captures"] == 2
 

@@ -4,10 +4,13 @@ import torch
 
 
 class FrontendReplay:
-    def __init__(self, frontend, max_entries: int = 32):
+    def __init__(self, frontend, max_entries: int = 32, max_batch: int = 1):
         if max_entries < 1:
             raise ValueError("max_entries must be positive")
+        if max_batch < 1:
+            raise ValueError("max_batch must be positive")
         self.frontend = frontend
+        self.max_batch = max_batch
         self.max_entries = max_entries
         self.entries = {}
         self.capture_stream = None
@@ -17,7 +20,7 @@ class FrontendReplay:
     def __call__(self, speech: torch.Tensor) -> torch.Tensor:
         if (
             speech.device.type != "cuda"
-            or speech.shape[0] != 1
+            or not 1 <= speech.shape[0] <= self.max_batch
             or torch.is_grad_enabled()
             or torch.is_autocast_enabled("cuda")
         ):
@@ -65,6 +68,7 @@ class FrontendReplay:
         return {
             "captures": len(self.entries),
             "max_entries": self.max_entries,
+            "max_batch": self.max_batch,
             "fallbacks": self.fallbacks,
             "input_output_bytes": sum(
                 (inp.numel() * inp.element_size() + out.numel() * out.element_size())

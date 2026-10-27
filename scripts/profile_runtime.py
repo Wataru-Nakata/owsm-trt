@@ -279,10 +279,11 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
             cold[v]["full_verify_warmup_ms"] = ms
             cold[v]["full_verify_warmup_captures"] = captures(model)
     after_warmup = {}
+    frontend_captures = {}
     for v in args.variants:
         activate(v)
         after_warmup[v] = captures(model)
-    frontend_captures = len(model._frontend_replay.entries) if model._frontend_replay else 0
+        frontend_captures[v] = len(model._frontend_replay.entries) if model._frontend_replay else 0
     for repeat in range(args.repeat):
         for v in args.variants if repeat % 2 == 0 else args.variants[::-1]:
             activate(v)
@@ -294,7 +295,7 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
                 current_frontend_captures = (
                     len(model._frontend_replay.entries) if model._frontend_replay else 0
                 )
-                if captures(model) != after_warmup[v] or current_frontend_captures != frontend_captures:
+                if captures(model) != after_warmup[v] or current_frontend_captures != frontend_captures[v]:
                     raise RuntimeError(f"new session/capture in steady-state {name}/{v}")
                 samples.append(
                     {

@@ -230,6 +230,7 @@ class OWSM:
         self._beam_backend = None
         self._encoder_lookahead = encoder_lookahead  # Staging resources are allocated only on eligible calls.
         self.frontend_graph = frontend_graph
+        self._frontend_graph_batch_limit = 1  # Larger graphs remain an isolated profiling experiment.
         self.greedy_skip_finished = greedy_kernels
         self.greedy_plain_solo = greedy_kernels
         self.greedy_fused_select = greedy_kernels
@@ -549,10 +550,10 @@ class OWSM:
             if batch.is_cuda and w.device.type == "cpu":
                 w = w.pin_memory()  # a copy from pageable memory would first wait for the stream's work
             row[: w.shape[0]].copy_(w, non_blocking=True)
-        if self.frontend_graph and self.use_cuda_graph and batch.is_cuda and len(waves) == 1:
+        if self.frontend_graph and self.use_cuda_graph and batch.is_cuda and len(waves) <= self._frontend_graph_batch_limit:
             if self._frontend_replay is None:
                 from .frontend_graph import FrontendReplay
-                self._frontend_replay = FrontendReplay(self.frontend)
+                self._frontend_replay = FrontendReplay(self.frontend, max_batch=self._frontend_graph_batch_limit)
             return self._frontend_replay(batch)[:, :frames]
         return self.frontend(batch)[:, :frames]  # [B, frames, n_mels]
 
