@@ -100,7 +100,7 @@ def main():
     ap.add_argument('--data',type=Path,required=True)
     ap.add_argument('--out',type=Path,required=True)
     ap.add_argument('--publish',type=Path,required=True)
-    ap.add_argument('--mode',choices=['beam_bound','beam_kernels','beam_combined','ring_split','serial64'],
+    ap.add_argument('--mode',choices=['beam_bound','beam_kernels','beam_combined','greedy_kernels','ring_split','serial64'],
                     default='beam_bound')
     ap.add_argument('--case',choices=['beam_b1','beam_b3','beam_prompt','beam_long','plain_ts','draft_ts','translation','long'],default='beam_b1')
     ap.add_argument('--datasets',nargs='+')
@@ -148,6 +148,8 @@ def main():
             reference=dict(beam_upper_bound=args.mode=='beam_kernels',beam_kernels=args.mode=='beam_bound'),
             candidate=dict(beam_upper_bound=True,beam_kernels=True),
         )
+    if args.mode=='greedy_kernels':
+        config['greedy_variants'] = dict(reference=False,candidate=True)
     config_path = args.publish/'config.json'
     if config_path.exists():
         assert json.loads(config_path.read_text())==config,'resume config/source/input changed'
@@ -175,6 +177,11 @@ def main():
         else:
             baseline = current
         backends = {'reference':baseline,'candidate':current}
+        models = dict.fromkeys(backends,model)
+        if args.mode=='greedy_kernels':
+            # The public constructor owns the switch mapping; reuse loaded weights/engines with separate pipeline state.
+            models['reference'] = OWSM(model.cfg,model.tokenizer,model.frontend,current,model.opts,
+                model.device,use_cuda_graph=model.use_cuda_graph,greedy_kernels=False)
         pools = {v:OrderedDict() for v in backends}
         engines = hub.cache_dir()/files.name.replace('/','--')/engine_tag(model.opts)
         env = dict(engine_sha256={p.name:sha256(p) for p in engines.glob('*.engine')},gpu=torch.cuda.get_device_name(),
@@ -183,6 +190,9 @@ def main():
         env['decoder_settings'] = {v:dict(kernel=type(b.kernel).__name__,
             programs=getattr(b.kernel,'P',None),solo_programs=getattr(b.kernel,'P_solo',None),
             single_cross_splits=getattr(b.kernel,'single_cross_splits',None)) for v,b in backends.items()}
+        if args.mode=='greedy_kernels':
+            env['greedy_settings'] = {v:{k:value for k,value in vars(m).items() if k.startswith('greedy_')}
+                                      for v,m in models.items()}
         env['decoder_dispatch'] = {v:{} for v in backends}
         env['dispatch_scope'] = ('Configured single-token functions for observed sessions; listed buckets may '
                                  'only have warmed/captured. Includes per-bucket observation jobs, not execution counts.')
@@ -193,6 +203,7 @@ def main():
             if 'decoder_settings' in previous:
                 assert previous['decoder_settings']==env['decoder_settings'], 'decoder settings changed on resume'
                 env['decoder_dispatch'] = previous['decoder_dispatch']
+            assert previous.get('greedy_settings')==env.get('greedy_settings'), 'greedy settings changed on resume'
         (args.out/'environment.json').write_text(json.dumps(env,indent=2)+'\n')
         publish_file(args.out/'environment.json',args.publish/'environment.json')
         archives = {}
@@ -223,6 +234,7 @@ def main():
                     waves = [wave(r) for r in batch]
                     outputs = {}
                     for mode in (list(backends) if chunk_id%2==0 else list(backends)[::-1]):
+                        model = models[mode]
                         model.backend,model._sessions = backends[mode],pools[mode]
                         if beam_mode:
                             model.beam_upper_bound = config['beam_variants'][mode]['beam_upper_bound']
