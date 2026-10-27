@@ -1,15 +1,23 @@
-# 102M serial Ring program budget (two measurements; default24 retained)
+# 102M serial Ring program budget
+
+Adopted after independent public verification2778349: H200132SM/102M uses64serial CTAs,
+with concurrent12and cross-attention NS2unchanged. Plain and CTC-drafted B1 RTFx improves
+3.7–6.9% across the two64-budget measurements, and110s improves7.1–8.1%. All changed-condition
+paired totals improve in11/11repeats in each run. B8auto uses unchanged TensorRT and has no gain claim.
+All sampled outputs/cache states match; English73/Japanese12, with plain/translation limited to12
+individual inputs per language. Final API checks and limitations appear below. Historical pilots retain
+all samples, including GC-associated excursions; their results are not multiplied together.
 
 Candidate31, E intent against the current Ring kernel, independent of wide-row N routing.
 Actual graph trace2777712 places the single-row Ring decoder at75.3%of102M English translation
 GPU kernel sums. These instrumented sums motivate a small same-engine ablation; they cannot
 predict wall savings. The previous1B32/64budget study does not establish a102M schedule.
 
-102M uses12programs with concurrent encoder work and24for serial single-row calls. The
-experiment compares existing24against32and48serial programs on H200132SM. Concurrent12,
+The original102M schedule used12programs with concurrent encoder work and24for serial single-row calls. The
+initial experiment compared24against32and48serial programs on H200132SM. Concurrent12,
 row routing, weights, fp16/fp32 arithmetic, cache layout, CTA tile size and cross-attention NS2
-remain unchanged. `RingDecoder` already accepts `solo_programs`; no new kernel or production
-route/default is introduced. Additional CTAs may increase barrier overhead, so a speedup is
+remain unchanged. `RingDecoder` already accepts `solo_programs`; the experiments tune this existing
+parameter. Final adoption changes the guarded serial default, not the kernel arithmetic. Additional CTAs may increase barrier overhead, so a speedup is
 not assumed. Every full token/time/text/segment output must match; any difference aborts.
 
 Six GPU synthetic checks exercise W1/8/32, cross length64/374, per-bucket graph reuse, offsets
@@ -32,7 +40,7 @@ python scripts/profile_ring_solo.py --model /local/owsm_v4_base_102M \
   --repeat 11 --out /local/results
 ```
 
-Run only on compute nodes via the staged `scripts/profile_ring_solo.pbs`. The first results are below; default24 remains unchanged.
+Run only on compute nodes via the staged `scripts/profile_ring_solo.pbs`. Historical first results below retained default24 until the final verification.
 
 
 Pilot2778037 (0110369) passed6GPU tests and18actual-checkpoint equality checks per language.
@@ -77,8 +85,8 @@ The English solo48draftedB1 excursion recurred at the exact same repeat2/input12
 80.763ms versus its1.778ms median, after79.098ms versus1.848ms in the pilot. All samples are
 retained. B8also has large excursions despite identical dispatch and graph/call counts.
 This motivates separate GC/processCPU/context-switch diagnostics and an uninstrumented rotated
-variant-order run; a GC cause is not established by repeat/input coincidence alone. The production
-default stays24 pending diagnosis. [Repeat and raw outliers](runtime-ring-solo-2778131.json).
+variant-order run; a GC cause is not established by repeat/input coincidence alone. At that point, the production
+default stayed24 pending diagnosis. [Repeat and raw outliers](runtime-ring-solo-2778131.json).
 
 `--host-diagnostics` records GC start/stop intervals, process CPU time, page faults and context
 switches for each measured call in `host.json`. These instrumented measurements are separate from
@@ -104,7 +112,7 @@ Before selecting the default, the same narrow E experiment extends to64/96serial
 an intermediate control and24as reference (`--solo-programs 24 48 64 96`). This changes no arithmetic,
 NS2or concurrent12budget. Six GPU graph/state tests now also check64/96; each corpus requires24actual
 checkpoint cases and every output/call to agree. These budgets are unmeasured until their artifacts
-are published. The production default is still24.
+are published. The production default was still24 at that point.
 
 Extended pilot2778290 used four resident pools (its environment prose incorrectly says three;
 the saved budget dictionary, samples and memory accounting include all four). This run (f7bf820) passed5CPU/6GPU checks and24actual-checkpoint comparisons per language.
@@ -124,4 +132,43 @@ No sample is dropped. Every64/96paired total improved in all11repeats for each c
 Japanese timestamp/translation benefit and does not improve110s over64. This is a measured compromise,
 not proof that64is globally optimal. H200132SM/102M default64is prepared with explicit24rollback,
 unchanged concurrent12/NS2and unchanged row dispatch. Independent timing/public-API verification
-is pending before documenting it as adopted. [Pilot results](runtime-ring-solo-more-2778290.json).
+subsequently passed as recorded below. [Pilot results](runtime-ring-solo-more-2778290.json).
+
+Public verification2778349 (9fa5996) passed20CPU/GPU tests,18actual-checkpoint comparisons per language,
+and15API cases per language. `actual_public_default=64`/`public_variant=solo64` confirm the actual auto
+backend was measured, against explicit24rollback and48control. All corpus outputs match the frozen
+2778131reference, and decoder calls plus actual graph replay counts match. The15API cases include
+plain/drafted/no-timestamp ASR, translation, B8, beam B1/B3, silence/noise,30s, long prompt, encoder
+lookahead,110s and reuse. No fallback/capture drift or output difference was observed.
+
+| Condition | English public64 RTFx change | Japanese public64 RTFx change |
+|---|---:|---:|
+| Plain ASR B1 | +5.09% | +5.32% |
+| Plain timestamp ASR B1 | +4.31% | +5.56% |
+| Translation B1 | +3.75% | +5.80% |
+| CTC-drafted timestamp B1 | +4.38% | +5.89% |
+| CTC-drafted timestamp B8 (unchanged control) | +0.14% | -0.28% |
+| 110s long-form | +7.06% | not measured |
+
+Every changed condition improves all11paired totals and pooledp95. B8remains an unchanged/noisy
+control; Japanese B8p95increases3.16% in this repeat. The48control retains a large English draftedB1
+excursion and aggregate-0.46%; no sample is discarded. These are loaded-input warmed measurements,
+not isolated deployment VRAM/cold-load results. Raw distributions, capture/memory data, quality and
+source hashes are in the [public report](runtime-ring-solo-api-2778349.json).
+
+The default applies only to H200132SM, D384/F1536/H6/L6and four warps. Other model/GPU/warp schedules
+retain prior defaults. An explicit `RingDecoder(..., solo_programs=24)` overrides it; the existing public
+`decoder_kernel="ring:s24"` selects the prior serial budget. Concurrent12, NS2, multi-row dispatch,
+encoder lookahead and engine precision are unchanged. This is same-Ring E validation, not a new
+fp32-equivalence result. No human timestamp boundaries or reference translations are available;
+long-form compares joined text/segments. No gain is claimed for1B, other GPUs or beam multi-row work.
+
+```sh
+python scripts/profile_ring_solo.py --model /local/owsm_v4_base_102M \
+  --manifest /local/manifest.json --long-audio /local/long_110s.wav \
+  --solo-programs 24 48 64 --rotated-order --baseline-results /local/frozen_2778131 \
+  --repeat 11 --out /local/results
+```
+
+The staged public job is `scripts/profile_ring_solo_api.pbs` and additional API checks use
+`scripts/validate_ring_solo_api.py --expected-programs 64` with the same model/manifest/long audio.

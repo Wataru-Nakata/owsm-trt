@@ -268,6 +268,13 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   decoder calls. Pooled request p95 improved; one102M translation input's median regressed1.08%.
   Drafted ASR has no corresponding speedup claim. Overlapping encoder calls retain their schedule.
   [Public API validation and limitations](docs/runtime-plain-solo.md).
+* **102M serial Ring budget.** H200132SM/102M now uses64 CTAs for serial single-row calls,
+  preserving concurrent12 and cross-attention splits. Independent measurements improve warmed
+  plain/drafted B1 RTFx by3.7–6.9% and110s long-form by7.1–8.1%, with exact sampled tokens/times,
+  unchanged call counts,20focused tests and30public API checks. Plain/translation use12 inputs per
+  language; drafted ASR uses English73/Japanese12. Other GPU/model defaults and auto B8 are unchanged.
+  Existing `decoder_kernel="ring:s24"` restores the previous serial budget.
+  [Distributions, GC excursions and verification](docs/runtime-ring-solo.md).
 * **Existing102M Ring row option.** `decoder_kernel="ring:rr"` remains an opt-in numerical
   change. On H200, English73/Japanese12 plain B3 ASR gained35–47% whole-list RTFx and
   timestamp beam5 B1 gained10.5–11.3%, against `auto` with the same engines (nine alternating
