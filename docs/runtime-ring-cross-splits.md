@@ -1,4 +1,4 @@
-# Single-row Ring cross-attention split experiment (unmeasured N)
+# Single-row Ring cross-attention splits (opt-in N)
 
 The current serial64 profile2778412 attributes17.9–20.9% of instrumented1B stage time and
 20.6–23.1%of102M to cross-attention. These are diagnostic fractions, not predicted wall savings.
@@ -10,7 +10,8 @@ weights, tile sizes, barriers, encoder buffers and beam behavior remain as befor
 None retaining the existing formula. It applies to allR1calls within that mode, both concurrent
 and solo, so encoder timing cannot change the arithmetic grouping within a mode. R>1retains the
 prior formula. This is N, not exact relative toNS2; token/time/quality differences must be retained.
-No public decoder-kernel string or default behavior is added by this experiment.
+The original prototype adds no default behavior. A guarded public `ring:split` option is now
+prepared for independent verification; it is not yet validated through the public API.
 
 Thirteen synthetic GPU checks cover width384/1024, W1/8/32, T64/374, offsets0/63/0, graphs,
 cache bounds, repeated states and EOS skip. Within each split setting, concurrent/solo outputs
@@ -30,7 +31,36 @@ pooled VRAM (three resident pools), dispatch/split counts, all tokens/segments a
 retained. Silence/noise,30s and long-prompt outputs are saved separately. There are no human
 boundary/reference-translation annotations; long-form exposes joined text/segments only.
 
-This prototype is not adopted or measured yet. Reproduction (allocated compute node only):
+Job2778533 (source254a2bb, H200132SM, Torch2.14.1/cu130, Triton3.8, TRT11.4.0.106) completed
+with exit0,26checks passed and all168 actual-model numerical combinations passing unchanged gates.
+Stageout_status1 is recorded separately; all expected artifacts were published. The full same-engine
+results, raw output differences, hashes and environment are in
+[runtime-ring-cross-splits-2778533.json](runtime-ring-cross-splits-2778533.json); raw samples are in
+`outputs/runtime-2778533`. RTFx changes below retain all11alternating repeats:
+
+| Model / language | Plain | Plain TS | Translation | Drafted | Drafted TS | Stream B1 | B8 control | 110s |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| 1B / English, NS4 | +1.42% | +2.20% | +2.09% | +0.69% | +1.08% | -2.68% | +0.48% | +1.77% |
+| 1B / Japanese, NS4 | +1.61% | +2.23% | +1.56% | +1.30% | +1.54% | -2.69% | -0.44% | — |
+| 102M / English, NS8 | +4.53% | +4.82% | +4.79% | +1.86% | +2.91% | -6.70% | +0.95% | +3.43% |
+| 102M / Japanese, NS8 | +3.59% | +4.52% | +4.67% | +3.36% | +4.65% | -0.22% | +0.90% | — |
+
+All changed direct-request cases above have11/11 positive paired totals and lower pooled p95.
+NS4/1B agrees exactly on all corpus and extra outputs. NS8/102M changes an English plain-TS
+boundary from19.22 to19.24s (1/12inputs); WER remains33/303. Its Japanese synthetic repeated30s
+input changes a start boundary from12.20 to12.44s, with unchanged text. Other selected-mode
+corpus/extra outputs and decoder call counts agree; WER/CER do not change. These boundary
+changes are baseline differences, not annotation-based accuracy. NS8/1B is rejected: direct
+cases regress3.0–6.6%, streaming regresses8.5–10.9%, and2Japanese translation outputs differ.
+NS4/102M is slower thanNS8 on the direct cases (1.4–3.4% gains vs baseline).
+
+B1 streaming regressions prevent changing defaults. The public opt-in under validation selects
+NS4/1B orNS8/102M on H200132SM only, consistently for allR1calls; unsupported hardware/models
+retain auto behavior, including numerical setup checks. B8 uses the unchanged row path, so its
+small fluctuations are a control, not an optimization gain. Cold/JIT and VRAM include resident
+comparison pools; no isolated deployment-memory or cold-start gain is claimed.
+
+Reproduction (allocated compute node only):
 
 ```sh
 python scripts/profile_ring_cross_splits.py --model /local/owsm_v4_medium_1B \
