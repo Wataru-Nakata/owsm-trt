@@ -48,8 +48,11 @@ has an empty final segment ending31.16seconds. These cases expose short-tail win
 both variants. The retained outputs reproduce the issue; changing windowing or restricting times
 would require a separate quality/compatibility evaluation. The existing `cut_at_pauses` option was
 not enabled in this audit and is not assumed to solve it.
-B3 job2780636 follows with frozen773f827 source and language/API-preserving input groups; its
-results remain pending.
+B3 job2780636 used frozen773f827 source and language/API-preserving input groups. It ended
+normally at the audit budget with a [validated partial result](runtime-large-regression-2780636-partial.json):
+9,600 text/segment pairs and9,584 available token/timestamp pairs match,75 chunks pass strict
+validation, and `complete=false` is retained. Job2780819 resumes the remaining3,632 inputs with
+the identical773f827 source/config/engines/corpus. Full B3 acceptance remains pending.
 
 A separate [partial cross-batch comparison](runtime-batch-numerics-6656.json) checks6,656 matched
 inputs with identical runtime source trees, checkpoint/engine hashes, Torch/CUDA and GPU type.
