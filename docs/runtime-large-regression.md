@@ -3,7 +3,7 @@
 The English73/Japanese12 sets used for tuning are screening sets. Their agreement does not establish
 coverage of uncommon inputs. Large output regressions are now a separate acceptance step from the
 small, repeated latency benchmark. The1B/beam5/timestamp/B1 and B3 upper-bound OFF/ON audits each completed with
-zero output differences across13,232 inputs. The search-kernel OFF/ON audit also completed at B1;
+zero output differences across13,232 inputs. The search-kernel OFF/ON audits also completed at B1 and B3;
 other large-corpus ablations and timing remain pending.
 Job2780055 prepared the corpus. Its
 [corpus manifest](runtime-large-regression-corpus-2780055.json) records13,204 real short-corpus inputs
@@ -96,17 +96,31 @@ both original outputs exactly. Actual dispatch and full raw outputs are retained
 
 The B3 repetition persists without an auto decoder switch or the new search kernels/bound.
 The TensorRT-only B1 result has the same text as auto B1 with a20ms start-time difference. This
-rules out decoder-route switching alone as the explanation; it does not yet separate feature/encoder/
-cross-projection batch effects from decoder/prefill batch effects. No truncation, timestamp clamping,
+rules out decoder-route switching alone as the explanation. No truncation, timestamp clamping,
 route default or model arithmetic was changed. `reproduce_batch_corner.py` and its PBS driver retain
 the48-call controls, exact group, dispatch, original-output differences and stability checks. Its small
 metadata fixtures pass. The public API sorts by duration, so this is not a decoder-row permutation test.
-The prepared `isolate_batch_corner.py` diagnostic crosses conditioning computed at B1/B3 with
+The [fixed-conditioning diagnostic2781169](runtime-batch-corner-stages-2781169.json) crosses conditioning computed at B1/B3 with
 prefill/decoding at B1/B3, keeping TensorRT and the original duration order. It copies fixed cross-KV
 without rerunning the encoder during the decode controls, records conditioning differences and stop
 diagnostics, and requires native1/1 and3/3 outputs to match the prior public API controls. Conditioning
-includes frontend, encoder and cross projections; mixed combinations are N interventions. Its small
-matrix/accounting tests pass; GPU results are pending and no runtime behavior changes are proposed.
+includes frontend, encoder and cross projections; mixed combinations are N interventions. All12 runs
+are stable across three repeats, and both native controls reproduce all three public API outputs exactly
+(PBS F/exit0, publication exit0). For the retained target:
+
+| Conditioning batch | Prefill/decoder batch | Target tokens | Character edits /53 | Complete segments |
+|---:|---:|---:|---:|---:|
+|1|1|63|14|1|
+|1|3|63|14|1|
+|3|1|374|214|0|
+|3|3|374|214|0|
+
+The repetition follows conditioning batch shape even when decoder batch is held fixed. Cross-key
+absolute differences have mean0.01254/max0.50897, and cross-value differences mean0.01372/max0.875
+over the three inputs. This localizes this case to sensitivity to the frontend/encoder/cross-projection
+output, but does not identify an individual operator or establish the cause of all245 cross-batch
+differences. Single-input conditioning is a diagnostic intervention here, not an adopted production
+fallback or a measured optimization. No runtime behavior changed.
 
 For13,044 inputs with identical text and ordered segment labels/count, all26,516 boundary differences
 have median/p95 zero. The52 nonzero boundary displacements have median20ms, p95120ms and maximum740ms;
@@ -223,15 +237,16 @@ Subsequent ablations also include `beam_kernels` (upper bound ON in both, search
 and `beam_combined` (upper bound and beam kernels both OFF/ON), to cover bugs shared by both sides
 of the upper-bound-only comparison. These use the existing PyTorch reference path, the same decoder
 backend/engine, and separate session pools. The [complete search-kernel B1 result](runtime-large-regression-2780923.json)
-from job2780923/frozen9e87cfaf passes all104 chunk/config/corpus/order/output checks (PBS F/exit0,
-publication exit0):13,232 text/segment pairs and13,191 available token/timestamp pairs match exactly.
+from job2780923 and [B3 result](runtime-large-regression-2781006.json) from job2781006 both use frozen9e87cfaf.
+Each passes all104 chunk/config/corpus/order/output checks (PBS F/exit0, publication exit0):
+13,232 text/segment pairs and13,191 available token/timestamp pairs match exactly at each batch.
 This compares the combined public `beam_kernels` switch while keeping the upper bound ON in both
 variants. It does not separately attribute each component's parity or establish a new speed gain.
-The [candidate-output repeat check](runtime-large-regression-repeat-2780923.json) also matches the
-candidate outputs from the earlier B1 bound audit on every available field, with identical runtime
-source tree, engines/checkpoint and software. B3 search kernels and combined bound/kernel ablations
-remain pending. B3 search-kernel job2781006 is running with the same frozen9e87cfaf source as B1,
-after a fresh account/queue/no-duplicate guard.
+The candidate-output repeat checks at [B1](runtime-large-regression-repeat-2780923.json) and
+[B3](runtime-large-regression-repeat-2781006.json) also match the respective earlier bound audits on
+every available field, with identical runtime source tree, engines/checkpoint and software.
+The101 B3 diagnostic inputs, including the Chinese repetition, are shared by both kernel variants;
+this check does not fix those baseline issues. Combined bound/kernel ablations remain pending.
 Other ablations are102M serial64 versus24 (E), and the explicit1B NS4/102M NS8 option versus NS2 (N),
 with plain/drafted ASR, translation and long-form cases. N differences remain visible, not treated
 as exact or silently accepted as accuracy improvements. New default adoption waits for relevant
@@ -266,7 +281,7 @@ dispatch/fallback metadata by observed session shape and cache bucket. Entries k
 job when a run resumes; a listed bucket may only have warmed/captured and is not an execution count.
 The102M `serial64/plain_ts` audit requires the solo route to activate, so an inactive24/64 configuration
 cannot silently pass as the intended ablation. This metadata change does not alter inference and is
-not included in the ongoing frozen9e87cfaf B3 kernel run.
+not included in the completed frozen9e87cfaf B3 kernel run.
 
 The preceding small public-split repeat2778800 was explicitly stopped when a fresh account query
 reported198 GPUs. PBS exit271 and partial publication are recorded in
