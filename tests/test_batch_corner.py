@@ -4,6 +4,7 @@ import copy
 import itertools
 
 import pytest
+from isolate_batch_corner import summarize_stages
 from reproduce_batch_corner import select_group, summarize_runs
 
 
@@ -42,3 +43,25 @@ def test_diagnostic_summary_separates_numerical_routes_from_exact_controls():
     for invalid in (runs[:-1],runs+[runs[-1]]):
         with pytest.raises(AssertionError):
             summarize_runs(invalid,2)
+
+
+def test_stage_matrix_requires_native_controls_and_stability_but_allows_mixed_differences():
+    def outputs(token):
+        return {'three':dict(tokens=[token],timestamp_tokens=[],text=str(token),segments=[])}
+    expected={1:outputs(1),3:outputs(3)}
+    runs=[dict(conditioning_batch=e,decoder_batch=d,repeat=r,
+               outputs=outputs(d if e==d else 7))
+          for e,d,r in itertools.product((1,3),(1,3),range(2))]
+    summary=summarize_stages(runs,expected,2)
+    assert summary['complete'] and not summary['unstable'] and not summary['native_failures']
+    changed=copy.deepcopy(runs)
+    changed[-1]['outputs']=outputs(99)
+    summary=summarize_stages(changed,expected,2)
+    assert len(summary['unstable'])==len(summary['native_failures'])==1
+    for invalid in (runs[:-1],runs+[runs[-1]]):
+        with pytest.raises(AssertionError):
+            summarize_stages(invalid,expected,2)
+    missing=copy.deepcopy(runs)
+    missing[2]['outputs']={}
+    with pytest.raises(AssertionError):
+        summarize_stages(missing,expected,2)

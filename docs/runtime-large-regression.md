@@ -101,6 +101,12 @@ cross-projection batch effects from decoder/prefill batch effects. No truncation
 route default or model arithmetic was changed. `reproduce_batch_corner.py` and its PBS driver retain
 the48-call controls, exact group, dispatch, original-output differences and stability checks. Its small
 metadata fixtures pass. The public API sorts by duration, so this is not a decoder-row permutation test.
+The prepared `isolate_batch_corner.py` diagnostic crosses conditioning computed at B1/B3 with
+prefill/decoding at B1/B3, keeping TensorRT and the original duration order. It copies fixed cross-KV
+without rerunning the encoder during the decode controls, records conditioning differences and stop
+diagnostics, and requires native1/1 and3/3 outputs to match the prior public API controls. Conditioning
+includes frontend, encoder and cross projections; mixed combinations are N interventions. Its small
+matrix/accounting tests pass; GPU results are pending and no runtime behavior changes are proposed.
 
 For13,044 inputs with identical text and ordered segment labels/count, all26,516 boundary differences
 have median/p95 zero. The52 nonzero boundary displacements have median20ms, p95120ms and maximum740ms;

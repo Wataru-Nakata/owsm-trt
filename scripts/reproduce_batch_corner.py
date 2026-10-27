@@ -27,6 +27,25 @@ def select_group(index: list[dict],case: dict) -> list[dict]:
     return rows
 
 
+def load_group_waves(rows: list[dict],data_dir: Path):
+    import soundfile as sf
+    import torch
+
+    from owsm_trt.audio import load_audio
+
+    waves=[]
+    with ExitStack() as stack:
+        archives={shard:stack.enter_context(tarfile.open(data_dir/shard))
+                  for shard in dict.fromkeys(r['shard'] for r in rows)}
+        for row in rows:
+            raw=archives[row['shard']].extractfile(row['audio_member']).read()
+            assert hashlib.sha256(raw).hexdigest()==row['audio_sha256']
+            data,sr=sf.read(io.BytesIO(raw),dtype='float32',always_2d=True)
+            mono=data[:,0] if data.shape[1]==1 else data.mean(axis=1)
+            waves.append(load_audio(torch.from_numpy(mono),sr=sr))
+    return waves
+
+
 def summarize_runs(runs: list[dict],repeats: int) -> dict:
     by_mode={}
     for run in runs:
@@ -84,25 +103,14 @@ def main():
     args.out.mkdir(parents=True,exist_ok=True)
     args.publish.mkdir(parents=True,exist_ok=True)
 
-    import soundfile as sf
     import torch
     from eval_wer import CER_LANGS, characters, edit_distance, normalize
     from profile_beam import command, dispatch, result_record
 
     from owsm_trt import OWSM, hub, megakernel
-    from owsm_trt.audio import load_audio
     from owsm_trt.build import engine_tag
 
-    with ExitStack() as stack:
-        archives={shard:stack.enter_context(tarfile.open(args.data/shard))
-                  for shard in dict.fromkeys(r['shard'] for r in rows)}
-        waves=[]
-        for row in rows:
-            raw=archives[row['shard']].extractfile(row['audio_member']).read()
-            assert hashlib.sha256(raw).hexdigest()==row['audio_sha256']
-            data,sr=sf.read(io.BytesIO(raw),dtype='float32',always_2d=True)
-            mono=data[:,0] if data.shape[1]==1 else data.mean(axis=1)
-            waves.append(load_audio(torch.from_numpy(mono),sr=sr))
+    waves=load_group_waves(rows,args.data)
     files=hub.resolve(args.model)
     runs=[]
     with torch.inference_mode():
