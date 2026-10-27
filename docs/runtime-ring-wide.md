@@ -1,4 +1,4 @@
-# Wider102M Ring diagnosis (no production routing change)
+# Wider102M Ring (verified N opt-in; auto unchanged)
 
 Candidate23, N investigation. The actual-graph trace2777712 shows TensorRT decoder GEMMs,
 attention and norm kernels dominate102M R15 beam and R8 translation. The measured existing
@@ -108,3 +108,29 @@ pending. It starts from the auto route (including its existing single-row numeri
 adds only the reviewed R10/15/16 S1 calls and retains logged auto fallback on unsupported
 configurations or setup errors. Auto/default and existing `ring:rr` remain unchanged.
 [Independent paired results](runtime-ring-wide-results-2777935.json).
+
+
+Public integration2777975 (ffef64b) passed26routing/fallback tests, all10timing conditions
+matched both modes of frozen2777897 exactly, and13APIcases per language matched the experimental
+wrapper exactly. These include partial batches, draft verification, lookahead, long prompts,
+silence/noise,30s windows,110s long-form and reuse. Long-form parity compares joined text/segments;
+other cases include full token IDs. No new fallback or warm capture occurred.
+
+The public route independently measures English B2/B3beam RTFx+26.54%/+24.24% and Japanese
++36.16%/+35.54%, all11pairs positive in each condition. English translationB10/B16 is+24.12%/
++16.47%; JapaneseB10 is+21.49%. The output/quality differences above are unchanged. Unchanged
+B1beam/JapaneseB16controls have no speedup claim. This result supports the explicit N opt-in;
+it does not make it output-compatible with auto or establish translation/silence quality.
+
+```python
+model = OWSM.from_pretrained("espnet/owsm_v4_base_102M", decoder_kernel="ring:wide")
+results = model.transcribe(audio_paths, beam_size=5, timestamps=True, batch_size=3)
+```
+
+The default remains `auto`. Existing `ring:rr` is unchanged and is a different option: `ring:wide`
+retains auto for rows<=8 and for all rows/windows outside exactly R10/15/16 S1decode. Thus beam5
+B1 has no new route; beam5B2/B3 can use the wider kernel. Other GPU/model shapes retain auto,
+with an explicit warning. No combined gain with LSE, encoder lookahead, prefetch or frontend
+options is claimed. Only H200132SM/102M is measured; unsupported hardware fallback is covered
+by CPU routing guards, not real-GPU performance testing.
+[Public timing, frozen-output parity and26APIcases](runtime-ring-wide-api-2777975.json).

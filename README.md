@@ -280,6 +280,14 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   timestamp beam5 B1 and18.8–21.2% for translation B8 versus the previous Ring schedule, with
   exact outputs and11 edge/API checks. This does not resolve the Ring-versus-auto quality
   differences above or change auto's TensorRT row routing. [Verified scheduling results](docs/runtime-ring-row-programs.md).
+* **Wider102M Ring option.** `decoder_kernel="ring:wide"` is an opt-in numerical change for
+  H200132SM/102M. Only R10/15/16 single-token decode calls change; smaller rows, prefill and
+  unsupported shapes retain auto. Independent/public English73/Japanese12 measurements improve
+  beam5 timestamp B2/B3 whole-corpus RTFx by24–36%, with all11paired totals faster. All beam
+  timestamp IDs match and WER/CER stay unchanged on these samples, but one English comma,
+  translation outputs and silence repetitions differ. Auto and `ring:rr` are unchanged.
+  Public output parity passed26APIcases plus26route/fallback tests; other GPUs are unmeasured.
+  [Usage, full numerical differences and limitations](docs/runtime-ring-wide.md).
 * **Cached-engine model loading.** Frontend/decoder helpers privately map supported ZIP checkpoints
   and read only needed tensors. On H200 with node-local files and warmed OS/JIT caches, fresh-process
   load medians fell from6.75 to4.61 s for1B and1.87 to1.61 s for102M (five alternating pairs, exact
