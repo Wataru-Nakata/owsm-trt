@@ -1,12 +1,20 @@
-# Bounded audio prefetch experiment
+# Bounded audio prefetch
 
-Candidate40, E/N intent; no speed or adoption claim yet. The earlier mono-file measurements
+Current status: `audio_prefetch_workers=1` or2 is a verified public opt-in; default0 remains.
+Greedy streaming evidence and the original investigation are recorded below. The later
+[fixed beam/translation extension](runtime-fixed-prefetch.md) also passes independent timing and
+output verification. Single batches, mixed/loaded inputs, CPU autocast, encoder lookahead, CTC-only
+and long-form retain their existing synchronous loading. Results concern warm node-local files.
+
+## Original streaming experiment
+
+Candidate40, E/N intent; the initial experiment started without a speed or adoption claim. The earlier mono-file measurements
 (`runtime-audio-io.md`) show a substantial file-inclusive gap to resident waveform controls.
 This experiment overlaps CPU file decoding/resampling for the next batch with the existing
 GPU streaming path. It does not preload timed inputs outside the request.
 
-The private `_audio_prefetch_workers` switch defaults to0. Workers1/2 apply only to an all-file
-list that enters drafted greedy streaming. Two batches at most are submitted, including the
+The initial private `_audio_prefetch_workers` switch defaulted to0. In that experiment, workers1/2
+applied only to an all-file list entering drafted greedy streaming. Two batches at most are submitted, including the
 current batch; result order and the existing duration-based scheduling are preserved. Each
 read owns its file handle. Feature extraction, H2D and model calls remain on the calling thread.
 Non-file/mixed inputs retain synchronous loading; CPU autocast also falls back because its
