@@ -1,0 +1,2033 @@
+{
+  "source": {
+    "group": "gai51740",
+    "queue": "R9920261300",
+    "resource": "rt_HG",
+    "nodes": 1,
+    "gpus": 1,
+    "walltime": "01:00:00",
+    "account_gpu_cap": 192,
+    "approval": "Standing serial1GPU authorization at same approvedsettings; fresh failclosed192cap/queue/no duplicates eachsubmission.",
+    "commit": "61fef6c46e25678986f863f72702d8825f141a23",
+    "snapshot": "/groups/gai51740/acc12576tt/github.com/owsm_trt/outputs/runtime-frontend-api/snapshot-61fef6c4.tar",
+    "experiment": "runtime_frontend_api",
+    "status": "approved_not_submitted",
+    "approved_jobs": 1,
+    "additional_jobs_submitted": 0,
+    "prepared_at": "2026-10-27T06:08:04.175164+00:00",
+    "depends_on": "2776693 terminalhandled d98821b;2776645 memorybenefit documented2b18e32.",
+    "classification": "Publicfrontend reuseTrue/defaultbatch1 andoptionalmax8, reverse memory-order Evalidation. Independent publicmono loader9341c60 vs explicitlegacy.43tests,2models9APIcases\u00d73modes,8memoryfolders,8frontendcases+8audio cases11pairs; sameengines."
+  },
+  "corpora": {
+    "1b_english_audio": {
+      "environment": {
+        "commit": "61fef6c46e25678986f863f72702d8825f141a23",
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106",
+          "soundfile": "0.14.0"
+        },
+        "load_ms": 3090.333472000566,
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "manifest_sha256": "fa83ecc7c85cd429cbbfaae75c391ae68d7071aa69e64feb42fda27a87a10aec",
+        "input_modes": {
+          "reference": "file paths, preserved legacy mean loader",
+          "mono": "file paths, public mono view loader",
+          "loaded": "resident tensor control"
+        },
+        "scope": "Same engines/checkpoint/default B1 frontend graph and decoder. E intent; independent public mono integration check. File paths include headers/read/decode in wall; loaded control excludes them. Warm OS/filesystem cache after staging; not cold disk/network/Lustre or preprocessing speed on other sample rates."
+      },
+      "audio": {
+        "first_load_ms": 128.56411400025536,
+        "warm_ms": {
+          "header": {
+            "n": 11,
+            "p50": 3.1119249997573206,
+            "p95": 3.130906000478717,
+            "min": 3.0826120000710944,
+            "max": 3.133907999654184,
+            "stdev": 0.014634311767453077
+          },
+          "reference": {
+            "n": 11,
+            "p50": 126.6878580008779,
+            "p95": 130.8194809998895,
+            "min": 126.0422360010125,
+            "max": 134.60526299968478,
+            "stdev": 2.3162108432487107
+          },
+          "mono": {
+            "n": 11,
+            "p50": 111.23967700041248,
+            "p95": 115.38763850057876,
+            "min": 110.72175499975856,
+            "max": 119.32766900099523,
+            "stdev": 2.3723134577330365
+          }
+        },
+        "samples_ms": {
+          "header": [
+            3.098323999438435,
+            3.12790400130325,
+            3.1159860009211116,
+            3.111611998974695,
+            3.133907999654184,
+            3.1005340006231563,
+            3.1018919999041827,
+            3.0826120000710944,
+            3.1119249997573206,
+            3.1265289999282686,
+            3.1225699985952815
+          ],
+          "reference": [
+            134.60526299968478,
+            126.71110500014038,
+            127.0218539993948,
+            126.0422360010125,
+            126.63916500059713,
+            126.21783900067385,
+            126.6878580008779,
+            126.42012899959809,
+            127.0225019998179,
+            126.42762500036042,
+            127.0336990000942
+          ],
+          "mono": [
+            119.32766900099523,
+            111.44760800016229,
+            110.85655500028224,
+            110.72175499975856,
+            110.76901100022951,
+            111.10483900120016,
+            111.2905559984938,
+            111.23967700041248,
+            111.11355499997444,
+            111.28814699986833,
+            111.29951499970048
+          ]
+        },
+        "waveforms_equal": true,
+        "scope": "CPU file header/decode/mono/resample phases with GPU idle, node-local warm filesystem; not GPU improvement and not additive with overlapping whole-request wall. Equality checks excluded."
+      },
+      "cases": {
+        "single_ts": {
+          "comparisons": {
+            "mono": {
+              "rtfx_change_percent": 2.7087432682937784,
+              "paired_changes_percent": [
+                3.3372742878738926,
+                3.275419864404605,
+                0.9175117062563798,
+                4.461739204387971,
+                5.740021613654633,
+                1.337213766381451,
+                3.1718886441363336,
+                1.7240841280617314,
+                0.9713433682062345,
+                2.4060504619030088,
+                2.4496553523446263
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 2.4496553523446263,
+              "interpretation": "candidate optimization"
+            },
+            "loaded": {
+              "rtfx_change_percent": 25.85761859576776,
+              "paired_changes_percent": [
+                25.515814853741126,
+                28.272600818493252,
+                25.303548728240365,
+                29.47339269308904,
+                29.829512980838913,
+                26.048585276093483,
+                25.364882149724345,
+                23.17661204359107,
+                23.353988376297497,
+                24.28388602147478,
+                23.805635964354387
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 25.364882149724345,
+              "interpretation": "resident-input control: removes file IO, not a runtime optimization gain"
+            }
+          },
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 803,
+                "p50": 7.406714999888209,
+                "p95": 10.938462399099079,
+                "min": 5.547770000703167,
+                "max": 21.807429000546108,
+                "stdev": 2.164947657664272
+              },
+              "rtfx": 825.7317878735419,
+              "peak_allocated_bytes": 6182830592,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 3454,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 45,
+                "rate": 0.0391304347826087,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "mono": {
+              "wall_ms": {
+                "n": 803,
+                "p50": 7.2153109995269915,
+                "p95": 10.528755198902218,
+                "min": 5.505944998731138,
+                "max": 20.846822999374126,
+                "stdev": 2.0399789224529887
+              },
+              "rtfx": 848.0987420917284,
+              "peak_allocated_bytes": 6182830592,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 3454,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 45,
+                "rate": 0.0391304347826087,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "loaded": {
+              "wall_ms": {
+                "n": 803,
+                "p50": 6.009914999594912,
+                "p95": 8.957961100895773,
+                "min": 4.97911399907025,
+                "max": 14.330841999253607,
+                "stdev": 1.4656752750638147
+              },
+              "rtfx": 1039.2463642058965,
+              "peak_allocated_bytes": 6182830592,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 3454,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 45,
+                "rate": 0.0391304347826087,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "outputs_and_decoder_call_totals_equal": true,
+          "cold": {
+            "reference": {
+              "warmup_ms": 5234.956655000133,
+              "allocated_delta_bytes": 4148347392,
+              "reserved_delta_bytes": 4351590400
+            },
+            "mono": {
+              "warmup_ms": 5230.619881000166,
+              "allocated_delta_bytes": 125084160,
+              "reserved_delta_bytes": 8388608
+            },
+            "loaded": {
+              "warmup_ms": 4945.86415699996,
+              "allocated_delta_bytes": 125541888,
+              "reserved_delta_bytes": 10485760
+            }
+          }
+        },
+        "stream_ts_b8": {
+          "comparisons": {
+            "mono": {
+              "rtfx_change_percent": 3.661406919542487,
+              "paired_changes_percent": [
+                6.308529020359965,
+                3.708238748834325,
+                4.028465548656834,
+                2.96824775450808,
+                3.993246620605384,
+                2.652694990615889,
+                3.5755768377044417,
+                2.480415464362884,
+                3.859814750511581,
+                2.6430494217307476,
+                4.075326626544551
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 3.708238748834325,
+              "interpretation": "candidate optimization"
+            },
+            "loaded": {
+              "rtfx_change_percent": 34.17879104327437,
+              "paired_changes_percent": [
+                36.923729144509586,
+                33.15844728545654,
+                36.588710846976056,
+                33.686699751358006,
+                34.592202309763834,
+                33.39602910716961,
+                33.36712641834239,
+                33.473052179065355,
+                32.68018350917452,
+                33.44658178127615,
+                34.697056059532684
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 33.473052179065355,
+              "interpretation": "resident-input control: removes file IO, not a runtime optimization gain"
+            }
+          },
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 257.8987369997776,
+                "p95": 261.80492299954494,
+                "min": 255.76050199924794,
+                "max": 264.39410299826704,
+                "stdev": 2.2518754581041738
+              },
+              "rtfx": 1863.4795378026724,
+              "peak_allocated_bytes": 11211173888,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 539,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 45,
+                "rate": 0.0391304347826087,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "mono": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 249.1777049999655,
+                "p95": 250.15041149981698,
+                "min": 247.42055299975618,
+                "max": 250.46433500028797,
+                "stdev": 0.8427054757684755
+              },
+              "rtfx": 1931.7091065440377,
+              "peak_allocated_bytes": 11244728320,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 539,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 45,
+                "rate": 0.0391304347826087,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "loaded": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 192.37633500051743,
+                "p95": 193.91467750028824,
+                "min": 189.77830700168852,
+                "max": 194.15271000070788,
+                "stdev": 1.143549487583361
+              },
+              "rtfx": 2500.394315162423,
+              "peak_allocated_bytes": 11244728320,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 539,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 45,
+                "rate": 0.0391304347826087,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "outputs_and_decoder_call_totals_equal": true,
+          "cold": {
+            "reference": {
+              "warmup_ms": 6151.146471000175,
+              "allocated_delta_bytes": 1566824960,
+              "reserved_delta_bytes": 1226833920
+            },
+            "mono": {
+              "warmup_ms": 5920.740733001367,
+              "allocated_delta_bytes": 1450924544,
+              "reserved_delta_bytes": 1457520640
+            },
+            "loaded": {
+              "warmup_ms": 6523.73949199864,
+              "allocated_delta_bytes": 1451692032,
+              "reserved_delta_bytes": 1459617792
+            }
+          }
+        }
+      }
+    },
+    "1b_japanese_audio": {
+      "environment": {
+        "commit": "61fef6c46e25678986f863f72702d8825f141a23",
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106",
+          "soundfile": "0.14.0"
+        },
+        "load_ms": 5202.151768000476,
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "manifest_sha256": "d1fee5764e1c4ff2a0d374392cd9f8044be77191de5a39b9935974ca258f5def",
+        "input_modes": {
+          "reference": "file paths, preserved legacy mean loader",
+          "mono": "file paths, public mono view loader",
+          "loaded": "resident tensor control"
+        },
+        "scope": "Same engines/checkpoint/default B1 frontend graph and decoder. E intent; independent public mono integration check. File paths include headers/read/decode in wall; loaded control excludes them. Warm OS/filesystem cache after staging; not cold disk/network/Lustre or preprocessing speed on other sample rates."
+      },
+      "audio": {
+        "first_load_ms": 12.07118199999968,
+        "warm_ms": {
+          "header": {
+            "n": 11,
+            "p50": 0.3833680002571782,
+            "p95": 0.4842389998884755,
+            "min": 0.37339400114433374,
+            "max": 0.5719370001315838,
+            "stdev": 0.05456363775190329
+          },
+          "reference": {
+            "n": 11,
+            "p50": 4.509090000283322,
+            "p95": 7.181892000517109,
+            "min": 4.466120999495615,
+            "max": 9.017533000587719,
+            "stdev": 1.2859294050621644
+          },
+          "mono": {
+            "n": 11,
+            "p50": 1.263436999579426,
+            "p95": 2.7783110008385847,
+            "min": 1.219415999003104,
+            "max": 3.825918000075035,
+            "stdev": 0.7356391839638505
+          }
+        },
+        "samples_ms": {
+          "header": [
+            0.3954539988626493,
+            0.3895479985658312,
+            0.39654099964536726,
+            0.37728999996033963,
+            0.3841500001726672,
+            0.37339400114433374,
+            0.37531500129261985,
+            0.5719370001315838,
+            0.3833680002571782,
+            0.3802600003837142,
+            0.38258699896687176
+          ],
+          "reference": [
+            9.017533000587719,
+            5.248809999102377,
+            5.3462510004465,
+            4.597849998390302,
+            4.60038300116139,
+            4.487256001084461,
+            4.509090000283322,
+            4.496147999816458,
+            4.469145000257413,
+            4.481782998482231,
+            4.466120999495615
+          ],
+          "mono": [
+            3.825918000075035,
+            1.7307040016021347,
+            1.3352189998840913,
+            1.2377389994071564,
+            1.2730010002997005,
+            1.2276659999770345,
+            1.3609819998237072,
+            1.2239440002304036,
+            1.2612139998964267,
+            1.219415999003104,
+            1.263436999579426
+          ]
+        },
+        "waveforms_equal": true,
+        "scope": "CPU file header/decode/mono/resample phases with GPU idle, node-local warm filesystem; not GPU improvement and not additive with overlapping whole-request wall. Equality checks excluded."
+      },
+      "cases": {
+        "single_ts": {
+          "comparisons": {
+            "mono": {
+              "rtfx_change_percent": 3.7270217798493377,
+              "paired_changes_percent": [
+                6.4753475897331825,
+                3.3493029552114306,
+                3.370296535028272,
+                3.474913265047208,
+                3.695700299460669,
+                3.3941847031630834,
+                4.254596313568726,
+                3.3943047966464635,
+                3.2792257641779843,
+                2.8562086597099023,
+                3.4533599039399565
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 3.3943047966464635,
+              "interpretation": "candidate optimization"
+            },
+            "loaded": {
+              "rtfx_change_percent": 7.310155268939544,
+              "paired_changes_percent": [
+                10.447408565914817,
+                7.171478569515832,
+                7.222379740959517,
+                7.074289523064281,
+                6.800810725258155,
+                7.205567132544766,
+                7.866238387413493,
+                6.89769834236158,
+                6.7787429666053445,
+                6.851102320372449,
+                6.1083410574018115
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 7.074289523064281,
+              "interpretation": "resident-input control: removes file IO, not a runtime optimization gain"
+            }
+          },
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 8.149037000293902,
+                "p95": 13.405799449355982,
+                "min": 5.868182000995148,
+                "max": 14.730577000591438,
+                "stdev": 2.0369265858525045
+              },
+              "rtfx": 1568.3634245570952,
+              "peak_allocated_bytes": 6175704576,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 792,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 29,
+                "rate": 0.048986486486486486,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "mono": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 7.726214999820513,
+                "p95": 12.969525750031607,
+                "min": 5.6172120002884185,
+                "max": 13.021671000387869,
+                "stdev": 1.9451588024031892
+              },
+              "rtfx": 1626.8166709775292,
+              "peak_allocated_bytes": 6175704576,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 792,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 29,
+                "rate": 0.048986486486486486,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "loaded": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 7.446763001098589,
+                "p95": 12.665028199899098,
+                "min": 5.3505110008700285,
+                "max": 12.729631998809054,
+                "stdev": 1.9341294406468463
+              },
+              "rtfx": 1683.0132260734763,
+              "peak_allocated_bytes": 6175704576,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 792,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 29,
+                "rate": 0.048986486486486486,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "outputs_and_decoder_call_totals_equal": true,
+          "cold": {
+            "reference": {
+              "warmup_ms": 1884.386681000251,
+              "allocated_delta_bytes": 4140215808,
+              "reserved_delta_bytes": 4206886912
+            },
+            "mono": {
+              "warmup_ms": 1869.345307999538,
+              "allocated_delta_bytes": 123758592,
+              "reserved_delta_bytes": 8388608
+            },
+            "loaded": {
+              "warmup_ms": 2027.0484360007686,
+              "allocated_delta_bytes": 123896320,
+              "reserved_delta_bytes": 8388608
+            }
+          }
+        },
+        "stream_ts_b8": {
+          "comparisons": {
+            "mono": {
+              "rtfx_change_percent": 4.521073165033673,
+              "paired_changes_percent": [
+                9.905721016171665,
+                3.2703775051657002,
+                3.550420087034767,
+                5.707483065762919,
+                2.54636002534927,
+                3.5644901309295873,
+                4.730453826098424,
+                3.975211878593443,
+                4.572972524587571,
+                3.315421959139764,
+                4.590924107389727
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 3.975211878593443,
+              "interpretation": "candidate optimization"
+            },
+            "loaded": {
+              "rtfx_change_percent": 7.499355919981765,
+              "paired_changes_percent": [
+                14.529127330044611,
+                6.478398699539523,
+                6.689385733360154,
+                7.424753015695962,
+                4.568265630370538,
+                5.387176138587724,
+                6.3886937616137285,
+                7.188407475835046,
+                6.912481532642123,
+                7.8544020311175355,
+                9.217202752733499
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 6.912481532642123,
+              "interpretation": "resident-input control: removes file IO, not a runtime optimization gain"
+            }
+          },
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 53.3148690010421,
+                "p95": 55.24118399989675,
+                "min": 52.43896600040898,
+                "max": 56.71583399998781,
+                "stdev": 1.0588898635524728
+              },
+              "rtfx": 2939.3651071279137,
+              "peak_allocated_bytes": 11429599744,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 176,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 29,
+                "rate": 0.048986486486486486,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "mono": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 51.33801299962215,
+                "p95": 51.723530500566994,
+                "min": 50.40850699879229,
+                "max": 51.775853000435745,
+                "stdev": 0.37888274330691546
+              },
+              "rtfx": 3072.2559542086374,
+              "peak_allocated_bytes": 11463154176,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 176,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 29,
+                "rate": 0.048986486486486486,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "loaded": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 49.90656100017077,
+                "p95": 50.55680949953967,
+                "min": 48.815449999892735,
+                "max": 50.57579200001783,
+                "stdev": 0.4928607211859402
+              },
+              "rtfx": 3159.798558299189,
+              "peak_allocated_bytes": 11463154176,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 176,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 29,
+                "rate": 0.048986486486486486,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "outputs_and_decoder_call_totals_equal": true,
+          "cold": {
+            "reference": {
+              "warmup_ms": 2525.7996870004717,
+              "allocated_delta_bytes": 1646730240,
+              "reserved_delta_bytes": 1308622848
+            },
+            "mono": {
+              "warmup_ms": 2207.7564759983943,
+              "allocated_delta_bytes": 1530509824,
+              "reserved_delta_bytes": 1539309568
+            },
+            "loaded": {
+              "warmup_ms": 2596.777421000297,
+              "allocated_delta_bytes": 1531597312,
+              "reserved_delta_bytes": 1541406720
+            }
+          }
+        }
+      }
+    },
+    "102m_english_audio": {
+      "environment": {
+        "commit": "61fef6c46e25678986f863f72702d8825f141a23",
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106",
+          "soundfile": "0.14.0"
+        },
+        "load_ms": 1297.2207260008872,
+        "checkpoint_sha256": "4702713d44ab3e239101f09182903cd28f7b51e565bb632008af12beefb37752",
+        "engine_sha256": {
+          "encoder.engine": "f3da9563c8ef41b6252388c18d89fac46cc5781cfa505d6750837e0c12e0f481",
+          "decoder.engine": "b6065937220853d65633f6f59ce0edab80270717b8971c8afa53baf9a2bf5f72",
+          "verify.engine": "34a912836635a2c6928abef52e6ea5140c5215bc8fa178ee8b1af07bd5458dcb"
+        },
+        "manifest_sha256": "fa83ecc7c85cd429cbbfaae75c391ae68d7071aa69e64feb42fda27a87a10aec",
+        "input_modes": {
+          "reference": "file paths, preserved legacy mean loader",
+          "mono": "file paths, public mono view loader",
+          "loaded": "resident tensor control"
+        },
+        "scope": "Same engines/checkpoint/default B1 frontend graph and decoder. E intent; independent public mono integration check. File paths include headers/read/decode in wall; loaded control excludes them. Warm OS/filesystem cache after staging; not cold disk/network/Lustre or preprocessing speed on other sample rates."
+      },
+      "audio": {
+        "first_load_ms": 98.34735799995542,
+        "warm_ms": {
+          "header": {
+            "n": 11,
+            "p50": 2.4459630003548227,
+            "p95": 3.125621498838882,
+            "min": 2.257885998915299,
+            "max": 3.1495669991272734,
+            "stdev": 0.35580401016243624
+          },
+          "reference": {
+            "n": 11,
+            "p50": 116.78930500056595,
+            "p95": 124.67897299939068,
+            "min": 92.20778999952017,
+            "max": 126.29178399947705,
+            "stdev": 13.61776390238722
+          },
+          "mono": {
+            "n": 11,
+            "p50": 101.03277000052913,
+            "p95": 109.10469549889967,
+            "min": 81.47359900067386,
+            "max": 109.67747999893618,
+            "stdev": 10.722431367665303
+          }
+        },
+        "samples_ms": {
+          "header": [
+            2.342155999940587,
+            2.3232370003825054,
+            2.278363001096295,
+            2.257885998915299,
+            2.264935001221602,
+            2.9997139990882715,
+            3.1495669991272734,
+            2.552054998886888,
+            3.1016759985504905,
+            3.0230430002120556,
+            2.4459630003548227
+          ],
+          "reference": [
+            103.75461900002847,
+            94.25148399895988,
+            93.04437500031781,
+            92.21309700114944,
+            92.20778999952017,
+            120.40477600021404,
+            118.84304600062023,
+            122.93153300015547,
+            126.29178399947705,
+            123.06616199930431,
+            116.78930500056595
+          ],
+          "mono": [
+            90.42784899975231,
+            83.50347499981581,
+            81.64999600012379,
+            81.47359900067386,
+            92.25060799872153,
+            108.53191099886317,
+            101.03277000052913,
+            105.45389000071737,
+            109.67747999893618,
+            108.20128500017745,
+            102.79137599900423
+          ]
+        },
+        "waveforms_equal": true,
+        "scope": "CPU file header/decode/mono/resample phases with GPU idle, node-local warm filesystem; not GPU improvement and not additive with overlapping whole-request wall. Equality checks excluded."
+      },
+      "cases": {
+        "single_ts": {
+          "comparisons": {
+            "mono": {
+              "rtfx_change_percent": 3.164622819723495,
+              "paired_changes_percent": [
+                -1.444082397535451,
+                -1.51077929232607,
+                6.786191187942281,
+                4.770480899989926,
+                5.197770847088368,
+                1.832367209829755,
+                -1.8665488848899403,
+                4.369975492936229,
+                7.0716990310426775,
+                4.860151528461887,
+                4.767164107535415
+              ],
+              "paired_positive": 8,
+              "paired_median_percent": 4.767164107535415,
+              "interpretation": "candidate optimization"
+            },
+            "loaded": {
+              "rtfx_change_percent": 72.62075609249618,
+              "paired_changes_percent": [
+                64.82752599636297,
+                61.734553985625595,
+                79.5313081808062,
+                78.07658338578254,
+                81.40740346520694,
+                71.8233670974831,
+                60.24924406119747,
+                67.69421347575602,
+                77.87463288847741,
+                78.81587689593475,
+                77.46647082698775
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 77.46647082698775,
+              "interpretation": "resident-input control: removes file IO, not a runtime optimization gain"
+            }
+          },
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 803,
+                "p50": 4.000209999503568,
+                "p95": 7.435126900782052,
+                "min": 2.1902550015511224,
+                "max": 16.704698999092216,
+                "stdev": 1.86100959899769
+              },
+              "rtfx": 1523.8824539603124,
+              "peak_allocated_bytes": 2302718976,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 4499,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 100,
+                "rate": 0.08695652173913043,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "mono": {
+              "wall_ms": {
+                "n": 803,
+                "p50": 3.885798001647345,
+                "p95": 7.43030989960971,
+                "min": 2.1376209988375194,
+                "max": 15.892149998762761,
+                "stdev": 1.7900714674355007
+              },
+              "rtfx": 1572.107585844103,
+              "peak_allocated_bytes": 2302718976,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 4499,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 100,
+                "rate": 0.08695652173913043,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "loaded": {
+              "wall_ms": {
+                "n": 803,
+                "p50": 2.1961070015095174,
+                "p95": 3.4873654985858593,
+                "min": 1.6240180011664052,
+                "max": 9.067623999726493,
+                "stdev": 1.0490687033013801
+              },
+              "rtfx": 2630.5374139871765,
+              "peak_allocated_bytes": 2302718976,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 4499,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 100,
+                "rate": 0.08695652173913043,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "outputs_and_decoder_call_totals_equal": true,
+          "cold": {
+            "reference": {
+              "warmup_ms": 2197.5964720004413,
+              "allocated_delta_bytes": 1574480896,
+              "reserved_delta_bytes": 1870659584
+            },
+            "mono": {
+              "warmup_ms": 5800.5981520000205,
+              "allocated_delta_bytes": 30828544,
+              "reserved_delta_bytes": 6291456
+            },
+            "loaded": {
+              "warmup_ms": 2830.6244519990287,
+              "allocated_delta_bytes": 30628864,
+              "reserved_delta_bytes": 27262976
+            }
+          }
+        },
+        "stream_ts_b8": {
+          "comparisons": {
+            "mono": {
+              "rtfx_change_percent": 5.655826034463907,
+              "paired_changes_percent": [
+                13.308041516736836,
+                10.49453296952041,
+                -24.143757058123573,
+                9.390335175906861,
+                9.675249276166497,
+                9.112317988997942,
+                9.133811436878414,
+                9.629422873349892,
+                9.553620724947432,
+                10.214978998232649,
+                9.255259092051627
+              ],
+              "paired_positive": 10,
+              "paired_median_percent": 9.553620724947432,
+              "interpretation": "candidate optimization"
+            },
+            "loaded": {
+              "rtfx_change_percent": 244.50849482187976,
+              "paired_changes_percent": [
+                245.77310861693272,
+                246.91392196878888,
+                247.01968126310635,
+                247.09548672376164,
+                242.79762858189105,
+                242.60887712549314,
+                242.7681840318262,
+                245.84067959574497,
+                242.28850588514382,
+                235.47032399351627,
+                251.53743666506378
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 245.77310861693272,
+              "interpretation": "resident-input control: removes file IO, not a runtime optimization gain"
+            }
+          },
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 185.55430299966247,
+                "p95": 189.3048424999506,
+                "min": 183.83520799943653,
+                "max": 191.42411800021364,
+                "stdev": 1.9692322009697054
+              },
+              "rtfx": 2585.122806521502,
+              "peak_allocated_bytes": 4177786880,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 770,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 99,
+                "rate": 0.08608695652173913,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "mono": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 169.19684999993478,
+                "p95": 207.71449750009197,
+                "min": 168.44936099914776,
+                "max": 245.33028499899956,
+                "stdev": 21.891703757072563
+              },
+              "rtfx": 2731.332855235609,
+              "peak_allocated_bytes": 4211341312,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 770,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 99,
+                "rate": 0.08608695652173913,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "loaded": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 53.88494499857188,
+                "p95": 55.579571999260224,
+                "min": 52.424501000132295,
+                "max": 55.7979509994766,
+                "stdev": 0.867112140575981
+              },
+              "rtfx": 8905.967670044362,
+              "peak_allocated_bytes": 4211341312,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 770,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 99,
+                "rate": 0.08608695652173913,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "outputs_and_decoder_call_totals_equal": true,
+          "cold": {
+            "reference": {
+              "warmup_ms": 2649.6767019998515,
+              "allocated_delta_bytes": 377789440,
+              "reserved_delta_bytes": 333447168
+            },
+            "mono": {
+              "warmup_ms": 2669.5841870005097,
+              "allocated_delta_bytes": 315333632,
+              "reserved_delta_bytes": 325058560
+            },
+            "loaded": {
+              "warmup_ms": 2835.3083849997347,
+              "allocated_delta_bytes": 315333632,
+              "reserved_delta_bytes": 325058560
+            }
+          }
+        }
+      }
+    },
+    "102m_japanese_audio": {
+      "environment": {
+        "commit": "61fef6c46e25678986f863f72702d8825f141a23",
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106",
+          "soundfile": "0.14.0"
+        },
+        "load_ms": 4151.869360999626,
+        "checkpoint_sha256": "4702713d44ab3e239101f09182903cd28f7b51e565bb632008af12beefb37752",
+        "engine_sha256": {
+          "encoder.engine": "f3da9563c8ef41b6252388c18d89fac46cc5781cfa505d6750837e0c12e0f481",
+          "decoder.engine": "b6065937220853d65633f6f59ce0edab80270717b8971c8afa53baf9a2bf5f72",
+          "verify.engine": "34a912836635a2c6928abef52e6ea5140c5215bc8fa178ee8b1af07bd5458dcb"
+        },
+        "manifest_sha256": "d1fee5764e1c4ff2a0d374392cd9f8044be77191de5a39b9935974ca258f5def",
+        "input_modes": {
+          "reference": "file paths, preserved legacy mean loader",
+          "mono": "file paths, public mono view loader",
+          "loaded": "resident tensor control"
+        },
+        "scope": "Same engines/checkpoint/default B1 frontend graph and decoder. E intent; independent public mono integration check. File paths include headers/read/decode in wall; loaded control excludes them. Warm OS/filesystem cache after staging; not cold disk/network/Lustre or preprocessing speed on other sample rates."
+      },
+      "audio": {
+        "first_load_ms": 15.248511999743641,
+        "warm_ms": {
+          "header": {
+            "n": 11,
+            "p50": 0.5108619989186991,
+            "p95": 0.5333105009412975,
+            "min": 0.49699599912855774,
+            "max": 0.5364090011426015,
+            "stdev": 0.012718129514699264
+          },
+          "reference": {
+            "n": 11,
+            "p50": 5.839270999786095,
+            "p95": 8.621318999757932,
+            "min": 5.744291000155499,
+            "max": 10.468368000147166,
+            "stdev": 1.3338986609205619
+          },
+          "mono": {
+            "n": 11,
+            "p50": 1.5701789998274762,
+            "p95": 3.7078659997860086,
+            "min": 1.4945899984013522,
+            "max": 5.03783900057897,
+            "stdev": 1.0044255636709918
+          }
+        },
+        "samples_ms": {
+          "header": [
+            0.528405998920789,
+            0.5364090011426015,
+            0.517497999680927,
+            0.5104290012241108,
+            0.5014079997636145,
+            0.49699599912855774,
+            0.5108619989186991,
+            0.5045289999543456,
+            0.5302120007399935,
+            0.4986570002074586,
+            0.5146929997863481
+          ],
+          "reference": [
+            10.468368000147166,
+            6.525124999825493,
+            6.774269999368698,
+            5.929375000050641,
+            5.839270999786095,
+            5.85404999947059,
+            5.79872699927364,
+            5.744291000155499,
+            5.7619330000306945,
+            5.756815000495408,
+            5.750332999014063
+          ],
+          "mono": [
+            5.03783900057897,
+            2.3778929989930475,
+            1.635258000533213,
+            1.4945899984013522,
+            1.6117689992825035,
+            1.5134149998630164,
+            1.5605770004185615,
+            1.5411579988722224,
+            1.5701789998274762,
+            1.5402070002892287,
+            1.5794790015206672
+          ]
+        },
+        "waveforms_equal": true,
+        "scope": "CPU file header/decode/mono/resample phases with GPU idle, node-local warm filesystem; not GPU improvement and not additive with overlapping whole-request wall. Equality checks excluded."
+      },
+      "cases": {
+        "single_ts": {
+          "comparisons": {
+            "mono": {
+              "rtfx_change_percent": 7.628367056493834,
+              "paired_changes_percent": [
+                11.55180336498638,
+                7.323815318031035,
+                7.049089918058926,
+                7.448485614235145,
+                7.343137456131221,
+                6.808287611694452,
+                7.221564624075083,
+                6.8466216513445755,
+                8.091681810510142,
+                7.079434583109867,
+                7.160008672289808
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 7.221564624075083,
+              "interpretation": "candidate optimization"
+            },
+            "loaded": {
+              "rtfx_change_percent": 14.700629605886606,
+              "paired_changes_percent": [
+                18.68897752152079,
+                15.053468928306124,
+                13.741074936063846,
+                15.192532130307956,
+                14.616373708849473,
+                14.601397337799638,
+                14.081871075013508,
+                14.209378709820886,
+                14.23328431049329,
+                14.029938486458061,
+                13.267854790952072
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 14.23328431049329,
+              "interpretation": "resident-input control: removes file IO, not a runtime optimization gain"
+            }
+          },
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 4.336611000326229,
+                "p95": 20.45792504977726,
+                "min": 3.2348120003007352,
+                "max": 20.77877199917566,
+                "stdev": 4.5899991762507
+              },
+              "rtfx": 2117.7773831445447,
+              "peak_allocated_bytes": 2296719360,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 2277,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 51,
+                "rate": 0.08614864864864864,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "mono": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 3.886035499817808,
+                "p95": 19.375126400700537,
+                "min": 2.9762180001853267,
+                "max": 19.469791999654262,
+                "stdev": 4.370200986910282
+              },
+              "rtfx": 2279.3292153702205,
+              "peak_allocated_bytes": 2296719360,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 2277,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 51,
+                "rate": 0.08614864864864864,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "loaded": {
+              "wall_ms": {
+                "n": 132,
+                "p50": 3.5434654992059222,
+                "p95": 19.037908000154857,
+                "min": 2.6139299989154097,
+                "max": 19.11916300014127,
+                "stdev": 4.385223376889928
+              },
+              "rtfx": 2429.103992117862,
+              "peak_allocated_bytes": 2296719360,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 2277,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 51,
+                "rate": 0.08614864864864864,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "outputs_and_decoder_call_totals_equal": true,
+          "cold": {
+            "reference": {
+              "warmup_ms": 1932.2927690009237,
+              "allocated_delta_bytes": 1567676416,
+              "reserved_delta_bytes": 1725956096
+            },
+            "mono": {
+              "warmup_ms": 1057.6552729999094,
+              "allocated_delta_bytes": 30076416,
+              "reserved_delta_bytes": 6291456
+            },
+            "loaded": {
+              "warmup_ms": 1094.5952199999738,
+              "allocated_delta_bytes": 29903872,
+              "reserved_delta_bytes": 27262976
+            }
+          }
+        },
+        "stream_ts_b8": {
+          "comparisons": {
+            "mono": {
+              "rtfx_change_percent": 13.735539774977234,
+              "paired_changes_percent": [
+                28.349378711215323,
+                13.470651119499255,
+                11.807987880184356,
+                12.336709231139587,
+                12.297534976816426,
+                12.952166955305522,
+                12.54206236192461,
+                12.058548517621691,
+                11.068205533982933,
+                12.783572725421166,
+                11.36639929767702
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 12.336709231139587,
+              "interpretation": "candidate optimization"
+            },
+            "loaded": {
+              "rtfx_change_percent": 19.347427368936753,
+              "paired_changes_percent": [
+                34.187275183422486,
+                20.693891565332745,
+                17.220617356093946,
+                17.98745615377748,
+                16.75291969037915,
+                18.47389433139568,
+                17.281920645661053,
+                17.288672271999083,
+                16.059114984351396,
+                18.311977377506892,
+                18.48584537232054
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 17.98745615377748,
+              "interpretation": "resident-input control: removes file IO, not a runtime optimization gain"
+            }
+          },
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 46.28672699982417,
+                "p95": 50.22408950026147,
+                "min": 45.458987000529305,
+                "max": 52.979297999627306,
+                "stdev": 2.0038993672136067
+              },
+              "rtfx": 3360.716607441612,
+              "peak_allocated_bytes": 4187131392,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 935,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 50,
+                "rate": 0.08445945945945946,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "mono": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 41.255475000070874,
+                "p95": 41.63583199988352,
+                "min": 40.835387000697665,
+                "max": 41.83362000003399,
+                "stdev": 0.28299229433528317
+              },
+              "rtfx": 3822.3291737810196,
+              "peak_allocated_bytes": 4220685824,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 935,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 50,
+                "rate": 0.08445945945945946,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "loaded": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 39.329978000751,
+                "p95": 39.48422949997621,
+                "min": 38.42015800000809,
+                "max": 39.48684799979674,
+                "stdev": 0.2869852461699709
+              },
+              "rtfx": 4010.928812142173,
+              "peak_allocated_bytes": 4220685824,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 935,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 50,
+                "rate": 0.08445945945945946,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "outputs_and_decoder_call_totals_equal": true,
+          "cold": {
+            "reference": {
+              "warmup_ms": 1051.7784940002457,
+              "allocated_delta_bytes": 388834816,
+              "reserved_delta_bytes": 358612992
+            },
+            "mono": {
+              "warmup_ms": 1040.4824089982867,
+              "allocated_delta_bytes": 326159360,
+              "reserved_delta_bytes": 350224384
+            },
+            "loaded": {
+              "warmup_ms": 1118.6693069994362,
+              "allocated_delta_bytes": 326159360,
+              "reserved_delta_bytes": 350224384
+            }
+          }
+        }
+      }
+    }
+  },
+  "limits": "Node-local warmed filesystem/cache after staging,16kHz corpora. File variants include headers/read/decode/mono;loadedcontrol excludes IO. CPU phases are separate and not additive with overlapped wall. Per-request B1 and whole-list B8 scopes separate. All session pools resident, no isolatedVRAM/startup claim.",
+  "adoption": "Public mono-file averaging shortcut adopted; exact numeric waveforms/full sampled outputs. Mixed signs/outliers retained; no cold disk/network or arbitrary-rate speed claim."
+}

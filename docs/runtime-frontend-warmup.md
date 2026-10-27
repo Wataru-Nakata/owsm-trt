@@ -65,3 +65,26 @@ stream reuse on both variants. These public-path results are pending.
 The same allocation independently verifies the two-line public mono-file loader integration against
 a preserved legacy loader, with43 focused tests including the15 already-passing CPU option checks.
 This is a separate file-inclusive ablation; it must not be merged into the loaded-input frontend gain.
+
+## Public verification2776797: adopted, batch limit1 retained
+
+Frozen61fef6c passed43 focused tests and all9 public API cases for each model in all three modes.
+Features, sampled full output tokens/time IDs/text/segments and decoder call totals match; long-form
+compares text/segments because joined token IDs are unavailable. No new warm capture or decoder
+fallback occurred. Reverse-order isolated memory runs (candidate first) reproduce all earlier
+allocation deltas: English B1 saves544MiB, English B8 saves288MiB; Japanese B1/B8 save256/64MiB.
+The reused stream leaves zero incremental post-release allocation. These are retained PyTorch
+allocation deltas with a fixed model/features, not whole-process VRAM. Cold times now have mixed
+signs; no startup or warm-speed gain is attributed to stream reuse.
+
+With stream reuse enabled on both sides, public `frontend_graph_max_batch=8` versus default1 gave
+102M timestamped B8 throughput+5.99% English/+2.66% Japanese; all11 pairs improve, paired medians
++5.26/+2.16%, and whole-list p95 falls55.84→51.13ms /40.57→38.56ms. This independently reproduces
+the earlier102M improvement.1B gains+0.35/+1.11% have mixed signs; B1 control changes−0.77..+0.55%
+also have mixed signs. Keep default1 and expose1..8 as an explicit memory/performance tradeoff.
+English B8 retained feature allocation is93.9–95.2MiB versusB1 52.5–52.9MiB in separate batch sweeps;
+shape distribution and cache history affect memory. No broad/default B8 or combined speed claim.
+
+[Environment, paired samples, reverse-order memory and public checks](runtime-frontend-api-2776797.json).
+Raw artifacts and reproducer: `outputs/runtime-2776797/`, `scripts/validate_frontend_api.pbs`.
+H200/v4 1B/102M only; other hardware, checkpoints and frontend CTC batch expansion are unmeasured.

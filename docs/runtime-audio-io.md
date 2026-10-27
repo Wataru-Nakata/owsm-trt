@@ -57,3 +57,30 @@ The public loader's mono view is now implemented; independent verification is pe
 `validate_frontend_api.pbs`. The profiler preserves explicit legacy file averaging and compares it
 against the actual imported public loader, so the baseline cannot silently become the candidate.
 All multichannel/nonfile/resampling behavior remains covered by the compute-node tests.
+
+## Public verification2776797: mono shortcut adopted
+
+Frozen61fef6c passed43 focused tests (including9 real loader cases) and the independent public-path
+ablation. All sampled waveforms, tokens/time IDs/text/segments and decoder-call totals match.
+The comparator retains the old file-averaging implementation; the candidate calls the actual
+public loader from9341c60. Eleven alternating warmed file-inclusive comparisons gave:
+
+|Model/corpus|Single TS B1 RTFx|Drafted TS B8 RTFx|B8 paired median|
+|---|---:|---:|---:|
+|1B English73|+2.71%|+3.66%|+3.71%|
+|1B Japanese12|+3.73%|+4.52%|+3.98%|
+|102M English73|+3.17%|+5.66%|+9.55%|
+|102M Japanese12|+7.63%|+13.74%|+12.34%|
+
+Every paired corpus total improves except102M English: B1 improves8/11 and B8 improves10/11.
+Its B8 pairs span−24.14..+13.31%, and whole-list p95 regresses9.73%; retain this outlier rather
+than claiming uniform tail-latency improvement. Other B8 p95 improves4.45–17.10%; pooled
+mixed-duration B1 p95 improves0.07–5.29%. Numeric waveform equality includes mono/stereo,
+16/44.1kHz and PCM16/FLOAT; byte identity for signed zero is not claimed. Mono files bypass
+one redundant average; stereo/resampling/nonfile conversion retains its prior implementation.
+
+[Public loader results and all pairs](runtime-audio-api-2776797.json), raw
+`outputs/runtime-2776797/*_audio/`; reproduce using `scripts/validate_frontend_api.pbs`.
+These are warmed node-local files, not cold network/Lustre measurements or an arbitrary-rate
+resampler benchmark. Loaded controls avoid I/O entirely and are not an implemented gain.
+Bounded asynchronous file prefetch is the next separate experiment (`runtime-audio-prefetch.md`).

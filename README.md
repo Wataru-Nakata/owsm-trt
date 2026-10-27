@@ -207,10 +207,21 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
 * **Single-utterance frontend graphs.** STFT/mel/normalization use a bounded CUDA graph cache by default;
   `frontend_graph=False` restores eager execution. H200 measurements with identical engines found single
   greedy RTFx +4.3% for v4 medium 1B and +11.5% for base 102M (English 73, five alternating repeats), with exact
-  features/tokens/segments. Larger batches run eagerly; graph buffers add cold work and memory. Pointwise
+  features/tokens/segments. The default captures B1; `frontend_graph_max_batch=8` optionally captures
+  batches up to8, with a32-shape cache and eager fallback above the selected limit, on CPU/autocast,
+  or at capacity. H200/102M timestamped B8 throughput improved6.0% English/2.7% Japanese in independent
+  public validation;1B gains were small/mixed, so the default stays1. Dedicated-stream warm-up also
+  avoids accumulating per-stream workspaces: the English B1 feature allocation delta fell596.5–596.9
+  to52.5–52.9MiB, reproduced with reversed measurement order. This is a memory result, not a warm
+  speed claim; graph buffers still add cold work and memory. [Public validation](docs/runtime-frontend-warmup.md). Pointwise
   frontend fusion remains disabled. A seven-repeat validation reproduced +5.0%/+12.1%, including lazy
   draft setup. CTC-only v4 1B also improved single-utterance RTFx 4.4% English/5.2% Japanese with exact
   features/output. [Runtime measurements](docs/runtime-results-2771009.md), [CTC measurements](docs/runtime-results-2771126.md).
+* **Mono file loading.** Mono files reuse their decoded channel storage without a redundant average.
+  Independent H200/1B/102M tests matched waveforms, tokens and segments; warmed file-inclusive single
+  timestamped RTFx improved2.7–7.6% on English73/Japanese12. B8 gains varied and102M English p95
+  regressed in one replication. Stereo/resampling semantics are unchanged; no cold disk/network
+  speed claim. [Measurements and limits](docs/runtime-audio-io.md).
 * **Greedy vocabulary selection and acceptance.** `greedy_kernels=True` (default) splits vocabulary
   argmax across blocks and fuses the final reduction with draft acceptance. Against the same engines
   with frontend graphs already enabled, timestamped single-request RTFx improved 4.3% English/4.8%
