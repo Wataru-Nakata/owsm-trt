@@ -2,7 +2,16 @@
 
 The English73/Japanese12 sets used for tuning are screening sets. Their agreement does not establish
 coverage of uncommon inputs. Large output regressions are now a separate acceptance step from the
-small, repeated latency benchmark. No large-corpus results have been measured yet.
+small, repeated latency benchmark. No large-corpus results have been measured yet. First job2779853
+exited1 after53seconds during preparation: the dev-other manifest remained but its source directory
+was absent. No inference ran and no complete corpus was published. The retry checks all source
+paths first and records every missing input in `preflight.json`. It can restore dev-other locally
+from the [official OpenSLR12 archive](https://www.openslr.org/12/), checking the
+[published MD5](https://openslr.trmal.net/resources/12/md5sum.txt), each selected archive member and
+its transcript before packing. Other missing datasets fail visibly instead of silently reducing coverage.
+The verified download is retained as one shared archive; extracted audio stays node-local and is
+deleted after shard publication. This repair and its small archive/metadata tests are implemented;
+successful full preparation and inference remain pending.
 
 The available manifests contain10,504 short recordings across English, Japanese, Chinese, German,
 Spanish, French and Russian, plus87 concatenated LibriSpeech chapters. They include2,620 LibriSpeech

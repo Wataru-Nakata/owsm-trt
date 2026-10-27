@@ -2,8 +2,10 @@
 
 import gzip
 import hashlib
+import io
 import json
 import tarfile
+from pathlib import Path
 
 import pytest
 from audit_large_regression import (
@@ -13,7 +15,13 @@ from audit_large_regression import (
     repetition,
     select_rows,
 )
-from prepare_large_regression import safe_key, write_shard
+from prepare_large_regression import (
+    missing_inputs,
+    recover_missing_inputs,
+    restore_dev_other,
+    safe_key,
+    write_shard,
+)
 from summarize_large_regression import summarize
 
 
@@ -81,6 +89,71 @@ def test_prompt_keeps_full_reference_only_for_supported_input_windows():
         select_rows(rows,'beam_prompt',None)
     assert {r['seconds'] for r in select_rows(rows,'beam_prompt',None,30)}=={1,30}
     assert len(select_rows(rows,'beam_b1',None))==4
+
+
+def test_recover_local_archive_verifies_transcript_and_rejects_links(tmp_path,monkeypatch):
+    path = tmp_path/'tiny.tar.gz'
+    prefix = 'LibriSpeech/dev-other/116/288045/'
+    with tarfile.open(path,'w:gz') as archive:
+        for name,data in [('116-288045.trans.txt',b'116-288045-0000 HELLO\n'),
+                          ('116-288045-0000.flac',b'original encoded bytes')]:
+            info = tarfile.TarInfo(prefix+name)
+            info.size = len(data)
+            archive.addfile(info,io.BytesIO(data))
+        info = tarfile.TarInfo(prefix+'116-288045-0001.flac')
+        info.type = tarfile.SYMTYPE
+        info.linkname = '/outside'
+        archive.addfile(info)
+    row = dict(id='116-288045-0000',text='HELLO',source_path='/missing',key='sample',dataset='librispeech_dev_other')
+    restored = dict(row)
+    restore_dev_other([restored],path,tmp_path/'local')
+    assert restored['original_source_path']=='/missing'
+    assert Path(restored['source_path']).read_bytes()==b'original encoded bytes'
+    assert missing_inputs([restored])==[]
+    cached = tmp_path/'.cache/regression-inputs/dev-other.tar.gz'
+    cached.parent.mkdir(parents=True)
+    cached.write_bytes(path.read_bytes())
+    local = tmp_path/'recovery'
+    local.mkdir()
+    monkeypatch.setattr('prepare_large_regression.DEV_OTHER_MD5',hashlib.md5(path.read_bytes()).hexdigest())
+    recovered = dict(row)
+    report = recover_missing_inputs([recovered],tmp_path,local,tmp_path/'published')
+    assert report['restored_archive']['samples']==1 and not report['unresolved']
+    assert Path(recovered['source_path']).read_bytes()==b'original encoded bytes'
+    monkeypatch.setattr('prepare_large_regression.DEV_OTHER_MD5','0'*32)
+    with pytest.raises(ValueError,match='checksum mismatch'):
+        recover_missing_inputs([dict(row)],tmp_path,local,tmp_path/'published')
+    with pytest.raises(ValueError,match='transcript differs'):
+        restore_dev_other([row|dict(text='different')],path,tmp_path/'bad')
+    with pytest.raises(ValueError,match='invalid LibriSpeech id'):
+        restore_dev_other([row|dict(id='../../outside')],path,tmp_path/'bad')
+    # Matching transcript does not make a symlink an admissible audio member.
+    with tarfile.open(path,'w:gz') as archive:
+        data = b'116-288045-0001 HELLO\n'
+        info = tarfile.TarInfo(prefix+'116-288045.trans.txt')
+        info.size=len(data)
+        archive.addfile(info,io.BytesIO(data))
+        info = tarfile.TarInfo(prefix+'116-288045-0001.flac')
+        info.type=tarfile.SYMTYPE
+        info.linkname='/outside'
+        archive.addfile(info)
+    with pytest.raises(ValueError,match='regular archive member'):
+        restore_dev_other([row|dict(id='116-288045-0001')],path,tmp_path/'bad')
+
+
+def test_missing_preflight_reports_all_missing_inputs_before_any_download(tmp_path,monkeypatch):
+    local,published = tmp_path/'local',tmp_path/'published'
+    local.mkdir()
+    rows = [dict(key=str(i),dataset=dataset,source_path=str(tmp_path/str(i)))
+            for i,dataset in enumerate(('librispeech_dev_other','fleurs_ja_validation'))]
+    def no_download(*args,**kwargs):
+        raise AssertionError('must report unknown missing inputs before downloading')
+    monkeypatch.setattr('prepare_large_regression.subprocess.run',no_download)
+    with pytest.raises(FileNotFoundError,match='all paths'):
+        recover_missing_inputs(rows,tmp_path,local,published)
+    report = json.loads((published/'preflight.json').read_text())
+    assert len(report['before_restore'])==2
+    assert report['missing_by_dataset']=={'librispeech_dev_other':1,'fleurs_ja_validation':1}
 
 
 def test_resume_rejects_partial_wrong_config_and_changed_chunks(tmp_path):

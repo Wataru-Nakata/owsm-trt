@@ -5,7 +5,9 @@ import hashlib
 import io
 import json
 import os
+import re
 import shutil
+import subprocess
 import tarfile
 from collections import Counter
 from pathlib import Path
@@ -23,6 +25,8 @@ SOURCES = [
     ('fleurs_ru_validation','.cache/multilingual/fleurs_ru_ru_validation.json','rus'),
     ('librispeech_long','.cache/longform/test_clean/manifest.json','eng'),
 ]
+DEV_OTHER_URL = 'https://openslr.trmal.net/resources/12/dev-other.tar.gz'
+DEV_OTHER_MD5 = 'c8d0bcc9cca99d4f8b62fcc847357931'  # OpenSLR12 md5sum.txt
 
 
 def sha256(path: Path) -> str:
@@ -70,6 +74,79 @@ def publish_file(source: Path, target: Path) -> None:
     shutil.copyfile(source,temp)
     assert sha256(source)==sha256(temp)
     os.replace(temp,target)
+
+
+def restore_dev_other(rows: list[dict], archive_path: Path, out: Path) -> None:
+    """Restore only named regular files locally, checking their official transcripts as well."""
+    transcripts = {}
+    with tarfile.open(archive_path) as archive:
+        for row in rows:
+            if not re.fullmatch(r'\d+-\d+-\d+',row['id']):
+                raise ValueError(f"invalid LibriSpeech id: {row['id']}")
+            speaker,chapter,_ = row['id'].split('-')
+            prefix = f'LibriSpeech/dev-other/{speaker}/{chapter}/'
+            if prefix not in transcripts:
+                member = archive.getmember(prefix+f'{speaker}-{chapter}.trans.txt')
+                if not member.isfile():
+                    raise ValueError('transcript must be a regular archive member')
+                transcripts[prefix] = dict(line.split(' ',1) for line in
+                    archive.extractfile(member).read().decode().splitlines())
+            if transcripts[prefix].get(row['id'])!=row['text']:
+                raise ValueError(f"archive transcript differs from manifest: {row['id']}")
+            member = archive.getmember(prefix+row['id']+'.flac')
+            if not member.isfile():
+                raise ValueError('audio must be a regular archive member')
+            target = out/speaker/chapter/(row['id']+'.flac')
+            target.parent.mkdir(parents=True,exist_ok=True)
+            with archive.extractfile(member) as source, target.open('wb') as dest:
+                shutil.copyfileobj(source,dest)
+            row['original_source_path'] = row['source_path']
+            row['source_path'] = str(target)
+
+
+def missing_inputs(rows: list[dict]) -> list[dict]:
+    return [{k:row[k] for k in ('key','dataset','source_path')} for row in rows
+            if not Path(row['source_path']).is_file()]
+
+
+def recover_missing_inputs(rows: list[dict], repo: Path, out: Path, publish: Path) -> dict:
+    missing = missing_inputs(rows)
+    report = dict(before_restore=missing,missing_by_dataset=dict(Counter(r['dataset'] for r in missing)))
+    def save():
+        path = out/'preflight.json'
+        path.write_text(json.dumps(report,indent=2)+'\n')
+        publish_file(path,publish/path.name)
+    save()
+    if any(r['dataset']!='librispeech_dev_other' for r in missing):
+        raise FileNotFoundError('missing corpus inputs; see preflight.json for all paths')
+    if missing:
+        archive = out/'dev-other.tar.gz'
+        cached = repo/'.cache/regression-inputs/dev-other.tar.gz'
+        if cached.exists():
+            shutil.copyfile(cached,archive)
+        else:
+            print('restoring missing dev-other from',DEV_OTHER_URL,flush=True)
+            subprocess.run(['curl','--fail','--location','--silent','--show-error','--connect-timeout','20','--max-time','240',
+                '--retry','2','--retry-max-time','300','--output',str(archive),DEV_OTHER_URL],
+                check=True,timeout=330)
+        digest = hashlib.md5(usedforsecurity=False)
+        with archive.open('rb') as stream:
+            for block in iter(lambda:stream.read(1<<20),b''):
+                digest.update(block)
+        actual = digest.hexdigest()
+        if actual!=DEV_OTHER_MD5:
+            raise ValueError(f'dev-other archive checksum mismatch: {actual}')
+        if not cached.exists():
+            publish_file(archive,cached)
+        restored = [r for r in rows if r['dataset']=='librispeech_dev_other']
+        restore_dev_other(restored,archive,out/'restored-dev-other')
+        report['restored_archive'] = dict(url=DEV_OTHER_URL,md5=actual,sha256=sha256(archive),
+                                         samples=len(restored),cache=str(cached))
+    report['unresolved'] = missing_inputs(rows)
+    save()
+    if report['unresolved']:
+        raise FileNotFoundError('unresolved corpus inputs; see preflight.json')
+    return report
 
 
 def inventory(repo: Path, jvs: Path) -> tuple[list[dict],dict]:
@@ -130,6 +207,8 @@ def main():
     import soundfile as sf
 
     rows,provenance = inventory(args.repo,args.jvs)
+    preflight = recover_missing_inputs(rows,args.repo,args.out,args.publish)
+    provenance['input_preflight'] = {k:v for k,v in preflight.items() if k!='before_restore'}
     import numpy as np
 
     # Known nonspeech probes complement real recordings; materialize only under node-local scratch.
@@ -185,6 +264,9 @@ def main():
     path.write_text(json.dumps(manifest,indent=2,ensure_ascii=False)+'\n')
     publish_file(path,args.publish/path.name)
     shutil.rmtree(synthetic)
+    if (args.out/'restored-dev-other').exists():
+        shutil.rmtree(args.out/'restored-dev-other')
+    (args.out/'dev-other.tar.gz').unlink(missing_ok=True)
     print(json.dumps(summaries,ensure_ascii=False),flush=True)
 
 
