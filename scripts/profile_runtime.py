@@ -192,7 +192,7 @@ def dispatch(model):
     return result
 
 
-def run_case(model, args, name, items, waves, configure=None, observe=None):
+def run_case(model, args, name, items, waves, configure=None, observe=None, input_sources=None):
     batch, beam, timestamps, draft, stream, task, prompt, limit = CASES[name]
     model.ctc_draft = draft
     model._sessions.clear()
@@ -206,6 +206,10 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
         items = [{"id": "long_110s", "path": args.long_audio}]
     chunks = [list(range(len(items)))] if stream else [[i] for i in range(len(items))]
     kw = dict(lang=args.lang, task=task, beam_size=beam, batch_size=batch, prompt=prompt)
+
+    def audio_inputs(mode, chunk):
+        source = waves if input_sources is None else input_sources[mode]
+        return [source[i] for i in chunk]
 
     def call(ws):
         if name == "long_greedy":
@@ -251,7 +255,7 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
     for v in args.variants:
         activate(v)
         before_allocated, before_reserved = torch.cuda.memory_allocated(), torch.cuda.memory_reserved()
-        _, ms = wall(lambda: [call([waves[i] for i in chunk]) for chunk in chunks])
+        _, ms = wall(lambda: [call(audio_inputs(v, chunk)) for chunk in chunks])
         if configure is not None and getattr(model.backend, "failed", set()):
             raise RuntimeError(f"kernel failed during warmup: {name}/{v}; refusing fallback timing")
         cold[v] = {
@@ -288,7 +292,7 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
         for v in args.variants if repeat % 2 == 0 else args.variants[::-1]:
             activate(v)
             for chunk in chunks:
-                group = [waves[i] for i in chunk]
+                group = audio_inputs(v, chunk)
                 start_calls = model.draft_stats[1]
                 torch.cuda.reset_peak_memory_stats()
                 results, ms = wall(lambda: call(group))
@@ -303,7 +307,7 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
                         "repeat": repeat,
                         "ids": [items[i]["id"] for i in chunk],
                         "wall_ms": ms,
-                        "audio_seconds": sum(len(w) for w in group) / model.cfg.sample_rate,
+                        "audio_seconds": sum(len(waves[i]) for i in chunk) / model.cfg.sample_rate,
                         "draft_decoder_calls": model.draft_stats[1] - start_calls,
                         "peak_allocated_bytes": torch.cuda.max_memory_allocated(),
                     }
@@ -356,7 +360,7 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
             activate(v)
             save(
                 path / f"actual_dispatch_{v}.json",
-                observe(model, lambda: [call([waves[i] for i in chunk]) for chunk in chunks]),
+                observe(model, lambda: [call(audio_inputs(v, chunk)) for chunk in chunks]),
             )
     if args.trace and name in (
         "single_greedy",
@@ -373,7 +377,7 @@ def run_case(model, args, name, items, waves, configure=None, observe=None):
             if getattr(args, "trace_variants", None) and v not in args.trace_variants:
                 continue
             activate(v)
-            group = [waves[i] for i in chunks[0]]
+            group = audio_inputs(v, chunks[0])
             with torch.profiler.profile(
                 activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA]
             ) as prof:
