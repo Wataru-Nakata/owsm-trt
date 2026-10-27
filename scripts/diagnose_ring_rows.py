@@ -13,6 +13,7 @@ from profile_beam import save, sha256
 from owsm_trt import OWSM, hub
 from owsm_trt.audio import load_audio
 from owsm_trt.build import engine_tag
+from owsm_trt.megakernel_ring import RingDecoder
 from owsm_trt.pipeline import _load_decoder
 
 
@@ -36,6 +37,8 @@ def main():
     ap.add_argument('--model', required=True)
     ap.add_argument('--manifest', type=Path, required=True)
     ap.add_argument('--out', type=Path, required=True)
+    ap.add_argument('--wide-one-token', action='store_true',
+                    help='isolated102M/H200 R10/15/16 S1 numerical diagnosis; no production route change')
     args = ap.parse_args()
     if not os.environ.get('PBS_JOBID'):
         ap.error('model/audio work requires a compute allocation')
@@ -44,6 +47,17 @@ def main():
     model = OWSM.from_pretrained(args.model, use_cuda_graph=False, ctc_draft=False)
     ring = model.backend.kernel
     m, dev = ring.m, model.device
+    row_shapes = ((1, 1), (3, 1), (5, 1), (8, 1), (8, 4))
+    real_rows = (3, 5, 8)
+    wide = {}
+    if args.wide_one_token:
+        if ((m.D, m.F, m.L, m.H) != (384, 1536, 6, 6)
+                or 'H200' not in torch.cuda.get_device_name(dev)
+                or torch.cuda.get_device_properties(dev).multi_processor_count != 132):
+            raise RuntimeError('wide numerical diagnosis is limited to102M/H200132SM')
+        real_rows = (10, 15, 16)
+        row_shapes = tuple((r, 1) for r in real_rows)
+        wide = {r: RingDecoder(m, row_programs=r*m.H) for r in real_rows}
     files = hub.resolve(args.model)
     decoder = _load_decoder(model.cfg, files.checkpoint, skip_init=True)
     gpu32 = copy.deepcopy(decoder).to(dev)
@@ -53,11 +67,13 @@ def main():
                   engine_sha256={p.name:sha256(p) for p in engine_dir.glob('*.engine')},
                   gpu=torch.cuda.get_device_name(), torch=torch.__version__, cuda=torch.version.cuda,
                   ring_programs=dict(single=ring.P, solo=ring.P_solo, rows=ring.P_rows),
+                  wide_one_token=args.wide_one_token, wide_programs={r:k.P_rows for r,k in wide.items()},
                   cases={}, note='Numerical diagnosis only. Existing 2%/50% gate is unchanged; failures are retained, '
                   'not accepted as speed measurements. Random KV is out of distribution. TF32 disabled for GPU fp32.')
 
     def check(name, tokens, offsets, k, v, ck, cv, real=False):
         rows, window = tokens.shape
+        selected_ring = wide.get(rows, ring)
         record = dict(rows=rows, window=window, cross_length=ck.shape[-2], real_prefill=real, status='running')
         report['cases'][name] = record
         save(args.out/'diagnostics.json', report)
@@ -70,7 +86,7 @@ def main():
                                       ('torch_gpu_fp16', gpu16, torch.float16)):
                 logits, kv = dec.step(gpu[0], gpu[1], *[list(x.to(dtype)) for x in gpu[2:]])
                 results[label] = logits.cpu(), kv.cpu()
-            for label, backend in [('ring', ring)] + ([('tensorrt', model.backend.inner)]
+            for label, backend in [('ring', selected_ring)] + ([('tensorrt', model.backend.inner)]
                                                       if ck.shape[-2] == model.cfg.enc_frames else []):
                 logits = torch.zeros(rows, window, m.V, device=dev)
                 kv = torch.zeros(m.L, 2, rows, m.H, window, m.D//m.H, device=dev, dtype=torch.float16)
@@ -80,7 +96,12 @@ def main():
                 run()
                 torch.cuda.synchronize()
                 if label == 'ring':
-                    ring.check()
+                    selected_ring.check()
+                    record['actual_ring_programs'] = run.programs
+                    record['actual_ring_cross_splits'] = run.const['NS']
+                    record['ring_prefix_preserved'] = all(
+                        torch.equal(dest[:, row, :, :int(offset), :], source[:, row, :, :int(offset), :])
+                        for dest,source in zip(inputs[2:4],gpu[2:4]) for row,offset in enumerate(offsets))
                 results[label] = logits.cpu(), kv.cpu()
                 if label == 'ring':
                     first = logits.clone()
@@ -105,16 +126,18 @@ def main():
                 f.write(f'{name} numerical comparison complete\n')
 
     for time in (64, model.cfg.enc_frames):
-        for rows, window in ((1, 1), (3, 1), (5, 1), (8, 1), (8, 4)):
+        for rows, window in row_shapes:
             g = torch.Generator().manual_seed(0)
             tokens = torch.randint(0, m.V, (rows, window), generator=g)
             offsets = torch.full((rows,), 5, dtype=torch.long)
             kv = [torch.randn(m.L, rows, m.H, n, m.D//m.H, generator=g).half()
                   for n in (64, 64, time, time)]
             check(f'random_t{time}_r{rows}_s{window}', tokens, offsets, *kv)
-    items = json.loads(args.manifest.read_text())[:8]
+    items = json.loads(args.manifest.read_text())[:max(real_rows)]
+    if len(items) < max(real_rows):
+        raise ValueError('manifest has too few real inputs for the numerical row checks')
     waves = [load_audio(it['path']) for it in items]
-    for rows in (3, 5, 8):
+    for rows in real_rows:
         session = model._session(rows)
         session.encode(model._features(waves[:rows]))
         primer = torch.tensor([model._primer('eng', 'asr', False, None)]*rows, device=dev)
