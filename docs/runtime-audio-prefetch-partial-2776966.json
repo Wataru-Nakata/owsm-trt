@@ -1,0 +1,2563 @@
+{
+  "source": {
+    "group": "gai51740",
+    "queue": "R9920261300",
+    "resource": "rt_HG",
+    "nodes": 1,
+    "gpus": 1,
+    "walltime": "01:00:00",
+    "account_gpu_cap": 192,
+    "approval": "Standing serial 1GPU authorization at same approved settings; fresh failclosed192 cap/queue/no duplicate checks each submission.",
+    "commit": "3a99ff26d8dbe077330ae0ade50e66228db7b4cb",
+    "snapshot": "/groups/gai51740/acc12576tt/github.com/owsm_trt/outputs/runtime-audio-prefetch-api/snapshot-3a99ff26.tar",
+    "experiment": "runtime_audio_prefetch_api",
+    "status": "approved_not_submitted",
+    "approved_jobs": 1,
+    "additional_jobs_submitted": 0,
+    "prepared_at": "2026-10-27T06:49:45.092734+00:00",
+    "depends_on": "2776917 terminalF/1 and failure recorded93015af.2776872 exact publicprefetch candidates measured7d571fd.",
+    "classification": "Public opt-in audio_prefetch_workers0/1/2,default0.48audio tests,2models15APIcasesx3modes,4corpora3casesx3modes11pairs sameengine timing. SeparateLSE same-input numerical diagnostic and149beam+31naive regressions at end; noLSE in audio benchmarks."
+  },
+  "corpora": {
+    "1b_english": {
+      "environment": {
+        "commit": "3a99ff26d8dbe077330ae0ade50e66228db7b4cb",
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106",
+          "soundfile": "0.14.0"
+        },
+        "load_ms": 2919.881804000397,
+        "first_audio_load_ms": 128.93479699960153,
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "manifest_sha256": "c450d4c3a4fc3c70b1cf307310fec49bbe7d4d3a4d2fd619c3eeb4182798aa3c",
+        "input_mode": "File paths for every variant; current public mono loader; no resident-input speed comparison.",
+        "workers": {
+          "reference": 0,
+          "worker1": 1,
+          "worker2": 2
+        },
+        "submitted_batch_bound": 2,
+        "waveforms_equal": true,
+        "frontend_graph_max_batch": 1,
+        "scope": "E/N intent: same model/engines/search/batch order, but CPU read timing may change concurrent decoder dispatch. All timed calls include thread startup/join, duration sorting and file reads; node-local warm OS cache after staging, not cold disk/Lustre/network. Reference waveform preloading is only correctness preparation, never a timed input."
+      },
+      "cases": {
+        "stream_greedy_b1": {
+          "comparisons": {
+            "worker1": {
+              "rtfx_change_percent": 8.645134819803712,
+              "p95_wall_change_percent": -7.191779848230673,
+              "paired_changes_percent": [
+                9.741535036888994,
+                9.333627767190578,
+                9.109202042769283,
+                7.851785705297565,
+                9.725623762704338,
+                9.18362388637346,
+                7.626865212564615,
+                7.39744482957827,
+                6.528553353605493,
+                8.54335971196123,
+                10.140887356321171
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 9.109202042769283
+            },
+            "worker2": {
+              "rtfx_change_percent": 7.100097664844651,
+              "p95_wall_change_percent": -5.451304132255075,
+              "paired_changes_percent": [
+                9.808561369023995,
+                4.579158481904244,
+                7.61953219149194,
+                7.651567765145928,
+                7.234349157839359,
+                7.536076836245931,
+                6.521366001629492,
+                5.651122486633331,
+                5.5144978753966845,
+                8.127036340818684,
+                8.023451286574645
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 7.536076836245931
+            }
+          },
+          "full_outputs_and_decoder_call_totals_equal": true,
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 281.72776000064914,
+                "p95": 282.777114000055,
+                "min": 278.5243119997176,
+                "max": 283.0634319998353,
+                "stdev": 1.3464005781782968
+              },
+              "rtfx": 1710.9158456272162,
+              "peak_allocated_bytes": 6606089728,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 1914,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 45,
+                "rate": 0.0391304347826087,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "worker1": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 258.36478199926205,
+                "p95": 262.4404064999908,
+                "min": 255.7885329988494,
+                "max": 262.45595299951674,
+                "stdev": 2.076664115153727
+              },
+              "rtfx": 1858.826827135074,
+              "peak_allocated_bytes": 6606089728,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 1914,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 45,
+                "rate": 0.0391304347826087,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "worker2": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 261.9410679999419,
+                "p95": 267.36207349949836,
+                "min": 257.2575329995743,
+                "max": 269.77723199888715,
+                "stdev": 3.059332190134826
+              },
+              "rtfx": 1832.3925416300513,
+              "peak_allocated_bytes": 6606089728,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 1914,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 45,
+                "rate": 0.0391304347826087,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "actual_dispatch": {
+            "reference": {
+              "plain_batches": [],
+              "drafted_calls": {
+                "rows1/cache64/window32/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 85,
+                "rows1/cache128/window32/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache128/window32/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache128/window4/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache128/window2/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache128/window1/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 1,
+                "rows1/cache64/window16/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 32,
+                "rows1/cache64/window4/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 11,
+                "rows1/cache64/window8/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 16,
+                "rows1/cache64/window1/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache64/window32/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 3,
+                "rows1/cache128/window16/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 1,
+                "rows1/cache64/window2/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache64/window2/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 3,
+                "rows1/cache64/window4/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache64/window16/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 6,
+                "rows1/cache64/window1/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 1,
+                "rows1/cache64/window8/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 1
+              },
+              "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads.",
+              "audio_loader_threads": {
+                "MainThread": 73
+              },
+              "audio_prefetch_workers": 0
+            },
+            "worker1": {
+              "plain_batches": [],
+              "drafted_calls": {
+                "rows1/cache64/window32/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 85,
+                "rows1/cache128/window32/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache128/window32/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache128/window4/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache128/window2/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache128/window1/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 1,
+                "rows1/cache64/window16/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 30,
+                "rows1/cache64/window4/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 11,
+                "rows1/cache64/window8/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 16,
+                "rows1/cache64/window1/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache64/window32/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 3,
+                "rows1/cache128/window16/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 1,
+                "rows1/cache64/window2/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache64/window2/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 3,
+                "rows1/cache64/window4/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache64/window16/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 8,
+                "rows1/cache64/window1/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 1,
+                "rows1/cache64/window8/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 1
+              },
+              "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads.",
+              "audio_loader_threads": {
+                "owsm-audio_0": 73
+              },
+              "audio_prefetch_workers": 1
+            },
+            "worker2": {
+              "plain_batches": [],
+              "drafted_calls": {
+                "rows1/cache64/window32/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 85,
+                "rows1/cache128/window32/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache128/window32/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache128/window4/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache128/window2/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache128/window1/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 1,
+                "rows1/cache64/window16/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 30,
+                "rows1/cache64/window4/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 11,
+                "rows1/cache64/window8/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 16,
+                "rows1/cache64/window1/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache64/window32/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 3,
+                "rows1/cache128/window16/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 1,
+                "rows1/cache64/window2/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache64/window2/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 3,
+                "rows1/cache64/window4/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache64/window16/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 8,
+                "rows1/cache64/window1/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 1,
+                "rows1/cache64/window8/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 1
+              },
+              "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads.",
+              "audio_loader_threads": {
+                "owsm-audio_1": 36,
+                "owsm-audio_0": 37
+              },
+              "audio_prefetch_workers": 2
+            }
+          },
+          "cold": {
+            "reference": {
+              "warmup_ms": 4310.896547000084,
+              "captures": {
+                "(1, 1)": {
+                  "encode": 18,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 48,
+                  "ready_verify_steps": 18,
+                  "normal_verify_graphs": 18,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "dispatch": {
+                "(1, 1)": {
+                  "megakernel-ring": 7,
+                  "uninitialized": 17
+                }
+              },
+              "allocated_delta_bytes": 4458963968,
+              "reserved_delta_bytes": 4653580288,
+              "frontend_graph": {
+                "captures": 17,
+                "max_entries": 32,
+                "max_batch": 1,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 21211712,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 94.13346400106093,
+              "full_verify_warmup_captures": {
+                "(1, 1)": {
+                  "encode": 18,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 48,
+                  "ready_verify_steps": 48,
+                  "normal_verify_graphs": 48,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            },
+            "worker1": {
+              "warmup_ms": 4487.588846999643,
+              "captures": {
+                "(1, 1)": {
+                  "encode": 18,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 48,
+                  "ready_verify_steps": 18,
+                  "normal_verify_graphs": 18,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "dispatch": {
+                "(1, 1)": {
+                  "megakernel-ring": 7,
+                  "uninitialized": 17
+                }
+              },
+              "allocated_delta_bytes": 187931648,
+              "reserved_delta_bytes": 62914560,
+              "frontend_graph": {
+                "captures": 17,
+                "max_entries": 32,
+                "max_batch": 1,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 21211712,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 92.6411359996564,
+              "full_verify_warmup_captures": {
+                "(1, 1)": {
+                  "encode": 18,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 48,
+                  "ready_verify_steps": 48,
+                  "normal_verify_graphs": 48,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            },
+            "worker2": {
+              "warmup_ms": 4563.8587060002465,
+              "captures": {
+                "(1, 1)": {
+                  "encode": 18,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 48,
+                  "ready_verify_steps": 18,
+                  "normal_verify_graphs": 18,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "dispatch": {
+                "(1, 1)": {
+                  "megakernel-ring": 7,
+                  "uninitialized": 17
+                }
+              },
+              "allocated_delta_bytes": 192216064,
+              "reserved_delta_bytes": 192937984,
+              "frontend_graph": {
+                "captures": 17,
+                "max_entries": 32,
+                "max_batch": 1,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 21211712,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 95.49000100014382,
+              "full_verify_warmup_captures": {
+                "(1, 1)": {
+                  "encode": 18,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 48,
+                  "ready_verify_steps": 48,
+                  "normal_verify_graphs": 48,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            }
+          }
+        },
+        "stream_greedy_b8": {
+          "comparisons": {
+            "worker1": {
+              "rtfx_change_percent": 28.24879765219963,
+              "p95_wall_change_percent": -23.801797953096493,
+              "paired_changes_percent": [
+                31.551728670743696,
+                27.21825814547514,
+                26.589516358545428,
+                28.131379487156916,
+                28.796631253089533,
+                32.03754393931308,
+                28.072935628812722,
+                25.375317570264656,
+                28.005237237055837,
+                28.226961312402498,
+                26.719704647453078
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 28.072935628812722
+            },
+            "worker2": {
+              "rtfx_change_percent": 28.054957998371698,
+              "p95_wall_change_percent": -23.973389236837626,
+              "paired_changes_percent": [
+                30.96997685576941,
+                28.38848961648679,
+                26.106695370551257,
+                28.302630381925866,
+                27.516170010480145,
+                33.84517310365367,
+                25.61133609851933,
+                27.321510380789714,
+                26.315844221453144,
+                28.056537593800158,
+                26.200839544812936
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 27.516170010480145
+            }
+          },
+          "full_outputs_and_decoder_call_totals_equal": true,
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 223.63163999943936,
+                "p95": 232.3419290005404,
+                "min": 221.12886299873935,
+                "max": 233.5311320002802,
+                "stdev": 3.903967974133969
+              },
+              "rtfx": 2142.9901201695916,
+              "peak_allocated_bytes": 11456360448,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 319,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 45,
+                "rate": 0.0391304347826087,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "worker1": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 174.92146100084938,
+                "p95": 177.04037249950488,
+                "min": 172.74985599942738,
+                "max": 177.2135259998322,
+                "stdev": 1.3709806547219396
+              },
+              "rtfx": 2748.3590629229293,
+              "peak_allocated_bytes": 11489914880,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 319,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 45,
+                "rate": 0.0391304347826087,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "worker2": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 175.0602739994065,
+                "p95": 176.64169400086394,
+                "min": 174.47856100079662,
+                "max": 176.790475999951,
+                "stdev": 0.7412591385512995
+              },
+              "rtfx": 2744.2050982924256,
+              "peak_allocated_bytes": 11489914880,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 319,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 45,
+                "rate": 0.0391304347826087,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "actual_dispatch": {
+            "reference": {
+              "plain_batches": [],
+              "drafted_calls": {
+                "rows8/cache64/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 20,
+                "rows8/cache128/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 4,
+                "rows8/cache256/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 1,
+                "rows8/cache128/window16/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 1,
+                "rows8/cache128/window2/_verify/megakernel-gluon/programsNone/cross_splits1/notime_graphFalse": 2,
+                "rows8/cache128/window1/_verify/megakernel-gluon/programsNone/cross_splits1/notime_graphFalse": 1
+              },
+              "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads.",
+              "audio_loader_threads": {
+                "MainThread": 73
+              },
+              "audio_prefetch_workers": 0
+            },
+            "worker1": {
+              "plain_batches": [],
+              "drafted_calls": {
+                "rows8/cache64/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 20,
+                "rows8/cache128/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 4,
+                "rows8/cache256/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 1,
+                "rows8/cache128/window16/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 1,
+                "rows8/cache128/window2/_verify/megakernel-gluon/programsNone/cross_splits1/notime_graphFalse": 2,
+                "rows8/cache128/window1/_verify/megakernel-gluon/programsNone/cross_splits1/notime_graphFalse": 1
+              },
+              "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads.",
+              "audio_loader_threads": {
+                "owsm-audio_0": 73
+              },
+              "audio_prefetch_workers": 1
+            },
+            "worker2": {
+              "plain_batches": [],
+              "drafted_calls": {
+                "rows8/cache64/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 20,
+                "rows8/cache128/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 4,
+                "rows8/cache256/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 1,
+                "rows8/cache128/window16/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 1,
+                "rows8/cache128/window2/_verify/megakernel-gluon/programsNone/cross_splits1/notime_graphFalse": 2,
+                "rows8/cache128/window1/_verify/megakernel-gluon/programsNone/cross_splits1/notime_graphFalse": 1
+              },
+              "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads.",
+              "audio_loader_threads": {
+                "owsm-audio_0": 40,
+                "owsm-audio_1": 33
+              },
+              "audio_prefetch_workers": 2
+            }
+          },
+          "cold": {
+            "reference": {
+              "warmup_ms": 6216.288899000574,
+              "captures": {
+                "(8, 1)": {
+                  "encode": 10,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 6,
+                  "normal_verify_graphs": 6,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "dispatch": {
+                "(8, 1)": {
+                  "uninitialized": 18,
+                  "megakernel-gluon": 2,
+                  "tensorrt: shape limit": 4
+                }
+              },
+              "allocated_delta_bytes": 1565932032,
+              "reserved_delta_bytes": 1235222528,
+              "frontend_graph": {
+                "captures": 17,
+                "max_entries": 32,
+                "max_batch": 1,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 21211712,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 16857.801209000172,
+              "full_verify_warmup_captures": {
+                "(8, 1)": {
+                  "encode": 10,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 24,
+                  "normal_verify_graphs": 24,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            },
+            "worker1": {
+              "warmup_ms": 5828.8403039987315,
+              "captures": {
+                "(8, 1)": {
+                  "encode": 10,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 6,
+                  "normal_verify_graphs": 6,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "dispatch": {
+                "(8, 1)": {
+                  "uninitialized": 18,
+                  "megakernel-gluon": 2,
+                  "tensorrt: shape limit": 4
+                }
+              },
+              "allocated_delta_bytes": 1451196928,
+              "reserved_delta_bytes": 1449132032,
+              "frontend_graph": {
+                "captures": 17,
+                "max_entries": 32,
+                "max_batch": 1,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 21211712,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 3094.0056769995863,
+              "full_verify_warmup_captures": {
+                "(8, 1)": {
+                  "encode": 10,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 24,
+                  "normal_verify_graphs": 24,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            },
+            "worker2": {
+              "warmup_ms": 8657.800904000396,
+              "captures": {
+                "(8, 1)": {
+                  "encode": 10,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 6,
+                  "normal_verify_graphs": 6,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "dispatch": {
+                "(8, 1)": {
+                  "uninitialized": 18,
+                  "megakernel-gluon": 2,
+                  "tensorrt: shape limit": 4
+                }
+              },
+              "allocated_delta_bytes": 1449516544,
+              "reserved_delta_bytes": 1486880768,
+              "frontend_graph": {
+                "captures": 17,
+                "max_entries": 32,
+                "max_batch": 1,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 21211712,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 3193.2572229998186,
+              "full_verify_warmup_captures": {
+                "(8, 1)": {
+                  "encode": 10,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 24,
+                  "normal_verify_graphs": 24,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            }
+          }
+        },
+        "stream_ts_b8": {
+          "comparisons": {
+            "worker1": {
+              "rtfx_change_percent": 26.34164064780615,
+              "p95_wall_change_percent": -22.89595445665402,
+              "paired_changes_percent": [
+                27.296566478937635,
+                25.058199316240337,
+                23.89706153438953,
+                27.891029198855,
+                25.305203285917834,
+                24.43595383278239,
+                25.24862221400681,
+                30.433033565704992,
+                30.078549251938448,
+                25.59202420220046,
+                24.52711145217885
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 25.305203285917834
+            },
+            "worker2": {
+              "rtfx_change_percent": 25.948986936580297,
+              "p95_wall_change_percent": -22.27528220259012,
+              "paired_changes_percent": [
+                27.459969185284905,
+                24.16391113506322,
+                22.70686906555539,
+                28.53229716053429,
+                24.589882878671876,
+                25.84198235391215,
+                23.335582914143526,
+                29.9389707062073,
+                29.14549320519395,
+                24.004037424522707,
+                25.80244972363708
+              ],
+              "paired_positive": 11,
+              "paired_median_percent": 25.80244972363708
+            }
+          },
+          "full_outputs_and_decoder_call_totals_equal": true,
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 253.2377429997723,
+                "p95": 262.6867865010354,
+                "min": 250.47882000035315,
+                "max": 262.7271600013046,
+                "stdev": 4.361385493827997
+              },
+              "rtfx": 1885.6902544543855,
+              "peak_allocated_bytes": 11492593664,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 539,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 45,
+                "rate": 0.0391304347826087,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "worker1": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 202.08198699947388,
+                "p95": 202.54213950011035,
+                "min": 200.56403700073133,
+                "max": 202.68139600011637,
+                "stdev": 0.5567714083186569
+              },
+              "rtfx": 2382.412005013461,
+              "peak_allocated_bytes": 11492593664,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 539,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 45,
+                "rate": 0.0391304347826087,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "worker2": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 203.3724959983374,
+                "p95": 204.17256349901436,
+                "min": 199.56948100116279,
+                "max": 204.21733699913602,
+                "stdev": 1.5579453960717453
+              },
+              "rtfx": 2375.007772247122,
+              "peak_allocated_bytes": 11492593664,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 539,
+              "agreement": {
+                "tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 73,
+                  "total": 73,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "WER",
+                "reference_units": 1150,
+                "errors": 45,
+                "rate": 0.0391304347826087,
+                "annotated_utterances": 73,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "actual_dispatch": {
+            "reference": {
+              "plain_batches": [],
+              "drafted_calls": {
+                "rows8/cache64/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 25,
+                "rows8/cache64/window16/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 3,
+                "rows8/cache64/window8/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 1,
+                "rows8/cache128/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 14,
+                "rows8/cache128/window4/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 2,
+                "rows8/cache128/window2/_verify/megakernel-gluon/programsNone/cross_splits1/notime_graphFalse": 2,
+                "rows8/cache128/window1/_verify/megakernel-gluon/programsNone/cross_splits1/notime_graphFalse": 2
+              },
+              "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads.",
+              "audio_loader_threads": {
+                "MainThread": 73
+              },
+              "audio_prefetch_workers": 0
+            },
+            "worker1": {
+              "plain_batches": [],
+              "drafted_calls": {
+                "rows8/cache64/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 25,
+                "rows8/cache64/window16/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 3,
+                "rows8/cache64/window8/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 1,
+                "rows8/cache128/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 14,
+                "rows8/cache128/window4/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 2,
+                "rows8/cache128/window2/_verify/megakernel-gluon/programsNone/cross_splits1/notime_graphFalse": 2,
+                "rows8/cache128/window1/_verify/megakernel-gluon/programsNone/cross_splits1/notime_graphFalse": 2
+              },
+              "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads.",
+              "audio_loader_threads": {
+                "owsm-audio_0": 73
+              },
+              "audio_prefetch_workers": 1
+            },
+            "worker2": {
+              "plain_batches": [],
+              "drafted_calls": {
+                "rows8/cache64/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 25,
+                "rows8/cache64/window16/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 3,
+                "rows8/cache64/window8/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 1,
+                "rows8/cache128/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 14,
+                "rows8/cache128/window4/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 2,
+                "rows8/cache128/window2/_verify/megakernel-gluon/programsNone/cross_splits1/notime_graphFalse": 2,
+                "rows8/cache128/window1/_verify/megakernel-gluon/programsNone/cross_splits1/notime_graphFalse": 2
+              },
+              "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads.",
+              "audio_loader_threads": {
+                "owsm-audio_0": 40,
+                "owsm-audio_1": 33
+              },
+              "audio_prefetch_workers": 2
+            }
+          },
+          "cold": {
+            "reference": {
+              "warmup_ms": 6040.153748001103,
+              "captures": {
+                "(8, 1)": {
+                  "encode": 10,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 7,
+                  "normal_verify_graphs": 7,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "dispatch": {
+                "(8, 1)": {
+                  "uninitialized": 17,
+                  "megakernel-gluon": 2,
+                  "tensorrt: shape limit": 5
+                }
+              },
+              "allocated_delta_bytes": 1417927168,
+              "reserved_delta_bytes": 1080033280,
+              "frontend_graph": {
+                "captures": 17,
+                "max_entries": 32,
+                "max_batch": 1,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 21211712,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 2226.2724289994367,
+              "full_verify_warmup_captures": {
+                "(8, 1)": {
+                  "encode": 10,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 24,
+                  "normal_verify_graphs": 24,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            },
+            "worker1": {
+              "warmup_ms": 6177.983974999734,
+              "captures": {
+                "(8, 1)": {
+                  "encode": 10,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 7,
+                  "normal_verify_graphs": 7,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "dispatch": {
+                "(8, 1)": {
+                  "uninitialized": 17,
+                  "megakernel-gluon": 2,
+                  "tensorrt: shape limit": 5
+                }
+              },
+              "allocated_delta_bytes": 1452089856,
+              "reserved_delta_bytes": 1442840576,
+              "frontend_graph": {
+                "captures": 17,
+                "max_entries": 32,
+                "max_batch": 1,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 21211712,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 2229.4931600008567,
+              "full_verify_warmup_captures": {
+                "(8, 1)": {
+                  "encode": 10,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 24,
+                  "normal_verify_graphs": 24,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            },
+            "worker2": {
+              "warmup_ms": 5865.1942889991915,
+              "captures": {
+                "(8, 1)": {
+                  "encode": 10,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 7,
+                  "normal_verify_graphs": 7,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "dispatch": {
+                "(8, 1)": {
+                  "uninitialized": 17,
+                  "megakernel-gluon": 2,
+                  "tensorrt: shape limit": 5
+                }
+              },
+              "allocated_delta_bytes": 1416855040,
+              "reserved_delta_bytes": 1447034880,
+              "frontend_graph": {
+                "captures": 17,
+                "max_entries": 32,
+                "max_batch": 1,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 21211712,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 2275.568734999979,
+              "full_verify_warmup_captures": {
+                "(8, 1)": {
+                  "encode": 10,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 24,
+                  "normal_verify_graphs": 24,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "1b_japanese": {
+      "environment": {
+        "commit": "3a99ff26d8dbe077330ae0ade50e66228db7b4cb",
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0",
+          "tensorrt": "11.4.0.106",
+          "soundfile": "0.14.0"
+        },
+        "load_ms": 2649.6904579998954,
+        "first_audio_load_ms": 12.06444899980852,
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "manifest_sha256": "560972fa705257f4f2cdf84a6f2d2c1d7c27c67ecc7e9d8bf4e705a4e0beb99f",
+        "input_mode": "File paths for every variant; current public mono loader; no resident-input speed comparison.",
+        "workers": {
+          "reference": 0,
+          "worker1": 1,
+          "worker2": 2
+        },
+        "submitted_batch_bound": 2,
+        "waveforms_equal": true,
+        "frontend_graph_max_batch": 1,
+        "scope": "E/N intent: same model/engines/search/batch order, but CPU read timing may change concurrent decoder dispatch. All timed calls include thread startup/join, duration sorting and file reads; node-local warm OS cache after staging, not cold disk/Lustre/network. Reference waveform preloading is only correctness preparation, never a timed input."
+      },
+      "cases": {
+        "stream_greedy_b1": {
+          "comparisons": {
+            "worker1": {
+              "rtfx_change_percent": -0.022974592643709713,
+              "p95_wall_change_percent": -1.2959974421039244,
+              "paired_changes_percent": [
+                2.2647841355036835,
+                0.6827731051486818,
+                0.49450796830408095,
+                0.08103500667537844,
+                -1.0863263332457573,
+                -0.8539490615284695,
+                -0.6422792645864317,
+                -0.26981056927749547,
+                -0.6460229140259677,
+                -0.33070867509866764,
+                0.048902236231707086
+              ],
+              "paired_positive": 5,
+              "paired_median_percent": -0.26981056927749547
+            },
+            "worker2": {
+              "rtfx_change_percent": -0.9489399032855617,
+              "p95_wall_change_percent": -0.05332570941528614,
+              "paired_changes_percent": [
+                1.157162105341114,
+                -1.0469919668842587,
+                -0.8578291331385657,
+                -0.6300359568785052,
+                -1.9409126766409712,
+                -1.281661903909126,
+                -0.5714257280256541,
+                -1.7358882845477708,
+                -1.5625386628915994,
+                -0.7313982337676217,
+                -1.2444903586426581
+              ],
+              "paired_positive": 1,
+              "paired_median_percent": -1.0469919668842587
+            }
+          },
+          "full_outputs_and_decoder_call_totals_equal": true,
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 59.43579799895815,
+                "p95": 60.82338400028675,
+                "min": 58.995560000767,
+                "max": 61.39781700039748,
+                "stdev": 0.6207326629020558
+              },
+              "rtfx": 2638.450066884658,
+              "peak_allocated_bytes": 6599283712,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 528,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 29,
+                "rate": 0.048986486486486486,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "worker1": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 59.82229499932146,
+                "p95": 60.03511449944199,
+                "min": 59.34084100044856,
+                "max": 60.03808399873378,
+                "stdev": 0.26547964632626
+              },
+              "rtfx": 2637.8438937296837,
+              "peak_allocated_bytes": 6599283712,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 528,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 29,
+                "rate": 0.048986486486486486,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "worker2": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 60.20745400019223,
+                "p95": 60.79094949927821,
+                "min": 59.81009800052561,
+                "max": 60.886426999786636,
+                "stdev": 0.325241710985757
+              },
+              "rtfx": 2613.412761371725,
+              "peak_allocated_bytes": 6599283712,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 528,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 29,
+                "rate": 0.048986486486486486,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "actual_dispatch": {
+            "reference": {
+              "plain_batches": [],
+              "drafted_calls": {
+                "rows1/cache64/window32/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 24,
+                "rows1/cache128/window32/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache64/window4/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache64/window2/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 1,
+                "rows1/cache64/window1/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 1,
+                "rows1/cache64/window2/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 1,
+                "rows1/cache64/window32/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 4,
+                "rows1/cache128/window32/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache64/window16/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 5,
+                "rows1/cache64/window8/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 1,
+                "rows1/cache64/window8/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache64/window16/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 3
+              },
+              "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads.",
+              "audio_loader_threads": {
+                "MainThread": 12
+              },
+              "audio_prefetch_workers": 0
+            },
+            "worker1": {
+              "plain_batches": [],
+              "drafted_calls": {
+                "rows1/cache64/window32/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 24,
+                "rows1/cache128/window32/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache64/window4/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache64/window2/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 1,
+                "rows1/cache64/window1/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 1,
+                "rows1/cache64/window2/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 1,
+                "rows1/cache64/window32/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 4,
+                "rows1/cache128/window32/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache64/window16/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 5,
+                "rows1/cache64/window8/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 1,
+                "rows1/cache64/window8/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache64/window16/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 3
+              },
+              "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads.",
+              "audio_loader_threads": {
+                "owsm-audio_0": 12
+              },
+              "audio_prefetch_workers": 1
+            },
+            "worker2": {
+              "plain_batches": [],
+              "drafted_calls": {
+                "rows1/cache64/window32/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 24,
+                "rows1/cache128/window32/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache64/window4/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache64/window2/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 1,
+                "rows1/cache64/window1/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 1,
+                "rows1/cache64/window2/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 1,
+                "rows1/cache64/window32/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 4,
+                "rows1/cache128/window32/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache64/window16/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 5,
+                "rows1/cache64/window8/_verify_solo/megakernel-ring/programs64/cross_splits2/notime_graphFalse": 1,
+                "rows1/cache64/window8/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 2,
+                "rows1/cache64/window16/_verify/megakernel-ring/programs32/cross_splits2/notime_graphFalse": 3
+              },
+              "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads.",
+              "audio_loader_threads": {
+                "owsm-audio_0": 6,
+                "owsm-audio_1": 6
+              },
+              "audio_prefetch_workers": 2
+            }
+          },
+          "cold": {
+            "reference": {
+              "warmup_ms": 1861.1537289998523,
+              "captures": {
+                "(1, 1)": {
+                  "encode": 8,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 48,
+                  "ready_verify_steps": 12,
+                  "normal_verify_graphs": 12,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "dispatch": {
+                "(1, 1)": {
+                  "uninitialized": 19,
+                  "megakernel-ring": 5
+                }
+              },
+              "allocated_delta_bytes": 4450410496,
+              "reserved_delta_bytes": 4508876800,
+              "frontend_graph": {
+                "captures": 8,
+                "max_entries": 32,
+                "max_batch": 1,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 14406812,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 111.90265900040686,
+              "full_verify_warmup_captures": {
+                "(1, 1)": {
+                  "encode": 8,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 48,
+                  "ready_verify_steps": 48,
+                  "normal_verify_graphs": 48,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            },
+            "worker1": {
+              "warmup_ms": 1965.0311929999589,
+              "captures": {
+                "(1, 1)": {
+                  "encode": 8,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 48,
+                  "ready_verify_steps": 12,
+                  "normal_verify_graphs": 12,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "dispatch": {
+                "(1, 1)": {
+                  "uninitialized": 19,
+                  "megakernel-ring": 5
+                }
+              },
+              "allocated_delta_bytes": 186184192,
+              "reserved_delta_bytes": 58720256,
+              "frontend_graph": {
+                "captures": 8,
+                "max_entries": 32,
+                "max_batch": 1,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 14406812,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 112.80169800011208,
+              "full_verify_warmup_captures": {
+                "(1, 1)": {
+                  "encode": 8,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 48,
+                  "ready_verify_steps": 48,
+                  "normal_verify_graphs": 48,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            },
+            "worker2": {
+              "warmup_ms": 1975.924489001045,
+              "captures": {
+                "(1, 1)": {
+                  "encode": 8,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 48,
+                  "ready_verify_steps": 12,
+                  "normal_verify_graphs": 12,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "dispatch": {
+                "(1, 1)": {
+                  "uninitialized": 19,
+                  "megakernel-ring": 5
+                }
+              },
+              "allocated_delta_bytes": 190468608,
+              "reserved_delta_bytes": 190840832,
+              "frontend_graph": {
+                "captures": 8,
+                "max_entries": 32,
+                "max_batch": 1,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 14406812,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 112.97535300036543,
+              "full_verify_warmup_captures": {
+                "(1, 1)": {
+                  "encode": 8,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 48,
+                  "ready_verify_steps": 48,
+                  "normal_verify_graphs": 48,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            }
+          }
+        },
+        "stream_greedy_b8": {
+          "comparisons": {
+            "worker1": {
+              "rtfx_change_percent": -1.2362615580600922,
+              "p95_wall_change_percent": -0.9940115801671534,
+              "paired_changes_percent": [
+                0.3396429626276509,
+                -1.543115945609852,
+                1.6758183615132483,
+                -1.1019480853448393,
+                1.031670576855248,
+                -1.9826883986680643,
+                -3.855096937570124,
+                -3.187791016175623,
+                -2.866859388607368,
+                -1.5301593798393576,
+                -0.5654448580016069
+              ],
+              "paired_positive": 3,
+              "paired_median_percent": -1.5301593798393576
+            },
+            "worker2": {
+              "rtfx_change_percent": -2.2337714955982357,
+              "p95_wall_change_percent": 0.7350065404829742,
+              "paired_changes_percent": [
+                1.077290168592282,
+                -2.8937489711798547,
+                -1.0532093340172355,
+                -1.493723791897239,
+                -2.8354308496369773,
+                -2.826108931431137,
+                -1.9712731021493735,
+                -3.4290029171118452,
+                -2.7766039293470213,
+                -5.494160237062773,
+                -0.8408955081355529
+              ],
+              "paired_positive": 1,
+              "paired_median_percent": -2.7766039293470213
+            }
+          },
+          "full_outputs_and_decoder_call_totals_equal": true,
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 46.3872669988632,
+                "p95": 48.55079249955452,
+                "min": 45.541834999312414,
+                "max": 48.60018100043817,
+                "stdev": 0.9563722584932688
+              },
+              "rtfx": 3372.204670090769,
+              "peak_allocated_bytes": 11677785088,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 132,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 29,
+                "rate": 0.048986486486486486,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "worker1": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 47.36112399950798,
+                "p95": 48.06819199984602,
+                "min": 45.91359000005468,
+                "max": 48.33722999865131,
+                "stdev": 0.5824350568702579
+              },
+              "rtfx": 3330.51540009533,
+              "peak_allocated_bytes": 11711339520,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 132,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 29,
+                "rate": 0.048986486486486486,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "worker2": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 47.718649000671576,
+                "p95": 48.907643999882566,
+                "min": 46.45764199995028,
+                "max": 49.11749100028828,
+                "stdev": 0.6896463937792983
+              },
+              "rtfx": 3296.8773233970487,
+              "peak_allocated_bytes": 11711339520,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 132,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 29,
+                "rate": 0.048986486486486486,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "actual_dispatch": {
+            "reference": {
+              "plain_batches": [],
+              "drafted_calls": {
+                "rows8/cache64/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 4,
+                "rows8/cache128/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 5,
+                "rows8/cache64/window16/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 2,
+                "rows8/cache64/window8/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 1
+              },
+              "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads.",
+              "audio_loader_threads": {
+                "MainThread": 12
+              },
+              "audio_prefetch_workers": 0
+            },
+            "worker1": {
+              "plain_batches": [],
+              "drafted_calls": {
+                "rows8/cache64/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 4,
+                "rows8/cache128/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 5,
+                "rows8/cache64/window16/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 2,
+                "rows8/cache64/window8/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 1
+              },
+              "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads.",
+              "audio_loader_threads": {
+                "owsm-audio_0": 12
+              },
+              "audio_prefetch_workers": 1
+            },
+            "worker2": {
+              "plain_batches": [],
+              "drafted_calls": {
+                "rows8/cache64/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 4,
+                "rows8/cache128/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 5,
+                "rows8/cache64/window16/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 2,
+                "rows8/cache64/window8/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 1
+              },
+              "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads.",
+              "audio_loader_threads": {
+                "owsm-audio_0": 8,
+                "owsm-audio_1": 4
+              },
+              "audio_prefetch_workers": 2
+            }
+          },
+          "cold": {
+            "reference": {
+              "warmup_ms": 1746.464844998627,
+              "captures": {
+                "(8, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 4,
+                  "normal_verify_graphs": 4,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "dispatch": {
+                "(8, 1)": {
+                  "uninitialized": 20,
+                  "tensorrt: shape limit": 4
+                }
+              },
+              "allocated_delta_bytes": 1646211072,
+              "reserved_delta_bytes": 1329594368,
+              "frontend_graph": {
+                "captures": 8,
+                "max_entries": 32,
+                "max_batch": 1,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 14406812,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 3110.9188079990417,
+              "full_verify_warmup_captures": {
+                "(8, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 24,
+                  "normal_verify_graphs": 24,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            },
+            "worker1": {
+              "warmup_ms": 1792.6959200012789,
+              "captures": {
+                "(8, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 4,
+                  "normal_verify_graphs": 4,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "dispatch": {
+                "(8, 1)": {
+                  "uninitialized": 20,
+                  "tensorrt: shape limit": 4
+                }
+              },
+              "allocated_delta_bytes": 1531475968,
+              "reserved_delta_bytes": 1522532352,
+              "frontend_graph": {
+                "captures": 8,
+                "max_entries": 32,
+                "max_batch": 1,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 14406812,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 3844.205487999716,
+              "full_verify_warmup_captures": {
+                "(8, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 24,
+                  "normal_verify_graphs": 24,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            },
+            "worker2": {
+              "warmup_ms": 1946.717496999554,
+              "captures": {
+                "(8, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 4,
+                  "normal_verify_graphs": 4,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "dispatch": {
+                "(8, 1)": {
+                  "uninitialized": 20,
+                  "tensorrt: shape limit": 4
+                }
+              },
+              "allocated_delta_bytes": 1529795584,
+              "reserved_delta_bytes": 1560281088,
+              "frontend_graph": {
+                "captures": 8,
+                "max_entries": 32,
+                "max_batch": 1,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 14406812,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 2887.0852010004455,
+              "full_verify_warmup_captures": {
+                "(8, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 24,
+                  "normal_verify_graphs": 24,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            }
+          }
+        },
+        "stream_ts_b8": {
+          "comparisons": {
+            "worker1": {
+              "rtfx_change_percent": -1.6391536321975764,
+              "p95_wall_change_percent": 1.5734646349390813,
+              "paired_changes_percent": [
+                0.8312505666939085,
+                -3.3257642238060936,
+                -0.37361691430077837,
+                -0.5004381437203831,
+                -1.242376088298125,
+                -3.072801563592431,
+                -1.7835487529451743,
+                -1.104304664629474,
+                -3.0825479707812797,
+                -2.063275998055991,
+                -2.205957586531737
+              ],
+              "paired_positive": 1,
+              "paired_median_percent": -1.7835487529451743
+            },
+            "worker2": {
+              "rtfx_change_percent": -2.2087981165188286,
+              "p95_wall_change_percent": 2.4920569434771167,
+              "paired_changes_percent": [
+                -2.0029910679012386,
+                -4.245970901010432,
+                -2.2467286833402267,
+                -1.0104551922663907,
+                -1.2176046942249164,
+                -3.9509363272979825,
+                -0.8879760656046898,
+                -3.3863870619740832,
+                -2.5284190570092457,
+                -2.2265659521127135,
+                -0.4898826916659327
+              ],
+              "paired_positive": 0,
+              "paired_median_percent": -2.2265659521127135
+            }
+          },
+          "full_outputs_and_decoder_call_totals_equal": true,
+          "summary": {
+            "reference": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 52.48036700140801,
+                "p95": 53.16074350048439,
+                "min": 52.02503600048658,
+                "max": 53.230372999678366,
+                "stdev": 0.39711689109292075
+              },
+              "rtfx": 2997.3654688382435,
+              "peak_allocated_bytes": 11711339520,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 176,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 29,
+                "rate": 0.048986486486486486,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "worker1": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 53.74183999992965,
+                "p95": 53.99720899913518,
+                "min": 52.62542300079076,
+                "max": 54.1441079985816,
+                "stdev": 0.5244575053717969
+              },
+              "rtfx": 2948.2340438855454,
+              "peak_allocated_bytes": 11711339520,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 176,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 29,
+                "rate": 0.048986486486486486,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            },
+            "worker2": {
+              "wall_ms": {
+                "n": 11,
+                "p50": 53.7455220000993,
+                "p95": 54.48553950009227,
+                "min": 52.92164899947238,
+                "max": 54.63912400045956,
+                "stdev": 0.5303915303801159
+              },
+              "rtfx": 2931.1597168173585,
+              "peak_allocated_bytes": 11711339520,
+              "memory_scope": "all variant session pools resident; not standalone deployment peak",
+              "draft_decoder_calls": 176,
+              "agreement": {
+                "tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "timestamp_tokens": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "segments": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                },
+                "text": {
+                  "equal": 12,
+                  "total": 12,
+                  "different_ids": []
+                }
+              },
+              "quality": {
+                "metric": "CER",
+                "reference_units": 592,
+                "errors": 29,
+                "rate": 0.048986486486486486,
+                "annotated_utterances": 12,
+                "reference_timestamp_error": null,
+                "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+              },
+              "token_comparison_scope": "returned token IDs"
+            }
+          },
+          "actual_dispatch": {
+            "reference": {
+              "plain_batches": [],
+              "drafted_calls": {
+                "rows8/cache64/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 6,
+                "rows8/cache128/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 6,
+                "rows8/cache128/window16/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 1,
+                "rows8/cache64/window16/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 1,
+                "rows8/cache64/window8/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 1,
+                "rows8/cache64/window1/_verify/megakernel-gluon/programsNone/cross_splits1/notime_graphFalse": 1
+              },
+              "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads.",
+              "audio_loader_threads": {
+                "MainThread": 12
+              },
+              "audio_prefetch_workers": 0
+            },
+            "worker1": {
+              "plain_batches": [],
+              "drafted_calls": {
+                "rows8/cache64/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 6,
+                "rows8/cache128/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 6,
+                "rows8/cache128/window16/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 1,
+                "rows8/cache64/window16/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 1,
+                "rows8/cache64/window8/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 1,
+                "rows8/cache64/window1/_verify/megakernel-gluon/programsNone/cross_splits1/notime_graphFalse": 1
+              },
+              "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads.",
+              "audio_loader_threads": {
+                "owsm-audio_0": 12
+              },
+              "audio_prefetch_workers": 1
+            },
+            "worker2": {
+              "plain_batches": [],
+              "drafted_calls": {
+                "rows8/cache64/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 6,
+                "rows8/cache128/window32/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 6,
+                "rows8/cache128/window16/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 1,
+                "rows8/cache64/window16/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 1,
+                "rows8/cache64/window8/_verify/tensorrt/programsNone/cross_splitsNone/notime_graphFalse": 1,
+                "rows8/cache64/window1/_verify/megakernel-gluon/programsNone/cross_splits1/notime_graphFalse": 1
+              },
+              "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads.",
+              "audio_loader_threads": {
+                "owsm-audio_0": 8,
+                "owsm-audio_1": 4
+              },
+              "audio_prefetch_workers": 2
+            }
+          },
+          "cold": {
+            "reference": {
+              "warmup_ms": 2003.6724999990838,
+              "captures": {
+                "(8, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 6,
+                  "normal_verify_graphs": 6,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "dispatch": {
+                "(8, 1)": {
+                  "megakernel-gluon": 1,
+                  "uninitialized": 18,
+                  "tensorrt: shape limit": 5
+                }
+              },
+              "allocated_delta_bytes": 1497832448,
+              "reserved_delta_bytes": 1161822208,
+              "frontend_graph": {
+                "captures": 8,
+                "max_entries": 32,
+                "max_batch": 1,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 14406812,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 2370.217926998521,
+              "full_verify_warmup_captures": {
+                "(8, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 24,
+                  "normal_verify_graphs": 24,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            },
+            "worker1": {
+              "warmup_ms": 2060.8714549998695,
+              "captures": {
+                "(8, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 6,
+                  "normal_verify_graphs": 6,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "dispatch": {
+                "(8, 1)": {
+                  "megakernel-gluon": 1,
+                  "uninitialized": 18,
+                  "tensorrt: shape limit": 5
+                }
+              },
+              "allocated_delta_bytes": 1498440704,
+              "reserved_delta_bytes": 1491075072,
+              "frontend_graph": {
+                "captures": 8,
+                "max_entries": 32,
+                "max_batch": 1,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 14406812,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 2550.497701000495,
+              "full_verify_warmup_captures": {
+                "(8, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 24,
+                  "normal_verify_graphs": 24,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            },
+            "worker2": {
+              "warmup_ms": 2156.101023998417,
+              "captures": {
+                "(8, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 6,
+                  "normal_verify_graphs": 6,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              },
+              "dispatch": {
+                "(8, 1)": {
+                  "megakernel-gluon": 1,
+                  "uninitialized": 18,
+                  "tensorrt: shape limit": 5
+                }
+              },
+              "allocated_delta_bytes": 1496760320,
+              "reserved_delta_bytes": 1528823808,
+              "frontend_graph": {
+                "captures": 8,
+                "max_entries": 32,
+                "max_batch": 1,
+                "reuse_warmup_stream": true,
+                "fallbacks": 0,
+                "input_output_bytes": 14406812,
+                "workspace_bytes": null,
+                "memory_note": "input/output only; captured intermediate private pools are additional"
+              },
+              "full_verify_warmup_ms": 2509.813489001317,
+              "full_verify_warmup_captures": {
+                "(8, 1)": {
+                  "encode": 2,
+                  "plain_select_fused": true,
+                  "ctc": 0,
+                  "decode": 0,
+                  "plain_ready": false,
+                  "plain_steps": 0,
+                  "verify": 24,
+                  "ready_verify_steps": 24,
+                  "normal_verify_graphs": 24,
+                  "notime_graphs": 0,
+                  "selection_fused_windows": 6,
+                  "selection_split_windows": 6
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "limits": "Same checkpoint/engines, node-local warmed file paths for every mode, current public mono loader, B1 frontend graphs;11alternating repeats. Each sample includes executor creation/join, headers, read/decode/resample and full streaming request. CPU preloading only prepares reference outputs. No cold disk/Lustre/network claim. All session pools resident, not standalone VRAM; future loaded batches bounded by count not bytes. No combined frontend/mono gain claim.",
+  "partial": "Job F/139. Only completed1B measurements are included;102M timing andLSE absent. Public1B15cases exact;102M worker0/1 partial outputs exact;worker2 failed withCUDA700 observed during encoder context creation, followed bysegfault.",
+  "api_partial": {
+    "1b": {
+      "cases": 15,
+      "modes": [
+        0,
+        1,
+        2
+      ],
+      "all_equal": true
+    },
+    "102m": {
+      "cases": 15,
+      "passed_modes": [
+        0,
+        1
+      ],
+      "failed_mode": 2,
+      "cause": "undetermined"
+    }
+  }
+}

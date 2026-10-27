@@ -90,3 +90,30 @@ is pending. No serving-wide default or workload auto-detection is introduced.
 
 The same allocation runs the separate LSE numerical/graph diagnostic after audio artifacts exist;
 it does not enable LSE in these audio benchmarks. Failure of that diagnostic is reported separately.
+
+## Partial public result2776966:102M CUDA failure, validation not complete
+
+Frozen3a99ff2 exited139 after48 audio tests passed.1B completed all15 public API cases for workers0/1/2
+with exact outputs and reader cleanup/reuse, then both file-inclusive corpus measurements. English
+B1 workers1/2 improved8.65/7.10%, greedy B8 improved28.25/28.06%, and timestamp B8 improved26.34/25.95%;
+all11 pairs improve. This reproduces a sizeable English gain with a different magnitude from the first
+run. Japanese B8 regresses1.24–2.23%; timestamp workers2 is slower in every pair. Retain default0.
+English inputs are73 FLAC files; Japanese inputs are12 WAV files. This difference is not evidence for
+language-specific selection or a universal codec policy.
+
+102M saved worker0/1 outputs, identical on all15 cases, then failed during worker2. CUDA error700 was
+reported while creating a TensorRT encoder context, surfacing through the serial `_decode` path;
+`create_execution_context` returnedNone, followed by an AttributeError and native teardown segfault.
+An earlier asynchronous failure remains possible; no root cause is established. The original log is
+`outputs/runtime-2776966/102m_api.log` (traceback at265 onward). There was no case-level checkpoint in
+that validator, so the exact triggering API case is not known.102M timing and the final LSE diagnostic
+never ran. Do not report this allocation as a successful public verification or adopt the option broadly.
+
+[Validated partial1B timings and API status](runtime-audio-prefetch-partial-2776966.json). The next
+`diagnose_audio_prefetch_api.pbs` retains the48 passed tests by hash, runs independent LSE checks in
+separate processes, then tests102M worker2 with CUDA_LAUNCH_BLOCKING=1 and explicit case synchronization
+against saved worker0 output. It follows with the original asynchronous0/1/2 sequence and the missing
+102M timing if those checks succeed. Case start/end and partial outputs are saved locally. Debug sync
+is correctness diagnosis only, never timing evidence. Runtime computation is unchanged; a small guard
+now reports failed TensorRT context creation directly instead of masking it with AttributeError. This
+guard is not a fix for CUDA error700. Public prefetch remains opt-in/default0 and pending validation.
