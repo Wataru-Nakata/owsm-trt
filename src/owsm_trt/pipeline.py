@@ -651,7 +651,9 @@ class OWSM:
                 raise ValueError("CTC-only models have no timestamps or beam search; use the defaults")
             bs = min(batch_size or self.opts.max_batch, self.opts.max_batch)
             # batches of similar durations: a batch's features stop after its longest recording
-            order = sorted(range(len(items)), key=lambda i: duration(items[i], sr or self.cfg.sample_rate))
+            order = list(range(len(items)))
+            if len(order) > 1:
+                order.sort(key=lambda i: duration(items[i], sr or self.cfg.sample_rate))
             chunks = [order[i : i + bs] for i in range(0, len(order), bs)]
             batches = ([self._wave(items[j], sr) for j in chunk] for chunk in chunks)
             results: list[Result | None] = [None] * len(items)
@@ -691,7 +693,10 @@ class OWSM:
                 results[j] = self._result(ids, offset=0.0)
             return results[0] if single else results
         # A batch decodes until its longest member finishes, so batch utterances of similar duration.
-        order = sorted(range(len(items)), key=lambda i: duration(items[i], sr or self.cfg.sample_rate))
+        # One item needs no ordering/header read; the loader still validates and decodes it normally.
+        order = list(range(len(items)))
+        if len(order) > 1:
+            order.sort(key=lambda i: duration(items[i], sr or self.cfg.sample_rate))
         results: list[Result | None] = [None] * len(items)
         if (self._encoder_lookahead and self.device.type == "cuda" and len(items) > bs
                 and (beam_size > 1 or task != "asr" or not self.ctc_draft)):
