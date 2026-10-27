@@ -62,3 +62,19 @@ rollback, including encoder-lookahead exclusion, then independently repeats all1
 through `--public-policy`. Separate diagnostics assert and save every actual plain call's program
 budget and NS. It also fills the recently adopted row policy's W2 graph/cache coverage. The first
 profiler result above is not yet an independently verified public-default result.
+
+
+## Incomplete public validation2776203
+
+Frozen658fa45 passed58 focused tests and seven additional Ring W2 GPU cases. Its1B public API
+artifact has all13 requests equal, including lookahead exclusion, and the final success message
+was printed. However, the validator process did not exit before its250s timeout (job exit124).
+102M API and all independent timing processes were never reached. This is a failed/incomplete
+job, not a completed adoption result or a new performance measurement.
+
+The validator now explicitly drops lingering session/window loop references and clears graphs
+before model destruction and interpreter shutdown, with CUDA synchronization and phase logs.
+A faulthandler watchdog will capture remaining stalls. Retained lazy-session/TRT graph ownership
+at shutdown is a hypothesis, not an established root cause. The fix changes only validation
+lifetime management; it does not bypass process cleanup or weaken output checks. Retry required.
+Raw complete/partial artifacts: `outputs/runtime-2776203/`.

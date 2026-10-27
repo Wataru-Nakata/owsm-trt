@@ -1,6 +1,7 @@
 """Compute-node regression of the public greedy-kernel default and serial rollback."""
 
 import argparse
+import faulthandler
 import gc
 import json
 import os
@@ -29,6 +30,8 @@ def main():
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--plain-solo", action="store_true", help="verify serial plain budget and encoder-lookahead exclusion")
     args = ap.parse_args()
+    faulthandler.enable()
+    faulthandler.dump_traceback_later(120, repeat=True)  # Retain evidence if destruction or shutdown stalls.
     if not os.environ.get("PBS_JOBID") and os.uname().nodename.startswith("login"):
         ap.error("model/audio work requires a compute allocation")
     items = json.loads(Path(args.manifest).read_text())[:8]
@@ -123,9 +126,18 @@ def main():
             raise RuntimeError("decoder failed and silently fell back during validation")
         expected = results
         records[mode] = dict(load_ms=load_ms, captures=dispatch, outputs=results)
+        # Loop locals can retain the last session (including lazy factory cycles and TRT contexts)
+        # beyond model deletion. Release graphs while CUDA/TRT modules are still fully alive.
+        print(f"{mode}: releasing graph/session owners", flush=True)
+        torch.cuda.synchronize()
+        sess = None
+        windows = []
+        model._sessions.clear()
+        gc.collect()
         del model
         gc.collect()
         torch.cuda.empty_cache()
+        print(f"{mode}: graph/model cleanup complete", flush=True)
     save(
         args.out / "public_api.json",
         dict(
