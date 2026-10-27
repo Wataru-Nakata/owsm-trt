@@ -63,3 +63,15 @@ now requires exact full state against eager execution of the same blockwise arit
 torch-reference numerical tests remain, and full real-model output comparisons are still required.
 This separates graph/state correctness from the already-declared N behavior without concealing either.
 The runtime reduction implementation has not been changed; no speed or adoption claim is made.
+
+## Diagnostic2777145: numerical branch difference confirmed; timing pending
+
+The same-input diagnostic passes exact mask/error checks. Maximum candidate perturbation is
+1.1920928955078125e-7; selected scores have zero gap under the same-input torch comparison.
+The two independently accumulated searches retain different side-beam histories while their
+returned output matches. This supports rounding propagation through tied paths in this synthetic
+fixture; it does not establish real-model equality or quality.149 LSE/beam tests now pass, including
+exact graph-versus-eager state with the same arithmetic, and31 naive beam/greedy/timestamp regressions
+pass. [Per-step trajectories and numeric checks](beam-lse-diagnostic-2777145.json). The allocation's
+later independent audio API diagnosis fails, so the job is not globally successful. Full-model LSE
+performance remains unmeasured and the default stays off.

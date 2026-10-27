@@ -27,6 +27,8 @@ def main():
     ap.add_argument('--out', type=Path, required=True)
     ap.add_argument('--workers', type=int, nargs='+', default=[0, 1, 2], choices=[0, 1, 2])
     ap.add_argument('--reference', type=Path, help='saved complete/partial output of worker0')
+    ap.add_argument('--frontend-eager', action='store_true', help='diagnostic only: disable frontend replay')
+    ap.add_argument('--legacy-frontend-warmup', action='store_true', help='diagnostic only: restore fresh warmup streams')
     ap.add_argument('--sync-cases', action='store_true', help='diagnostic only: synchronize before/after each API case')
     args = ap.parse_args()
     if not os.environ.get('PBS_JOBID'):
@@ -56,15 +58,18 @@ def main():
         previous = json.loads(args.reference.read_text())
         expected = previous.get('modes', previous)['0']['outputs']
 
+    iteration = -1
+
     def progress(workers, case, phase):
-        save(args.out / 'case_progress.json', dict(workers=workers, case=case, phase=phase))
-        print(workers, case, phase, flush=True)
+        save(args.out / 'case_progress.json', dict(iteration=iteration, workers=workers, case=case, phase=phase))
+        print(iteration, workers, case, phase, flush=True)
         if args.sync_cases:
             torch.cuda.synchronize()
     try:
-        for workers in args.workers:
+        for iteration, workers in enumerate(args.workers):
             progress(workers, 'model_load', 'start')
-            model, ms = wall(lambda: OWSM.from_pretrained(args.model, audio_prefetch_workers=workers))
+            model, ms = wall(lambda: OWSM.from_pretrained(args.model, audio_prefetch_workers=workers, frontend_graph=not args.frontend_eager))
+            model._frontend_reuse_warmup_stream = not args.legacy_frontend_warmup
             assert model._audio_prefetch_workers == workers
             files = hub.resolve(args.model)
             engines = hub.cache_dir() / files.name.replace('/', '--') / engine_tag(model.opts)
@@ -162,7 +167,8 @@ def main():
             checkpoint_sha256=sha256(files.checkpoint), engine_sha256=engine_hashes,
             commit=os.environ.get('OWSM_PROFILE_COMMIT'), gpu=torch.cuda.get_device_name(),
             long_token_scope='long-form compares text/segments; joined token IDs unavailable',
-            diagnostic_sync_cases=args.sync_cases, cuda_launch_blocking=os.environ.get('CUDA_LAUNCH_BLOCKING'),
+            diagnostic_sync_cases=args.sync_cases, requested_workers=args.workers,
+            frontend_graph=not args.frontend_eager, reuse_frontend_warmup=not args.legacy_frontend_warmup, cuda_launch_blocking=os.environ.get('CUDA_LAUNCH_BLOCKING'),
             reference_sha256=sha256(args.reference) if args.reference else None))
     finally:
         pipeline.load_audio = original_loader

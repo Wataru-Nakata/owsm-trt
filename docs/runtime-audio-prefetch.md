@@ -117,3 +117,20 @@ against saved worker0 output. It follows with the original asynchronous0/1/2 seq
 is correctness diagnosis only, never timing evidence. Runtime computation is unchanged; a small guard
 now reports failed TensorRT context creation directly instead of masking it with AttributeError. This
 guard is not a fix for CUDA error700. Public prefetch remains opt-in/default0 and pending validation.
+
+## Diagnostic2777145: asynchronous failure reproduced at long_prompt
+
+Frozenaa586c8, F/exit1. Fresh102M worker2 with CUDA_LAUNCH_BLOCKING and case synchronization
+passes all15 API cases against the saved worker0 output. The ordinary asynchronous0/1/2 sequence
+again passes workers0/1 and worker2 through translation8, then fails at long_prompt. The traceback in
+`outputs/runtime-2777145/102m_async_api.log` identifies the encoder's profile0/lane0 context creation,
+with preceding CUDA700; the new guard reports this directly. The root cause is still undetermined,
+and the synchronous pass does not establish asynchronous safety. Missing102M timings remain absent.
+
+`diagnose_prefetch_cuda_matrix.pbs` now isolates: fresh worker2 without blocking, three worker0 model
+lifecycles,0/1/2 with legacy frontend warm-up,0/1/2 with eager frontend, and0/1/2 with case-only
+synchronization (no global launch blocking). Each process records its own exit and partial case;
+expected reproductions do not prevent other independent controls. A separate Compute Sanitizer
+memcheck run uses stream-ordered race tracking, following the [NVIDIA documentation](https://docs.nvidia.com/compute-sanitizer/ComputeSanitizer/index.html).
+Installed diagnostic tool:2025.3.1.0 from CUDA13.0.1. Sanitizer and synchronization change scheduling;
+none of these passes is speed evidence. Runtime and defaults are unchanged by this matrix.
