@@ -8,6 +8,15 @@ All sampled outputs/cache states match; English73/Japanese12, with plain/transla
 individual inputs per language. Final API checks and limitations appear below. Historical pilots retain
 all samples, including GC-associated excursions; their results are not multiplied together.
 
+The subsequent [expanded plain timestamp audit2781184](runtime-large-regression-2781184.json) validates
+13,232 inputs across seven languages against24 CTAs with identical checkpoint/engines and software.
+All104 chunks pass source/order/hash/output checks:13,232 text/segment pairs and13,191 available full
+token/timestamp pairs match exactly;41 long-form inputs have no joined token IDs. Both observed B1
+sessions activate `plain_solo` and retain Ring routes without fallback; their settings record24/64 CTAs.
+This includes common baseline diagnostic failures; it does not establish that either variant is free
+of repetition or invalid timestamps. Large drafted/translation/87-chapter and bulk/refill checks remain
+pending. No new latency or speed gain is inferred from this regression run.
+
 Candidate31, E intent against the current Ring kernel, independent of wide-row N routing.
 Actual graph trace2777712 places the single-row Ring decoder at75.3%of102M English translation
 GPU kernel sums. These instrumented sums motivate a small same-engine ablation; they cannot

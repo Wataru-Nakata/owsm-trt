@@ -274,6 +274,9 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   unchanged call counts,20focused tests and30public API checks. Plain/translation use12 inputs per
   language; drafted ASR uses English73/Japanese12. Other GPU/model defaults and auto B8 are unchanged.
   Existing `decoder_kernel="ring:s24"` restores the previous serial budget.
+  A separate seven-language plain timestamp audit matches all13,232 text/segment outputs and13,191
+  available token/timestamp sequences for24 versus64 CTAs; it is an output regression, not a timing run.
+  [Expanded regression coverage](docs/runtime-large-regression.md).
   [Distributions, GC excursions and verification](docs/runtime-ring-solo.md).
 * **Existing102M Ring row option.** `decoder_kernel="ring:rr"` remains an opt-in numerical
   change. On H200, English73/Japanese12 plain B3 ASR gained35–47% whole-list RTFx and

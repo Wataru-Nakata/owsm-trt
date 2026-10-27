@@ -3,7 +3,8 @@
 The English73/Japanese12 sets used for tuning are screening sets. Their agreement does not establish
 coverage of uncommon inputs. Large output regressions are now a separate acceptance step from the
 small, repeated latency benchmark. The1B/beam5/timestamp/B1 and B3 upper-bound OFF/ON audits each completed with
-zero output differences across13,232 inputs. The search-kernel OFF/ON audits also completed at B1 and B3;
+zero output differences across13,232 inputs. The search-kernel OFF/ON audits also completed at B1 and B3,
+and the102M plain timestamp serial64-versus24 audit passes the same13,232 inputs;
 other large-corpus ablations and timing remain pending.
 Job2780055 prepared the corpus. Its
 [corpus manifest](runtime-large-regression-corpus-2780055.json) records13,204 real short-corpus inputs
@@ -251,6 +252,21 @@ Other ablations are102M serial64 versus24 (E), and the explicit1B NS4/102M NS8 o
 with plain/drafted ASR, translation and long-form cases. N differences remain visible, not treated
 as exact or silently accepted as accuracy improvements. New default adoption waits for relevant
 large-corpus checks as well as the repeated performance benchmark.
+
+The [102M serial64/24 plain timestamp result2781184](runtime-large-regression-2781184.json) uses frozen3d9bba3,
+with PBS F/exit0 and publication exit0. All104 chunks pass config/corpus/order/hash/output validation.
+Text/segments match on13,232 pairs and full token/timestamp sequences on13,191 available pairs;
+41 ordinary corpus inputs use long-form and lack joined IDs. Both variants activate the B1 solo path,
+with Ring24/64 configured and no fallback in the observed session/bucket metadata. This is the same
+checkpoint/engine scheduling comparison, not a model-size comparison or a new speed measurement.
+
+Speech-only WER/CER is identical between24 and64: English WER7.52%, Japanese CER12.03%, German
+WER18.20%, French WER24.47%, Russian WER20.04%, Spanish WER9.54%, Chinese CER21.34%. Generated
+nonspeech is excluded from those rates. Both variants share51 distinct flagged inputs, including
+21 invalid/out-of-range segments,16 unpaired timestamp sequences,17 repeated-fourgram inputs,
+15 repeated-token inputs and1 empty segment (categories overlap). These are baseline findings,
+not schedule regressions or human timing errors. Large drafted/translation/87-chapter and bulk/refill
+coverage is still pending; the completed plain audit must not be extended to those paths by inference.
 
 `audit_large_regression.py` stores both complete outputs, timestamp IDs, segments, text, WER/CER
 counts, invalid/empty/unpaired/nonmonotonic times and diagnostic repetition indicators. Results are
