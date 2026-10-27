@@ -30,6 +30,7 @@ class FrontendReplay:
         self.capture_stream = None
         self.ready = None
         self.fallbacks = 0
+        self.direct_replays = 0
 
     def __call__(self, speech: torch.Tensor) -> torch.Tensor:
         if (
@@ -98,6 +99,36 @@ class FrontendReplay:
         self.ready.record(stream)
         return result
 
+    def try_waves(self, waves: list[torch.Tensor], length: int, device: torch.device) -> torch.Tensor | None:
+        """Fill an existing graph input directly; cold/unsupported calls use the normal capture path."""
+        if (not self.entries or device.type != "cuda" or not 1 <= len(waves) <= self.max_batch
+                or torch.is_grad_enabled() or torch.is_autocast_enabled("cuda")):
+            return None
+        if device.index is None:
+            device = torch.device("cuda", torch.cuda.current_device())
+        key = ((len(waves), length), torch.get_default_dtype(), device,
+               self.frontend.fused_power, self.frontend.fused_logmel)
+        entry = self.entries.get(key)
+        if entry is None:
+            return None
+        inp, out, graph = entry
+        stream = torch.cuda.current_stream(device)
+        stream.wait_event(self.ready)
+        try:
+            inp.zero_()
+            for row, wave in zip(inp, waves):
+                wave = wave[:length]
+                if wave.device.type == "cpu":
+                    wave = wave.pin_memory()
+                row[:wave.shape[0]].copy_(wave, non_blocking=True)
+            graph.replay()
+            result = out.clone()  # Consumers on another stream must not alias the next replay.
+        finally:
+            # A pin/copy failure may follow queued input writes; another stream must wait for those too.
+            self.ready.record(stream)
+        self.direct_replays += 1
+        return result
+
     def info(self) -> dict:
         return {
             "captures": len(self.entries),
@@ -106,6 +137,7 @@ class FrontendReplay:
             "reuse_warmup_stream": self.reuse_warmup_stream,
             "capture_stream": "exclusive native stream",
             "fallbacks": self.fallbacks,
+            "direct_replays": self.direct_replays,
             "input_output_bytes": sum(
                 (inp.numel() * inp.element_size() + out.numel() * out.element_size())
                 for inp, out, _ in self.entries.values()
