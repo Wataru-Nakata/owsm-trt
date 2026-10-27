@@ -45,3 +45,32 @@ python scripts/profile_audio_prefetch.py --model /local/owsm_v4_medium_1B \
 Only consider default/public exposure after repeatable file-inclusive improvement and separate
 public API validation; keep regression cases explicit. Single-request latency, beam/translation,
 CTC-only and long-form paths are outside this first experiment.
+
+## First result2776872: prepare opt-in, retain default0
+
+Frozen4f207ca, H200, F/exit0,35 tests passed. All12 cases across1B/102M and English73/Japanese12
+match waveforms, full tokens/time IDs/text/segments and decoder-call totals. Actual loader-thread
+dispatch is verified separately; no warm captures, fallback or leaked worker threads occurred.
+Eleven alternating whole-list file-inclusive comparisons:
+
+|Model/corpus|Greedy B1 workers1/2|Greedy B8 workers1/2|Timestamp B8 workers1/2|
+|---|---:|---:|---:|
+|1B English73|+8.90/+7.26%|+35.10/+33.50%|+37.51/+36.87%|
+|1B Japanese12|+0.51/−0.43%|−0.54/−0.88%|−0.58/−1.00%|
+|102M English73|+40.19/+43.50%|+25.21/+59.15%|+26.50/+64.29%|
+|102M Japanese12|+4.31/+0.69%|+1.71/+0.57%|+0.05/−1.07%|
+
+Every English paired comparison improves.1B timestamp B8 workers1 spans+35.93..+39.25%;102M
+workers2 spans+49.07..+79.00%, with paired median+62.71% and whole-list p95−41.06%. Japanese B8
+is mostly worse:102M greedy workers1's aggregate+1.71% hides a paired median−1.58% and only2/11
+positive pairs, including one+33.68% outlier. Do not label that a repeatable improvement. Different
+corpora also have different formats/length mixes; these are not language-specific routing rules.
+
+Prepare a public worker count0/1/2, retaining default0 and all-file/streaming/autocast eligibility.
+Thread startup/join stays inside request timing. More workers do not consistently help;1B English
+prefers1, while102M English B8 benefits from2. Do not introduce automatic model/language policy
+from these small corpora. Independent public API validation and a fresh timing replication remain
+required. [All pairs, p95, environments and dispatch](runtime-audio-prefetch-2776872.json); raw
+`outputs/runtime-2776872/`. Long-form/single-file/beam/translation remain unchanged and unmeasured
+for speed. The following experiment uses a separate GPU job and will not merge gains with frontend
+batch capture or change model precision/search.
