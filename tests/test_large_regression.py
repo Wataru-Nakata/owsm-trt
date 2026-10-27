@@ -74,6 +74,15 @@ def test_failure_keeps_reproduction_context_and_reraises(tmp_path,monkeypatch):
     assert (out/'failure-synthetic.json').read_bytes()==(published/'failure-synthetic.json').read_bytes()
 
 
+def test_prompt_keeps_full_reference_only_for_supported_input_windows():
+    rows = [dict(key=str(i),lang='eng',dataset='speech',long_form=False,seconds=seconds)
+            for i,seconds in enumerate((1,30,30.01,45))]
+    with pytest.raises(ValueError,match='input-window limit'):
+        select_rows(rows,'beam_prompt',None)
+    assert {r['seconds'] for r in select_rows(rows,'beam_prompt',None,30)}=={1,30}
+    assert len(select_rows(rows,'beam_b1',None))==4
+
+
 def test_resume_rejects_partial_wrong_config_and_changed_chunks(tmp_path):
     rows = [dict(key=str(i)) for i in range(3)]
     value = dict(tokens=[],timestamp_tokens=[],segments=[],text='')

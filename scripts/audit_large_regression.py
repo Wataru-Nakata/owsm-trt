@@ -35,9 +35,16 @@ def repetition(tokens: list[int]) -> dict:
                 scope='Diagnostic repetition indicators, not annotation-based error labels.')
 
 
-def select_rows(rows: list[dict], case: str, datasets: list[str] | None) -> list[dict]:
+def select_rows(rows: list[dict], case: str, datasets: list[str] | None,
+                prompt_window_seconds: float | None = None) -> list[dict]:
     selected = [r for r in rows if (not datasets or r['dataset'] in datasets)
                 and (r['long_form'] if case=='long' else not r['long_form'])]
+    if case=='beam_prompt':
+        if prompt_window_seconds is None or prompt_window_seconds<=0:
+            raise ValueError('prompt regression requires the model input-window limit')
+        # The public long-form API has no external prompt parameter; never silently drop it or
+        # trim audio while keeping its full reference. Longer inputs remain in the non-prompt audit.
+        selected = [r for r in selected if r['seconds']<=prompt_window_seconds]
     # Process Japanese and English early; deterministic hash order mixes lengths within a corpus.
     rank = {'jpn':0,'eng':1}
     selected.sort(key=lambda r:(rank.get(r['lang'],2),r['lang'],r['dataset'],
@@ -106,16 +113,21 @@ def main():
     from owsm_trt import OWSM, hub, megakernel, megakernel_ring
     from owsm_trt.audio import load_audio
     from owsm_trt.build import engine_tag
+    from owsm_trt.config import load_espnet_config, parse_config
 
-    rows = select_rows(json.loads((args.data/'index.json').read_text()),args.case,args.datasets)
+    files = hub.resolve(args.model)
+    prompt_limit = (parse_config(load_espnet_config(files.config)).speech_seconds
+                    if args.case=='beam_prompt' else None)
+    rows = select_rows(json.loads((args.data/'index.json').read_text()),args.case,args.datasets,prompt_limit)
     if not rows:
         raise RuntimeError('empty selected corpus')
-    files = hub.resolve(args.model)
     config = dict(schema=1,commit=os.environ.get('OWSM_PROFILE_COMMIT'),mode=args.mode,case=args.case,
         index_sha256=sha256(args.data/'index.json'),checkpoint_sha256=sha256(files.checkpoint),
         selected_keys_sha256=hashlib.sha256('\n'.join(r['key'] for r in rows).encode()).hexdigest(),
         chunk_size=args.chunk_size,selected_samples=len(rows),datasets=args.datasets,
         scope='Full output/quality regression, one pass per variant. Includes warmup/capture/I/O; no steady-state latency or speedup claim. Long-form has joined text/segments only. No human timestamp or reference translation annotation.')
+    if prompt_limit is not None:
+        config['prompt_window_seconds'] = prompt_limit
     config_path = args.publish/'config.json'
     if config_path.exists():
         assert json.loads(config_path.read_text())==config,'resume config/source/input changed'

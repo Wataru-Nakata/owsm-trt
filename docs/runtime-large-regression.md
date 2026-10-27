@@ -23,7 +23,9 @@ resampling, model work and tests stay on compute nodes; no temporary waveform fi
 
 Twenty-eight generated silence/noise/tone probes (English/Japanese primers) complement real speech;
 they do not substitute for natural noise/music/conversation coverage. Prompt stress is a separate
-`beam_prompt` case.
+`beam_prompt` case limited to complete inputs within the model's input window; the public long-form
+API does not accept an external prompt. Longer inputs remain covered by the other cases, without
+trimming audio or silently dropping the prompt.
 
 The first priority is1B, beam5, timestamps=True, B1: same-engine existing upper-bound OFF versus
 current ON. B3 follows to cover mixed lengths and partially finished groups. Supported subsequent
