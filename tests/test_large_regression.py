@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 from audit_large_regression import (
     capture_failure,
+    input_groups,
     load_completed,
     record_differences,
     repetition,
@@ -91,6 +92,16 @@ def test_prompt_keeps_full_reference_only_for_supported_input_windows():
         select_rows(rows,'beam_prompt',None)
     assert {r['seconds'] for r in select_rows(rows,'beam_prompt',None,30)}=={1,30}
     assert len(select_rows(rows,'beam_b1',None))==4
+
+
+def test_mixed_batch_does_not_change_short_input_api_or_output_order():
+    rows = [dict(key=str(i),lang=lang,seconds=seconds) for i,(lang,seconds) in enumerate([
+        ('eng',2),('eng',31),('eng',4),('eng',7),('eng',9),('jpn',10)])]
+    groups = list(input_groups(rows,3,30,False))
+    assert [r for batch,_ in groups for r in batch]==rows
+    assert [(len(batch),joined) for batch,joined in groups]==[(1,False),(1,True),(1,False),(2,False),(1,False)]
+    assert all(len({r['lang'] for r in batch})==1 for batch,_ in groups)
+    assert all(joined for _,joined in input_groups(rows,3,30,True))
 
 
 def test_recover_local_archive_verifies_transcript_and_rejects_links(tmp_path,monkeypatch):

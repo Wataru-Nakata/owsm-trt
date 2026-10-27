@@ -79,8 +79,14 @@ API does not accept an external prompt. Longer inputs remain covered by the othe
 trimming audio or silently dropping the prompt.
 
 The first priority is1B, beam5, timestamps=True, B1: same-engine existing upper-bound OFF versus
-current ON. B3 follows to cover mixed lengths and partially finished groups. Supported subsequent
-ablations also include `beam_kernels` (upper bound ON in both, search/state/cache kernels OFF/ON)
+current ON. B3 follows to cover mixed lengths and partially finished groups. Its
+evaluation groups preserve input order and share a language and API: a longer-than-window neighbour
+does not switch an ordinary short input to long-form semantics or remove its token IDs. Groups may
+therefore have1/2/3 inputs; each future record stores its group keys, API and requested batch size.
+This grouping change has small fixture coverage; B3 GPU results remain pending. The current B1
+continuation stays frozen at8151703.
+
+Subsequent ablations also include `beam_kernels` (upper bound ON in both, search/state/cache kernels OFF/ON)
 and `beam_combined` (upper bound and beam kernels both OFF/ON), to cover bugs shared by both sides
 of the upper-bound-only comparison. These use the existing PyTorch reference path, the same decoder
 backend/engine, and separate session pools. They are pending large-corpus E checks, not results.

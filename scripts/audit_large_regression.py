@@ -12,6 +12,7 @@ import tarfile
 import time
 from collections import Counter, OrderedDict
 from contextlib import ExitStack
+from itertools import groupby
 from pathlib import Path
 
 from prepare_large_regression import publish_file, sha256
@@ -63,6 +64,14 @@ def capture_failure(call, context: dict, out: Path, publish: Path):
         path.write_text(json.dumps(failure,indent=2,ensure_ascii=False)+'\n')
         publish_file(path,publish/name)
         raise
+
+
+def input_groups(rows: list[dict], batch_size: int, window_seconds: float, force_long: bool):
+    """Keep row order while avoiding a language/API change caused only by a batch neighbour."""
+    for begin in range(0,len(rows),batch_size):
+        group = rows[begin:begin+batch_size]
+        for (_,joined),items in groupby(group,key=lambda r:(r['lang'],force_long or r['seconds']>window_seconds)):
+            yield list(items),joined
 
 
 def load_completed(publish: Path, rows: list[dict], chunk_size: int, config_digest: str) -> dict:
@@ -192,57 +201,56 @@ def main():
                     break
                 subset = rows[offset:offset+args.chunk_size]
                 records = []
-                # Keep a chunk one language at a time for the same primer; B3 intentionally mixes lengths.
-                for begin in range(0,len(subset),3 if args.case=='beam_b3' else 1):
+                # B3 mixes lengths within the same language and supported API. A >window neighbour
+                # must not switch an ordinary short input to long-form semantics/token availability.
+                for batch,joined in input_groups(subset,3 if args.case=='beam_b3' else 1,
+                                                 model.cfg.speech_seconds,args.case=='long'):
                     if stop[0]:
                         break
-                    group = subset[begin:begin+(3 if args.case=='beam_b3' else 1)]
-                    # Corpus boundaries in a chunk cannot share a language primer.
-                    groups = [group] if len({r['lang'] for r in group})==1 else [[r] for r in group]
-                    for batch in groups:
-                        waves = [wave(r) for r in batch]
-                        outputs = {}
-                        for mode in (list(backends) if chunk_id%2==0 else list(backends)[::-1]):
-                            model.backend,model._sessions = backends[mode],pools[mode]
-                            if beam_mode:
-                                model.beam_upper_bound = config['beam_variants'][mode]['beam_upper_bound']
-                                model.beam_kernels = config['beam_variants'][mode]['beam_kernels']
-                            model.ctc_draft = args.case in ('draft_ts','long')
-                            kw = dict(lang=batch[0]['lang'],beam_size=5 if beam_mode else 1,
-                                      batch_size=3 if args.case=='beam_b3' else 1,
-                                      task='st_eng' if args.case=='translation' else 'asr')
-                            if args.case=='beam_prompt':
-                                kw['prompt'] = 'Previous speech context. '*20
-                            joined = args.case=='long' or any(r['seconds']>model.cfg.speech_seconds for r in batch)
-                            def decode():
-                                values = (model.transcribe_long(waves,**kw) if joined
-                                          else model.transcribe(waves,timestamps=True,**kw))
-                                assert not model.backend.failed,f'backend fallback: {mode}'
-                                assert len(values)==len(batch),'output count mismatch'
-                                return values
-                            values = capture_failure(decode,dict(config=config,variant=mode,options=kw,
-                                joined=joined,inputs=batch,completed_variant_outputs=outputs),args.out,args.publish)
-                            results = []
-                            for row,value in zip(batch,values):
-                                record = result_record(model,value,row,row['seconds'])
-                                record['token_ids_available'] = not joined
-                                record['repetition'] = repetition(record['tokens'])
-                                if args.case!='translation':
-                                    units = characters if row['lang'] in CER_LANGS else normalize
-                                    ref,hyp = units(row['text']),units(record['text'])
-                                    record['quality'] = dict(metric='CER' if row['lang'] in CER_LANGS else 'WER',
-                                        errors=edit_distance(ref,hyp),reference_units=len(ref))
-                                else:
-                                    record['quality'] = None
-                                results.append(record)
-                            outputs[mode] = results
-                        for index,row in enumerate(batch):
-                            ref,actual = outputs['reference'][index],outputs['candidate'][index]
-                            records.append(dict(key=row['key'],dataset=row['dataset'],lang=row['lang'],speaker=row['speaker'],
-                                duration_bucket=row['duration_bucket'],source=dict(shard=row['shard'],member=row['audio_member'],
-                                audio_sha256=row['audio_sha256'],reference_text=row['text']),
-                                config_sha256=config_digest,reference=ref,candidate=actual,
-                                differences=record_differences(ref,actual)))
+                    waves = [wave(r) for r in batch]
+                    outputs = {}
+                    for mode in (list(backends) if chunk_id%2==0 else list(backends)[::-1]):
+                        model.backend,model._sessions = backends[mode],pools[mode]
+                        if beam_mode:
+                            model.beam_upper_bound = config['beam_variants'][mode]['beam_upper_bound']
+                            model.beam_kernels = config['beam_variants'][mode]['beam_kernels']
+                        model.ctc_draft = args.case in ('draft_ts','long')
+                        kw = dict(lang=batch[0]['lang'],beam_size=5 if beam_mode else 1,
+                                  batch_size=3 if args.case=='beam_b3' else 1,
+                                  task='st_eng' if args.case=='translation' else 'asr')
+                        if args.case=='beam_prompt':
+                            kw['prompt'] = 'Previous speech context. '*20
+                        def decode():
+                            values = (model.transcribe_long(waves,**kw) if joined
+                                      else model.transcribe(waves,timestamps=True,**kw))
+                            assert not model.backend.failed,f'backend fallback: {mode}'
+                            assert len(values)==len(batch),'output count mismatch'
+                            return values
+                        values = capture_failure(decode,dict(config=config,variant=mode,options=kw,
+                            joined=joined,inputs=batch,completed_variant_outputs=outputs),args.out,args.publish)
+                        results = []
+                        for row,value in zip(batch,values):
+                            record = result_record(model,value,row,row['seconds'])
+                            record['token_ids_available'] = not joined
+                            record['repetition'] = repetition(record['tokens'])
+                            if args.case!='translation':
+                                units = characters if row['lang'] in CER_LANGS else normalize
+                                ref,hyp = units(row['text']),units(record['text'])
+                                record['quality'] = dict(metric='CER' if row['lang'] in CER_LANGS else 'WER',
+                                    errors=edit_distance(ref,hyp),reference_units=len(ref))
+                            else:
+                                record['quality'] = None
+                            results.append(record)
+                        outputs[mode] = results
+                    for index,row in enumerate(batch):
+                        ref,actual = outputs['reference'][index],outputs['candidate'][index]
+                        records.append(dict(key=row['key'],dataset=row['dataset'],lang=row['lang'],speaker=row['speaker'],
+                            duration_bucket=row['duration_bucket'],source=dict(shard=row['shard'],member=row['audio_member'],
+                            audio_sha256=row['audio_sha256'],reference_text=row['text']),
+                            input_group=[r['key'] for r in batch],api='transcribe_long' if joined else 'transcribe',
+                            requested_batch_size=kw['batch_size'],
+                            config_sha256=config_digest,reference=ref,candidate=actual,
+                            differences=record_differences(ref,actual)))
                 if len(records)!=len(subset):
                     assert stop[0], 'partial chunk without interruption'
                     break  # Complete published chunks remain valid; retry this chunk after termination.
