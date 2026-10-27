@@ -1,6 +1,7 @@
 # Blockwise full-vocabulary normalization experiment
 
-Candidate07, N class; disabled by default and no high-level API option. The prior eager/instrumented
+Candidate07, N class; verified public opt-in `beam_fused_lse=True`, disabled by default.
+H200/1B and102M independent measurements and public routing checks are below. The prior eager/instrumented
 B3 sample measured selection0.126ms per call versus decoder1.08ms (`beam-local-topk.md`). This
 motivates a small isolated reduction/memory-traffic experiment, not a graph-phase attribution or
 predicted speedup. Decoder remains dominant and prior local top-K did not yield a meaningful gain.
@@ -43,8 +44,8 @@ python scripts/profile_beam.py --model /local/owsm_v4_medium_1B \
   --fused-lse --baseline-runtime /local/baseline_runtime.py --phases --out /local/results
 ```
 
-GPU correctness/performance is pending. Keep defaults and README speed claims unchanged unless
-full comparison and independent replication justify adoption. Do not combine predicted or measured
+The completed correctness/performance and independent public verification are recorded below.
+The N-class reduction remains off by default. Do not combine predicted or measured
 gains with unrelated audio/frontend variants.
 
 ## First attempt2776917: internal side-beam mismatch, no performance result
@@ -110,3 +111,42 @@ default off. The independent `validate_beam_lse_api.pbs` tests public constructo
 repeat/session eviction, greedy, translation, long prompts and disabled-kernel fallback, then repeats
 all eight measured corpus conditions through `--verify-api`. Expanded public verification remains
 pending until that run completes; no extra default or combined optimization gain is claimed.
+
+
+## Independent public verification2777441: adopt opt-in, retain defaultOFF
+
+Frozen9552af9 finishes F/exit0 with36 public-option/routing tests. The prior149 kernel/state and31
+naive regression checks are retained by source/artifact hash; there is no reduction-kernel change.
+Both checkpoints pass all12 public cases: K2/3/5/8, no timestamps, translation, long prompt, repeated
+beam/session reuse, greedy direct/stream/translation and disabled-kernel fallback. Actual session
+flags and fallback dispatch are checked. All eight full-corpus cases also pass the independent
+public API output/dispatch comparison and six extra cases. All returned tokens, timestamp IDs,
+text/segments and decoder call totals match the same-engine reference; WER/CER stays unchanged.
+
+|Model / corpus|B|RTFx gain|Paired group median|Improved groups|Repeat-total gain range|
+|---|---:|---:|---:|---:|---:|
+|1B English73|1|1.175%|1.191%|73/73|0.829..1.371%|
+|1B English73|3|0.765%|0.768%|25/25|0.420..1.074%|
+|1B Japanese12|1|1.256%|1.104%|12/12|0.988..1.757%|
+|1B Japanese12|3|0.876%|0.871%|4/4|0.424..1.918%|
+|102M English73|1|2.145%|1.913%|73/73|1.869..3.384%|
+|102M English73|3|2.234%|2.099%|25/25|1.776..3.319%|
+|102M Japanese12|1|2.540%|2.518%|12/12|2.155..2.891%|
+|102M Japanese12|3|2.728%|2.419%|4/4|2.199..5.033%|
+
+Every one of the11 repeat totals improves in each condition. These are loaded-waveform,
+warm single/fixed-batch measurements; thread prefetch and grouped/tail options are not enabled.
+`beam_fused_lse=True` is accepted as a measured opt-in for these H200 shapes. The default remains
+False because changes in reduction order can affect other near ties, checkpoints or inputs.
+Unsupported/disabled beam kernels retain torch.log_softmax. Greedy decoding is unaffected.
+No general bitwise guarantee, reference-time accuracy, standalone memory advantage or combined
+speedup is implied. The separate four-preset experiment measures interaction with grouped/tail.
+
+[All samples, quality, public dispatch, hashes and cold measurements](beam-lse-api-results-2777441.json)
+retain the raw analysis path/hash; full API outputs are in `outputs/runtime-2777441/`. PBS reports
+Stageout_status1 separately, although exit_status0 and all expected artifacts were verified.
+
+```python
+model = OWSM.from_pretrained("espnet/owsm_v4_medium_1B", beam_fused_lse=True)
+result = model.transcribe(audio, beam_size=5, timestamps=True, batch_size=1)
+```

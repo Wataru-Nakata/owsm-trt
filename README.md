@@ -331,7 +331,7 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   decoding. See [beam profiling and validation](docs/beam-search.md) and the
   [60-candidate ledger](docs/beam-candidates.tsv) for tested scope and remaining work.
   Candidate masking/scoring and finished-state updates use fused Triton kernels on CUDA by default;
-  full-vocabulary log-softmax and global top-K stay in PyTorch. `beam_kernels=False` selects the reference
+  full-vocabulary log-softmax and global top-K stay in PyTorch by default. `beam_kernels=False` selects the reference
   operations, also used on CPU or without Triton. Against the already optimized stopping path,
   [same-engine H200/1B measurements](docs/beam-fusion.md) show an additional 20.3% RTFx at B=1 and 14.2%
   at B=3 on 73 English inputs, with identical tokens, timestamps, segments and decoder call counts.
@@ -346,6 +346,12 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   Parent selection, token-history gather and timestamp state now share one kernel for K<=8 and
   capacity<=512. [The next same-engine comparison](docs/beam-state-fusion.md) adds4.30% /4.24% RTFx
   at B=1 / B=3 on English 73, and5.07% /4.02% on Japanese12, with identical outputs and275 GPU tests.
+  `beam_fused_lse=True` optionally fuses full-vocabulary normalization with candidate scoring.
+  [Independent H200 verification](docs/beam-lse.md#independent-public-verification2777441-adopt-opt-in-retain-defaultoff)
+  measured an additional0.77–1.26% RTFx for1B and2.14–2.73% for102M at B1/B3, beam5/timestamps,
+  with matching sampled tokens, times, segments and decoder calls. It remains off by default:
+  fp32 reduction order changes, so near ties can differ. Disabled/unsupported beam kernels retain
+  the original normalizer. Greedy is unchanged; these gains do not include the grouped/tail preset.
   For further speed, opt into `beam_grouped_cross=True` and `beam_compact_tail=True` in
   `OWSM.from_pretrained`. The [guarded H200/1B preset](docs/beam-wider-rows.md#verified-api-preset-2773443)
   uses grouped Gluon attention at B=2/3. With tail compaction, measured RTFx improves29.43%/32.42%
