@@ -150,3 +150,34 @@ normal asynchronous scheduling is unchanged. Six synthetic CPU propagation/reuse
 The next compute job runs the frozen old loop as a negative control and tests outstanding GPU
 work at initial launch, decoder meanwhile refill and finished callbacks, with/without priority.
 This separate correctness change is not presented as the cause or fix of the CUDA700 matrix failure.
+
+
+## Public opt-in verified after lifetime correction2777327
+
+Frozen6a15d1f finishes successfully with94 tests. Public outputs match the saved reference for all
+15 cases across six102M and three1B model lifecycles. The prior CUDA700 failure was reproduced
+independently as a pooled frontend capture-stream workspace lifetime problem and corrected with
+an exclusive native stream; it also occurred with prefetch disabled. See the
+[reproducer, public checks and102M timing artifacts](runtime-frontend-lifetime-2777327.json).
+
+The missing102M11-pair timing replication uses that correction on all variants:
+
+|Corpus / case|worker1 RTFx|worker2 RTFx|worker2 positive pairs|worker2 paired median|
+|---|---:|---:|---:|---:|
+|English73 greedy B1|+40.82%|+43.97%|11/11|+44.73%|
+|English73 greedy B8|+19.29%|+63.18%|11/11|+64.74%|
+|English73 timestamp B8|+27.80%|+66.56%|11/11|+64.90%|
+|Japanese12 greedy B1|+3.81%|+1.20%|8/11|+1.22%|
+|Japanese12 greedy B8|+2.07%|+0.30%|1/11|-2.88%|
+|Japanese12 timestamp B8|+0.20%|-0.46%|1/11|-0.94%|
+
+English102M timestamp B8 whole73-file request p50 falls169.65→103.64ms, p95 171.33→105.05ms;
+RTFx2884.82→4804.81. These are whole streaming corpus requests, not single-utterance latency.
+All full outputs and decoder call totals match. The Japanese B8 aggregate hides a slow reference
+outlier: both workers generally regress in paired samples.1B timing is the separate2776966
+replication (+26.34% worker1 timestamp B8 English), not newly measured in this allocation.
+
+Retain `audio_prefetch_workers=0` by default, expose1/2 as validated opt-ins for all-file greedy ASR
+streaming. Bounds, exclusions, reader cleanup and CPU-autocast fallback remain. These gains concern
+node-local warmed files (English FLAC versus Japanese WAV), not cold shared-storage/network reads,
+language-based policy or loaded-waveform inference. Do not multiply with earlier mono/frontend gains.

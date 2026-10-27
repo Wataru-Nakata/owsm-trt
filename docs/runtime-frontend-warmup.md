@@ -116,3 +116,28 @@ against frozen old code and the correction, including release. `validate_fronten
 runs that reproducer,94 focused tests, six successive102M model lifecycles and three1B lifecycles,
 then the missing102M prefetch timings and memory comparison. Validation is pending; the earlier
 memory reduction alone is insufficient evidence of safe model/session reuse.
+
+
+## Verified correction2777327
+
+Frozen6a15d1f completed F/exit0. The minimal old-code control recorded a pooled-stream alias,
+destroyed unrelated graphs on that pool, then failed with CUDA illegal address during replay.
+The exclusive stream did not alias any of96 pooled stream requests (32 distinct streams), preserved
+all feature outputs after the same graph churn, and completed finalizer cleanup. This independently
+reproduces the workspace lifetime mechanism rather than inferring it from a later TRT exception.
+
+94 focused tests pass. The expanded public API compares every output with the saved pre-change
+worker0 baseline:102M runs workers0/1/2 twice in one process (six model lifecycles);1B runs all three.
+Each lifecycle covers15 cases, including long prompts, beam/translation, mixed/loaded files,
+stereo/resampling, CPU autocast, injected read failure/reuse and110s recording. All agree exactly.
+The separate streaming-exception regression first reproduces outstanding GPU work in all six old-loop
+conditions; the new exception drain passes, without adding normal-path host synchronization.
+
+A reverse-order memory replication with the exclusive stream preserves the previous102M English
+savings: B1 retained delta596.51→52.51MiB (544MiB less), B8 381.94→93.94MiB (288MiB less).
+Candidate post-release delta is0 in both; legacy residuals are544/288MiB. Exact features, same shapes,
+zero fallback. These remain incremental PyTorch allocation measurements, not whole-process peaks
+or new latency gains. Keep the exclusive capture stream and warm-up reuse; batch limit default1.
+[Tests, lifecycle controls, API/environment and memory evidence](runtime-frontend-lifetime-2777327.json).
+Raw results are `outputs/runtime-2777327/`; reproduce with `validate_frontend_lifetime.pbs` and
+`diagnose_frontend_lifetime.py --baseline-frontend <frozen0946b43/frontend_graph.py>`.

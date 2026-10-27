@@ -213,9 +213,8 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   public validation;1B gains were small/mixed, so the default stays1. Dedicated-stream warm-up also
   avoids accumulating per-stream workspaces: the English B1 feature allocation delta fell596.5–596.9
   to52.5–52.9MiB, reproduced with reversed measurement order. This is a memory result, not a warm
-  speed claim; graph buffers still add cold work and memory. Expanded repeated-model tests exposed
-  a pooled-stream workspace lifetime failure; an exclusive capture-stream correction is under
-  validation. [Public validation](docs/runtime-frontend-warmup.md). Pointwise
+  speed claim; graph buffers still add cold work and memory. An exclusive native capture stream prevents pooled-stream workspace
+  invalidation during session/model reuse; the expanded lifecycle regression passes. [Public validation](docs/runtime-frontend-warmup.md). Pointwise
   frontend fusion remains disabled. A seven-repeat validation reproduced +5.0%/+12.1%, including lazy
   draft setup. CTC-only v4 1B also improved single-utterance RTFx 4.4% English/5.2% Japanese with exact
   features/output. [Runtime measurements](docs/runtime-results-2771009.md), [CTC measurements](docs/runtime-results-2771126.md).
@@ -224,6 +223,12 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   timestamped RTFx improved2.7–7.6% on English73/Japanese12. B8 gains varied and102M English p95
   regressed in one replication. Stereo/resampling semantics are unchanged; no cold disk/network
   speed claim. [Measurements and limits](docs/runtime-audio-io.md).
+* **Optional file prefetch.** `audio_prefetch_workers=1` or `2` overlaps bounded CPU file reading
+  with greedy ASR streaming. On H200, English73 file-inclusive timestamp B8 RTFx improves26–38%
+  for1B (worker1) and64–67% for102M (worker2) across two measurements, with exact outputs.
+  Japanese12 B8 shows no consistent benefit; default0 remains. Mixed/loaded inputs, plain decoding,
+  beam and translation retain synchronous loading. These are warmed node-local file measurements.
+  [Public checks, paired timings and limits](docs/runtime-audio-prefetch.md).
 * **Greedy vocabulary selection and acceptance.** `greedy_kernels=True` (default) splits vocabulary
   argmax across blocks and fuses the final reduction with draft acceptance. Against the same engines
   with frontend graphs already enabled, timestamped single-request RTFx improved 4.3% English/4.8%

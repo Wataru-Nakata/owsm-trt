@@ -315,7 +315,7 @@ class OWSM:
         ``frontend_graph``: reuse CUDA graphs for single-utterance STFT/mel/normalization (default
         True with ``use_cuda_graph``). A bounded 32-shape cache retains private graph buffers; each
         returned feature tensor has its own storage. ``frontend_graph_max_batch`` (integer1..8, default1)
-        permits wider captured batches as an opt-in. Each cache reuses its dedicated warm-up stream.
+        permits wider captured batches as an opt-in. Each cache owns an exclusive capture/warm-up stream.
         Batches above the selected limit, CPU, autocast and cache saturation run
         eagerly. False restores eager frontend execution. Exact features/output verified on H200
         with v4 medium 1B/base 102M; other GPUs/checkpoints are unmeasured.
@@ -325,7 +325,7 @@ class OWSM:
         on the caller thread. Only all-file inputs are prefetched; mixed/waveform inputs and CPU
         autocast load synchronously. Worker setup/join is per request. More workers can regress
         small/cheap inputs, so select using file-inclusive measurements. Other decode paths are
-        unchanged. Public integration verification is pending; see docs/runtime-audio-prefetch.md.
+        unchanged. Public API checks pass on H200/1B/102M; see docs/runtime-audio-prefetch.md for measured gains and limits.
 
         ``greedy_kernels`` (default True): split draft-window vocabulary selection across blocks and
         fuse the final argmax with draft acceptance, reuse short-primer flags for fixed-batch
