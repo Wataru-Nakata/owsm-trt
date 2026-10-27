@@ -60,7 +60,8 @@ def load_audio(audio: AudioLike, sample_rate: int = 16000, sr: int | None = None
         import soundfile as sf
 
         data, sr = sf.read(os.fspath(audio), dtype="float32", always_2d=True)
-        wav = torch.from_numpy(data.mean(axis=1))
+        mono = data[:, 0] if data.shape[1] == 1 else data.mean(axis=1)
+        wav = torch.from_numpy(mono)
     else:
         wav = torch.as_tensor(audio, dtype=torch.float32).cpu()
         if wav.dim() == 2:  # [N, C] or [C, N]

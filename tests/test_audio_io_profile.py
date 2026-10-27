@@ -5,7 +5,7 @@ import os
 import numpy as np
 import pytest
 import torch
-from profile_audio_io import mono_load_audio
+from profile_audio_io import legacy_load_audio
 
 from owsm_trt.audio import load_audio
 
@@ -23,17 +23,17 @@ def test_mono_view_preserves_decode_resample_and_tensor_lifetime(tmp_path, rate,
     data[:4] = np.array([0.0, -0.0, 0.25, -0.25], dtype=np.float32)[:, None]
     path = tmp_path / "audio.wav"
     sf.write(path, data, rate, subtype=subtype)
-    expected = load_audio(path)
-    actual = mono_load_audio(path)
+    expected = legacy_load_audio(path)
+    actual = load_audio(path)
     assert actual.dtype == torch.float32 and actual.device.type == "cpu" and actual.ndim == 1
     torch.testing.assert_close(actual, expected, rtol=0, atol=0)
     # A later file read cannot overwrite the array storage owned by a retained mono tensor.
-    mono_load_audio(path).fill_(9)
+    load_audio(path).fill_(9)
     torch.testing.assert_close(actual, expected, rtol=0, atol=0)
 
 
 def test_nonfile_inputs_keep_existing_conversion_and_errors():
     data = torch.tensor([[0.0, -0.0, 0.25, -0.25], [0.5, 0.1, -0.1, -0.5]])
-    torch.testing.assert_close(mono_load_audio(data), load_audio(data), rtol=0, atol=0)
+    torch.testing.assert_close(load_audio(data), data.mean(dim=0), rtol=0, atol=0)
     with pytest.raises(ValueError, match="expected 1-D or 2-D"):
-        mono_load_audio(torch.zeros(2, 2, 2))
+        load_audio(torch.zeros(2, 2, 2))

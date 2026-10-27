@@ -17,15 +17,14 @@ from owsm_trt.audio import duration, load_audio, resample
 from owsm_trt.build import engine_tag
 
 
-def mono_load_audio(audio, sample_rate=16000, sr=None):
-    """Profiling-only candidate: keep multi-channel averaging and the existing resampler."""
+def legacy_load_audio(audio, sample_rate=16000, sr=None):
+    """Preserved pre-optimization file behavior, independent of the current public loader."""
     if not isinstance(audio, (str, os.PathLike)):
         return load_audio(audio, sample_rate, sr)
     import soundfile as sf
 
     data, rate = sf.read(os.fspath(audio), dtype="float32", always_2d=True)
-    mono = data[:, 0] if data.shape[1] == 1 else data.mean(axis=1)
-    return resample(torch.from_numpy(mono), rate, sample_rate)
+    return resample(torch.from_numpy(data.mean(axis=1)), rate, sample_rate)
 
 
 @torch.inference_mode()
@@ -53,8 +52,8 @@ def main():
         lengths=[duration(path,16000) for path in paths]
         phases['header'].append((time.perf_counter()-start)*1000)
         assert all(abs(sec-len(w)/16000)<1e-6 for sec,w in zip(lengths,waves))
-        for mode,loader in ([('reference',load_audio),('mono',mono_load_audio)] if repeat%2==0
-                            else [('mono',mono_load_audio),('reference',load_audio)]):
+        for mode,loader in ([('reference',legacy_load_audio),('mono',load_audio)] if repeat%2==0
+                            else [('mono',load_audio),('reference',legacy_load_audio)]):
             start=time.perf_counter()
             actual=[loader(path) for path in paths]
             phases[mode].append((time.perf_counter()-start)*1000)
@@ -72,15 +71,15 @@ def main():
         sm_count=torch.cuda.get_device_properties(model.device).multi_processor_count,cuda=torch.version.cuda,
         versions={n:importlib.metadata.version(n) for n in ('torch','triton','tensorrt','soundfile')},load_ms=load_ms,
         checkpoint_sha256=sha256(files.checkpoint),engine_sha256={p.name:sha256(p) for p in engines.glob('*.engine')},
-        manifest_sha256=sha256(args.manifest),input_modes={'reference':'file paths, unchanged loader','mono':'file paths, mono view candidate','loaded':'resident tensor control'},
-        scope='Same engines/checkpoint/default B1 frontend graph and decoder. E intent; no runtime change. '
+        manifest_sha256=sha256(args.manifest),input_modes={'reference':'file paths, preserved legacy mean loader','mono':'file paths, public mono view loader','loaded':'resident tensor control'},
+        scope='Same engines/checkpoint/default B1 frontend graph and decoder. E intent; independent public mono integration check. '
               'File paths include headers/read/decode in wall; loaded control excludes them. '
               'Warm OS/filesystem cache after staging; not cold disk/network/Lustre or preprocessing speed on other sample rates.'))
     inputs={'reference':paths,'mono':paths,'loaded':waves}
     summary={}
     original=pipeline.load_audio
     def configure(m,mode):
-        pipeline.load_audio=mono_load_audio if mode=='mono' else load_audio
+        pipeline.load_audio=legacy_load_audio if mode=='reference' else load_audio
     try:
         for case in ('single_ts','stream_ts_b8'):
             summary[case]=run_case(model,args,case,items,waves,configure=configure,
