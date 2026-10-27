@@ -112,6 +112,9 @@ A subsequent job verifies config and finished chunks and resumes the remaining i
 45-minute pass ending successfully is **not** a completed evaluation unless its `complete` flag is
 true. Each1GPU job remains limited to1hour and requires fresh account<=192/queue/duplicate checks.
 On a capacity overrun, only this session's job is stopped; completed chunks remain reusable.
+During a resumed job, monitoring uses `progress.json` with the current job ID; an earlier run's
+`status.json` must not override newer progress. Future final status files also record their job ID.
+The frozen8151703 continuation retains its older final-status format.
 
 The audit is one pass per variant, including I/O/cold graphs/warm calls. Its elapsed time is not a
 steady-state latency or speedup result. `summarize_large_regression.py` aggregates agreement and

@@ -270,6 +270,7 @@ def main():
     status = dict(expected=len(rows),completed=sum(x['samples'] for x in completed.values()),
         differences=sum(x['differences'] for x in completed.values()),chunks=completed,
         complete=sum(x['samples'] for x in completed.values())==len(rows),
+        job=os.environ.get('PBS_JOBID'),
         classification='N' if args.mode=='ring_split' else 'E',interrupted=stop[0],elapsed_seconds=time.monotonic()-started)
     (args.out/'status.json').write_text(json.dumps(status,indent=2)+'\n')
     publish_file(args.out/'status.json',args.publish/'status.json')
