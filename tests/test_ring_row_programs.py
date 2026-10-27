@@ -26,7 +26,7 @@ def test_budget_refuses_unmeasured_rows(rows):
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason='compute GPU required')
 @pytest.mark.parametrize('rows', range(2, 9))
-@pytest.mark.parametrize('window', [1, 4])
+@pytest.mark.parametrize('window', [1, 2, 4], ids=['w1','w2','w4'])
 @torch.inference_mode()
 def test_row_program_graph_logits_cache_and_argmax_exact(rows, window):
     from test_megakernel import CFG384, _model

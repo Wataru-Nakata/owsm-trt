@@ -27,6 +27,7 @@ def main():
     ap.add_argument("--lazy-plain", action="store_true", help="Validate opt-in deferred plain setup")
     ap.add_argument("--finished-stop", action="store_true", help="Assert the public finished-call guard and rollback")
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--plain-solo", action="store_true", help="verify serial plain budget and encoder-lookahead exclusion")
     args = ap.parse_args()
     if not os.environ.get("PBS_JOBID") and os.uname().nodename.startswith("login"):
         ap.error("model/audio work requires a compute allocation")
@@ -79,6 +80,17 @@ def main():
                            for fn in sess._steps.values()):
                         raise RuntimeError(f'actual finished-stop dispatch mismatch: {mode}/{name}')
 
+            if args.plain_solo:
+                for sess in model._sessions.values():
+                    if not isinstance(sess,GreedySession):
+                        continue
+                    expected_solo = mode == "default" and sess.batch == 1 and bool(getattr(model.backend,"solo_differs",False))
+                    assert sess.plain_solo is expected_solo
+                    if expected_solo:
+                        assert all(fn.programs == model.backend.kernel.P_solo for fn in sess._steps.values())
+                    elif sess.batch == 1 and getattr(model.backend,"solo_differs",False):
+                        assert all(fn.programs == model.backend.kernel.P for fn in sess._steps.values())
+
             if name == "plain_decoder" and model._session(1).windows:
                 raise RuntimeError("plain decoder check accidentally used drafted decoding")
             if name == "plain_decoder" and (model._session(1).select_workspace is not None) != (mode == "default"):
@@ -95,6 +107,18 @@ def main():
         results["lid"] = model.detect_language(waves[0])
         if mode == "default" and results["lid"] != expected["lid"]:
             raise RuntimeError("language identification changed")
+        if args.plain_solo:
+            model._sessions.clear()
+            model._encoder_lookahead = True
+            model.ctc_draft = False
+            out = model.transcribe(waves,lang=args.lang,task="st_eng",batch_size=1)
+            results["plain_lookahead"] = [asdict(x) for x in out]
+            for sess in model._sessions.values():
+                assert not sess.plain_solo
+                if getattr(model.backend,"solo_differs",False):
+                    assert sess._steps and all(fn.programs == model.backend.kernel.P for fn in sess._steps.values())
+            if mode == "default":
+                assert results["plain_lookahead"] == expected["plain_lookahead"]
         if getattr(model.backend, "failed", set()):
             raise RuntimeError("decoder failed and silently fell back during validation")
         expected = results
@@ -109,6 +133,7 @@ def main():
             decoder_kernel=args.decoder_kernel,
             lazy_plain=args.lazy_plain,
             finished_stop=args.finished_stop,
+            plain_solo=args.plain_solo,
             checkpoint_sha256=sha256(files.checkpoint),
             engine_sha256=engine_hashes,
             gpu=torch.cuda.get_device_name(),

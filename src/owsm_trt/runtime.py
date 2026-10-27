@@ -719,7 +719,8 @@ class GreedySession(_Session):
     Extra buffers: seq [B, C + 1] every token fed or generated so far; ctc_ids [B, T] CTC best path.
 
     With ``draft_windows``, :meth:`decode_drafted` checks several drafted tokens per row and decoder
-    call, using one CUDA graph per (cache bucket, window size).
+    call, using one CUDA graph per (cache bucket, window size). ``plain_solo`` selects a supported
+    backend's larger serial budget for plain single-row calls; leave it off when encoding overlaps.
     """
 
     def __init__(
@@ -747,7 +748,9 @@ class GreedySession(_Session):
         lazy_plain: bool = False,
         skip_finished: bool = False,
         skip_finished_groups: bool = False,
+        plain_solo: bool = False,
     ):
+        self.plain_solo = bool(plain_solo and batch == 1 and getattr(backend, "solo_differs", False))
         # Allocate the optional flag before base eager step construction; normal allocation order
         # is unchanged when disabled. This is also the session's eventual EOS state, not a copy.
         single_stop = skip_finished and batch == 1 and getattr(backend, "supports_finished_stop", False)
@@ -867,12 +870,16 @@ class GreedySession(_Session):
         return self.caches[self.buckets[-1]][1]
 
     def _prepare_steps(self) -> None:
-        if self._plain_stop is None:
+        extra = {}
+        if self._plain_stop is not None:
+            extra["stop"] = self._plain_stop
+        if self.plain_solo:
+            extra["solo"] = True
+        if not extra:
             return super()._prepare_steps()
         self._steps = {
             c: self.backend.step_fn(
-                self.tok, self.offs, k, v, self.cross_k, self.cross_v, self.logits, self.new_kv,
-                stop=self._plain_stop,
+                self.tok, self.offs, k, v, self.cross_k, self.cross_v, self.logits, self.new_kv, **extra,
             )
             for c, (k, v) in self.caches.items()
         }

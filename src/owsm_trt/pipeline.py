@@ -231,6 +231,7 @@ class OWSM:
         self._encoder_lookahead = encoder_lookahead  # Staging resources are allocated only on eligible calls.
         self.frontend_graph = frontend_graph
         self.greedy_skip_finished = greedy_kernels
+        self.greedy_plain_solo = greedy_kernels
         self.greedy_fused_select = greedy_kernels
         self.greedy_split_choose = greedy_kernels
         self.greedy_fuse_accept = greedy_kernels
@@ -489,6 +490,7 @@ class OWSM:
                     lazy_verify_graphs=self.greedy_lazy_verify_graphs, fused_select=self.greedy_fused_select,
                     lazy_plain=self.greedy_lazy_plain, skip_finished=self.greedy_skip_finished,
                     skip_finished_groups=self.greedy_skip_finished,
+                    plain_solo=self.greedy_plain_solo and not self._encoder_lookahead,
                 )  # fmt: skip
             else:
                 backend = self.backend

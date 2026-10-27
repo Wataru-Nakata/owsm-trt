@@ -47,3 +47,18 @@ lookahead exclusion, drafted behavior, reuse and independent request timings bef
 [Per-input results, quality and environment](runtime-plain-solo-2776121.json); raw artifacts in
 `outputs/runtime-2776121/`. PBS Stageout_status1 coexisted with complete artifacts and exit0.
 No reference translation/boundary quality or isolated cold/VRAM improvement is claimed.
+
+
+## Public integration: independent validation pending
+
+`GreedySession(..., plain_solo=False)` adds an optional single-row serial budget. The public
+factory enables it with `greedy_kernels=True` only when encoder lookahead is disabled and the
+actual backend supports distinct solo calls. Drafted verification retains its own existing
+concurrency choice; other rows/backends and `greedy_kernels=False` keep the previous plain path.
+No per-token host branch/synchronization is added; the setting binds the constructed graph.
+
+`validate_plain_solo.pbs` checks both budgets' EOS/restart GPU behavior and actual public/default
+rollback, including encoder-lookahead exclusion, then independently repeats all12 request cases
+through `--public-policy`. Separate diagnostics assert and save every actual plain call's program
+budget and NS. It also fills the recently adopted row policy's W2 graph/cache coverage. The first
+profiler result above is not yet an independently verified public-default result.

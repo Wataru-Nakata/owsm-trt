@@ -78,6 +78,7 @@ def main():
     ap.add_argument('--lang',default='eng')
     ap.add_argument('--repeat',type=int,default=11)
     ap.add_argument('--out',required=True,type=Path)
+    ap.add_argument('--public-policy',action='store_true',help='compare actual public plain_solo to its rollback')
     args = ap.parse_args()
     if not os.environ.get('PBS_JOBID'):
         ap.error('model/audio work requires a compute allocation')
@@ -88,7 +89,7 @@ def main():
     base = model.backend
     if not isinstance(base,megakernel.MegaBackend) or not isinstance(base.kernel,megakernel_ring.RingDecoder) or not base.solo_differs:
         raise RuntimeError('requires the actual Ring single-row route with distinct solo programs')
-    backends = {'reference':base,'solo':PlainSolo(base)}
+    backends = {'reference':base,'solo':base if args.public_policy else PlainSolo(base)}
     files = hub.resolve(args.model)
     engines = hub.cache_dir()/files.name.replace('/','--')/engine_tag(model.opts)
     save(args.out/'environment.json',dict(commit=os.environ.get('OWSM_PROFILE_COMMIT'),
@@ -96,7 +97,7 @@ def main():
         gpu=torch.cuda.get_device_name(),cuda=torch.version.cuda,
         versions={n:importlib.metadata.version(n) for n in ('torch','triton','tensorrt')},
         nvidia_smi=command(['nvidia-smi','--query-gpu=name,driver_version','--format=csv']),
-        load_ms=load_ms,manifest_sha256=sha256(args.manifest),programs=dict(reference=base.kernel.P,solo=base.kernel.P_solo),
+        public_policy=args.public_policy,load_ms=load_ms,manifest_sha256=sha256(args.manifest),programs=dict(reference=base.kernel.P,solo=base.kernel.P_solo),
         scope='E intent, same existing Ring NS/arithmetic, fixed serial requests, no concurrent encoder. '
               'Separate real-checkpoint synthetic-state bitwise checks; existing scalar EOS guard on both modes. '
               'No runtime default change. Mixed-duration per-request samples; cold/cache order and shared resident pools are separate.'))
@@ -107,9 +108,22 @@ def main():
     summary = {}
     def configure(m,mode):
         m.backend = backends[mode]
+        m.greedy_plain_solo = args.public_policy and mode == 'solo'
         assert not m._encoder_lookahead
+    def observe(m,call):
+        result = count_decoder_dispatch(m,call)
+        enabled = isinstance(m.backend,PlainSolo) or m.greedy_plain_solo
+        expected = base.kernel.P_solo if enabled else base.kernel.P
+        budgets = {}
+        for key,session in m._sessions.items():
+            actual = {c:dict(programs=fn.programs,cross_splits=fn.const['NS']) for c,fn in session._steps.items()}
+            assert actual and all(x['programs']==expected for x in actual.values())
+            if args.public_policy:
+                assert session.plain_solo is enabled
+            budgets[str(key)] = actual
+        return result | {'actual_plain_budgets':budgets}
     for name in PLAIN_CASES:
-        summary[name] = run_case(model,args,name,items,waves,configure=configure,observe=count_decoder_dispatch)
+        summary[name] = run_case(model,args,name,items,waves,configure=configure,observe=observe)
         save(args.out/'summary.json',summary)
         assert not base.failed
         assert all(v['equal']==v['total'] for mode in summary[name].values() for v in mode['agreement'].values()), name
