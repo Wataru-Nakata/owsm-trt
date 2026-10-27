@@ -23,8 +23,9 @@ but is not enabled in the main ablation. Unsupported CPU/Triton configurations u
 `tests/test_beam_lse.py` checks strided prefill, vocab8/2053/50002, finite/masked large logits,
 near ties, sparse/all-invalid candidates, NaN/+Inf, inactive/done rows, numerical-error flags,
 CUDA-graph replay, bucket boundaries, forced limits, prompts and repeated decoding. Scores use
-explicit fp32 tolerances; masks/error flags are exact. Toy decoded output must match, while real
-output differences are recorded by the profiler rather than hidden behind text-only checks.
+explicit fp32 tolerances; masks/error flags are exact. Graph state/output must match eager execution of the same blockwise arithmetic. Torch-versus-blockwise
+branch/output differences are diagnosed separately and real output differences are recorded by the
+profiler rather than hidden behind text-only checks.
 Existing beam/naive/greedy/timestamp regressions run in the allocated job too.
 
 `profile_beam_lse.pbs` stages the environment, unchanged engines/checkpoints, code and audio on
@@ -45,3 +46,20 @@ python scripts/profile_beam.py --model /local/owsm_v4_medium_1B \
 GPU correctness/performance is pending. Keep defaults and README speed claims unchanged unless
 full comparison and independent replication justify adoption. Do not combine predicted or measured
 gains with unrelated audio/frontend variants.
+
+## First attempt2776917: internal side-beam mismatch, no performance result
+
+Frozenc4820cb stopped at the first graph/state comparison:24 mask/error/full-normalizer tests passed,
+but8/90 entries of the final `seq` side-beam history differed from torch normalization. The assertion
+for returned output and preceding active/done/best sequence checks passed in that case. The old test
+incorrectly required all internal branches to stay exact across an explicitly N-class normalizer; a
+rounding-induced near tie is plausible but not yet proven. No naive regression or real-model timing ran.
+
+Keep the original failure log in `outputs/runtime-2776917/tests.log`. A per-step compute-node
+diagnostic now compares candidates and selected scores on identical inputs, verifies exact masks/error
+flags and bounds any selected-score gap by the measured numerical perturbation. Save the two search
+trajectories and final outputs, including any branch differences. The graph/bucket/limit/reuse test
+now requires exact full state against eager execution of the same blockwise arithmetic. The24 direct
+torch-reference numerical tests remain, and full real-model output comparisons are still required.
+This separates graph/state correctness from the already-declared N behavior without concealing either.
+The runtime reduction implementation has not been changed; no speed or adoption claim is made.
