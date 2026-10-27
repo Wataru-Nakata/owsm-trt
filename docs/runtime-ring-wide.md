@@ -32,5 +32,24 @@ python scripts/diagnose_ring_rows.py --model /local/owsm_v4_base_102M \
   --manifest /local/manifest.json --wide-one-token --out /local/numerics
 ```
 
-Run with the staged `scripts/diagnose_ring_wide.pbs` on an allocated compute node. Verification
-and numerical results are pending.
+Run with the staged `scripts/diagnose_ring_wide.pbs` on an allocated compute node. Numerical results are below; performance and corpus quality remain pending.
+
+
+Job2777869 (585f842) passed6synthetic tests and completed9numerical cases. Every Ring result
+was finite, repeat-exact and preserved the existing cache prefix. P24vs60/90/96 synthetic
+logits, complete cache writes and argmax matched exactly through graph reuse. Exit0 and all
+artifacts were saved; scheduler Stageout_status1 is retained separately.
+
+On real-audio prefills, scaled maximum logit error against CPU fp32 was0.0842%/0.1007%/0.1232%
+forR10/15/16, with100%argmax agreement. At random full-length KV, Ring exceeded the existing2%
+gate atR10(3.889%) andR15(2.033%); these remain **failed**. TensorRT errors for the same cases
+were3.263%/5.321%, and GPUfp16 was3.854%/1.283%. CPU/GPUfp32 agreed within0.0018%over allcases.
+This indicates numerical sensitivity of those synthetic states; it does not establish harmless
+corpus differences. The64-frame Ring random cases passed the existing gate, although argmax
+agreement was90%/93.3%forR10/15. No gate was relaxed.
+
+The next step is an explicitly N-class, profiler-only comparison of existing auto dispatch and
+wide one-token Ring forR10/15/16. Only those exact shapes change; smaller rows, prefill, wider
+windows and unsupported configurations retain the base backend. Full outputs/quality must be
+reported, and any nonfinite/error/fallback aborts. No default or public option is changed.
+[Complete numerical evidence and source hashes](runtime-ring-wide-numerics-2777869.json).
