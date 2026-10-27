@@ -29,7 +29,11 @@ trimming audio or silently dropping the prompt.
 
 The first priority is1B, beam5, timestamps=True, B1: same-engine existing upper-bound OFF versus
 current ON. B3 follows to cover mixed lengths and partially finished groups. Supported subsequent
-ablations are102M serial64 versus24 (E), and the explicit1B NS4/102M NS8 option versus NS2 (N),
+ablations also include `beam_kernels` (upper bound ON in both, search/state/cache kernels OFF/ON)
+and `beam_combined` (upper bound and beam kernels both OFF/ON), to cover bugs shared by both sides
+of the upper-bound-only comparison. These use the existing PyTorch reference path, the same decoder
+backend/engine, and separate session pools. They are pending large-corpus E checks, not results.
+Other ablations are102M serial64 versus24 (E), and the explicit1B NS4/102M NS8 option versus NS2 (N),
 with plain/drafted ASR, translation and long-form cases. N differences remain visible, not treated
 as exact or silently accepted as accuracy improvements. New default adoption waits for relevant
 large-corpus checks as well as the repeated performance benchmark.

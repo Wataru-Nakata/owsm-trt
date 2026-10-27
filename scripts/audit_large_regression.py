@@ -91,7 +91,8 @@ def main():
     ap.add_argument('--data',type=Path,required=True)
     ap.add_argument('--out',type=Path,required=True)
     ap.add_argument('--publish',type=Path,required=True)
-    ap.add_argument('--mode',choices=['beam_bound','ring_split','serial64'],default='beam_bound')
+    ap.add_argument('--mode',choices=['beam_bound','beam_kernels','beam_combined','ring_split','serial64'],
+                    default='beam_bound')
     ap.add_argument('--case',choices=['beam_b1','beam_b3','beam_prompt','plain_ts','draft_ts','translation','long'],default='beam_b1')
     ap.add_argument('--datasets',nargs='+')
     ap.add_argument('--budget-seconds',type=int,default=2700)
@@ -101,8 +102,9 @@ def main():
         ap.error('model/audio operations require an allocated compute node')
     if args.budget_seconds<1 or args.chunk_size<1:
         ap.error('positive budget and chunk size required')
-    if (args.mode=='beam_bound')!=args.case.startswith('beam_'):
-        ap.error('beam_bound mode requires a beam case; other modes require single-row cases')
+    beam_mode = args.mode.startswith('beam_')
+    if beam_mode!=args.case.startswith('beam_'):
+        ap.error('beam modes require a beam case; other modes require single-row cases')
     args.out.mkdir(parents=True,exist_ok=True)
     args.publish.mkdir(parents=True,exist_ok=True)
     import soundfile as sf
@@ -128,6 +130,11 @@ def main():
         scope='Full output/quality regression, one pass per variant. Includes warmup/capture/I/O; no steady-state latency or speedup claim. Long-form has joined text/segments only. No human timestamp or reference translation annotation.')
     if prompt_limit is not None:
         config['prompt_window_seconds'] = prompt_limit
+    if beam_mode:
+        config['beam_variants'] = dict(
+            reference=dict(beam_upper_bound=args.mode=='beam_kernels',beam_kernels=args.mode=='beam_bound'),
+            candidate=dict(beam_upper_bound=True,beam_kernels=True),
+        )
     config_path = args.publish/'config.json'
     if config_path.exists():
         assert json.loads(config_path.read_text())==config,'resume config/source/input changed'
@@ -197,9 +204,11 @@ def main():
                         outputs = {}
                         for mode in (list(backends) if chunk_id%2==0 else list(backends)[::-1]):
                             model.backend,model._sessions = backends[mode],pools[mode]
-                            model.beam_upper_bound = mode=='candidate' if args.mode=='beam_bound' else True
+                            if beam_mode:
+                                model.beam_upper_bound = config['beam_variants'][mode]['beam_upper_bound']
+                                model.beam_kernels = config['beam_variants'][mode]['beam_kernels']
                             model.ctc_draft = args.case in ('draft_ts','long')
-                            kw = dict(lang=batch[0]['lang'],beam_size=5 if args.mode=='beam_bound' else 1,
+                            kw = dict(lang=batch[0]['lang'],beam_size=5 if beam_mode else 1,
                                       batch_size=3 if args.case=='beam_b3' else 1,
                                       task='st_eng' if args.case=='translation' else 'asr')
                             if args.case=='beam_prompt':
