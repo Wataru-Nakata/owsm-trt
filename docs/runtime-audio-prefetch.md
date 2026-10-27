@@ -74,3 +74,19 @@ required. [All pairs, p95, environments and dispatch](runtime-audio-prefetch-277
 `outputs/runtime-2776872/`. Long-form/single-file/beam/translation remain unchanged and unmeasured
 for speed. The following experiment uses a separate GPU job and will not merge gains with frontend
 batch capture or change model precision/search.
+
+## Public opt-in prepared
+
+`OWSM.from_pretrained(..., audio_prefetch_workers=1)` (or2) now passes the validated count through
+the public constructor; default0 is unchanged. Non-integer/bool/out-of-range values fail before model
+loading.13 new option checks and the18 fake-loader tests pass on CPU. The independent compute-node
+runner `validate_audio_prefetch_api.pbs` checks48 focused audio cases, then each1B/102M public worker
+setting on15 API cases: file B1/B8 with/without timestamps, mixed/loaded inputs, plain/beam/translation,
+long prompts, CPU autocast, empty input, silence/noise, stereo44.1kHz, an injected read error with
+worker cleanup and subsequent reuse, and110s long form. Loader thread evidence verifies eligible
+and excluded paths. It repeats the original same-engine file-inclusive timing ablation with11 pairs.
+Full `from_pretrained` API equivalence and same-engine timing are separate passes; public validation
+is pending. No serving-wide default or workload auto-detection is introduced.
+
+The same allocation runs the separate LSE numerical/graph diagnostic after audio artifacts exist;
+it does not enable LSE in these audio benchmarks. Failure of that diagnostic is reported separately.
