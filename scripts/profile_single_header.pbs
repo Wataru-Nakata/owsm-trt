@@ -58,7 +58,7 @@ if sys.argv[2]:
         item['path'] = str(dest)
     (p / 'extra_manifest.json').write_text(json.dumps(extra))
 PY
-cp "$LOCAL/source.json" "$LOCAL/results/"
+cp "$LOCAL/source.json" "$LOCAL/prior_validation.json" "$LOCAL/results/"
 nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv -l 5 \
     > "$LOCAL/results/gpu_utilization.csv" &
 SMI=$!
