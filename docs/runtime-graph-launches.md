@@ -36,3 +36,7 @@ python scripts/profile_graph_launches.py --model /local/owsm_v4_medium_1B \
 The PBS runner stages audio, code, environment, models, unchanged engines and temporary trace files
 on `$PBS_LOCALDIR`, then publishes compact results and compressed traces. No speed claim precedes
 these observations; graph-internal costs that cannot be correlated remain explicitly unmeasured.
+
+The allocation also repeats the independent singleton-header ablation in separate processes for
+1B/102M/CTC1B. Those uninstrumented timing pairs are not graph-attribution results. Prior header
+correctness/artifact hashes are retained; the five attribution tests run in the new allocation.

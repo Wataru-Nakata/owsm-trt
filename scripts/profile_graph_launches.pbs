@@ -58,25 +58,39 @@ if sys.argv[2]:
         item['path'] = str(dest)
     (p / 'extra_manifest.json').write_text(json.dumps(extra))
 PY
-cp "$LOCAL/source.json" "$LOCAL/results/"
+cp "$LOCAL/source.json" "$LOCAL/prior_validation.json" "$LOCAL/results/"
 nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv -l 5 \
     > "$LOCAL/results/gpu_utilization.csv" &
 SMI=$!
 timeout 120 "$PY" -m pytest -q -p no:cacheprovider "$LOCAL/tests/test_graph_trace_summary.py" \
     > "$LOCAL/results/tests.log" 2>&1
-for SIZE in 1b 102m; do
+for SIZE in 1b 102m ctc; do
     NAME=owsm_v4_medium_1B
     if [ "$SIZE" = 102m ]; then NAME=owsm_v4_base_102M; fi
-    cp -a "$REPO/.cache/models/$NAME" "$LOCAL/$NAME"
+    if [ "$SIZE" = ctc ]; then
+        NAME=owsm_ctc_v4_1B
+        cp -aL "$REPO/.cache/hf/hub/models--espnet--owsm_ctc_v4_1B/snapshots/8ab32d9d5a1dd84087ebf6e0ea17f38c92eddee0" "$LOCAL/$NAME"
+        CACHE_NAME=espnet--owsm_ctc_v4_1B
+    else
+        cp -a "$REPO/.cache/models/$NAME" "$LOCAL/$NAME"
+        CACHE_NAME=$NAME
+    fi
     mkdir -p "$OWSM_TRT_CACHE/$NAME"
-    cp -a "$REPO/.cache/engines/$NAME/v621-NVIDIA_H200-sm90-trt11.4.0.106-float16-3d0cbdc9" "$OWSM_TRT_CACHE/$NAME/"
+    cp -a "$REPO/.cache/engines/$CACHE_NAME/v621-NVIDIA_H200-sm90-trt11.4.0.106-float16-3d0cbdc9" "$OWSM_TRT_CACHE/$NAME/"
     for CORPUS in english japanese; do
         MANIFEST="$LOCAL/manifest.json"
         LANG_ID=eng
         if [ "$CORPUS" = japanese ]; then MANIFEST="$LOCAL/extra_manifest.json"; LANG_ID=jpn; fi
-        timeout 700 "$PY" "$LOCAL/scripts/profile_graph_launches.py" \
-            --model "$LOCAL/$NAME" --manifest "$MANIFEST" --lang "$LANG_ID" --repeat 21 \
-            --out "$LOCAL/results/${SIZE}_${CORPUS}" > "$LOCAL/results/${SIZE}_${CORPUS}.log" 2>&1
-        printf '%s %s real CUDA-graph attribution complete\n' "$SIZE" "$CORPUS" >> "$OUT/progress.log"
+        if [ "$SIZE" != ctc ]; then
+            timeout 700 "$PY" "$LOCAL/scripts/profile_graph_launches.py" \
+                --model "$LOCAL/$NAME" --manifest "$MANIFEST" --lang "$LANG_ID" --repeat 21 \
+                --out "$LOCAL/results/${SIZE}_${CORPUS}" > "$LOCAL/results/${SIZE}_${CORPUS}.log" 2>&1
+            printf '%s %s real CUDA-graph attribution complete\n' "$SIZE" "$CORPUS" >> "$OUT/progress.log"
+        fi
+        timeout 600 "$PY" "$LOCAL/scripts/profile_single_header.py" \
+            --model "$LOCAL/$NAME" --manifest "$MANIFEST" --lang "$LANG_ID" \
+            --baseline-pipeline "$LOCAL/baseline_pipeline.py" --repeat 11 \
+            --out "$LOCAL/results/${SIZE}_${CORPUS}_header" > "$LOCAL/results/${SIZE}_${CORPUS}_header.log" 2>&1
+        printf '%s %s singleton-header independent replication complete\n' "$SIZE" "$CORPUS" >> "$OUT/progress.log"
     done
 done
