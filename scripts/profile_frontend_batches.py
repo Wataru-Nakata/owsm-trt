@@ -58,6 +58,51 @@ def feature_check(model,waves,out):
 
 
 @torch.inference_mode()
+def cache_memory(model,waves,out,batch=8):
+    """One variant's frontend cache at a time; model and expected features are fixed residents."""
+    order = sorted(waves,key=len)
+    groups = [order[i:i+batch] for i in range(0,len(order),batch)]
+    model._frontend_replay = None
+    model.frontend_graph = False
+    expected = [model._features(group) for group in groups]
+    torch.cuda.synchronize()
+    results = {}
+    for mode,limit in (('reference',1),('graph',8)):
+        model._frontend_replay = None
+        gc.collect()
+        torch.cuda.empty_cache()
+        baseline = torch.cuda.memory_allocated()
+        baseline_reserved = torch.cuda.memory_reserved()
+        model.frontend_graph = True
+        model._frontend_graph_batch_limit = limit
+        cold_samples,peak = [],baseline
+        for group,reference in zip(groups,expected):
+            torch.cuda.reset_peak_memory_stats()
+            features,ms = wall(lambda group=group:model._features(group))
+            cold_samples.append(ms)
+            peak = max(peak,torch.cuda.max_memory_allocated())
+            torch.testing.assert_close(features,reference,rtol=0,atol=0)
+            del features
+        results[mode] = dict(batch=batch,batches=len(groups),features_exact=True,
+            cold_pass_ms=sum(cold_samples),cold_batch_ms=cold_samples,
+            retained_allocated_delta_bytes=torch.cuda.memory_allocated()-baseline,
+            reserved_delta_bytes=torch.cuda.memory_reserved()-baseline_reserved,
+            peak_allocated_delta_bytes=peak-baseline,
+            cache=model._frontend_replay.info() if model._frontend_replay else None)
+        model._frontend_replay = None
+        gc.collect()
+        torch.cuda.empty_cache()
+        results[mode]['post_release_allocated_delta_bytes'] = torch.cuda.memory_allocated()-baseline
+    model.frontend_graph = True
+    model._frontend_graph_batch_limit = 1
+    save(out/'isolated_cache_memory.json',dict(variants=results,
+        scope='Frontend cache only, one variant resident at a time; shared model and exact eager features '
+              'remain fixed. PyTorch allocated/reserved memory, not total device process memory. '
+              'Cold sums synchronized feature/H2D calls, excludes equality checks; not request latency. '
+              'Batches match sorted B8 encoder supply; decoder/session memory excluded.'))
+
+
+@torch.inference_mode()
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--model',required=True)
@@ -65,6 +110,8 @@ def main():
     ap.add_argument('--lang',default='eng')
     ap.add_argument('--repeat',type=int,default=11)
     ap.add_argument('--out',type=Path,required=True)
+    ap.add_argument('--cases',nargs='+',choices=BATCH_CASES,default=list(BATCH_CASES))
+    ap.add_argument('--cache-memory',action='store_true',help='measure isolated B8 frontend cache allocation before request timings')
     args = ap.parse_args()
     if not os.environ.get('PBS_JOBID'):
         ap.error('audio/model work requires a compute allocation')
@@ -78,6 +125,7 @@ def main():
         checkpoint_sha256=sha256(files.checkpoint),engine_sha256={p.name:sha256(p) for p in engines.glob('*.engine')},
         manifest_sha256=sha256(args.manifest),gpu=torch.cuda.get_device_name(),
         sm_count=torch.cuda.get_device_properties(model.device).multi_processor_count,cuda=torch.version.cuda,
+        cases=args.cases,isolated_cache_memory=args.cache_memory,
         versions={n:importlib.metadata.version(n) for n in ('torch','triton','tensorrt')},load_ms=load_ms,
         nvidia_smi=command(['nvidia-smi','--query-gpu=name,driver_version','--format=csv']),
         classification='E intent; same frontend operations/batch shape, graph replay versus eager for B2..8. '
@@ -89,13 +137,15 @@ def main():
     waves,disk_ms = wall(lambda:[load_audio(it['path']) for it in items])
     save(args.out/'disk_load.json',dict(aggregate_ms=disk_ms,included_in_wall=False))
     feature_check(model,waves,args.out)
+    if args.cache_memory:
+        cache_memory(model,waves,args.out)
     pools = {mode:FrontendReplay(model.frontend,max_batch=1 if mode=='reference' else 8) for mode in args.variants}
     summary,caches = {},{}
     def configure(m,mode):
         m.frontend_graph = True
         m._frontend_graph_batch_limit = 1 if mode=='reference' else 8
         m._frontend_replay = pools[mode]
-    for name in BATCH_CASES:
+    for name in args.cases:
         summary[name] = run_case(model,args,name,items,waves,configure=configure,observe=count_decoder_dispatch)
         save(args.out/'summary.json',summary)
         assert not getattr(model.backend,'failed',set())

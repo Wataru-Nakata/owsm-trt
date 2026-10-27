@@ -56,3 +56,15 @@ remains reproducible.102M drafted B8 is pending independent throughput and isola
 cold measurement. No reference translation or boundary quality is available.
 [Environment, paired samples, memory and equality](runtime-frontend-batches-2776301.json);
 raw artifacts in `outputs/runtime-2776301/`, reproduction `scripts/profile_frontend_batches.pbs`.
+
+## Narrow replication prepared
+
+`profile_frontend_batches_recheck.pbs` targets102M drafted timestamp B8 only, English73/Japanese12,
+11 independent alternating pairs. The unchanged frontend's11 passing tests from2776301 are
+retained with a source hash; they are not rerun. Feature/output agreement is checked again.
+`--cache-memory` constructs the sorted B8 encoder supply's cache with only one variant resident
+at a time, records retained and peak allocated deltas, then releases it before the next variant.
+Model and eager expected features stay fixed. PyTorch allocator observations exclude non-PyTorch
+library/device allocations; post-release deltas reveal residual workspace. Cold feature/H2D calls
+are synchronized and timed separately from equality checks and whole-request measurements.
+This replication is pending; broad public expansion remains disabled.
