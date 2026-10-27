@@ -2,26 +2,56 @@
 
 The English73/Japanese12 sets used for tuning are screening sets. Their agreement does not establish
 coverage of uncommon inputs. Large output regressions are now a separate acceptance step from the
-small, repeated latency benchmark. Job2780055 completed corpus preparation and started inference;
-full large-corpus correctness and timing results are still pending. Its
+small, repeated latency benchmark. The1B/beam5/timestamp/B1 upper-bound OFF/ON audit completed with
+zero output differences across13,232 inputs; other large-corpus ablations and timing remain pending.
+Job2780055 prepared the corpus. Its
 [corpus manifest](runtime-large-regression-corpus-2780055.json) records13,204 real short-corpus inputs
 (29.798hours),28 synthetic cases and87 long-context chapters, packed into27 verified shards
 (5,194,571,795 bytes including the index). The initial audit selects13,232 inputs;41 ordinary corpus
 recordings exceed30seconds and use the long-form API, whose token IDs are unavailable. The87 long
 chapters reuse test-clean speech and are reserved for the separate long-context case.
 The prepared `beam_long` case runs the87 chapters through beam5 `transcribe_long`, independently
-of the greedy `long` case. Its GPU results are pending; the initial B1 continuation still selects
+of the greedy `long` case. Its GPU results are pending; the completed B1 audit selected
 the13,232 ordinary/stress inputs, including41 recordings longer than one window.
+
+The [complete B1 result](runtime-large-regression-2780523.json) combines the preserved partial runs
+with job2780523 (PBS F/exit0, final publication exit0). All104 chunks pass hash, source/config,
+selected-input ordering and recomputed output-difference checks. Text and segments match on13,232/13,232
+inputs; full token and timestamp-token sequences match on13,191/13,191 available outputs. The41
+long-form outputs have no joined token IDs and are excluded from that denominator. Both variants
+use the same checkpoint/engines, current search kernels and frozen8151703 source: this isolates
+the upper bound, not the entire change from892c29f. Job walltime is not a steady-state speed result.
+
+Speech-only error rates are identical between OFF and ON; generated nonspeech is excluded:
+
+| Language | Speech inputs | Metric | OFF = ON |
+|---|---:|---|---:|
+| English | 5,878 | WER | 3.73% |
+| Japanese | 3,966 | CER | 7.76% |
+| German | 862 | WER | 6.90% |
+| French | 289 | WER | 11.44% |
+| Russian | 356 | WER | 7.86% |
+| Spanish | 908 | WER | 4.84% |
+| Chinese | 945 | CER | 11.92% |
+
+The complete artifact also retains102 distinct diagnostic inputs, identical on both variants:
+83 have invalid/out-of-range segment times, all28 nonspeech probes generate text,5 have repeated
+fourgram indicators, and1 has an empty segment (categories overlap). There are no unpaired or
+nonmonotonic timestamp-token/segment sequences in the available diagnostics. These are baseline
+quality/data findings, not upper-bound regressions or human timestamp errors. Raw range flags108
+include25 floating-point boundary false positives; corrected flags83 retain the20ms allowance.
+B3 job2780636 follows with frozen773f827 source and language/API-preserving input groups; its
+results remain pending.
 
 Job2780055 was stopped after a fresh account query showed200 GPUs (the session cancelled only its
 own1GPU job). PBS exit271 is not a successful full audit. Its
 [validated partial result](runtime-large-regression-2780055-partial.json) contains3,584 Japanese
 inputs in28 complete chunks, with exact tokens/timestamp tokens/segments/text and zero differing
 outputs. `complete=false` and `interrupted=true` are retained. Resume validation checks every chunk
-hash, selected key, source/config digest and output difference. Job2780199 resumes the remaining
+hash, selected key, source/config digest and output difference. Job2780199 resumed the remaining
 9,648 inputs with the exact same8151703 code/checkpoint/engines/corpus. It too was stopped after a
-fresh query showed193 GPUs. Strict resume validation now covers4,224 outputs in33 chunks, all
-returned tokens/timestamps/segments/text equal, leaving9,008 inputs pending. Neither stopped job
+fresh query showed193 GPUs. Strict resume validation then covered4,224 outputs in33 chunks, all
+returned tokens/timestamps/segments/text equal, leaving9,008 inputs for2780523. Neither stopped job
 establishes full-corpus acceptance or a new latency result.
 
 The [4,224-input diagnostic catalogue](runtime-large-regression-cases-4224.json) retains30 originally
@@ -46,7 +76,7 @@ from the [official OpenSLR12 archive](https://www.openslr.org/12/), checking the
 its transcript before packing. Other missing datasets fail visibly instead of silently reducing coverage.
 The verified download is retained as one shared archive; extracted audio stays node-local and is
 deleted after shard publication. This repair and its small archive/metadata tests are implemented;
-successful full preparation is now recorded in2780055; full inference verification remains pending.
+successful preparation is recorded in2780055 and full B1 verification in2780523.
 Second job2780026 also stopped before inference: the first inventory treated all JVS nonpara30
 transcript lines as recordings. The original ZIP member index confirms2,700 recorded files across
 the selected90 speakers (30 each), while the1,800 extra transcript entries have no audio member in
@@ -80,7 +110,7 @@ The input index, source-manifest hashes and a final manifest make the corpus reu
 resampling, model work and tests stay on compute nodes; no temporary waveform files go to Lustre.
 Future reuse copies each shared shard once and verifies its staged bytes before marking the local
 corpus complete. Good/corrupt-copy fixtures cover that check; no staging speedup is claimed, and
-the ongoing B1 continuation retains the original8151703 implementation.
+the completed B1 continuation retained the original8151703 implementation.
 
 Twenty-eight generated silence/noise/tone probes (English/Japanese primers) complement real speech;
 they do not substitute for natural noise/music/conversation coverage. Prompt stress is a separate
@@ -93,8 +123,8 @@ current ON. B3 follows to cover mixed lengths and partially finished groups. Its
 evaluation groups preserve input order and share a language and API: a longer-than-window neighbour
 does not switch an ordinary short input to long-form semantics or remove its token IDs. Groups may
 therefore have1/2/3 inputs; each future record stores its group keys, API and requested batch size.
-This grouping change has small fixture coverage; B3 GPU results remain pending. The current B1
-continuation stays frozen at8151703.
+This grouping change has small fixture coverage; B3 GPU results remain pending. The completed B1
+continuation stayed frozen at8151703.
 
 Subsequent ablations also include `beam_kernels` (upper bound ON in both, search/state/cache kernels OFF/ON)
 and `beam_combined` (upper bound and beam kernels both OFF/ON), to cover bugs shared by both sides
