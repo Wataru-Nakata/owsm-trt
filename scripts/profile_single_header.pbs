@@ -84,5 +84,11 @@ for SIZE in 1b 102m ctc; do
             --baseline-pipeline "$LOCAL/baseline_pipeline.py" --repeat 11 \
             --out "$LOCAL/results/${SIZE}_${CORPUS}_header" > "$LOCAL/results/${SIZE}_${CORPUS}_header.log" 2>&1
         printf '%s %s singleton header comparison complete\n' "$SIZE" "$CORPUS" >> "$OUT/progress.log"
+        if [ "$SIZE" != ctc ]; then
+            timeout 850 "$PY" "$LOCAL/scripts/profile_audio_prefetch.py" --fixed \
+                --model "$LOCAL/$NAME" --manifest "$MANIFEST" --lang "$LANG_ID" --repeat 11 \
+                --out "$LOCAL/results/${SIZE}_${CORPUS}" > "$LOCAL/results/${SIZE}_${CORPUS}.log" 2>&1
+            printf '%s %s independent fixed-prefetch replication complete\n' "$SIZE" "$CORPUS" >> "$OUT/progress.log"
+        fi
     done
 done

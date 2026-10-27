@@ -31,3 +31,7 @@ python scripts/profile_single_header.py --model /local/owsm_v4_medium_1B \
 ```
 
 No speed claim or other-optimization composition is established before the run completes.
+
+The allocation also independently repeats the fixed-prefetch comparison in separate processes.
+Those multi-item calls use the same duration ordering in both versions, so the singleton shortcut
+does not enter their timings. Keep the two result sets and their gain claims separate.
