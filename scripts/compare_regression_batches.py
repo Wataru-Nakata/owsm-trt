@@ -109,6 +109,10 @@ def compare_batches(first_dir: Path,third_dir: Path) -> dict:
                     q[label+'_nonempty']+=bool(record['text'].strip())
                     q[label+'_insertions']+=record['quality']['errors']
             deltas=boundary_displacements(a,b)
+            if fields:
+                changed[-1].update(segment_counts=[len(a['segments']),len(b['segments'])],
+                    comparable_boundary_count=len(deltas) if deltas is not None else None,
+                    max_boundary_displacement=max(deltas,default=0) if deltas is not None else None)
             if deltas is not None:
                 boundary_inputs+=1
                 boundaries.extend(deltas)

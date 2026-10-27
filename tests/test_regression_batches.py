@@ -62,6 +62,8 @@ def test_batch_comparison_separates_missing_ids_nonspeech_and_boundary_changes(t
     assert boundaries['all_boundaries']['count']==4
     assert boundaries['changed_boundaries']['count']==1
     assert boundaries['changed_boundaries']['p95']==pytest.approx(.02)
+    assert result['changed_inputs'][0]['max_boundary_displacement']==pytest.approx(.02)
+    assert result['changed_inputs'][1]['max_boundary_displacement'] is None
 
 
 @pytest.mark.parametrize('corruption',['hash','config','within_batch','order'])

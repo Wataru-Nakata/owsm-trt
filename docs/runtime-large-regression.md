@@ -2,7 +2,7 @@
 
 The English73/Japanese12 sets used for tuning are screening sets. Their agreement does not establish
 coverage of uncommon inputs. Large output regressions are now a separate acceptance step from the
-small, repeated latency benchmark. The1B/beam5/timestamp/B1 upper-bound OFF/ON audit completed with
+small, repeated latency benchmark. The1B/beam5/timestamp/B1 and B3 upper-bound OFF/ON audits each completed with
 zero output differences across13,232 inputs; other large-corpus ablations and timing remain pending.
 Job2780055 prepared the corpus. Its
 [corpus manifest](runtime-large-regression-corpus-2780055.json) records13,204 real short-corpus inputs
@@ -48,21 +48,48 @@ has an empty final segment ending31.16seconds. These cases expose short-tail win
 both variants. The retained outputs reproduce the issue; changing windowing or restricting times
 would require a separate quality/compatibility evaluation. The existing `cut_at_pauses` option was
 not enabled in this audit and is not assumed to solve it.
-B3 job2780636 used frozen773f827 source and language/API-preserving input groups. It ended
-normally at the audit budget with a [validated partial result](runtime-large-regression-2780636-partial.json):
-9,600 text/segment pairs and9,584 available token/timestamp pairs match,75 chunks pass strict
-validation, and `complete=false` is retained. Job2780819 resumes the remaining3,632 inputs with
-the identical773f827 source/config/engines/corpus. Full B3 acceptance remains pending.
+The [complete B3 result](runtime-large-regression-2780819.json) uses frozen773f827 source and
+language/API-preserving input groups. Job2780636 produced a [validated9,600-input checkpoint](runtime-large-regression-2780636-partial.json);
+job2780819 completed the remaining3,632 inputs with identical source/config/engines/corpus (PBS F/exit0,
+publication exit0). All104 chunks pass strict validation. Text/segments match on13,232 pairs and
+full token/timestamp sequences match on13,191 available pairs;41 long-form outputs lack joined IDs.
+This is an upper-bound-only E check at each fixed batch configuration. B3's common baseline flags
+include81 invalid/out-of-range segments,28 nonspeech text outputs,6 repeated-fourgram inputs,
+1 empty segment and1 unpaired timestamp sequence, across101 distinct diagnostic inputs.
 
-A separate [partial cross-batch comparison](runtime-batch-numerics-6656.json) checks6,656 matched
-inputs with identical runtime source trees, checkpoint/engine hashes, Torch/CUDA and GPU type.
-Upper-bound OFF/ON agrees within each batch. Comparing B1 against B3 instead changes batch shapes
-and default decoder routing together:98 inputs differ, including79 texts and21 available timestamp
-sequences. Of6,648 available full token sequences,6,550 match; the8 long-form outputs have no IDs.
-On this matched subset, Japanese CER edit totals are8,637 versus8,638 per111,347 reference characters;
-English WER edit totals are2,490 versus2,495 per49,162 reference words. This is an N comparison,
-not an upper-bound regression or an isolated kernel experiment. Full cross-batch results and
-attribution of individual differences remain pending; no time-boundary accuracy is inferred.
+The separate [complete cross-batch comparison](runtime-batch-numerics-13232.json) uses identical
+runtime trees, checkpoint/engine hashes, Torch/CUDA and GPU type, but changes batch shapes and
+default decoder routing together (N). Comparing upper-bound OFF outputs between B1 and B3 gives:
+
+| Output field | Equal / available pairs |
+|---|---:|
+| Full token sequence |12,946 /13,191|
+| Timestamp-token sequence |13,132 /13,191|
+| Segments |12,993 /13,232|
+| Text |13,044 /13,232|
+
+There are245 differing inputs:240 in three-input groups and5 in two-input groups. All35 ordinary
+single-input groups and41 long-form single-input groups match. Speech-only error-count changes
+(B3 minus B1) are Japanese+1/111,347 characters, English+6/111,768 words, German−5/18,706 words,
+French−4/6,759 words, Russian+3/6,501 words, Spanish+2/23,314 words and Chinese+196/35,649 characters.
+Chinese CER is11.9246% at B1 and12.4744% at B3. These are batch/dispatch differences, not upper-bound
+regressions or an isolated kernel experiment; they do not establish causality for a particular change.
+
+A retained [Chinese corner case](runtime-batch-corner-cases.json),
+`fleurs_zh_test--cmn_hans_cn-11229861275679868227` (19.3seconds), accounts for+200 edit errors:
+B1 returns63 tokens, one complete segment and14/53 character edits; B3 returns374 tokens,
+478 raw text characters, a repeated fourgram58 times, one opening timestamp with no closing pair,
+no complete segment and214/53 edits. Both bound variants agree within each batch. The other944
+Chinese inputs net−4 edits. The exact input group and both outputs are retained for a targeted
+reproduction; numerical-path attribution and repeated-run stability remain unverified.
+
+For13,044 inputs with identical text and ordered segment labels/count, all26,516 boundary differences
+have median/p95 zero. The52 nonzero boundary displacements have median20ms, p95120ms and maximum740ms;
+the maximum is the synthetic English10second silence probe. The188 changed-text/segmentation inputs
+are excluded from this boundary comparison, not treated as aligned. No human timing accuracy is inferred.
+All28 nonspeech probes generate text at both batch sizes; Japanese inserted-character totals are231/256
+and English inserted-word totals197/204 for B1/B3. They remain excluded from speech WER/CER.
+The earlier [6,656-input partial comparison](runtime-batch-numerics-6656.json) is preserved as a checkpoint.
 
 Reproduce this saved-output comparison without loading models or audio:
 
@@ -162,7 +189,7 @@ current ON. B3 follows to cover mixed lengths and partially finished groups. Its
 evaluation groups preserve input order and share a language and API: a longer-than-window neighbour
 does not switch an ordinary short input to long-form semantics or remove its token IDs. Groups may
 therefore have1/2/3 inputs; each future record stores its group keys, API and requested batch size.
-This grouping change has small fixture coverage; B3 GPU results remain pending. The completed B1
+This grouping change has small fixture coverage and the complete B3 result above. The completed B1
 continuation stayed frozen at8151703.
 Each call in this audit handles one such group. Large multi-batch request behavior, row refill,
 encoder lookahead and file-prefetch coverage require separate cases; this audit does not establish them.
@@ -170,7 +197,8 @@ encoder lookahead and file-prefetch coverage require separate cases; this audit 
 Subsequent ablations also include `beam_kernels` (upper bound ON in both, search/state/cache kernels OFF/ON)
 and `beam_combined` (upper bound and beam kernels both OFF/ON), to cover bugs shared by both sides
 of the upper-bound-only comparison. These use the existing PyTorch reference path, the same decoder
-backend/engine, and separate session pools. They are pending large-corpus E checks, not results.
+backend/engine, and separate session pools. Search-kernel B1 job2780923 is running from frozen9e87cfaf
+with fresh account/queue/no-duplicate checks; full acceptance and the combined ablation remain pending.
 Other ablations are102M serial64 versus24 (E), and the explicit1B NS4/102M NS8 option versus NS2 (N),
 with plain/drafted ASR, translation and long-form cases. N differences remain visible, not treated
 as exact or silently accepted as accuracy improvements. New default adoption waits for relevant
