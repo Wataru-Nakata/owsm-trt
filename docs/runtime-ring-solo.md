@@ -1,4 +1,4 @@
-# 102M serial Ring program budget (prepared, unmeasured)
+# 102M serial Ring program budget (first measurement; default24 retained)
 
 Candidate31, E intent against the current Ring kernel, independent of wide-row N routing.
 Actual graph trace2777712 places the single-row Ring decoder at75.3%of102M English translation
@@ -32,5 +32,30 @@ python scripts/profile_ring_solo.py --model /local/owsm_v4_base_102M \
   --repeat 11 --out /local/results
 ```
 
-Run only on compute nodes via the staged `scripts/profile_ring_solo.pbs`. No performance or
-GPU equality result exists yet, and default24 remains unchanged.
+Run only on compute nodes via the staged `scripts/profile_ring_solo.pbs`. The first results are below; default24 remains unchanged.
+
+
+Pilot2778037 (0110369) passed6GPU tests and18actual-checkpoint equality checks per language.
+All11conditions have exactly identical outputs and decoder-call totals across24/32/48; long-form
+compares joined text/segments. Exit0 and complete artifacts; Stageout_status1 is recorded separately.
+
+| Condition | English32 /48 RTFx change | Japanese32 /48 RTFx change |
+|---|---:|---:|
+| Plain ASR B1 | +1.54% /+4.22% | +1.51% /+4.51% |
+| Plain timestamp ASR B1 | +2.61% /+3.55% | +1.15% /+3.48% |
+| Translation B1 | +3.05% /+4.05% | +2.66% /+4.88% |
+| CTC-drafted timestamp B1 | +2.69% /+0.40% | +3.21% /+5.00% |
+| CTC-drafted timestamp B8 | +0.30% /+0.03% | +0.59% /+0.84% |
+| 110s long-form | +3.93% /+6.25% | not measured |
+
+Every paired total improved in all11repeats for plainB1 and long-form, and their pooledp95
+improved. B8is mixed/noisy and has no gain claim. English draftedB1 with48 has one paired total
+-26.785%, while the other10are positive; its aggregate+0.397%is therefore much smaller than
+its p95improvement. That latency excursion is retained with largest raw samples in the report;
+its cause is unresolved and no sample is discarded. No warm capture/fallback/output drift was
+observed. An independent repeat is required before any default change.
+
+The first pilot records calls, bound backend names and drafted program histograms. A later
+profiler revision additionally counts actual graph replays and records each plain bucket's
+program/split configuration in a separate pass; this is not added to warm wall timing.
+[Complete first results and outliers](runtime-ring-solo-2778037.json).
