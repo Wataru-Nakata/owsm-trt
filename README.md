@@ -352,6 +352,8 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   invalid live logits (NaN/+Inf) or exhaustion without a finished hypothesis raise `RuntimeError` after
   decoding. See [beam profiling and validation](docs/beam-search.md) and the
   [60-candidate ledger](docs/beam-candidates.tsv) for tested scope and remaining work.
+  These small sets are screening evidence. A separate [expanded regression suite](docs/runtime-large-regression.md)
+  covers seven languages, harder speech and long recordings; its large-corpus evaluation is pending.
   Candidate masking/scoring and finished-state updates use fused Triton kernels on CUDA by default;
   full-vocabulary log-softmax and global top-K stay in PyTorch by default. `beam_kernels=False` selects the reference
   operations, also used on CPU or without Triton. Against the already optimized stopping path,

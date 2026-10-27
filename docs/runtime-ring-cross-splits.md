@@ -67,3 +67,7 @@ python scripts/profile_ring_cross_splits.py --model /local/owsm_v4_medium_1B \
   --manifest /local/manifest.json --long-audio /local/long_110s.wav \
   --repeat 11 --out /local/results
 ```
+
+The public repeat2778800 was stopped for the account192-GPU cap after another allocation surge.
+PBS exit271 and incomplete published artifacts prevent accepting it as independent validation.
+Large-corpus regression now takes priority; see [expanded evaluation](runtime-large-regression.md).

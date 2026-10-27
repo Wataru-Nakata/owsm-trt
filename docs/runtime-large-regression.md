@@ -1,0 +1,58 @@
+# Expanded regression corpus and resumable evaluation
+
+The English73/Japanese12 sets used for tuning are screening sets. Their agreement does not establish
+coverage of uncommon inputs. Large output regressions are now a separate acceptance step from the
+small, repeated latency benchmark. No large-corpus results have been measured yet.
+
+The available manifests contain10,504 short recordings across English, Japanese, Chinese, German,
+Spanish, French and Russian, plus87 concatenated LibriSpeech chapters. They include2,620 LibriSpeech
+test-clean,2,864 dev-other,394 English FLEURS,266 Japanese FLEURS,1,000 JVS parallel100,945 Chinese,
+862 German,908 Spanish,289 French and356 Russian FLEURS. The1,000 JVS items are only10 speakers
+reading100 sentences. To add text/speaker diversity, preparation reads nonpara30 from90 JVS speakers
+(up to2,700 further recordings), excluding the91–100 calibration partition. Actual counts, distinct
+texts, known speakers, original sample rates, hours and duration buckets are recorded during packing.
+These existing datasets are not claimed to be an untouched holdout. The87 chapters reuse test-clean
+speech, so they are long-context coverage, not87 independent sources. The earlier Japanese12 overlap
+is explicitly marked; reference segment boundaries/target translations are unavailable.
+
+`prepare_large_regression.py` runs only inside an allocated job. One writer packs original encoded
+audio plus per-sample JSON into512-sample WebDataset tar shards under `$PBS_LOCALDIR`, verifies
+each member hash/count, then atomically publishes completed shards to `.cache/regression-expanded-v1`.
+The input index, source-manifest hashes and a final manifest make the corpus reusable. Audio decoding,
+resampling, model work and tests stay on compute nodes; no temporary waveform files go to Lustre.
+
+Twenty-eight generated silence/noise/tone probes (English/Japanese primers) complement real speech;
+they do not substitute for natural noise/music/conversation coverage. Prompt stress is a separate
+`beam_prompt` case.
+
+The first priority is1B, beam5, timestamps=True, B1: same-engine existing upper-bound OFF versus
+current ON. B3 follows to cover mixed lengths and partially finished groups. Supported subsequent
+ablations are102M serial64 versus24 (E), and the explicit1B NS4/102M NS8 option versus NS2 (N),
+with plain/drafted ASR, translation and long-form cases. N differences remain visible, not treated
+as exact or silently accepted as accuracy improvements. New default adoption waits for relevant
+large-corpus checks as well as the repeated performance benchmark.
+
+`audit_large_regression.py` stores both complete outputs, timestamp IDs, segments, text, WER/CER
+counts, invalid/empty/unpaired/nonmonotonic times and diagnostic repetition indicators. Results are
+published only as complete128-sample compressed chunks, with corpus/checkpoint/engine/code hashes.
+A subsequent job verifies config and finished chunks and resumes the remaining input IDs. A
+45-minute pass ending successfully is **not** a completed evaluation unless its `complete` flag is
+true. Each1GPU job remains limited to1hour and requires fresh account<=192/queue/duplicate checks.
+On a capacity overrun, only this session's job is stopped; completed chunks remain reusable.
+
+The audit is one pass per variant, including I/O/cold graphs/warm calls. Its elapsed time is not a
+steady-state latency or speedup result. `summarize_large_regression.py` aggregates agreement and
+quality separately by language, dataset and duration. Long-form returns joined text/segments only;
+empty joined token lists do not count toward token agreement. Repetition indicators are heuristics,
+not ground-truth errors. Inputs longer than a model window use long-form, avoiding reference text
+being compared to an intentionally trimmed30-second input.
+
+The preceding small public-split repeat2778800 was explicitly stopped when a fresh account query
+reported198 GPUs. PBS exit271 and partial publication are recorded in
+`outputs/runtime-ring-split-api/capacity-action.json`. Progress reached many completed phases, but
+missing artifacts prevent accepting the job as full validation. Prototype results2778533 remain
+valid; no public-split default adoption or independent speed replication is claimed from2778800.
+
+The proposed frontend direct-input retry was withdrawn before submission: earlier2771513 had
+already tested the same basic idea without a broad gain. Its temporary runtime prototypefc02d74
+was reverted in4f6041e. Expanded coverage takes priority over repeating that small screening test.
