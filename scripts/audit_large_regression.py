@@ -119,7 +119,7 @@ def main():
     import soundfile as sf
     import torch
     from eval_wer import CER_LANGS, characters, edit_distance, normalize
-    from profile_beam import command, result_record
+    from profile_beam import command, dispatch, result_record
 
     from owsm_trt import OWSM, hub, megakernel, megakernel_ring
     from owsm_trt.audio import load_audio
@@ -176,10 +176,19 @@ def main():
         env = dict(engine_sha256={p.name:sha256(p) for p in engines.glob('*.engine')},gpu=torch.cuda.get_device_name(),
             torch=torch.__version__,cuda=torch.version.cuda,job=os.environ.get('PBS_JOBID'),
             nvidia_smi=command(['nvidia-smi','--query-gpu=name,uuid,driver_version','--format=csv']))
+        env['decoder_settings'] = {v:dict(kernel=type(b.kernel).__name__,
+            programs=getattr(b.kernel,'P',None),solo_programs=getattr(b.kernel,'P_solo',None),
+            single_cross_splits=getattr(b.kernel,'single_cross_splits',None)) for v,b in backends.items()}
+        env['decoder_dispatch'] = {v:{} for v in backends}
+        env['dispatch_scope'] = ('Configured single-token functions for observed sessions; listed buckets may '
+                                 'only have warmed/captured. Includes per-bucket observation jobs, not execution counts.')
         if (args.publish/'environment.json').exists():
             previous = json.loads((args.publish/'environment.json').read_text())
             assert previous['engine_sha256']==env['engine_sha256']
             assert previous['torch']==env['torch'] and previous['cuda']==env['cuda']
+            if 'decoder_settings' in previous:
+                assert previous['decoder_settings']==env['decoder_settings'], 'decoder settings changed on resume'
+                env['decoder_dispatch'] = previous['decoder_dispatch']
         (args.out/'environment.json').write_text(json.dumps(env,indent=2)+'\n')
         publish_file(args.out/'environment.json',args.publish/'environment.json')
         archives = {}
@@ -228,6 +237,22 @@ def main():
                             return values
                         values = capture_failure(decode,dict(config=config,variant=mode,options=kw,
                             joined=joined,inputs=batch,completed_variant_outputs=outputs),args.out,args.publish)
+                        changed_dispatch = False
+                        for (session_batch,session_beam),session in model._sessions.items():
+                            solo = getattr(session,'plain_solo',None)
+                            if args.mode=='serial64' and args.case=='plain_ts':
+                                assert solo, 'serial64 plain audit did not activate the solo decoder route'
+                            shape = f'batch={session_batch},beam={session_beam}'
+                            previous_dispatch = env['decoder_dispatch'][mode].get(shape,{})
+                            observed = dict(plain_solo=solo,decoder=previous_dispatch.get('decoder',{}) | {
+                                str(bucket):info | dict(observed_job=os.environ.get('PBS_JOBID'))
+                                for bucket,info in dispatch(session).items()})
+                            if env['decoder_dispatch'][mode].get(shape)!=observed:
+                                env['decoder_dispatch'][mode][shape] = observed
+                                changed_dispatch = True
+                        if changed_dispatch:
+                            (args.out/'environment.json').write_text(json.dumps(env,indent=2)+'\n')
+                            publish_file(args.out/'environment.json',args.publish/'environment.json')
                         results = []
                         for row,value in zip(batch,values):
                             record = result_record(model,value,row,row['seconds'])

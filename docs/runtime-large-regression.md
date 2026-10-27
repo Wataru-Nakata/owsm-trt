@@ -261,6 +261,12 @@ Segment boundary order/overlap is checked even for long-form outputs. Token-leve
 report their available-record count; missing long-form token IDs are not evidence of valid token timing.
 Summaries recompute invalid segment counts from saved boundaries/durations with the corrected
 floating-point comparison; `recorded_invalid_segments` retains the original per-run diagnostic.
+Future audit snapshots also retain reference/candidate decoder settings and configured single-token
+dispatch/fallback metadata by observed session shape and cache bucket. Entries keep their observation
+job when a run resumes; a listed bucket may only have warmed/captured and is not an execution count.
+The102M `serial64/plain_ts` audit requires the solo route to activate, so an inactive24/64 configuration
+cannot silently pass as the intended ablation. This metadata change does not alter inference and is
+not included in the ongoing frozen9e87cfaf B3 kernel run.
 
 The preceding small public-split repeat2778800 was explicitly stopped when a fresh account query
 reported198 GPUs. PBS exit271 and partial publication are recorded in
