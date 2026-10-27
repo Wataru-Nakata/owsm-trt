@@ -1,0 +1,99 @@
+{
+  "complete": true,
+  "samples": 13232,
+  "agreement": {
+    "tokens": {
+      "equal": 13191,
+      "total": 13191
+    },
+    "timestamp_tokens": {
+      "equal": 13191,
+      "total": 13191
+    },
+    "segments": {
+      "equal": 13232,
+      "total": 13232
+    },
+    "text": {
+      "equal": 13232,
+      "total": 13232
+    }
+  },
+  "different_inputs": [],
+  "configs": [
+    {
+      "schema": 1,
+      "commit": "8151703a60ba41b65a8f651f25b9934fdbbc082e",
+      "mode": "beam_bound",
+      "case": "beam_b1",
+      "index_sha256": "213a5e54cf891cefdcfebffb4c2dbac392867f64bcecc9cc60c3bdf7e5057211",
+      "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+      "selected_keys_sha256": "9e3b3aaf48d058ef6b2174dd89026bacc39b06c7551729bfd054ff80d36e9987",
+      "chunk_size": 128,
+      "selected_samples": 13232,
+      "datasets": null,
+      "scope": "Full output/quality regression, one pass per variant. Includes warmup/capture/I/O; no steady-state latency or speedup claim. Long-form has joined text/segments only. No human timestamp or reference translation annotation.",
+      "beam_variants": {
+        "reference": {
+          "beam_upper_bound": false,
+          "beam_kernels": true
+        },
+        "candidate": {
+          "beam_upper_bound": true,
+          "beam_kernels": true
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "commit": "9e87cfaf81aa45fa789e37a491e2f15b2a830557",
+      "mode": "beam_kernels",
+      "case": "beam_b1",
+      "index_sha256": "213a5e54cf891cefdcfebffb4c2dbac392867f64bcecc9cc60c3bdf7e5057211",
+      "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+      "selected_keys_sha256": "9e3b3aaf48d058ef6b2174dd89026bacc39b06c7551729bfd054ff80d36e9987",
+      "chunk_size": 128,
+      "selected_samples": 13232,
+      "datasets": null,
+      "scope": "Full output/quality regression, one pass per variant. Includes warmup/capture/I/O; no steady-state latency or speedup claim. Long-form has joined text/segments only. No human timestamp or reference translation annotation.",
+      "beam_variants": {
+        "reference": {
+          "beam_upper_bound": true,
+          "beam_kernels": false
+        },
+        "candidate": {
+          "beam_upper_bound": true,
+          "beam_kernels": true
+        }
+      }
+    }
+  ],
+  "environments": [
+    {
+      "engine_sha256": {
+        "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+        "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+        "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+      },
+      "gpu": "NVIDIA H200",
+      "torch": "2.14.1+cu130",
+      "cuda": "13.0",
+      "job": "2780523.pbs1",
+      "nvidia_smi": "name, uuid, driver_version\nNVIDIA H200, GPU-02264d06-e62e-ac13-3c4e-9877e69aa361, 595.71.05"
+    },
+    {
+      "engine_sha256": {
+        "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+        "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+        "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+      },
+      "gpu": "NVIDIA H200",
+      "torch": "2.14.1+cu130",
+      "cuda": "13.0",
+      "job": "2780923.pbs1",
+      "nvidia_smi": "name, uuid, driver_version\nNVIDIA H200, GPU-a099714a-f758-6dbb-cfdb-a18e1cad4f0c, 595.71.05"
+    }
+  ],
+  "runtime_tree": "a9ab5a575ef33008f254fac7c010af1bc817a765",
+  "scope": "Same candidate settings across separate1B/B1 upperbound and search-kernel audit jobs;not another optimization/speed comparison. Hashes/config/order/outputs rechecked."
+}

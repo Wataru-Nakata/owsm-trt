@@ -3,7 +3,8 @@
 The English73/Japanese12 sets used for tuning are screening sets. Their agreement does not establish
 coverage of uncommon inputs. Large output regressions are now a separate acceptance step from the
 small, repeated latency benchmark. The1B/beam5/timestamp/B1 and B3 upper-bound OFF/ON audits each completed with
-zero output differences across13,232 inputs; other large-corpus ablations and timing remain pending.
+zero output differences across13,232 inputs. The search-kernel OFF/ON audit also completed at B1;
+other large-corpus ablations and timing remain pending.
 Job2780055 prepared the corpus. Its
 [corpus manifest](runtime-large-regression-corpus-2780055.json) records13,204 real short-corpus inputs
 (29.798hours),28 synthetic cases and87 long-context chapters, packed into27 verified shards
@@ -87,7 +88,8 @@ group, B1/B3, auto versus TensorRT-only dispatch, search kernels OFF/ON and boun
 three times (48 calls). Checkpoint/corpus/engine/software identity is checked against the B3 artifact.
 Actual decoder dispatch, full outputs, original-output differences and fixed-configuration stability
 are retained. Fixed-route/fixed-batch kernel/bound controls require exact outputs; route/batch changes
-are reported as N. Small metadata fixtures pass; GPU reproduction remains pending. The public API
+are reported as N. Small metadata fixtures pass; GPU reproduction job2780984 is running from frozen19d9b31 after
+the successful B1 search-kernel audit, with fresh account/queue/no-duplicate admission checks. The public API
 may sort inputs internally, so this is not a test of arbitrary decoder-row permutations.
 
 For13,044 inputs with identical text and ordered segment labels/count, all26,516 boundary differences
@@ -204,8 +206,15 @@ encoder lookahead and file-prefetch coverage require separate cases; this audit 
 Subsequent ablations also include `beam_kernels` (upper bound ON in both, search/state/cache kernels OFF/ON)
 and `beam_combined` (upper bound and beam kernels both OFF/ON), to cover bugs shared by both sides
 of the upper-bound-only comparison. These use the existing PyTorch reference path, the same decoder
-backend/engine, and separate session pools. Search-kernel B1 job2780923 is running from frozen9e87cfaf
-with fresh account/queue/no-duplicate checks; full acceptance and the combined ablation remain pending.
+backend/engine, and separate session pools. The [complete search-kernel B1 result](runtime-large-regression-2780923.json)
+from job2780923/frozen9e87cfaf passes all104 chunk/config/corpus/order/output checks (PBS F/exit0,
+publication exit0):13,232 text/segment pairs and13,191 available token/timestamp pairs match exactly.
+This compares the combined public `beam_kernels` switch while keeping the upper bound ON in both
+variants. It does not separately attribute each component's parity or establish a new speed gain.
+The [candidate-output repeat check](runtime-large-regression-repeat-2780923.json) also matches the
+candidate outputs from the earlier B1 bound audit on every available field, with identical runtime
+source tree, engines/checkpoint and software. B3 search kernels and combined bound/kernel ablations
+remain pending.
 Other ablations are102M serial64 versus24 (E), and the explicit1B NS4/102M NS8 option versus NS2 (N),
 with plain/drafted ASR, translation and long-form cases. N differences remain visible, not treated
 as exact or silently accepted as accuracy improvements. New default adoption waits for relevant

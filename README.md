@@ -356,7 +356,9 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   completed same-engine upper-bound OFF/ON comparisons at B1 and B3 over13,232 inputs in seven languages each:
   all text/segments and13,191 available full token/timestamp sequences match (41 long-form outputs
   lack joined token IDs). Across B1 versus B3,245 inputs differ as batch shape/default decoder routing change;
-  a Chinese B3 repetition case raises its CER. Separate search-kernel/full-runtime ablations remain pending.
+  a Chinese B3 repetition case raises its CER. The combined search-kernel OFF/ON switch also matches
+  on all13,232 B1 outputs and13,191 available token/timestamp sequences. B3 search-kernel and further
+  full-runtime ablations remain pending.
   Candidate masking/scoring and finished-state updates use fused Triton kernels on CUDA by default;
   full-vocabulary log-softmax and global top-K stay in PyTorch by default. `beam_kernels=False` selects the reference
   operations, also used on CPU or without Triton. Against the already optimized stopping path,
