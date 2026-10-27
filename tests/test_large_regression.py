@@ -14,6 +14,7 @@ from audit_large_regression import (
     select_rows,
 )
 from prepare_large_regression import safe_key, write_shard
+from summarize_large_regression import summarize
 
 
 @pytest.mark.parametrize('key',['','../outside','folder/item','a.b','bad key'])
@@ -97,3 +98,39 @@ def test_resume_rejects_partial_wrong_config_and_changed_chunks(tmp_path):
     write(records)
     with pytest.raises(AssertionError):
         load_completed(tmp_path,rows,2,'digest')
+
+
+def test_summary_separates_nonspeech_and_excludes_unavailable_token_ids(tmp_path):
+    config = dict(selected_samples=3,selected_keys_sha256=hashlib.sha256(b'a\nb\nc').hexdigest())
+    config_path = tmp_path/'config.json'
+    config_path.write_text(json.dumps(config))
+    digest = hashlib.sha256(config_path.read_bytes()).hexdigest()
+    value = dict(tokens=[1],timestamp_tokens=[],segments=[],text='word',token_ids_available=True,
+        empty_segments=0,invalid_segments=0,unpaired_timestamp=False,nonmonotonic_timestamps=False,
+        repetition=repetition([1]),quality=dict(metric='WER',errors=1,reference_units=10))
+    probe = value|dict(quality=dict(metric='CER',errors=9,reference_units=0))
+    joined = value|dict(tokens=[],token_ids_available=False)
+    records = [dict(key=key,lang=lang,dataset=dataset,duration_bucket='<=10s',config_sha256=digest,
+                    reference=record,candidate=record,differences=[])
+               for key,lang,dataset,record in [('a','eng','speech',value),('b','jpn','stress',probe),
+                                                ('c','eng','long',joined)]]
+    path = tmp_path/'chunk-00000.jsonl.gz'
+    with gzip.open(path,'wt') as f:
+        for record in records:
+            f.write(json.dumps(record)+'\n')
+    (tmp_path/'progress.json').write_text(json.dumps(dict(chunks={
+        path.name:dict(sha256=hashlib.sha256(path.read_bytes()).hexdigest()),
+    })))
+    result = summarize(tmp_path)
+    assert result['complete'] and result['completed']==3
+    total = result['strata']['all']
+    assert total['agreement']['tokens']==dict(equal=2,total=2)
+    assert total['agreement']['text']==dict(equal=3,total=3)
+    assert total['quality']['candidate']['rate'] is None
+    assert total['quality']['candidate']['errors']==2
+    assert total['quality']['candidate']['excluded_nonspeech_errors']==9
+    assert result['strata']['language:eng']['quality']['candidate']['rate']==.1
+    assert result['strata']['dataset:stress']['quality']['candidate']['rate'] is None
+    path.write_bytes(b'changed')
+    with pytest.raises(AssertionError):
+        summarize(tmp_path)
