@@ -1,6 +1,19 @@
 """Bounded, inference-only frontend replay; returned tensors never alias captured outputs."""
 
+import weakref
+
 import torch
+
+
+def _release_capture(entries, ready, stream, destroy, handle):
+    # Graph destruction can clear the stream's cuBLAS workspace. Keep that stream exclusive
+    # until all its graphs and replay work are gone, including replays on encoder streams.
+    try:
+        ready.synchronize()
+        stream.synchronize()  # also covers a failed warm-up/capture before ready was recorded
+        entries.clear()
+    finally:
+        destroy(handle)
 
 
 class FrontendReplay:
@@ -42,8 +55,25 @@ class FrontendReplay:
             from .runtime import capture_graph
 
             if self.capture_stream is None:
-                self.capture_stream = torch.cuda.Stream(device=speech.device)
-                self.ready = torch.cuda.Event()
+                from cuda.bindings import runtime
+
+                # torch.cuda.Stream() rotates through a finite shared pool. Another session's
+                # graph destruction could then clear our eager warm-up's cuBLAS workspace
+                # (PyTorch #193402). A native stream cannot alias that pool while it is alive.
+                with torch.cuda.device(speech.device):
+                    error, handle = runtime.cudaStreamCreateWithFlags(runtime.cudaStreamNonBlocking)
+                if error != runtime.cudaError_t.cudaSuccess:
+                    raise RuntimeError(f"frontend capture stream creation failed: {error}")
+                try:
+                    self.capture_stream = torch.cuda.ExternalStream(int(handle), device=speech.device)
+                    self.ready = torch.cuda.Event()
+                    self._release = weakref.finalize(
+                        self, _release_capture, self.entries, self.ready, self.capture_stream,
+                        runtime.cudaStreamDestroy, handle,
+                    )
+                except BaseException:
+                    runtime.cudaStreamDestroy(handle)
+                    raise
             else:
                 self.ready.synchronize()  # cold-only; previous graph buffers/workspace are idle
             inp = torch.empty_like(speech)
@@ -74,6 +104,7 @@ class FrontendReplay:
             "max_entries": self.max_entries,
             "max_batch": self.max_batch,
             "reuse_warmup_stream": self.reuse_warmup_stream,
+            "capture_stream": "exclusive native stream",
             "fallbacks": self.fallbacks,
             "input_output_bytes": sum(
                 (inp.numel() * inp.element_size() + out.numel() * out.element_size())

@@ -88,3 +88,31 @@ shape distribution and cache history affect memory. No broad/default B8 or combi
 [Environment, paired samples, reverse-order memory and public checks](runtime-frontend-api-2776797.json).
 Raw artifacts and reproducer: `outputs/runtime-2776797/`, `scripts/validate_frontend_api.pbs`.
 H200/v4 1B/102M only; other hardware, checkpoints and frontend CTC batch expansion are unmeasured.
+
+
+## Expanded lifecycle regression2777265; exclusive capture correction pending
+
+The earlier nine-case public check did not cover enough successive model lifecycles. The expanded
+15-case validator fails on the third102M model at long_prompt, including three worker0 instances
+without audio prefetch and with case synchronization. Legacy fresh warm-up streams and eager
+frontend controls both pass15 cases for workers0/1/2, matching the saved baseline. Fresh worker2
+also passes. [Matrix evidence](runtime-cuda-matrix-2777265.json); raw logs `outputs/runtime-2777265/`.
+No timing claim follows from these diagnostic controls. Compute Sanitizer fails much earlier at
+single_file, with378 reports including driver queries and TRT stream-ordered allocation accesses;
+those reports do not establish the cause of the third-model failure.
+
+A newly constructed `torch.cuda.Stream` is selected from a finite round-robin pool, so another
+session can capture on the frontend's stream. PyTorch2.14.1 graph destruction
+[clears that stream's cached cuBLAS workspaces](https://github.com/pytorch/pytorch/blob/v2.14.1/aten/src/ATen/cuda/CUDAGraph.cpp#L348-L350).
+The [upstream issue193402](https://github.com/pytorch/pytorch/issues/193402) describes a surviving
+graph retaining an address freed by another graph's destruction. This is a concrete lifetime
+hypothesis here, not yet a confirmed diagnosis of the API failure.
+
+The proposed correction creates one exclusive native CUDA stream per frontend replay object,
+wraps it with ExternalStream, and retains it until the last replay completes and all its graphs
+are released. Warm-up reuse and the32-shape bound stay unchanged. No global workspace clear or
+new arithmetic is introduced. `diagnose_frontend_lifetime.py` exercises pooled-stream graph churn
+against frozen old code and the correction, including release. `validate_frontend_lifetime.pbs`
+runs that reproducer,94 focused tests, six successive102M model lifecycles and three1B lifecycles,
+then the missing102M prefetch timings and memory comparison. Validation is pending; the earlier
+memory reduction alone is insufficient evidence of safe model/session reuse.

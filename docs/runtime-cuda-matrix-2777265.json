@@ -1,0 +1,106 @@
+{
+  "job": "2777265.pbs1",
+  "source_commit": "0946b4321f4be8e492230b30251cb662761cf200",
+  "job_exit": 0,
+  "matrix": {
+    "statuses": {
+      "fresh2": 0,
+      "zero3": 139,
+      "legacy": 0,
+      "eager": 0,
+      "sync": 139,
+      "memcheck": 86
+    },
+    "scope": "Independent diagnostics; exit0 here means matrix execution completed, not every mode passed. No speed measurements."
+  },
+  "modes": {
+    "fresh2": {
+      "last_case": {
+        "iteration": 0,
+        "workers": 2,
+        "case": "model_cleanup",
+        "phase": "complete"
+      },
+      "all_equal": true,
+      "cases": 15,
+      "workers": [
+        2
+      ],
+      "engine_sha256": {
+        "encoder.engine": "f3da9563c8ef41b6252388c18d89fac46cc5781cfa505d6750837e0c12e0f481",
+        "decoder.engine": "b6065937220853d65633f6f59ce0edab80270717b8971c8afa53baf9a2bf5f72",
+        "verify.engine": "34a912836635a2c6928abef52e6ea5140c5215bc8fa178ee8b1af07bd5458dcb"
+      },
+      "artifact_sha256": "6f2553b9d250f51f90d3096a778f3364c562fa5c8d536cabe2c4ea149d3ffff0"
+    },
+    "zero3": {
+      "last_case": {
+        "iteration": 2,
+        "workers": 0,
+        "case": "long_prompt",
+        "phase": "start"
+      }
+    },
+    "legacy": {
+      "last_case": {
+        "iteration": 2,
+        "workers": 2,
+        "case": "model_cleanup",
+        "phase": "complete"
+      },
+      "all_equal": true,
+      "cases": 15,
+      "workers": [
+        0,
+        1,
+        2
+      ],
+      "engine_sha256": {
+        "encoder.engine": "f3da9563c8ef41b6252388c18d89fac46cc5781cfa505d6750837e0c12e0f481",
+        "decoder.engine": "b6065937220853d65633f6f59ce0edab80270717b8971c8afa53baf9a2bf5f72",
+        "verify.engine": "34a912836635a2c6928abef52e6ea5140c5215bc8fa178ee8b1af07bd5458dcb"
+      },
+      "artifact_sha256": "622f98657fafec25ecd1a5cb8a321b433c41f060f844f69ece86e5f4c1f5d9ab"
+    },
+    "eager": {
+      "last_case": {
+        "iteration": 2,
+        "workers": 2,
+        "case": "model_cleanup",
+        "phase": "complete"
+      },
+      "all_equal": true,
+      "cases": 15,
+      "workers": [
+        0,
+        1,
+        2
+      ],
+      "engine_sha256": {
+        "encoder.engine": "f3da9563c8ef41b6252388c18d89fac46cc5781cfa505d6750837e0c12e0f481",
+        "decoder.engine": "b6065937220853d65633f6f59ce0edab80270717b8971c8afa53baf9a2bf5f72",
+        "verify.engine": "34a912836635a2c6928abef52e6ea5140c5215bc8fa178ee8b1af07bd5458dcb"
+      },
+      "artifact_sha256": "352349a1e0acdde36e28b759ee97b1e04917ee509f828b000c6b71272b98d544"
+    },
+    "sync": {
+      "last_case": {
+        "iteration": 2,
+        "workers": 2,
+        "case": "long_prompt",
+        "phase": "start"
+      }
+    },
+    "memcheck": {
+      "last_case": {
+        "iteration": 0,
+        "workers": 0,
+        "case": "single_file",
+        "phase": "start"
+      }
+    }
+  },
+  "speed_measured": false,
+  "interpretation": "Failure reproduced with prefetch disabled and case synchronization; legacy frontend warmup and eager frontend controls pass. Stream/workspace lifetime is a hypothesis, pending isolated reproducer and exclusive-stream fix validation.",
+  "sanitizer_scope": "378 reports including driver symbol-query errors and possible stream-ordered access-before-allocation in TensorRT GEMM; process failed at first single_file. This does not identify the later third-model long_prompt failure."
+}

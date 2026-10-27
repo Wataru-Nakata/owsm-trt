@@ -134,3 +134,19 @@ expected reproductions do not prevent other independent controls. A separate Com
 memcheck run uses stream-ordered race tracking, following the [NVIDIA documentation](https://docs.nvidia.com/compute-sanitizer/ComputeSanitizer/index.html).
 Installed diagnostic tool:2025.3.1.0 from CUDA13.0.1. Sanitizer and synchronization change scheduling;
 none of these passes is speed evidence. Runtime and defaults are unchanged by this matrix.
+
+
+## Matrix2777265 and separate streaming exception boundary
+
+The matrix runner completed with exit0, but zero3/sync modes exited139; fresh2/legacy/eager passed,
+and sanitizer exited86. Thus this is not a successful end-to-end validation. The failure also
+occurs with prefetch disabled. See the [frontend lifetime investigation](runtime-frontend-warmup.md)
+and [mode-by-mode evidence](runtime-cuda-matrix-2777265.json). The next job tests an exclusive
+frontend capture stream before considering public prefetch verification complete.
+
+Separately, a reader or finished callback can raise while decode_stream's encoder/decoder is still
+running. The loop now drains only its own streams on exception before propagating the error;
+normal asynchronous scheduling is unchanged. Six synthetic CPU propagation/reuse cases pass.
+The next compute job runs the frozen old loop as a negative control and tests outstanding GPU
+work at initial launch, decoder meanwhile refill and finished callbacks, with/without priority.
+This separate correctness change is not presented as the cause or fix of the CUDA700 matrix failure.

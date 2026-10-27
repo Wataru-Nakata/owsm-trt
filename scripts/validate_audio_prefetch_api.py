@@ -3,6 +3,7 @@
 import argparse
 import faulthandler
 import gc
+import importlib.util
 import json
 import os
 import threading
@@ -27,6 +28,7 @@ def main():
     ap.add_argument('--out', type=Path, required=True)
     ap.add_argument('--workers', type=int, nargs='+', default=[0, 1, 2], choices=[0, 1, 2])
     ap.add_argument('--reference', type=Path, help='saved complete/partial output of worker0')
+    ap.add_argument('--baseline-frontend', type=Path, help='diagnostic only: load a frozen frontend replay class')
     ap.add_argument('--frontend-eager', action='store_true', help='diagnostic only: disable frontend replay')
     ap.add_argument('--legacy-frontend-warmup', action='store_true', help='diagnostic only: restore fresh warmup streams')
     ap.add_argument('--sync-cases', action='store_true', help='diagnostic only: synchronize before/after each API case')
@@ -36,6 +38,14 @@ def main():
     if args.workers[0] != 0 and args.reference is None:
         ap.error('a reference is required when skipping worker0')
     import soundfile as sf
+
+    if args.baseline_frontend:
+        from owsm_trt import frontend_graph
+
+        spec = importlib.util.spec_from_file_location('owsm_trt._baseline_frontend', args.baseline_frontend)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        frontend_graph.FrontendReplay = mod.FrontendReplay
 
     faulthandler.enable()
     faulthandler.dump_traceback_later(180, repeat=True)
@@ -169,6 +179,7 @@ def main():
             long_token_scope='long-form compares text/segments; joined token IDs unavailable',
             diagnostic_sync_cases=args.sync_cases, requested_workers=args.workers,
             frontend_graph=not args.frontend_eager, reuse_frontend_warmup=not args.legacy_frontend_warmup, cuda_launch_blocking=os.environ.get('CUDA_LAUNCH_BLOCKING'),
+            baseline_frontend_sha256=sha256(args.baseline_frontend) if args.baseline_frontend else None,
             reference_sha256=sha256(args.reference) if args.reference else None))
     finally:
         pipeline.load_audio = original_loader

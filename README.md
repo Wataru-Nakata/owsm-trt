@@ -213,7 +213,9 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   public validation;1B gains were small/mixed, so the default stays1. Dedicated-stream warm-up also
   avoids accumulating per-stream workspaces: the English B1 feature allocation delta fell596.5–596.9
   to52.5–52.9MiB, reproduced with reversed measurement order. This is a memory result, not a warm
-  speed claim; graph buffers still add cold work and memory. [Public validation](docs/runtime-frontend-warmup.md). Pointwise
+  speed claim; graph buffers still add cold work and memory. Expanded repeated-model tests exposed
+  a pooled-stream workspace lifetime failure; an exclusive capture-stream correction is under
+  validation. [Public validation](docs/runtime-frontend-warmup.md). Pointwise
   frontend fusion remains disabled. A seven-repeat validation reproduced +5.0%/+12.1%, including lazy
   draft setup. CTC-only v4 1B also improved single-utterance RTFx 4.4% English/5.2% Japanese with exact
   features/output. [Runtime measurements](docs/runtime-results-2771009.md), [CTC measurements](docs/runtime-results-2771126.md).
