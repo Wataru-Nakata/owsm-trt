@@ -14,6 +14,10 @@ texts, known speakers, original sample rates, hours and duration buckets are rec
 These existing datasets are not claimed to be an untouched holdout. The87 chapters reuse test-clean
 speech, so they are long-context coverage, not87 independent sources. The earlier Japanese12 overlap
 is explicitly marked; reference segment boundaries/target translations are unavailable.
+The local JVS release includes phoneme alignment files; its `README.txt` explicitly describes them
+as automatically generated. They are not human timestamp annotations and are not used as timing
+ground truth in this pass. The installed JVS `whisper10`/`falset10` subsets are additional candidates
+for later speaking-style coverage; their full completeness and model outputs remain unchecked.
 
 `prepare_large_regression.py` runs only inside an allocated job. One writer packs original encoded
 audio plus per-sample JSON into512-sample WebDataset tar shards under `$PBS_LOCALDIR`, verifies
