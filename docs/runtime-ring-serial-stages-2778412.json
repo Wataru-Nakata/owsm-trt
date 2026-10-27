@@ -1,0 +1,551 @@
+{
+  "source": {
+    "group": "gai51740",
+    "queue": "R9920261300",
+    "resource": "rt_HG",
+    "nodes": 1,
+    "gpus": 1,
+    "walltime": "01:00:00",
+    "account_gpu_cap": 192,
+    "approval": "Standing serial1GPU authorization; fresh failclosed192 capacity/queue/no-duplicate guard.",
+    "classification": "Profiling only: current1B/102M serial64 actualprefillS1 plus syntheticS1/8/32; runtime/precisionunchanged.",
+    "commit": "f8549000ca2336f64ddce6f59f1aeea38ca3682f",
+    "snapshot": "/groups/gai51740/acc12576tt/github.com/owsm_trt/outputs/runtime-ring-serial-stages/snapshot-f8549000.tar",
+    "experiment": "runtime_ring_serial_stages",
+    "status": "approved_not_submitted",
+    "approved_jobs": 1,
+    "additional_jobs_submitted": 0,
+    "prepared_at": "2026-10-27T12:19:40.173480+00:00",
+    "purpose": "8fixedstatecomparisons,15repeats with30replays perCUDAeventsample; TSglobaltimer stage attribution separate, exactlogits/cache/pred required. No requestlatency or predictedgain claim. Selectnext bottleneck afterserial64adoption."
+  },
+  "profiles": {
+    "owsm_v4_base_102M_real": {
+      "environment": {
+        "commit": "f8549000ca2336f64ddce6f59f1aeea38ca3682f",
+        "checkpoint_sha256": "4702713d44ab3e239101f09182903cd28f7b51e565bb632008af12beefb37752",
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0"
+        },
+        "nvidia_smi": "name, driver_version\nNVIDIA H200, 595.71.05",
+        "load_ms": 3896.6864058747888,
+        "weight_prepare_ms": null,
+        "ncu": false,
+        "scope": "real audio/prefill fixed states; decoder-only timings exclude audio/encoder/prefill; not request latency",
+        "manifest_sha256": "cfebebb8a262f7b45ed48dc360171a3ac226789f73527e7509f85092dc1dc599",
+        "engine_sha256": {
+          "encoder.engine": "f3da9563c8ef41b6252388c18d89fac46cc5781cfa505d6750837e0c12e0f481",
+          "decoder.engine": "b6065937220853d65633f6f59ce0edab80270717b8971c8afa53baf9a2bf5f72",
+          "verify.engine": "34a912836635a2c6928abef52e6ea5140c5215bc8fa178ee8b1af07bd5458dcb"
+        },
+        "default_ring": {
+          "programs": 12,
+          "solo": 64,
+          "rows": 24,
+          "warps": 4,
+          "chunk": 1
+        }
+      },
+      "cases": {
+        "plain_solo": {
+          "kernel_us": {
+            "reference": {
+              "n": 15,
+              "p50": 177.77172724405924,
+              "p95": 178.15818786621094,
+              "min": 177.56800651550293,
+              "max": 178.18133036295572,
+              "stdev": 0.20491396680357238
+            },
+            "instrumented": {
+              "n": 15,
+              "p50": 177.97759373982748,
+              "p95": 178.17855834960938,
+              "min": 177.72693634033203,
+              "max": 178.22186152140299,
+              "stdev": 0.1412567395220688
+            }
+          },
+          "stage_median_us": {
+            "embed": 2.816,
+            "output": 13.312,
+            "qkv": 15.104,
+            "self": 19.456,
+            "out": 13.824,
+            "crossq": 14.592,
+            "cross": 38.144,
+            "crossout": 13.568,
+            "ffn1": 15.104,
+            "ffn2": 28.16,
+            "argmax": 1.28
+          },
+          "stage_median_fraction": {
+            "embed": 0.016058394160583942,
+            "output": 0.07591240875912408,
+            "qkv": 0.08613138686131387,
+            "self": 0.11094890510948906,
+            "out": 0.07883211678832118,
+            "crossq": 0.0832116788321168,
+            "cross": 0.21751824817518248,
+            "crossout": 0.07737226277372264,
+            "ffn1": 0.08613138686131387,
+            "ffn2": 0.16058394160583944,
+            "argmax": 0.007299270072992701
+          },
+          "programs": 64,
+          "cross_splits": 2,
+          "exact": true
+        }
+      }
+    },
+    "owsm_v4_base_102M_synthetic": {
+      "environment": {
+        "commit": "f8549000ca2336f64ddce6f59f1aeea38ca3682f",
+        "checkpoint_sha256": "4702713d44ab3e239101f09182903cd28f7b51e565bb632008af12beefb37752",
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0"
+        },
+        "nvidia_smi": "name, driver_version\nNVIDIA H200, 595.71.05",
+        "load_ms": 262.3222558759153,
+        "weight_prepare_ms": 120.20861310884356,
+        "ncu": false,
+        "scope": "real weights, synthetic fixed states; decoder-only timings exclude audio/encoder/prefill; not request latency",
+        "manifest_sha256": null,
+        "engine_sha256": {},
+        "default_ring": {
+          "programs": 12,
+          "solo": 64,
+          "rows": 24,
+          "warps": 4,
+          "chunk": 1
+        }
+      },
+      "cases": {
+        "plain_solo": {
+          "kernel_us": {
+            "reference": {
+              "n": 15,
+              "p50": 175.38560231526694,
+              "p95": 175.6488561630249,
+              "min": 175.08692741394043,
+              "max": 175.7429281870524,
+              "stdev": 0.17135871297784194
+            },
+            "instrumented": {
+              "n": 15,
+              "p50": 178.0245304107666,
+              "p95": 178.31445535024008,
+              "min": 177.80906359354654,
+              "max": 178.40107282002768,
+              "stdev": 0.15575632123491215
+            }
+          },
+          "stage_median_us": {
+            "embed": 3.072,
+            "output": 13.568,
+            "qkv": 15.104,
+            "self": 19.456,
+            "out": 13.824,
+            "crossq": 14.336,
+            "cross": 38.4,
+            "crossout": 13.312,
+            "ffn1": 15.104,
+            "ffn2": 27.648,
+            "argmax": 1.28
+          },
+          "stage_median_fraction": {
+            "embed": 0.01754385964912281,
+            "output": 0.07748538011695907,
+            "qkv": 0.08625730994152048,
+            "self": 0.11111111111111112,
+            "out": 0.07894736842105264,
+            "crossq": 0.08187134502923978,
+            "cross": 0.2192982456140351,
+            "crossout": 0.0760233918128655,
+            "ffn1": 0.08625730994152048,
+            "ffn2": 0.15789473684210528,
+            "argmax": 0.007309941520467837
+          },
+          "programs": 64,
+          "cross_splits": 2,
+          "exact": true
+        },
+        "verify8_solo": {
+          "kernel_us": {
+            "reference": {
+              "n": 15,
+              "p50": 182.60374069213867,
+              "p95": 182.92128086090088,
+              "min": 182.22932815551758,
+              "max": 182.99519220987955,
+              "stdev": 0.21404265832313443
+            },
+            "instrumented": {
+              "n": 15,
+              "p50": 184.70187187194824,
+              "p95": 185.1639461517334,
+              "min": 184.43946838378906,
+              "max": 185.20426750183105,
+              "stdev": 0.2466092062484624
+            }
+          },
+          "stage_median_us": {
+            "embed": 3.328,
+            "output": 15.104,
+            "qkv": 16.384,
+            "self": 19.2,
+            "out": 14.336,
+            "crossq": 15.104,
+            "cross": 37.632,
+            "crossout": 14.08,
+            "ffn1": 16.384,
+            "ffn2": 29.696,
+            "argmax": 1.536
+          },
+          "stage_median_fraction": {
+            "embed": 0.018207282913165267,
+            "output": 0.08263305322128851,
+            "qkv": 0.0896358543417367,
+            "self": 0.10504201680672269,
+            "out": 0.0784313725490196,
+            "crossq": 0.08263305322128851,
+            "cross": 0.20588235294117646,
+            "crossout": 0.07703081232492998,
+            "ffn1": 0.0896358543417367,
+            "ffn2": 0.16246498599439776,
+            "argmax": 0.008403361344537816
+          },
+          "programs": 64,
+          "cross_splits": 2,
+          "exact": true
+        },
+        "verify32_solo": {
+          "kernel_us": {
+            "reference": {
+              "n": 15,
+              "p50": 220.742400487264,
+              "p95": 221.09610875447592,
+              "min": 220.44480641682944,
+              "max": 221.1946646372477,
+              "stdev": 0.18113762483935728
+            },
+            "instrumented": {
+              "n": 15,
+              "p50": 223.58506520589194,
+              "p95": 223.95029385884604,
+              "min": 223.27574094136557,
+              "max": 224.00107383728027,
+              "stdev": 0.20432171649783523
+            }
+          },
+          "stage_median_us": {
+            "embed": 4.608,
+            "output": 21.248,
+            "qkv": 17.152,
+            "self": 25.088,
+            "out": 17.152,
+            "crossq": 16.896,
+            "cross": 50.944,
+            "crossout": 18.688,
+            "ffn1": 17.152,
+            "ffn2": 28.928,
+            "argmax": 2.56
+          },
+          "stage_median_fraction": {
+            "embed": 0.020905923344947733,
+            "output": 0.09639953542392568,
+            "qkv": 0.07781649245063879,
+            "self": 0.11382113821138212,
+            "out": 0.07781649245063879,
+            "crossq": 0.07665505226480837,
+            "cross": 0.23112659698025553,
+            "crossout": 0.08478513356562137,
+            "ffn1": 0.07781649245063879,
+            "ffn2": 0.13124274099883856,
+            "argmax": 0.011614401858304297
+          },
+          "programs": 64,
+          "cross_splits": 2,
+          "exact": true
+        }
+      }
+    },
+    "owsm_v4_medium_1B_real": {
+      "environment": {
+        "commit": "f8549000ca2336f64ddce6f59f1aeea38ca3682f",
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0"
+        },
+        "nvidia_smi": "name, driver_version\nNVIDIA H200, 595.71.05",
+        "load_ms": 8745.140529237688,
+        "weight_prepare_ms": null,
+        "ncu": false,
+        "scope": "real audio/prefill fixed states; decoder-only timings exclude audio/encoder/prefill; not request latency",
+        "manifest_sha256": "cfebebb8a262f7b45ed48dc360171a3ac226789f73527e7509f85092dc1dc599",
+        "engine_sha256": {
+          "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+          "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+          "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+        },
+        "default_ring": {
+          "programs": 32,
+          "solo": 64,
+          "rows": 64,
+          "warps": 4,
+          "chunk": 2
+        }
+      },
+      "cases": {
+        "plain_solo": {
+          "kernel_us": {
+            "reference": {
+              "n": 15,
+              "p50": 618.0096308390299,
+              "p95": 618.7415568033854,
+              "min": 616.8671925862631,
+              "max": 618.8863754272461,
+              "stdev": 0.5547021324726303
+            },
+            "instrumented": {
+              "n": 15,
+              "p50": 622.4138895670573,
+              "p95": 623.0498059590658,
+              "min": 621.3312149047852,
+              "max": 623.0527877807617,
+              "stdev": 0.5552949010069069
+            }
+          },
+          "stage_median_us": {
+            "embed": 3.328,
+            "output": 26.112,
+            "qkv": 71.68,
+            "self": 57.344,
+            "out": 53.248,
+            "crossq": 58.368,
+            "cross": 115.712,
+            "crossout": 53.248,
+            "ffn1": 74.24,
+            "ffn2": 106.752,
+            "argmax": 1.28
+          },
+          "stage_median_fraction": {
+            "embed": 0.005356407086938607,
+            "output": 0.04202719406674907,
+            "qkv": 0.11536876802637001,
+            "self": 0.092295014421096,
+            "out": 0.08570251339101771,
+            "crossq": 0.09394313967861558,
+            "cross": 0.1862381540997116,
+            "crossout": 0.08570251339101771,
+            "ffn1": 0.11948908117016892,
+            "ffn2": 0.17181705809641531,
+            "argmax": 0.0020601565718994645
+          },
+          "programs": 64,
+          "cross_splits": 2,
+          "exact": true
+        }
+      }
+    },
+    "owsm_v4_medium_1B_synthetic": {
+      "environment": {
+        "commit": "f8549000ca2336f64ddce6f59f1aeea38ca3682f",
+        "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+        "gpu": "NVIDIA H200",
+        "sm_count": 132,
+        "cuda": "13.0",
+        "versions": {
+          "torch": "2.14.1",
+          "triton": "3.8.0"
+        },
+        "nvidia_smi": "name, driver_version\nNVIDIA H200, 595.71.05",
+        "load_ms": 1792.1162913553417,
+        "weight_prepare_ms": 233.43119490891695,
+        "ncu": false,
+        "scope": "real weights, synthetic fixed states; decoder-only timings exclude audio/encoder/prefill; not request latency",
+        "manifest_sha256": null,
+        "engine_sha256": {},
+        "default_ring": {
+          "programs": 32,
+          "solo": 64,
+          "rows": 64,
+          "warps": 4,
+          "chunk": 2
+        }
+      },
+      "cases": {
+        "plain_solo": {
+          "kernel_us": {
+            "reference": {
+              "n": 15,
+              "p50": 620.5120086669922,
+              "p95": 621.0556793212891,
+              "min": 618.7221527099609,
+              "max": 621.2863922119141,
+              "stdev": 0.6593519692050541
+            },
+            "instrumented": {
+              "n": 15,
+              "p50": 626.0746637980143,
+              "p95": 626.3531875610352,
+              "min": 624.6815999348959,
+              "max": 626.3957341512045,
+              "stdev": 0.5783217964774742
+            }
+          },
+          "stage_median_us": {
+            "embed": 3.328,
+            "output": 26.368,
+            "qkv": 67.84,
+            "self": 58.88,
+            "out": 54.528,
+            "crossq": 59.648,
+            "cross": 116.48,
+            "crossout": 55.04,
+            "ffn1": 75.008,
+            "ffn2": 106.496,
+            "argmax": 1.536
+          },
+          "stage_median_fraction": {
+            "embed": 0.005323505323505323,
+            "output": 0.042178542178542174,
+            "qkv": 0.10851760851760851,
+            "self": 0.09418509418509419,
+            "out": 0.08722358722358721,
+            "crossq": 0.09541359541359541,
+            "cross": 0.1863226863226863,
+            "crossout": 0.08804258804258804,
+            "ffn1": 0.11998361998361996,
+            "ffn2": 0.17035217035217035,
+            "argmax": 0.002457002457002457
+          },
+          "programs": 64,
+          "cross_splits": 2,
+          "exact": true
+        },
+        "verify8_solo": {
+          "kernel_us": {
+            "reference": {
+              "n": 15,
+              "p50": 627.0890553792318,
+              "p95": 627.8941790262858,
+              "min": 626.472536722819,
+              "max": 628.1525293986002,
+              "stdev": 0.4911660636654956
+            },
+            "instrumented": {
+              "n": 15,
+              "p50": 629.8154830932617,
+              "p95": 631.0322316487631,
+              "min": 628.7754694620768,
+              "max": 631.1210632324219,
+              "stdev": 0.7681567862918459
+            }
+          },
+          "stage_median_us": {
+            "embed": 3.584,
+            "output": 27.392,
+            "qkv": 71.68,
+            "self": 57.856,
+            "out": 55.808,
+            "crossq": 59.136,
+            "cross": 112.384,
+            "crossout": 55.296,
+            "ffn1": 76.8,
+            "ffn2": 107.008,
+            "argmax": 1.536
+          },
+          "stage_median_fraction": {
+            "embed": 0.005702647657841141,
+            "output": 0.043584521384928715,
+            "qkv": 0.11405295315682282,
+            "self": 0.09205702647657842,
+            "out": 0.08879837067209775,
+            "crossq": 0.09409368635437881,
+            "cross": 0.17881873727087577,
+            "crossout": 0.08798370672097759,
+            "ffn1": 0.12219959266802444,
+            "ffn2": 0.17026476578411404,
+            "argmax": 0.0024439918533604886
+          },
+          "programs": 64,
+          "cross_splits": 2,
+          "exact": true
+        },
+        "verify32_solo": {
+          "kernel_us": {
+            "reference": {
+              "n": 15,
+              "p50": 713.3866628011068,
+              "p95": 714.1354497273763,
+              "min": 711.950937906901,
+              "max": 714.2101287841797,
+              "stdev": 0.7785297318940018
+            },
+            "instrumented": {
+              "n": 15,
+              "p50": 733.9712142944336,
+              "p95": 735.786018371582,
+              "min": 732.4127833048502,
+              "max": 735.8816146850586,
+              "stdev": 0.905054272011014
+            }
+          },
+          "stage_median_us": {
+            "embed": 4.608,
+            "output": 31.488,
+            "qkv": 73.984,
+            "self": 77.312,
+            "out": 64.0,
+            "crossq": 64.0,
+            "cross": 152.832,
+            "crossout": 66.304,
+            "ffn1": 80.64,
+            "ffn2": 110.848,
+            "argmax": 3.584
+          },
+          "stage_median_fraction": {
+            "embed": 0.0063157894736842095,
+            "output": 0.0431578947368421,
+            "qkv": 0.10140350877192982,
+            "self": 0.10596491228070175,
+            "out": 0.08771929824561403,
+            "crossq": 0.08771929824561403,
+            "cross": 0.2094736842105263,
+            "crossout": 0.09087719298245614,
+            "ffn1": 0.11052631578947368,
+            "ffn2": 0.1519298245614035,
+            "argmax": 0.004912280701754386
+          },
+          "programs": 64,
+          "cross_splits": 2,
+          "exact": true
+        }
+      }
+    }
+  },
+  "scheduler": {
+    "observed_at": "2026-10-27T12:21:13.155765+00:00",
+    "state": "R",
+    "project": "gai51740",
+    "queue": "R9920261300",
+    "resource": "rt_HG",
+    "nodes": 1,
+    "gpus": 1,
+    "requested_walltime": "01:00:00",
+    "walltime_used": "00:00:48"
+  },
+  "scope": "Fixedstate decoder-only diagnostics, all8TS/reference output/cache/pred exact. GPUevents include launchgaps; stageclockssums includeinstrumentation. Neither is requestlatency or predictedgain."
+}

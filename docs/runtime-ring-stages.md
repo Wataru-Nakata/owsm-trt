@@ -118,7 +118,23 @@ runs both1B and102M at their current64serial CTAs: one actual audio/first-prefil
 separate synthetic W1/8/32,15repetitions each. Every instrumented/uninstrumented logit/cache/pred
 must match. No model/kernel arithmetic or runtime routing changes in this profiling step.
 
-Results are pending. CUDA-event graph averages include launch gaps and are not request latency;
+Results follow below. CUDA-event graph averages include launch gaps and are not request latency;
 globaltimer stage sums include instrumentation and must not be subtracted as predicted speedups.
 The profile excludes feature/encoder/prefill and cannot establish corpus quality or later-step
 behavior. Its purpose is to select the next measured decoder bottleneck after the accepted schedule.
+
+Job2778412 (f854900) passed all8instrumented/reference output/cache/pred comparisons. Both models
+use64serial CTAs and NS2. Reference CUDA-event p50 averages in microseconds:
+
+| Model | Real first-prefill S1 | Synthetic S1 | Synthetic S8 | Synthetic S32 |
+|---|---:|---:|---:|---:|
+| 1B | 618.01 | 620.51 | 627.09 | 713.39 |
+| 102M | 177.77 | 175.39 | 182.60 | 220.74 |
+
+Cross-attention is the largest instrumented stage group:17.9–20.9% for1B and20.6–23.1%for102M.
+FFN2accounts for15.2–17.2%and13.1–16.2%, respectively. Medians are aggregated from15stage samples;
+these fractions include instrumentation and are not removable wall time. The next isolated N
+experiment holds CTA budgets fixed while changing single-row cross-attention splits2/4/8.
+The split count will remain identical within each variant for concurrent/solo calls, preserving
+schedule-independent arithmetic within that variant. Current defaults remainNS2 and quality/latency
+must be measured before any adoption. [Environment and attribution](runtime-ring-serial-stages-2778412.json).
