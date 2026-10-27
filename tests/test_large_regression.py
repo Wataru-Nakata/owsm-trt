@@ -27,6 +27,7 @@ from prepare_large_regression import (
     safe_key,
     write_shard,
 )
+from segment_metrics import invalid_segments
 from summarize_large_regression import summarize
 
 
@@ -89,6 +90,15 @@ def test_differences_include_timestamps_and_segments_not_just_text():
     assert repetition([1]*8)['max_identical_token_run']==8
     assert repetition([1,2,3,4]*3)['max_fourgram_count']==3
     assert repetition([])['max_fourgram_count']==0
+
+
+def test_segment_range_allows_rounding_at_existing_tolerance_but_rejects_real_errors():
+    assert 8.30 > 8.28 + .02  # The previous diagnostic incorrectly flagged this exact boundary.
+    assert invalid_segments([dict(start=0,end=8.30)],8.28)==0
+    assert invalid_segments([dict(start=0,end=8.300001)],8.28)==1
+    assert invalid_segments([dict(start=0,end=8.32)],8.28)==1
+    assert invalid_segments([dict(start=-.02,end=0),dict(start=1,end=.98),
+                             dict(start=float('nan'),end=1),dict(start=0,end=float('inf'))],8.28)==4
 
 
 def test_deterministic_selection_and_separate_long_form():
@@ -246,8 +256,9 @@ def test_summary_separates_nonspeech_and_excludes_unavailable_token_ids(tmp_path
     config_path = tmp_path/'config.json'
     config_path.write_text(json.dumps(config))
     digest = hashlib.sha256(config_path.read_bytes()).hexdigest()
-    value = dict(tokens=[1],timestamp_tokens=[],segments=[],text='word',token_ids_available=True,
-        empty_segments=0,invalid_segments=0,unpaired_timestamp=False,nonmonotonic_timestamps=False,
+    value = dict(tokens=[1],timestamp_tokens=[],segments=[dict(start=0,end=8.30)],
+        input_seconds=8.28,text='word',token_ids_available=True,
+        empty_segments=0,invalid_segments=1,unpaired_timestamp=False,nonmonotonic_timestamps=False,
         repetition=repetition([1]),quality=dict(metric='WER',errors=1,reference_units=10))
     probe = value|dict(quality=dict(metric='CER',errors=9,reference_units=0))
     joined = value|dict(tokens=[],token_ids_available=False,
@@ -273,6 +284,8 @@ def test_summary_separates_nonspeech_and_excludes_unavailable_token_ids(tmp_path
     assert total['quality']['candidate']['excluded_nonspeech_errors']==9
     assert total['flags']['candidate']['timestamp_token_records']==2
     assert total['flags']['candidate']['nonmonotonic_segment_boundaries']==1
+    assert total['flags']['candidate']['recorded_invalid_segments']==3
+    assert total['flags']['candidate']['invalid_segments']==0
     assert result['strata']['language:eng']['quality']['candidate']['rate']==.1
     assert result['strata']['dataset:stress']['quality']['candidate']['rate'] is None
     path.write_bytes(b'changed')

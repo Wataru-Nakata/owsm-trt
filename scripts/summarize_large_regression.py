@@ -9,6 +9,7 @@ from pathlib import Path
 
 from audit_large_regression import FIELDS, record_differences
 from prepare_large_regression import sha256
+from segment_metrics import invalid_segments
 
 
 def summarize(result_dir: Path) -> dict:
@@ -49,8 +50,11 @@ def summarize(result_dir: Path) -> dict:
                         total['agreement'][field]['equal'] += row['reference'][field]==row['candidate'][field]
                     for mode in ('reference','candidate'):
                         record = row[mode]
-                        for field in ('empty_segments','invalid_segments'):
-                            total['flags'][mode][field] += record[field]
+                        total['flags'][mode]['empty_segments'] += record['empty_segments']
+                        # Preserve raw historical flags while recomputing boundary-safe diagnostics.
+                        total['flags'][mode]['recorded_invalid_segments'] += record['invalid_segments']
+                        total['flags'][mode]['invalid_segments'] += invalid_segments(
+                            record['segments'],record['input_seconds'])
                         total['flags'][mode]['timestamp_token_records'] += record['token_ids_available']
                         if record['token_ids_available']:
                             for field in ('unpaired_timestamp','nonmonotonic_timestamps'):
@@ -85,6 +89,8 @@ def summarize(result_dir: Path) -> dict:
             quality['note'] = ('Speech-only WER or CER; generated nonspeech probes are excluded and counted separately. '
                                'Combined unlike units are not a single accuracy metric.')
     return dict(config=config,completed=len(seen),complete=complete,strata=dict(totals),
+        timestamp_diagnostics='Invalid segments recomputed from saved boundaries/input duration; '
+            '20ms endpoint allowance with 1ns floating-point tolerance. Original flags retained as recorded_invalid_segments.',
         timestamp_reference='unavailable; agreement/invalidity only, not boundary accuracy',
         repetition='heuristic diagnostics only; repeated text can be legitimate',
         timing='regression pass includes I/O, cold graphs and warm calls; no speedup claimed')

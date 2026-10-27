@@ -25,6 +25,7 @@ from pathlib import Path
 
 import torch
 from eval_wer import CER_LANGS, characters, edit_distance, normalize
+from segment_metrics import invalid_segments
 
 import owsm_trt.pipeline as pipeline
 from owsm_trt import OWSM, hub
@@ -160,8 +161,7 @@ def kernel_totals(path):
 def result_record(model, result, item, duration):
     times = [t for t in result.tokens if model.tokenizer.is_time(t)]
     segments = [asdict(s) for s in result.segments]
-    invalid = sum(s["end"] < s["start"] or s["start"] < 0 or s["end"] > duration + .02
-                  for s in segments)
+    invalid = invalid_segments(segments, duration)
     return {"id": item["id"], "input_seconds": duration, "tokens": result.tokens,
             "token_count": len(result.tokens), "timestamp_tokens": times, "timestamp_count": len(times),
             "text": result.text, "segments": segments, "segment_count": len(segments),

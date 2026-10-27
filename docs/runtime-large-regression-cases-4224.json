@@ -27,7 +27,11 @@
       "reasons": [
         "outside_input_or_invalid_segment"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 1,
+      "recomputed_reasons": [
+        "outside_input_or_invalid_segment"
+      ]
     },
     {
       "key": "jvs_nonpara90--jvs009-BASIC5000_2571",
@@ -53,7 +57,11 @@
       "reasons": [
         "outside_input_or_invalid_segment"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 1,
+      "recomputed_reasons": [
+        "outside_input_or_invalid_segment"
+      ]
     },
     {
       "key": "jvs_parallel10--jvs009-VOICEACTRESS100_095",
@@ -79,7 +87,11 @@
       "reasons": [
         "outside_input_or_invalid_segment"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 1,
+      "recomputed_reasons": [
+        "outside_input_or_invalid_segment"
+      ]
     },
     {
       "key": "stress--jpn-noise-30s-0p1",
@@ -110,7 +122,12 @@
         "text_generated_on_nonspeech_probe",
         "repeated_fourgram_indicator"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 0,
+      "recomputed_reasons": [
+        "text_generated_on_nonspeech_probe",
+        "repeated_fourgram_indicator"
+      ]
     },
     {
       "key": "stress--jpn-tone-1s",
@@ -137,7 +154,12 @@
         "outside_input_or_invalid_segment",
         "text_generated_on_nonspeech_probe"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 1,
+      "recomputed_reasons": [
+        "outside_input_or_invalid_segment",
+        "text_generated_on_nonspeech_probe"
+      ]
     },
     {
       "key": "stress--jpn-silence-2s",
@@ -164,7 +186,12 @@
         "outside_input_or_invalid_segment",
         "text_generated_on_nonspeech_probe"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 1,
+      "recomputed_reasons": [
+        "outside_input_or_invalid_segment",
+        "text_generated_on_nonspeech_probe"
+      ]
     },
     {
       "key": "stress--jpn-silence-10s",
@@ -191,7 +218,12 @@
         "outside_input_or_invalid_segment",
         "text_generated_on_nonspeech_probe"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 1,
+      "recomputed_reasons": [
+        "outside_input_or_invalid_segment",
+        "text_generated_on_nonspeech_probe"
+      ]
     },
     {
       "key": "stress--jpn-noise-2s-0p01",
@@ -217,7 +249,11 @@
       "reasons": [
         "text_generated_on_nonspeech_probe"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 0,
+      "recomputed_reasons": [
+        "text_generated_on_nonspeech_probe"
+      ]
     },
     {
       "key": "stress--jpn-silence-0p1s",
@@ -244,7 +280,12 @@
         "outside_input_or_invalid_segment",
         "text_generated_on_nonspeech_probe"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 1,
+      "recomputed_reasons": [
+        "outside_input_or_invalid_segment",
+        "text_generated_on_nonspeech_probe"
+      ]
     },
     {
       "key": "stress--jpn-noise-2s-0p1",
@@ -270,7 +311,11 @@
       "reasons": [
         "text_generated_on_nonspeech_probe"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 0,
+      "recomputed_reasons": [
+        "text_generated_on_nonspeech_probe"
+      ]
     },
     {
       "key": "stress--jpn-tone-30s",
@@ -296,7 +341,11 @@
       "reasons": [
         "text_generated_on_nonspeech_probe"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 0,
+      "recomputed_reasons": [
+        "text_generated_on_nonspeech_probe"
+      ]
     },
     {
       "key": "stress--jpn-silence-0p5s",
@@ -323,7 +372,12 @@
         "outside_input_or_invalid_segment",
         "text_generated_on_nonspeech_probe"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 1,
+      "recomputed_reasons": [
+        "outside_input_or_invalid_segment",
+        "text_generated_on_nonspeech_probe"
+      ]
     },
     {
       "key": "stress--jpn-silence-30s",
@@ -349,7 +403,11 @@
       "reasons": [
         "text_generated_on_nonspeech_probe"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 0,
+      "recomputed_reasons": [
+        "text_generated_on_nonspeech_probe"
+      ]
     },
     {
       "key": "stress--jpn-noise-10s-0p1",
@@ -375,7 +433,11 @@
       "reasons": [
         "text_generated_on_nonspeech_probe"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 0,
+      "recomputed_reasons": [
+        "text_generated_on_nonspeech_probe"
+      ]
     },
     {
       "key": "stress--jpn-noise-30s-0p01",
@@ -402,7 +464,12 @@
         "text_generated_on_nonspeech_probe",
         "repeated_fourgram_indicator"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 0,
+      "recomputed_reasons": [
+        "text_generated_on_nonspeech_probe",
+        "repeated_fourgram_indicator"
+      ]
     },
     {
       "key": "stress--jpn-tone-10s",
@@ -428,7 +495,11 @@
       "reasons": [
         "text_generated_on_nonspeech_probe"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 0,
+      "recomputed_reasons": [
+        "text_generated_on_nonspeech_probe"
+      ]
     },
     {
       "key": "stress--jpn-noise-10s-0p01",
@@ -454,7 +525,11 @@
       "reasons": [
         "text_generated_on_nonspeech_probe"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 0,
+      "recomputed_reasons": [
+        "text_generated_on_nonspeech_probe"
+      ]
     },
     {
       "key": "fleurs_en_validation--en_us-13870674013435125016",
@@ -480,7 +555,9 @@
       "reasons": [
         "outside_input_or_invalid_segment"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 0,
+      "recomputed_reasons": []
     },
     {
       "key": "fleurs_en_validation--en_us-6415341913845555034",
@@ -506,7 +583,9 @@
       "reasons": [
         "outside_input_or_invalid_segment"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 0,
+      "recomputed_reasons": []
     },
     {
       "key": "fleurs_en_validation--en_us-16685771406658302555",
@@ -532,7 +611,9 @@
       "reasons": [
         "outside_input_or_invalid_segment"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 0,
+      "recomputed_reasons": []
     },
     {
       "key": "fleurs_en_validation--en_us-15171241960492149561",
@@ -558,7 +639,9 @@
       "reasons": [
         "outside_input_or_invalid_segment"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 0,
+      "recomputed_reasons": []
     },
     {
       "key": "fleurs_en_validation--en_us-11030046932175288954",
@@ -584,7 +667,9 @@
       "reasons": [
         "outside_input_or_invalid_segment"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 0,
+      "recomputed_reasons": []
     },
     {
       "key": "fleurs_en_validation--en_us-10098964113747380446",
@@ -610,7 +695,9 @@
       "reasons": [
         "outside_input_or_invalid_segment"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 0,
+      "recomputed_reasons": []
     },
     {
       "key": "fleurs_en_validation--en_us-1298409023920250606",
@@ -636,7 +723,9 @@
       "reasons": [
         "outside_input_or_invalid_segment"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 0,
+      "recomputed_reasons": []
     },
     {
       "key": "fleurs_en_validation--en_us-12554742849849029631",
@@ -662,7 +751,9 @@
       "reasons": [
         "outside_input_or_invalid_segment"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 0,
+      "recomputed_reasons": []
     },
     {
       "key": "fleurs_en_validation--en_us-2699451722157462043",
@@ -688,7 +779,9 @@
       "reasons": [
         "outside_input_or_invalid_segment"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 0,
+      "recomputed_reasons": []
     },
     {
       "key": "fleurs_en_validation--en_us-6538398155791771629",
@@ -714,7 +807,9 @@
       "reasons": [
         "outside_input_or_invalid_segment"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 0,
+      "recomputed_reasons": []
     },
     {
       "key": "fleurs_en_validation--en_us-1169013790597959793",
@@ -740,7 +835,9 @@
       "reasons": [
         "outside_input_or_invalid_segment"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 0,
+      "recomputed_reasons": []
     },
     {
       "key": "fleurs_en_validation--en_us-15654985879045201103",
@@ -766,7 +863,9 @@
       "reasons": [
         "outside_input_or_invalid_segment"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 0,
+      "recomputed_reasons": []
     },
     {
       "key": "fleurs_en_validation--en_us-3907900566906015878",
@@ -792,8 +891,34 @@
       "reasons": [
         "outside_input_or_invalid_segment"
       ],
-      "output_differences": []
+      "output_differences": [],
+      "recomputed_invalid_segments": 0,
+      "recomputed_reasons": []
     }
   ],
-  "scope": "Same flags on both variants; these are existing output/data-quality diagnostics, not optimization regressions or human-annotated timing errors. Nonspeech probes have no speech; repetition thresholds are heuristic. The three subsecond JVS cases have the same file sizes as original ZIP members; transcript/audio correspondence is not verified."
+  "scope": "Same flags on both variants; these are existing output/data-quality diagnostics, not optimization regressions or human-annotated timing errors. Nonspeech probes have no speech; repetition thresholds are heuristic. The three subsecond JVS cases have the same file sizes as original ZIP members; transcript/audio correspondence is not verified.",
+  "diagnostic_revision": {
+    "previous_flagged_inputs": 30,
+    "recomputed_flagged_inputs": 17,
+    "recorded_invalid_inputs": 21,
+    "recomputed_invalid_inputs": 8,
+    "rounding_only_inputs": [
+      "fleurs_en_validation--en_us-13870674013435125016",
+      "fleurs_en_validation--en_us-6415341913845555034",
+      "fleurs_en_validation--en_us-16685771406658302555",
+      "fleurs_en_validation--en_us-15171241960492149561",
+      "fleurs_en_validation--en_us-11030046932175288954",
+      "fleurs_en_validation--en_us-10098964113747380446",
+      "fleurs_en_validation--en_us-1298409023920250606",
+      "fleurs_en_validation--en_us-12554742849849029631",
+      "fleurs_en_validation--en_us-2699451722157462043",
+      "fleurs_en_validation--en_us-6538398155791771629",
+      "fleurs_en_validation--en_us-1169013790597959793",
+      "fleurs_en_validation--en_us-15654985879045201103",
+      "fleurs_en_validation--en_us-3907900566906015878"
+    ],
+    "endpoint_allowance_seconds": 0.02,
+    "floating_tolerance_seconds": 1e-09,
+    "note": "Original flags/reasons are preserved. Thirteen endpoint flags were floating-point false positives at the existing20ms allowance. Recomputed flags do not change generated outputs, quality errors or reference/candidate agreement."
+  }
 }

@@ -21,10 +21,14 @@ fresh query showed193 GPUs. Strict resume validation now covers4,224 outputs in3
 returned tokens/timestamps/segments/text equal, leaving9,008 inputs pending. Neither stopped job
 establishes full-corpus acceptance or a new latency result.
 
-The [4,224-input diagnostic catalogue](runtime-large-regression-cases-4224.json) retains30 distinct
-flagged inputs, identically flagged on both variants: all14 Japanese nonspeech probes generated
-text,21 inputs had out-of-range/invalid segment times, and2 had repeated-fourgram indicators
-(these groups overlap). Three JVS flags involve0.587–0.611second recordings with17–43 character
+The [4,224-input diagnostic catalogue](runtime-large-regression-cases-4224.json) retains30 originally
+flagged inputs, identically flagged on both variants. Rechecking the saved boundaries found13 false
+positives at the existing20ms endpoint allowance: binary rounding makes `8.30 > 8.28 + .02` true.
+The shared diagnostic now tolerates1ns at that boundary and rejects nonfinite segment times.
+Original flags remain recorded; corrected diagnostics leave17 distinct inputs: all14 Japanese
+nonspeech probes generated text,8 inputs had out-of-range/invalid segment times, and2 had
+repeated-fourgram indicators (these groups overlap). Generation, CER/WER and output agreement are
+unchanged. Three JVS flags involve0.587–0.611second recordings with17–43 character
 references. Their sizes agree with the original ZIP members, but audio/transcript correspondence
 has not been reviewed. They remain in the audit; no difficult cases were removed to improve scores.
 The nonspeech cases are excluded from speech CER/WER and counted separately. These are baseline
@@ -117,6 +121,8 @@ probes retain insertion/empty-output diagnostics but are excluded from speech WE
 counts never receive a combined error rate.
 Segment boundary order/overlap is checked even for long-form outputs. Token-level timestamp flags
 report their available-record count; missing long-form token IDs are not evidence of valid token timing.
+Summaries recompute invalid segment counts from saved boundaries/durations with the corrected
+floating-point comparison; `recorded_invalid_segments` retains the original per-run diagnostic.
 
 The preceding small public-split repeat2778800 was explicitly stopped when a fresh account query
 reported198 GPUs. PBS exit271 and partial publication are recorded in
