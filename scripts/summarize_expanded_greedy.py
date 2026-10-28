@@ -77,6 +77,40 @@ def output_agreement(tokens: dict, ids: list[str], exact: bool) -> dict:
     return result
 
 
+def beam_diagnostics(observed: dict, case: str, variant: str) -> dict:
+    """Validate the H200/1B K5 preset's effective routes, including the final B2 batch."""
+    single=case=='beam_single_ts'
+    assert case in ('beam_single_ts','beam_stream_ts_b3')
+    assert variant in ('reference','candidate')
+    batches=observed['plain_batches']
+    sizes=[1]*32 if single else [3]*10+[2]
+    assert [len(b['output_lengths']) for b in batches]==sizes,'unexpected beam batch grouping'
+    assert all(b['beam'] and b['rows']==5*size and isinstance(b['decoder_calls'],int)
+               and b['decoder_calls']>=0 for b,size in zip(batches,sizes))
+    sessions=observed['sessions']
+    assert set(sessions)=={f'({size}, 5)' for size in sizes},'missing beam session'
+    candidate=variant=='candidate'
+    for size in set(sizes):
+        session=sessions[f'({size}, 5)']
+        tail=candidate and not single
+        assert session['fused_lse']==candidate and session['compact_tail']==tail
+        assert session['chunk']==(1 if single else 4)
+        route='megakernel-gluon' if single or candidate else 'tensorrt'
+        expected={str(bucket) for bucket in (64,128,256,512)}
+        if tail:
+            expected.update(f'tail/group={group}/cache={bucket}'
+                            for group in range(size) for bucket in (64,128,256,512))
+        assert set(session['dispatch'])==expected,'incomplete beam/tail dispatch'
+        for info in session['dispatch'].values():
+            assert info['implementation']==route,'unexpected decoder fallback'
+            assert info['fallback_reason']==('shape limit' if route=='tensorrt' else None)
+        transition=session['last_request_tail_start']
+        if transition is not None:
+            assert tail and len(transition)==2 and 0<=transition[0]<size and transition[1]>=0
+    return dict(decoder_calls=sum(b['decoder_calls'] for b in batches),prefill_selections=len(batches),
+                batches=batches,sessions=sessions,scope=observed['scope'])
+
+
 def summarize(raw: Path) -> dict:
     profile=raw/'profile'
     assert (raw/'exit_status.txt').read_text().strip()=='0'
@@ -150,13 +184,7 @@ def summarize(raw: Path) -> dict:
             value['beam_decoder_diagnostics']={}
             for variant in ('reference','candidate'):
                 observed=json.loads((folder/f'actual_dispatch_{variant}.json').read_text())
-                batches=observed['plain_batches']
-                assert sum(len(b['output_lengths']) for b in batches)==32
-                assert all(b['beam'] and b['rows']==5*len(b['output_lengths'])
-                           and b['decoder_calls']>=0 for b in batches)
-                value['beam_decoder_diagnostics'][variant]=dict(
-                    decoder_calls=sum(b['decoder_calls'] for b in batches),prefill_selections=len(batches),
-                    batches=batches,sessions=observed['sessions'],scope=observed['scope'])
+                value['beam_decoder_diagnostics'][variant]=beam_diagnostics(observed,case,variant)
         result[name]=value
     with (raw/'gpu_utilization.csv').open() as stream:
         telemetry=[{k.strip():v.strip() for k,v in row.items()} for row in csv.DictReader(stream)]

@@ -3,7 +3,7 @@
 import json
 
 import pytest
-from summarize_expanded_greedy import aggregate, output_agreement, summarize
+from summarize_expanded_greedy import aggregate, beam_diagnostics, output_agreement, summarize
 
 
 def samples(streaming=False):
@@ -58,3 +58,49 @@ def test_instrumented_job_cannot_be_reported_as_warm_latency(tmp_path):
         (tmp_path/name).write_text(json.dumps(value))
     with pytest.raises(AssertionError,match='instrumented host diagnostics'):
         summarize(tmp_path)
+
+
+def beam_records(single, candidate):
+    sizes=[1]*32 if single else [3]*10+[2]
+    sessions={}
+    for size in set(sizes):
+        tail=candidate and not single
+        gluon=single or candidate
+        keys=[str(bucket) for bucket in (64,128,256,512)]
+        if tail:
+            keys.extend(f'tail/group={group}/cache={bucket}'
+                        for group in range(size) for bucket in (64,128,256,512))
+        sessions[f'({size}, 5)']=dict(
+            dispatch={key:dict(implementation='megakernel-gluon' if gluon else 'tensorrt',
+                               fallback_reason=None if gluon else 'shape limit') for key in keys},
+            fused_lse=candidate,compact_tail=tail,chunk=1 if single else 4,last_request_tail_start=None)
+    return dict(plain_batches=[dict(beam=True,rows=5*size,decoder_calls=4,output_lengths=[2]*size)
+                               for size in sizes],sessions=sessions,scope='separate diagnostic pass')
+
+
+@pytest.mark.parametrize('single',[True,False])
+@pytest.mark.parametrize('candidate',[True,False])
+def test_beam_replays_exclude_prefill_and_validate_partial_batch(single,candidate):
+    result=beam_diagnostics(beam_records(single,candidate),
+        'beam_single_ts' if single else 'beam_stream_ts_b3','candidate' if candidate else 'reference')
+    assert result['prefill_selections']==(32 if single else 11)
+    assert result['decoder_calls']==4*result['prefill_selections']
+
+
+@pytest.mark.parametrize('corruption',['route','missing_tail','missing_b2','tail_on_b1','fractional_calls'])
+def test_beam_summary_rejects_wrong_effective_routes_or_counts(corruption):
+    single=corruption=='tail_on_b1'
+    observed=beam_records(single,True)
+    session=observed['sessions']['(1, 5)' if single else '(3, 5)']
+    if corruption=='route':
+        session['dispatch']['64']['implementation']='tensorrt'
+    elif corruption=='missing_tail':
+        del session['dispatch']['tail/group=2/cache=512']
+    elif corruption=='missing_b2':
+        del observed['sessions']['(2, 5)']
+    elif corruption=='tail_on_b1':
+        session['compact_tail']=True
+    else:
+        observed['plain_batches'][0]['decoder_calls']=4.5
+    with pytest.raises(AssertionError):
+        beam_diagnostics(observed,'beam_single_ts' if single else 'beam_stream_ts_b3','candidate')
