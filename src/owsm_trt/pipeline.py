@@ -326,8 +326,9 @@ class OWSM:
         differ. The default remains ``auto``. See docs/runtime-ring-cross-splits.md for validation.
 
         ``ctc_draft``: for greedy ASR, let the encoder's CTC head propose the transcript and check up
-        to 31 proposed tokens per utterance and decoder call. The output is the greedy output; only the
-        number of decoder calls changes.
+        to 31 proposed tokens per utterance and decoder call. Verification follows greedy choices,
+        but fp16 verification/batch shapes can change numerical choices and generated tokens.
+        See docs/runtime-large-regression.md for measured plain/drafted and batch differences.
 
         ``frontend_graph``: reuse CUDA graphs for single-utterance STFT/mel/normalization (default
         True with ``use_cuda_graph``). A bounded 32-shape cache retains private graph buffers; each
