@@ -521,4 +521,5 @@ inputs remain unchanged. Reference captures20 shapes with30.12MiB input/output b
 captures32 with396.25MiB and123 capacity fallbacks. The same memory/feature/timestamp limitations
 apply. These are the same13,232 corpus inputs evaluated on a second model, not additional independent
 audio. Immutable source and logs are under `outputs/runtime-large-audit-1b-frontend-submit-01` and
-`outputs/runtime-2786953`; separate1B repeated timing is underway.
+`outputs/runtime-2786953`; the [separate repeated timing](runtime-expanded-greedy.md) finds small
+mixed1B gains, so the default remains1.

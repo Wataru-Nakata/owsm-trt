@@ -175,6 +175,31 @@ source. Raw timings/cold/cache/output/dispatch data and the previous-output cont
 `outputs/runtime-2786935/`. The default remains1 for the memory/performance tradeoff and mixed
 earlier1B measurements; the larger1B frontend audit is separate.
 
+## Frontend batch graph comparison / 1B
+
+[Job2787087](runtime-expanded-frontend-2787087.json), same frozen7ac9f15 and224 input/groups,
+completed PBS/publication exit0. All outputs and draft-call counts match, and all224 reference
+outputs match the prior1B public-ON run2786368. Full-corpus parity also passes13,232 inputs
+([audit](runtime-large-regression-2786953.json)). These are separate checks, not additional unique audio.
+
+| Language | RTFx change | Request p50 ms limit1 →8 | Request p95 ms limit1 →8 | Positive pairs |
+|---|---:|---:|---:|---:|
+| German |−0.37%|121.666 →121.715|123.529 →122.633|2/7|
+| English |+0.53%|127.936 →127.454|129.448 →128.651|6/7|
+| French |+0.81%|136.882 →135.716|138.358 →137.352|5/7|
+| Japanese |+0.77%|111.668 →110.280|112.023 →111.581|4/7|
+| Russian |+1.07%|166.077 →164.144|167.274 →165.617|6/7|
+| Spanish |+1.19%|135.464 →134.804|138.113 →135.880|6/7|
+| Chinese |+1.11%|133.779 →132.943|134.445 →133.698|4/7|
+
+Every language has at least one slower paired repeat; German pooled throughput and p50 regress.
+All p95 values decrease in this seven-repeat sample, but the small mixed gains do not justify a
+default change. Model load is8.085seconds. As for102M, candidate caches have four B8 shapes per
+language without saturation; cold setup, audio loading and shared-pool memory remain separate.
+Keep limit1 by default and limit8 as an explicit memory/performance choice. Raw evidence and
+previous-output control are in `outputs/runtime-2787087/`; the immutable source is
+`outputs/runtime-expanded-frontend-1b-submit-01`.
+
 ## Prepared budget tail diagnosis
 
 `--host-diagnostics` records GC overlap, process CPU time, faults and context switches through the
