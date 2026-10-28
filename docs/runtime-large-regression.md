@@ -524,12 +524,57 @@ audio. Immutable source and logs are under `outputs/runtime-large-audit-1b-front
 `outputs/runtime-2786953`; the [separate repeated timing](runtime-expanded-greedy.md) finds small
 mixed1B gains, so the default remains1.
 
-### Prepared public beam preset audit
+### Public beam preset audit / 1B B3
 
 `--mode beam_preset --case beam_b3` (also B1) compares the existing opt-in grouped cross attention,
 compact tail and fused LSE together against the optimized default. Upper-bound stopping and search
 kernels stay ON in both. It uses separate public pipeline/session state with the same engine/checkpoint,
 requires H200132SM/1B, records effective search/decoder/tail routes, and fails on grouped-backend
 errors. All generated N differences remain visible; no new search rule, kernel or default is added.
-Eight focused metadata/configuration/resume checks pass. Prior small measurements showed throughput
-gains and timestamp/silence differences;13,232-input coverage is pending, with no new quality claim.
+Eight focused metadata/configuration/resume checks pass. This is a combined public preset audit;
+it does not isolate the three components' effects.
+
+[Job2787145](runtime-large-regression-2787145.json), frozen dc17623, completes13,232 inputs/104 chunks
+with PBS/publication exit0. The optimized-default reference matches all earlier B3 candidate outputs
+from2781006 on every available field, with identical grouping/order/checkpoint/engines. The runtime
+source differs only in API docstrings (all other files byte-identical, pipeline AST equal after
+docstring removal). Effective B2/B3 routes are TRT/reference and Gluon/candidate; candidate fused LSE,
+shared cross-KV and tail compaction are enabled with the same four-step host check interval.
+These are bound/configured routes, not invocation counts.
+
+The preset changes238 inputs, including two long-form outputs without token IDs. Full tokens match
+12,955/13,191, timestamp sequences13,133/13,191, text13,054/13,232 and segments13,002/13,232.
+Speech-only edit counts, with original reference denominators:
+
+| Language | Metric | Default → preset edits | Reference units | Delta |
+|---|---|---:|---:|---:|
+| Japanese |CER|8638 →8632|111347|−6|
+| English |WER|4179 →4170|111768|−9|
+| German |WER|1286 →1292|18706|+6|
+| French |WER|769 →770|6759|+1|
+| Russian |WER|514 →509|6501|−5|
+| Spanish |WER|1130 →1128|23314|−2|
+| Chinese |CER|4447 →4448|35649|+1|
+
+The largest absolute individual speech edit change is4 units, in either direction. No global quality
+improvement follows from these mixed changes. Among13,053 outputs with comparable text/ordered
+segment labels/count,55 boundaries move;179 incompatible outputs are excluded. All nonzero boundaries
+have median20ms, p95/max740ms. The three740ms moves are English silence probes (2/10/30seconds);
+the52 speech boundaries have median20ms, p95 100ms and maximum120ms. These are displacements
+between generated outputs, not annotation-based timestamp errors.
+
+Invalid/out-of-range segment counts rise81→83, adding two English input flags:
+`librispeech_test_clean--260-123288-0015` (21.185seconds; end21.18→21.22) and
+`librispeech_test_clean--121-127105-0032` (3.17seconds; start0.04→0.06, end3.18→3.24).
+The existing20ms endpoint allowance and numerical tolerance are unchanged. Empty-segment count1,
+unpaired-timestamp count1 and repeated-fourgram count6 remain; no nonmonotonicity is added.
+The previously diagnosed Chinese conditioning-batch corner
+`fleurs_zh_test--cmn_hans_cn-11229861275679868227` still reaches374 tokens and214/53 character edits
+in both routes (some tokens/text differ); the faster decoder preset does not resolve its repetition.
+
+Keep all options opt-in. No latency conclusion is drawn from the one-pass allocation. Full changed
+outputs, per-language quality, largest edit/time differences and source controls are in the artifact;
+raw chunks and validator are in `outputs/runtime-large-audit/`, PBS/logs in `outputs/runtime-2787145`.
+After this job was already finished, the account reached200 allocated GPUs; a fresh parent check
+found192. No own job remained to cancel and no new job was submitted. The separate expanded timing
+is prepared and waits for a safe slot under the192-GPU cap.
