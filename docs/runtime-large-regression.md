@@ -5,7 +5,7 @@ coverage of uncommon inputs. Large output regressions are now a separate accepta
 small, repeated latency benchmark. The1B/beam5/timestamp/B1 and B3 upper-bound OFF/ON audits each completed with
 zero output differences across13,232 inputs. The search-kernel OFF/ON audits also completed at B1 and B3,
 and the102M plain timestamp serial64-versus24 audit passes the same13,232 inputs;
-the102M drafted timestamp public greedy-kernel switch also passes all13,232 inputs.
+the102M drafted timestamp public greedy-kernel switch also passes all13,232 inputs at B1 and bulk B8.
 Other large-corpus ablations and timing remain pending.
 
 Completed ordinary/stress-corpus E checks are listed below. Each row uses the same checkpoint and
@@ -20,11 +20,12 @@ corpus; their counts must not be added to claim more independent evaluation inpu
 |1B beam5 B3|Combined search-kernel switch OFF / ON|13,232|13,191|[2781006](runtime-large-regression-2781006.json)|
 |102M plain greedy B1|Serial Ring24 /64 CTAs|13,232|13,191|[2781184](runtime-large-regression-2781184.json)|
 |102M CTC-drafted greedy B1|Public greedy-kernel switch OFF / ON|13,232|13,191|[2785506](runtime-large-regression-2785506.json)|
+|102M CTC-drafted greedy bulk B8|Public greedy-kernel switch OFF / ON|13,232|13,191|[2786149](runtime-large-regression-2786149.json)|
 
 All rows enable timestamps. Beam upper-bound comparisons keep search kernels ON; search-kernel
 comparisons keep the upper bound ON. These are separate ablations, not whole-version parity.
 Each ordinary audit contains41 longer-than-window inputs with no joined token IDs. Prompt, other drafted,
-translation and bulk/refill configurations must be evaluated independently. The separate87-chapter
+translation and other bulk/refill configurations must be evaluated independently. The separate87-chapter
 combined beam comparison also passes, as described below; its inputs reuse test-clean speech.
 
 Job2780055 prepared the corpus. Its
@@ -261,10 +262,19 @@ This grouping change has small fixture coverage and the complete B3 result above
 continuation stayed frozen at8151703.
 Each call in this audit handles one such group. Large multi-batch request behavior, row refill,
 encoder lookahead and file-prefetch coverage require separate cases; this audit does not establish them.
-The prepared `greedy_kernels/draft_bulk` case sends up to64 same-language, same-API inputs per call
+The `greedy_kernels/draft_bulk` case sends up to64 same-language, same-API inputs per call
 with requested batch8, so ordinary groups larger than8 exercise streaming/refill. Longer-than-window
 inputs keep long-form semantics and their unavailable token IDs. Full input-group keys and requested
-batch size are recorded. Its GPU validation is pending; the B1 result does not establish bulk parity.
+batch size are recorded. The [102M result2786149](runtime-large-regression-2786149.json), frozen3976d7f,
+passes all104 chunks and13,232 text/segment pairs plus13,191 available token/timestamp pairs
+(PBS F/exit0 and publication exit0). The293 requests include237 ordinary requests larger than8,
+covering13,135 inputs;173 requests contain64 inputs. Group membership, language/API consistency and
+batch8 bound verification functions are validated. Metadata records already bound verification
+functions without creating lazy graphs: batch8 uses TensorRT fallbacks for unsupported row/window
+shapes, while bound batch1 functions include Ring. These are configured/captured routes, not execution
+counts. Both variants retain51 diagnostic inputs, including21 invalid/out-of-range segments and16
+unpaired timestamp sequences. This validates the combined public switch within bulk requests;
+it does not establish B1/B8 numerical identity, per-flag execution, file-prefetch coverage or a speed gain.
 
 Additional ablations include `beam_kernels` (upper bound ON in both, search/state/cache kernels OFF/ON)
 and `beam_combined` (upper bound and beam kernels both OFF/ON), to cover bugs shared by both sides
@@ -335,7 +345,7 @@ tokens with276 consecutive identical tokens, repeated punctuation and no complet
 The9.66second Chinese input `fleurs_zh_test--cmn_hans_cn-9699581877784184472` repeats a digit token11
 times while retaining a valid segment (26/36 character edits). Both schedules produce the same results;
 the saved chunk/input IDs and diagnostics retain these cases for future quality work.
-Large translation,102M87-chapter and bulk/refill coverage is still pending; the completed plain audit
+Large translation and102M87-chapter coverage is still pending; the completed plain audit
 must not be extended to those paths by inference. The separate drafted B1 result is described above.
 
 `audit_large_regression.py` stores both complete outputs, timestamp IDs, segments, text, WER/CER

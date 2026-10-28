@@ -251,7 +251,7 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   26.6–27.1%, with exact tokens/segments (12 inputs per condition,11 alternating repeats,
   versus the previously optimized path). Drafted/beam paths have no corresponding speedup claim.
   [Plain selection measurements and cold costs](docs/runtime-plain-selection.md).
-  The expanded seven-language102M drafted timestamp B1 audit also matches13,232 text/segment
+  The expanded seven-language102M drafted timestamp B1 and bulk B8 audits each match13,232 text/segment
   pairs and13,191 available token/timestamp pairs for the public switch OFF/ON. A separate comparison
   of plain versus CTC-drafted execution differs on63 inputs as decode/verification shapes change;
   this does not establish bitwise identity between those two paths or a new speed gain.
