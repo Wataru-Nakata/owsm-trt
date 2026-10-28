@@ -396,6 +396,14 @@ quality separately by language, dataset and duration. Long-form returns joined t
 empty joined token lists do not count toward token agreement. Repetition indicators are heuristics,
 not ground-truth errors. Inputs longer than a model window use long-form, avoiding reference text
 being compared to an intentionally trimmed30-second input.
+`profile_expanded_greedy.py` prepares a separate repeated timing comparison for the public greedy
+switch:32 speech inputs per language (224 total), deterministically balanced across dataset/duration
+strata, excluding earlier screening overlap, nonspeech and inputs outside one window. It reuses
+`profile_runtime.run_case` for alternating warm single-request and batch8 streaming wall measurements,
+full output checks, separate cold/capture metadata and an untimed dispatch-count pass. Loading and
+resampling happen before timed calls; both variant pools are resident. The default seven repeats
+measure the same inputs repeatedly, not independent speech samples. Its three lightweight sampling
+fixtures pass; GPU timing is pending and the balanced sample is not a corpus-weighted speed estimate.
 The summary verifies published chunk hashes and recomputes output differences. Generated nonspeech
 probes retain insertion/empty-output diagnostics but are excluded from speech WER/CER. Mixed WER/CER
 counts never receive a combined error rate.
