@@ -416,7 +416,8 @@ strata, excluding earlier screening overlap, nonspeech and inputs outside one wi
 full output checks, separate cold/capture metadata and an untimed dispatch-count pass. Loading and
 resampling happen before timed calls; both variant pools are resident. The default seven repeats
 measure the same inputs repeatedly, not independent speech samples. Its three lightweight sampling
-fixtures pass; GPU timing is pending and the balanced sample is not a corpus-weighted speed estimate.
+fixtures pass. The [1B and102M timing runs](runtime-expanded-greedy.md) are complete.
+The balanced sample is not a corpus-weighted speed estimate.
 `summarize_expanded_greedy.py RAW_JOB_DIR --out RESULT.json` checks the final PBS/publication status,
 all224 selected IDs,14 conditions, seven paired repeats, full output agreement and request membership
 before aggregating timing. It retains per-request p50/p95/spread, repeat totals and paired RTFx changes,

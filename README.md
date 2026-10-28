@@ -257,6 +257,12 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   drafted B1 versus bulk B8 differs on125 inputs for1B and748 for102M as grouping, batch shapes and dispatch change.
   These comparisons do not establish bitwise identity across paths/batches or a new speed gain.
   [Large regression results and retained corner cases](docs/runtime-large-regression.md).
+  A separate H200/1B seven-language,224-input timing run measures the combined public switch:
+  drafted timestamp B1 RTFx improves6.1–6.9%, with all seven paired repeats positive per language
+  and exact outputs/call counts. Bulk B8 changes are smaller (+0.2–1.5%) and mixed across repeats.
+  The matching102M run gains15.0–17.5% at B1 and6.9–8.7% at bulk B8; all paired repeat totals
+  improve, with exact outputs/call counts. These are combined-switch gains, not additional stacked gains.
+  [Expanded timing, p50/p95 and limitations](docs/runtime-expanded-greedy.md).
 * **Completed plain decoder calls.** With `greedy_kernels=True`, single-row Ring calls skip decoder
   computation after EOS while keeping the existing host-check interval and graph replay count.
   H200/1B and102M English/Japanese B1 throughput improved1.0–5.6% across12 tested conditions,
