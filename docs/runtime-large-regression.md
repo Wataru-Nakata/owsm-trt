@@ -485,7 +485,7 @@ The proposed frontend direct-input retry was withdrawn before submission: earlie
 already tested the same basic idea without a broad gain. Its temporary runtime prototypefc02d74
 was reverted in4f6041e. Expanded coverage takes priority over repeating that small screening test.
 
-### Frontend batch graph audit / 102M
+### Frontend batch graph audit / 102M and1B
 
 `--mode frontend_batches --case draft_bulk` compares the existing public
 `frontend_graph_max_batch=1/8` switch with greedy optimizations ON and budget256 in both variants.
@@ -513,3 +513,12 @@ of the tested behavior, not a decode failure. The default remains1; separate war
 Reproduce with `scripts/audit_large_regression.pbs` and the immutable source in
 `outputs/runtime-large-audit-102m-frontend-submit-01`. Complete raw outputs and the chunk validator
 are under `outputs/runtime-large-audit/`; final PBS evidence is in `outputs/runtime-2786900/`.
+
+The [1B extension2786953](runtime-large-regression-2786953.json) uses the same e9a465f source and
+13,232 input set/grouping. PBS/publication exit0,104 chunks and all available output pairs pass;
+the reference exactly matches the earlier1B public-ON bulk candidate. All106 baseline diagnostic
+inputs remain unchanged. Reference captures20 shapes with30.12MiB input/output buffers; candidate
+captures32 with396.25MiB and123 capacity fallbacks. The same memory/feature/timestamp limitations
+apply. These are the same13,232 corpus inputs evaluated on a second model, not additional independent
+audio. Immutable source and logs are under `outputs/runtime-large-audit-1b-frontend-submit-01` and
+`outputs/runtime-2786953`; separate1B repeated timing is underway.
