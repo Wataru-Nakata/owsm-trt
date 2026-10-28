@@ -251,6 +251,11 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   26.6–27.1%, with exact tokens/segments (12 inputs per condition,11 alternating repeats,
   versus the previously optimized path). Drafted/beam paths have no corresponding speedup claim.
   [Plain selection measurements and cold costs](docs/runtime-plain-selection.md).
+  The expanded seven-language102M drafted timestamp B1 audit also matches13,232 text/segment
+  pairs and13,191 available token/timestamp pairs for the public switch OFF/ON. A separate comparison
+  of plain versus CTC-drafted execution differs on63 inputs as decode/verification shapes change;
+  this does not establish bitwise identity between those two paths or a new speed gain.
+  [Large regression results and retained corner cases](docs/runtime-large-regression.md).
 * **Completed plain decoder calls.** With `greedy_kernels=True`, single-row Ring calls skip decoder
   computation after EOS while keeping the existing host-check interval and graph replay count.
   H200/1B and102M English/Japanese B1 throughput improved1.0–5.6% across12 tested conditions,

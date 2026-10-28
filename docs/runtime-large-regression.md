@@ -5,7 +5,8 @@ coverage of uncommon inputs. Large output regressions are now a separate accepta
 small, repeated latency benchmark. The1B/beam5/timestamp/B1 and B3 upper-bound OFF/ON audits each completed with
 zero output differences across13,232 inputs. The search-kernel OFF/ON audits also completed at B1 and B3,
 and the102M plain timestamp serial64-versus24 audit passes the same13,232 inputs;
-other large-corpus ablations and timing remain pending.
+the102M drafted timestamp public greedy-kernel switch also passes all13,232 inputs.
+Other large-corpus ablations and timing remain pending.
 
 Completed ordinary/stress-corpus E checks are listed below. Each row uses the same checkpoint and
 engines within that comparison, and all available output fields match. The rows reuse the same
@@ -18,11 +19,12 @@ corpus; their counts must not be added to claim more independent evaluation inpu
 |1B beam5 B1|Combined search-kernel switch OFF / ON|13,232|13,191|[2780923](runtime-large-regression-2780923.json)|
 |1B beam5 B3|Combined search-kernel switch OFF / ON|13,232|13,191|[2781006](runtime-large-regression-2781006.json)|
 |102M plain greedy B1|Serial Ring24 /64 CTAs|13,232|13,191|[2781184](runtime-large-regression-2781184.json)|
+|102M CTC-drafted greedy B1|Public greedy-kernel switch OFF / ON|13,232|13,191|[2785506](runtime-large-regression-2785506.json)|
 
 All rows enable timestamps. Beam upper-bound comparisons keep search kernels ON; search-kernel
 comparisons keep the upper bound ON. These are separate ablations, not whole-version parity.
-Each ordinary audit contains41 longer-than-window inputs with no joined token IDs. Prompt, drafted,
-translation and bulk/refill coverage must be evaluated independently. The separate87-chapter
+Each ordinary audit contains41 longer-than-window inputs with no joined token IDs. Prompt, other drafted,
+translation and bulk/refill configurations must be evaluated independently. The separate87-chapter
 combined beam comparison also passes, as described below; its inputs reuse test-clean speech.
 
 Job2780055 prepared the corpus. Its
@@ -279,10 +281,36 @@ Other ablations are102M serial64 versus24 (E), and the explicit1B NS4/102M NS8 o
 with plain/drafted ASR, translation and long-form cases. N differences remain visible, not treated
 as exact or silently accepted as accuracy improvements. New default adoption waits for relevant
 large-corpus checks as well as the repeated performance benchmark.
-The prepared `greedy_kernels` audit mode compares the public constructor's OFF/ON switch with shared
+The `greedy_kernels` audit mode compares the public constructor's OFF/ON switch with shared
 loaded weights/engines and separate pipeline/session state. It records the resolved greedy settings,
-uses the same corpus/order/hash/resume checks and requires exact full outputs. Its GPU results are pending;
-the serial64 audit alone does not validate all selection/draft-acceptance changes.
+uses the same corpus/order/hash/resume checks and requires exact full outputs. The [102M drafted timestamp
+B1 result2785506](runtime-large-regression-2785506.json), frozen7b466ac, passes all104 chunks and
+13,232 text/segment pairs plus13,191 available token/timestamp pairs. Resolved selection, acceptance,
+cached-draft-flags, skip-finished and plain-solo settings are OFF/ON as requested; lazy graph settings
+are unchanged. This is combined-switch parity, not separate execution or speed evidence for each flag.
+Both variants retain51 diagnostic inputs, including the earlier Russian repetition. The job completed
+PBS F/exit0 and publication exit0. Account usage rose to196 during the job; by the parent's fresh
+stop check the job was already F, so no cancellation occurred. Both observations are retained.
+
+A separate [plain-versus-drafted comparison](runtime-greedy-path-numerics-13232.json) uses candidate
+outputs from2781184 and2785506, after requiring each within-run E control to pass. The runtime tree,
+checkpoint/engines, software, input order and candidate Ring settings match, but the decode paths
+and verification-window shapes differ. There are63 differing inputs:62 have available token IDs and
+one is long-form. Full token sequences match13,129/13,191, timestamp sequences13,184/13,191,
+text13,178/13,232 and segments13,173/13,232. These are N path-comparison observations, not failures of
+the greedy-kernel switch. The cause of each difference is not isolated by these saved outputs.
+
+Drafted-minus-plain speech edit counts are Japanese+10/111,347 characters, English+6/111,768 words,
+German−167/18,706 words, French+1/6,759 words, Russian−1/6,501 words, Spanish−1/23,314 words,
+and Chinese+1/35,649 characters. The30.24second German input
+`fleurs_de_test--de_de-13598528500304921206` alone accounts for−166 word edits (173/31 versus7/31).
+Its first30second segment matches; the residual0.24second window generates a long repeated tail ending
+at60seconds without drafts and a shorter tail ending32.56seconds with drafts. Both exceed the audio
+duration. No window, skip or timestamp-clamping policy was changed to hide this case.
+For13,178 inputs with identical text and ordered segment labels/count, seven boundaries move:
+median40ms, p95/max120ms among those nonzero differences. The54 incompatible text/segmentation
+outputs are excluded from this boundary comparison. These are output displacements, not human timing
+accuracy. `compare_greedy_paths.py` reproduces the comparison and its three small metadata fixtures pass.
 
 The [102M serial64/24 plain timestamp result2781184](runtime-large-regression-2781184.json) uses frozen3d9bba3,
 with PBS F/exit0 and publication exit0. All104 chunks pass config/corpus/order/hash/output validation.
@@ -303,8 +331,8 @@ tokens with276 consecutive identical tokens, repeated punctuation and no complet
 The9.66second Chinese input `fleurs_zh_test--cmn_hans_cn-9699581877784184472` repeats a digit token11
 times while retaining a valid segment (26/36 character edits). Both schedules produce the same results;
 the saved chunk/input IDs and diagnostics retain these cases for future quality work.
-Large drafted/translation/87-chapter and bulk/refill
-coverage is still pending; the completed plain audit must not be extended to those paths by inference.
+Large translation,102M87-chapter and bulk/refill coverage is still pending; the completed plain audit
+must not be extended to those paths by inference. The separate drafted B1 result is described above.
 
 `audit_large_regression.py` stores both complete outputs, timestamp IDs, segments, text, WER/CER
 counts, invalid/empty/unpaired/nonmonotonic times and diagnostic repetition indicators. Results are
