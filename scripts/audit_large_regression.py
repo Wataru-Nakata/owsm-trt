@@ -116,7 +116,7 @@ def main():
     ap.add_argument('--data',type=Path,required=True)
     ap.add_argument('--out',type=Path,required=True)
     ap.add_argument('--publish',type=Path,required=True)
-    ap.add_argument('--mode',choices=['beam_bound','beam_kernels','beam_combined','greedy_kernels','ring_split','serial64','draft_budget'],
+    ap.add_argument('--mode',choices=['beam_bound','beam_kernels','beam_combined','greedy_kernels','ring_split','serial64','draft_budget','frontend_batches'],
                     default='beam_bound')
     ap.add_argument('--case',choices=['beam_b1','beam_b3','beam_prompt','beam_long','plain_ts','draft_ts','draft_bulk','translation','long'],default='beam_b1')
     ap.add_argument('--datasets',nargs='+')
@@ -134,10 +134,12 @@ def main():
     beam_mode = args.mode.startswith('beam_')
     if beam_mode!=args.case.startswith('beam_'):
         ap.error('beam modes require a beam case; other modes require a greedy case')
-    if args.case=='draft_bulk' and args.mode not in ('greedy_kernels','draft_budget'):
-        ap.error('draft_bulk requires greedy_kernels or draft_budget; single-row scheduling knobs are not bulk ablations')
+    if args.case=='draft_bulk' and args.mode not in ('greedy_kernels','draft_budget','frontend_batches'):
+        ap.error('draft_bulk requires greedy_kernels, draft_budget or frontend_batches; single-row scheduling knobs are not bulk ablations')
     if args.mode=='draft_budget' and args.case!='draft_bulk':
         ap.error('draft_budget requires draft_bulk; single-row windows are unchanged at these budgets')
+    if args.mode=='frontend_batches' and args.case!='draft_bulk':
+        ap.error('frontend_batches requires draft_bulk; single-row frontend capture is unchanged')
     request_batch = 8 if args.case=='draft_bulk' else (3 if args.case=='beam_b3' else 1)
     # More inputs than rows exercise row refill across batches in one public API call.
     group_size = 64 if args.case=='draft_bulk' else request_batch
@@ -175,6 +177,8 @@ def main():
         config['greedy_variants'] = dict(reference=False,candidate=True)
     if args.mode=='draft_budget':
         config['draft_budget_variants'] = dict(reference=256,candidate=128)
+    if args.mode=='frontend_batches':
+        config['frontend_batch_variants'] = dict(reference=1,candidate=8)
     if args.case=='draft_bulk':
         config.update(request_batch_size=request_batch,input_group_limit=group_size)
     config_path = args.publish/'config.json'
@@ -191,7 +195,8 @@ def main():
     started = time.monotonic()
     with torch.inference_mode():
         model = OWSM.from_pretrained(args.model,decoder_kernel='ring:split' if args.mode=='ring_split' else 'auto',
-                                    draft_token_budget=128 if args.mode=='draft_budget' else 256)
+                                    draft_token_budget=128 if args.mode=='draft_budget' else 256,
+                                    frontend_graph_max_batch=8 if args.mode=='frontend_batches' else 1)
         assert isinstance(model.backend,megakernel.MegaBackend),'required backend unavailable'
         current = model.backend
         if args.mode=='ring_split':
@@ -213,6 +218,9 @@ def main():
         elif args.mode=='draft_budget':
             models['reference'] = OWSM(model.cfg,model.tokenizer,model.frontend,current,model.opts,
                 model.device,use_cuda_graph=model.use_cuda_graph,draft_token_budget=256)
+        elif args.mode=='frontend_batches':
+            models['reference'] = OWSM(model.cfg,model.tokenizer,model.frontend,current,model.opts,
+                model.device,use_cuda_graph=model.use_cuda_graph,frontend_graph_max_batch=1)
         pools = {v:OrderedDict() for v in backends}
         engines = hub.cache_dir()/files.name.replace('/','--')/engine_tag(model.opts)
         env = dict(engine_sha256={p.name:sha256(p) for p in engines.glob('*.engine')},gpu=torch.cuda.get_device_name(),
@@ -221,13 +229,23 @@ def main():
         env['decoder_settings'] = {v:dict(kernel=type(b.kernel).__name__,
             programs=getattr(b.kernel,'P',None),solo_programs=getattr(b.kernel,'P_solo',None),
             single_cross_splits=getattr(b.kernel,'single_cross_splits',None)) for v,b in backends.items()}
-        if args.mode in ('greedy_kernels','draft_budget'):
+        if args.mode in ('greedy_kernels','draft_budget','frontend_batches'):
             env['greedy_settings'] = {v:{k:value for k,value in vars(m).items() if k.startswith('greedy_')}
                                       for v,m in models.items()}
         if args.mode=='draft_budget':
             env['draft_token_budgets'] = {v:m.draft_token_budget for v,m in models.items()}
             assert env['draft_token_budgets']==config['draft_budget_variants']
             assert env['greedy_settings']['reference']==env['greedy_settings']['candidate']
+        if args.mode=='frontend_batches':
+            env['frontend_batch_limits'] = {v:m._frontend_graph_batch_limit for v,m in models.items()}
+            assert env['frontend_batch_limits']==config['frontend_batch_variants']
+            assert env['greedy_settings']['reference']==env['greedy_settings']['candidate']
+            assert all(m.frontend_graph and m._frontend_reuse_warmup_stream and m.draft_token_budget==256
+                       for m in models.values())
+            env['frontend_observations'] = {}
+            env['frontend_scope'] = ('Per-job bounded cache snapshots after each completed chunk. '
+                'Fallback count includes cache-capacity misses only; above-limit eager calls are not counted. '
+                'Input/output bytes exclude graph-private intermediate pools/workspaces. No cache eviction.')
         env['decoder_dispatch'] = {v:{} for v in backends}
         env['dispatch_scope'] = ('Configured single-token and already bound drafted-verification functions '
                                  'for observed sessions; listed buckets/windows may only have warmed/captured. '
@@ -241,6 +259,9 @@ def main():
                 env['decoder_dispatch'] = previous['decoder_dispatch']
             assert previous.get('greedy_settings')==env.get('greedy_settings'), 'greedy settings changed on resume'
             assert previous.get('draft_token_budgets')==env.get('draft_token_budgets'), 'draft budget changed on resume'
+            assert previous.get('frontend_batch_limits')==env.get('frontend_batch_limits'), 'frontend limits changed on resume'
+            if args.mode=='frontend_batches':
+                env['frontend_observations'] = previous['frontend_observations']
         (args.out/'environment.json').write_text(json.dumps(env,indent=2)+'\n')
         publish_file(args.out/'environment.json',args.publish/'environment.json')
         archives = {}
@@ -339,6 +360,12 @@ def main():
                         f.write(json.dumps(record,ensure_ascii=False)+'\n')
                 publish_file(path,args.publish/name)
                 completed[name] = dict(samples=len(records),sha256=sha256(path),differences=sum(bool(r['differences']) for r in records))
+                if args.mode=='frontend_batches':
+                    env['frontend_observations'][os.environ['PBS_JOBID']] = {
+                        v:(m._frontend_replay.info() | dict(shapes=[list(key[0]) for key in m._frontend_replay.entries])
+                           if m._frontend_replay else None) for v,m in models.items()}
+                    (args.out/'environment.json').write_text(json.dumps(env,indent=2)+'\n')
+                    publish_file(args.out/'environment.json',args.publish/'environment.json')
                 status = dict(expected=len(rows),completed=sum(x['samples'] for x in completed.values()),
                     differences=sum(x['differences'] for x in completed.values()),chunks=completed,
                     elapsed_seconds=time.monotonic()-started,job=os.environ.get('PBS_JOBID'),complete=False)

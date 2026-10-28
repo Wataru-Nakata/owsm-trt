@@ -482,3 +482,16 @@ valid; no public-split default adoption or independent speed replication is clai
 The proposed frontend direct-input retry was withdrawn before submission: earlier2771513 had
 already tested the same basic idea without a broad gain. Its temporary runtime prototypefc02d74
 was reverted in4f6041e. Expanded coverage takes priority over repeating that small screening test.
+
+### Prepared frontend batch graph audit
+
+`--mode frontend_batches --case draft_bulk` compares the existing public
+`frontend_graph_max_batch=1/8` switch with greedy optimizations ON and budget256 in both variants.
+It uses separate pipeline/session/frontend caches while sharing the checkpoint and decoder engines.
+The E comparison includes all13,232 ordinary/stress inputs with the existing64-input grouping and
+requested B8, preserving long-input API boundaries. Graph limits and per-job cache shapes/captures,
+capacity fallback counts and input/output bytes are recorded after each completed chunk. Above-limit
+eager calls are not included in the cache-capacity fallback counter; graph-private intermediates and
+workspaces are not included in the byte count. Cache capacity stays32 without eviction.
+Six focused CPU metadata/guard/resume fixtures pass; this preparation makes no GPU parity or speed
+claim. The default remains1 pending large output validation and separate repeated timing.

@@ -36,6 +36,7 @@ from summarize_large_regression import summarize
 
 @pytest.mark.parametrize('mode,case,message',[
     ('draft_budget','draft_ts','draft_budget requires draft_bulk'),
+    ('frontend_batches','draft_ts','frontend_batches requires draft_bulk'),
     ('ring_split','draft_bulk','single-row scheduling knobs are not bulk ablations'),
 ])
 def test_bulk_ablation_rejects_inactive_or_unrelated_scheduling_options(monkeypatch,capsys,mode,case,message):
