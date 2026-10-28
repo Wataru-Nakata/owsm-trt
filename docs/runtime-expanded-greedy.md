@@ -43,7 +43,8 @@ available; no outliers are removed.
 Model load takes7.407seconds in this run, excluding environment/corpus staging. Per-condition warmup
 and full verification capture costs remain separate in `cold.json`; they are not compared as isolated
 deployment cold starts because the frontend/backend and existing caches are shared. CUDA allocation
-peaks include both variant pools; five-second `nvidia-smi` samples additionally include loading,
+peaks include both variant pools and exclude allocations outside PyTorch's allocator, such as TensorRT
+workspace; five-second `nvidia-smi` samples additionally include loading,
 capture and untimed diagnostics. Neither is a standalone per-variant deployment memory estimate.
 
 Reproduce inside a compute allocation with the frozen source and staged environment/engines:

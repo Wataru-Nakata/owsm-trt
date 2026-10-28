@@ -353,7 +353,7 @@ The next `draft_budget/draft_bulk` audit compares the existing public token budg
 using separate model/session state, identical greedy optimizations and unchanged decoder routing.
 Only bulk is permitted: these budgets do not change the available single-row windows. Resolved
 budgets and already bound verification routes are recorded and checked on resume. This is N because
-verification shapes can change numerical outputs. Large-corpus results are pending; no default or
+verification shapes can change numerical outputs. Clean allocation completion and timing are pending; no default or
 new kernel change is part of this audit addition.
 Job2786632 (frozen529a97c) published all13,232 outputs/104 chunks before the account rose to194 GPUs.
 The parent confirmed the overage and cancelled only its1GPU allocation. PBS exits271 and raw publication
