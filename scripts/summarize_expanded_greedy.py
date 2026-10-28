@@ -125,8 +125,14 @@ def summarize(raw: Path) -> dict:
     selection_path=profile/'selection.json'
     assert hashlib.sha256(selection_path.read_bytes()).hexdigest()==env['selection_sha256']
     selected=json.loads(selection_path.read_text())
-    assert len(selected)==7 and all(len(rows)==32 for rows in selected.values())
-    assert complete['samples']==sum(map(len,selected.values()))==224
+    subset=env.get('language_subset')
+    if subset is None:
+        assert len(selected)==7
+    else:
+        assert subset and len(set(subset))==len(subset) and list(selected)==subset
+    assert all(len(rows)==32 for rows in selected.values())
+    sample_count=sum(map(len,selected.values()))
+    assert complete['samples']==sample_count==32*len(selected)
     summaries=json.loads((profile/'summary.json').read_text())
     comparison=env.get('comparison','greedy_kernels')
     from profile_expanded_greedy import COMPARISON_CASES
@@ -199,7 +205,7 @@ def summarize(raw: Path) -> dict:
                'Public frontend graph batch limit1/8, fresh bounded cache per language. ' if comparison=='frontend_batches' else
                'N: existing grouped cross/tail/LSE beam preset versus optimized default. ' if comparison=='beam_preset' else
                'N: same-engine public draft budget256/128, greedy kernels ON both; differences retained. ')+
-              'Balanced 224-input speech sample, '
+              f'Balanced {sample_count}-input speech sample, '
               'not an independent quality holdout or corpus-weighted performance. Seven repeats '
               'are repeated timings, not additional evaluation inputs. Raw files retain per-call '
               'wall time/output/dispatch/cold metadata. No timing from the full-corpus one-pass audit.')

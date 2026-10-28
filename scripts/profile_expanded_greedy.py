@@ -20,12 +20,17 @@ COMPARISON_CASES = {
 }
 
 
-def select_inputs(rows: list[dict], per_language: int, window_seconds: float) -> dict[str, list[dict]]:
+def select_inputs(rows: list[dict], per_language: int, window_seconds: float,
+                  languages: list[str] | None = None) -> dict[str, list[dict]]:
     if per_language<1 or window_seconds<=0:
         raise ValueError('positive sample count and window required')
     if len({r['key'] for r in rows})!=len(rows):
         raise ValueError('duplicate corpus input keys')
-    languages=sorted({r['lang'] for r in rows if r['dataset']!='stress' and not r['long_form']})
+    available={r['lang'] for r in rows if r['dataset']!='stress' and not r['long_form']}
+    if languages is not None and (not languages or len(set(languages))!=len(languages)
+                                  or not set(languages)<=available):
+        raise ValueError('language subset must be distinct, nonempty and present in the corpus')
+    languages=sorted(available if languages is None else languages)
     selected={}
     for lang in languages:
         strata=defaultdict(list)
@@ -56,6 +61,7 @@ def main():
     ap.add_argument('--out',type=Path,required=True)
     ap.add_argument('--per-language',type=int,default=32)
     ap.add_argument('--repeat',type=int,default=7)
+    ap.add_argument('--languages',nargs='+',help='complete all conditions for these languages in a shorter job')
     ap.add_argument('--comparison',choices=list(COMPARISON_CASES),default='greedy_kernels')
     ap.add_argument('--host-diagnostics',action='store_true',help='separate instrumented GC/CPU pass; not warm latency')
     ap.add_argument('--candidate-first',action='store_true',help='reverse the initial warmup/alternating variant order')
@@ -113,7 +119,7 @@ def main():
             assert frontend_limits==dict(reference=1,candidate=8)
             assert settings['reference']==settings['candidate'] and budgets==dict(reference=256,candidate=256)
         selected=select_inputs(json.loads((args.data/'index.json').read_text()),args.per_language,
-                               model.cfg.speech_seconds)
+                               model.cfg.speech_seconds,args.languages)
         files=hub.resolve(args.model)
         engines=hub.cache_dir()/files.name.replace('/','--')/engine_tag(model.opts)
         save(args.out/'selection.json',selected)
@@ -129,6 +135,7 @@ def main():
             comparison=args.comparison,classification='N' if numerical else 'E',cases=cases,
             host_diagnostics=args.host_diagnostics,variant_order=variants,
             repeat=args.repeat,per_language=args.per_language,
+            language_subset=list(selected) if args.languages is not None else None,
             scope=('INSTRUMENTED host diagnostic; not warm latency. ' if args.host_diagnostics else
                    'Uninstrumented warm request timing. ')+('N: public draft budget256/128, greedy kernels ON both. ' if budget
                    else 'N: public grouped cross/tail/LSE beam preset, optimized default control. ' if beam

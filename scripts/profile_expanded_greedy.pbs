@@ -78,9 +78,13 @@ for PASS in "${PASSES[@]}"; do
         exit 1
     fi
     OPTIONS=()
-    if [ "$PASS" = host_profile ]; then OPTIONS=(--host-diagnostics); fi
-    if [ "$PASS" = profile ] && [ "$HOST_ROTATED" = 1 ]; then OPTIONS=(--candidate-first); fi
-    printf '%s\n' "$PASS: 224 inputs, 7 alternating repeats, comparison=$COMPARISON" >> "$OUT/progress.log"
+    if [ -n "${PROFILE_LANGUAGES:-}" ]; then
+        IFS=':' read -r -a LANGUAGE_ARGS <<< "$PROFILE_LANGUAGES"
+        OPTIONS+=(--languages "${LANGUAGE_ARGS[@]}")
+    fi
+    if [ "$PASS" = host_profile ]; then OPTIONS+=(--host-diagnostics); fi
+    if [ "$PASS" = profile ] && [ "$HOST_ROTATED" = 1 ]; then OPTIONS+=(--candidate-first); fi
+    printf '%s\n' "$PASS: language subset=${PROFILE_LANGUAGES:-all}, 7 alternating repeats, comparison=$COMPARISON" >> "$OUT/progress.log"
     timeout --kill-after=30 --preserve-status "$PROFILE_TIMEOUT" "$PY" "$LOCAL/scripts/profile_expanded_greedy.py" \
         --model "$LOCAL/$MODEL_NAME" --data "$LOCAL/corpus" --out "$LOCAL/results/$PASS" \
         --per-language 32 --repeat 7 --comparison "$COMPARISON" "${OPTIONS[@]}" > "$LOCAL/results/$PASS.log" 2>&1 &

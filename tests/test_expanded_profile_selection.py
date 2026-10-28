@@ -32,3 +32,15 @@ def test_selection_rejects_insufficient_or_duplicate_inputs():
         select_inputs(rows(),9,30)
     with pytest.raises(ValueError,match='duplicate'):
         select_inputs(rows()+rows()[:1],4,30)
+
+
+def test_subset_preserves_exact_per_language_selection_and_canonical_order():
+    full=select_inputs(rows(),4,30)
+    assert select_inputs(rows(),4,30,['jpn'])=={'jpn':full['jpn']}
+    assert select_inputs(rows(),4,30,['jpn','eng'])==full
+
+
+@pytest.mark.parametrize('languages',[[],['eng','eng'],['absent']])
+def test_invalid_subset_cannot_silently_drop_requested_languages(languages):
+    with pytest.raises(ValueError,match='language subset'):
+        select_inputs(rows(),4,30,languages)
