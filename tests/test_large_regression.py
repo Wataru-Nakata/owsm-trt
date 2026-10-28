@@ -10,6 +10,7 @@ import zipfile
 from pathlib import Path
 from types import SimpleNamespace
 
+import audit_large_regression
 import prepare_large_regression
 import pytest
 from audit_large_regression import (
@@ -31,6 +32,19 @@ from prepare_large_regression import (
 )
 from segment_metrics import invalid_segments
 from summarize_large_regression import summarize
+
+
+@pytest.mark.parametrize('mode,case,message',[
+    ('draft_budget','draft_ts','draft_budget requires draft_bulk'),
+    ('ring_split','draft_bulk','single-row scheduling knobs are not bulk ablations'),
+])
+def test_bulk_ablation_rejects_inactive_or_unrelated_scheduling_options(monkeypatch,capsys,mode,case,message):
+    monkeypatch.setenv('PBS_JOBID','metadata-only')
+    monkeypatch.setattr('sys.argv',['audit','--model','unused','--data','unused','--out','unused',
+                                  '--publish','unused','--mode',mode,'--case',case])
+    with pytest.raises(SystemExit) as error:
+        audit_large_regression.main()
+    assert error.value.code==2 and message in capsys.readouterr().err
 
 
 @pytest.mark.parametrize('key',['','../outside','folder/item','a.b','bad key'])

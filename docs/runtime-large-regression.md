@@ -349,6 +349,12 @@ moves20ms;37 incompatible outputs are excluded from that statistic. Three timest
 change overall, and the full changed outputs remain in the artifact. Baseline flag totals remain
 unchanged. This is N evidence, not exact parity or a new latency result. No default changes follow:
 the earlier B1 streaming regression still applies, and large1B/translation/long-form coverage is pending.
+The next `draft_budget/draft_bulk` audit compares the existing public token budget256 versus128,
+using separate model/session state, identical greedy optimizations and unchanged decoder routing.
+Only bulk is permitted: these budgets do not change the available single-row windows. Resolved
+budgets and already bound verification routes are recorded and checked on resume. This is N because
+verification shapes can change numerical outputs. Large-corpus results are pending; no default or
+new kernel change is part of this audit addition.
 The `greedy_kernels` audit mode compares the public constructor's OFF/ON switch with shared
 loaded weights/engines and separate pipeline/session state. It records the resolved greedy settings,
 uses the same corpus/order/hash/resume checks and requires exact full outputs. The [102M drafted timestamp
