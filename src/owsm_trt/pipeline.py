@@ -264,6 +264,7 @@ class OWSM:
             else None
         )
         self._sessions: OrderedDict[tuple, GreedySession | BeamSession | CTCSession] = OrderedDict()
+        self._session_cache_limit = 2  # Private ablation control; the production retention policy is unchanged.
         self._lane_streams: list = []  # streams of the CTC lanes (_ctc_stream)
         self._ctc_buffers: dict[int, tuple] = {}  # per lane: buffers its CTC sessions share
 
@@ -530,7 +531,7 @@ class OWSM:
     def _session(self, batch: int, beam: int = 1) -> GreedySession | BeamSession:
         key = (batch, beam)
         if key not in self._sessions:
-            if len(self._sessions) >= 2:
+            if len(self._sessions) >= self._session_cache_limit:
                 self._sessions.popitem(last=False)
             args = (self.opts.capacity, self.tokenizer.eos, self.dtype, self.device, self.use_cuda_graph)
             if beam == 1:

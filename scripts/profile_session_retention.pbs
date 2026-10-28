@@ -1,0 +1,76 @@
+#!/bin/bash
+# Standing authorization still requires a fresh capacity/queue/duplicate guard before qsub.
+#PBS -N owsm_beam_session_retention
+#PBS -l walltime=01:00:00
+#PBS -j oe
+set -euo pipefail
+ulimit -c 0
+: "${PBS_JOBID:?run via qsub}"
+: "${PBS_LOCALDIR:?run via qsub}"
+: "${SNAPSHOT:?immutable source archive}"
+cd "$PBS_O_WORKDIR"
+REPO=$PWD
+OUT="$REPO/outputs/runtime-${PBS_JOBID%%.*}"
+LOCAL="$PBS_LOCALDIR/session-retention"
+MODEL_NAME=${MODEL_NAME:-owsm_v4_medium_1B}
+CORPUS="$REPO/.cache/regression-expanded-v1"
+mkdir -p "$OUT" "$LOCAL" "$LOCAL/results" "$LOCAL/tmp" "$LOCAL/engines"
+export TMPDIR="$LOCAL/tmp" TRITON_CACHE_DIR="$LOCAL/triton" TORCHINDUCTOR_CACHE_DIR="$LOCAL/inductor"
+export UV_CACHE_DIR="$LOCAL/uv-cache" PIP_CACHE_DIR="$LOCAL/pip-cache"
+export XDG_CACHE_HOME="$LOCAL/cache" CUDA_CACHE_PATH="$LOCAL/cuda"
+export OWSM_TRT_CACHE="$LOCAL/engines" PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+export OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
+export OWSM_PROFILE_PROGRESS="$OUT/progress.log"
+SMI=""
+WORKER=""
+publish() {
+    local status=$?
+    trap - EXIT
+    [ -z "$SMI" ] || kill "$SMI" 2>/dev/null || true
+    printf '%s\n' "$status" > "$LOCAL/results/exit_status.txt"
+    cp -a "$LOCAL/results/." "$OUT/"
+    exit "$status"
+}
+interrupt() {
+    if [ -n "$WORKER" ]; then
+        kill -TERM "$WORKER" 2>/dev/null || true
+        wait "$WORKER" || true
+    fi
+    exit 143
+}
+trap publish EXIT
+trap interrupt TERM INT
+ZSTD="$(command -v zstd || echo "$HOME/miniconda3/bin/zstd")"
+"$ZSTD" -dc -T4 "$REPO/.cache/envs/owsm-env.tar.zst" | tar -xf - -C "$PBS_LOCALDIR"
+tar -xf "$SNAPSHOT" -C "$LOCAL"
+export OWSM_PROFILE_COMMIT="$(cat "$LOCAL/commit.txt")"
+export PYTHONPATH="$LOCAL/src:$LOCAL/scripts"
+PY="$PBS_LOCALDIR/owsm-env/bin/python3"
+cp "$LOCAL/source.json" "$LOCAL/results/"
+printf '%s\n' 'environment ready; corpus validation/packing starts' > "$OUT/progress.log"
+timeout --kill-after=30 1200 "$PY" "$LOCAL/scripts/prepare_large_regression.py" --repo "$REPO" \
+    --jvs /groups/gai51740/acc12576tt/datasets/jvs_ver1 --out "$LOCAL/corpus" --publish "$CORPUS" \
+    > "$LOCAL/results/corpus.log" 2>&1 &
+WORKER=$!
+wait "$WORKER"
+WORKER=""
+cp "$LOCAL/corpus/complete.json" "$LOCAL/results/corpus.json"
+printf '%s\n' 'verified corpus published; model staging starts' >> "$OUT/progress.log"
+cp -a "$REPO/.cache/models/$MODEL_NAME" "$LOCAL/$MODEL_NAME"
+mkdir -p "$OWSM_TRT_CACHE/$MODEL_NAME"
+cp -a "$REPO/.cache/engines/$MODEL_NAME/v621-NVIDIA_H200-sm90-trt11.4.0.106-float16-3d0cbdc9" "$OWSM_TRT_CACHE/$MODEL_NAME/"
+nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv -l 5 > "$LOCAL/results/gpu_utilization.csv" &
+SMI=$!
+# The default remains two retained sessions; the private three-entry control is experimental.
+timeout 180 "$PY" -m pytest -q -p no:cacheprovider "$LOCAL/tests/test_session_retention.py" \
+    > "$LOCAL/results/tests.log" 2>&1
+PROFILE_TIMEOUT=$((3500 - SECONDS))
+if (( PROFILE_TIMEOUT < 300 )); then exit 1; fi
+printf '%s\n' 'session retention2/3: English/Japanese12 each,7 repeats of two paired cycles' >> "$OUT/progress.log"
+timeout --kill-after=30 --preserve-status "$PROFILE_TIMEOUT" "$PY" "$LOCAL/scripts/profile_session_retention.py" \
+    --model "$LOCAL/$MODEL_NAME" --data "$LOCAL/corpus" --out "$LOCAL/results/retention" \
+    --languages eng jpn --repeat 7 > "$LOCAL/results/retention.log" 2>&1 &
+WORKER=$!
+wait "$WORKER"
+WORKER=""
+printf '%s\n' 'session retention experiment ended; inspect full output and creation counts' >> "$OUT/progress.log"
