@@ -249,6 +249,8 @@ def main():
             programs=getattr(b.kernel,'P',None),solo_programs=getattr(b.kernel,'P_solo',None),
             single_cross_splits=getattr(b.kernel,'single_cross_splits',None)) for v,b in backends.items()}
         if args.mode=='beam_preset':
+            env['decoder_settings_scope'] = ('Pipeline base backend only; effective grouped beam/tail routes '
+                                             'and search options are recorded per session in decoder_dispatch.')
             env['beam_settings'] = {v:{key:getattr(m,key) for key in config['beam_variants'][v]}
                                     for v,m in models.items()}
             assert env['beam_settings']==config['beam_variants']
