@@ -417,6 +417,11 @@ full output checks, separate cold/capture metadata and an untimed dispatch-count
 resampling happen before timed calls; both variant pools are resident. The default seven repeats
 measure the same inputs repeatedly, not independent speech samples. Its three lightweight sampling
 fixtures pass; GPU timing is pending and the balanced sample is not a corpus-weighted speed estimate.
+`summarize_expanded_greedy.py RAW_JOB_DIR --out RESULT.json` checks the final PBS/publication status,
+all224 selected IDs,14 conditions, seven paired repeats, full output agreement and request membership
+before aggregating timing. It retains per-request p50/p95/spread, repeat totals and paired RTFx changes,
+decoder-call differences and shared-pool peak memory. Nine sampling/aggregation fixtures pass;
+five-second GPU telemetry covers cold/warm/diagnostic calls together, not per-condition utilization.
 The summary verifies published chunk hashes and recomputes output differences. Generated nonspeech
 probes retain insertion/empty-output diagnostics but are excluded from speech WER/CER. Mixed WER/CER
 counts never receive a combined error rate.
