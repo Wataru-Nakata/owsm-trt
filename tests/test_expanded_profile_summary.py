@@ -1,7 +1,7 @@
 """Synthetic timing records only; no inference or timing on the login node."""
 
 import pytest
-from summarize_expanded_greedy import aggregate
+from summarize_expanded_greedy import aggregate, output_agreement
 
 
 def samples(streaming=False):
@@ -34,3 +34,15 @@ def test_summary_rejects_incomplete_or_unpaired_timing(corruption):
         rows[0]['audio_seconds']=9
     with pytest.raises(AssertionError):
         aggregate(rows,['a','b'],3,False)
+
+
+def test_output_differences_are_retained_only_for_explicit_n_comparison():
+    value=dict(tokens=[1],timestamp_tokens=[],text='one',segments=[])
+    records=dict(reference={'a':value},candidate={'a':value|dict(tokens=[2],text='two')})
+    with pytest.raises(AssertionError,match='E output difference'):
+        output_agreement(records,['a'],exact=True)
+    result=output_agreement(records,['a'],exact=False)
+    assert result['tokens']==dict(equal=0,total=1,different_ids=['a'])
+    assert result['timestamp_tokens']==dict(equal=1,total=1,different_ids=[])
+    with pytest.raises(AssertionError):
+        output_agreement(records,['a','missing'],exact=False)

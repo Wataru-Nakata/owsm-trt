@@ -87,3 +87,14 @@ do not establish gains for another GPU, translation, long-form, nonspeech or oth
 Raw data and the B1 audit control are in`outputs/runtime-2786438/`; the immutable submission is
 `outputs/runtime-expanded-greedy-102m-submit-01`. Reproduction uses the same commands above with
 the102M checkpoint and result directory.
+
+## Prepared numerical budget comparison
+
+`--comparison draft_budget` compares the existing public budget256/128 on bulk B8 only (seven
+language conditions), holding the public greedy optimizations ON in both. Separate session pools
+and the same warm/alternating protocol are retained. It records the resolved budgets, permits and
+retains N output differences, and still rejects unstable repeated outputs or backend failures.
+The summarizer recomputes agreement from saved full outputs; its explicit N mode does not weaken
+the E-mode equality check. Ten small sampler/aggregation fixtures pass, and re-summarizing both
+completed E jobs preserves all28 conditions' statistics exactly. GPU budget timing is pending;
+this adds no new default, kernel, precision or decoder route.

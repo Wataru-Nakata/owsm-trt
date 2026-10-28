@@ -66,6 +66,17 @@ def aggregate(samples: list[dict], ids: list[str], repeats: int, streaming: bool
               'Draft-call counts are not all decoder steps. Memory includes both resident variant pools.')
 
 
+def output_agreement(tokens: dict, ids: list[str], exact: bool) -> dict:
+    assert set(tokens)=={'reference','candidate'}
+    assert all(set(records)==set(ids) for records in tokens.values())
+    result={field:dict(equal=sum(tokens['reference'][key][field]==tokens['candidate'][key][field] for key in ids),
+        total=len(ids),different_ids=[key for key in ids if tokens['reference'][key][field]!=tokens['candidate'][key][field]])
+        for field in FIELDS}
+    if exact:
+        assert all(v['equal']==v['total'] for v in result.values()),'E output difference'
+    return result
+
+
 def summarize(raw: Path) -> dict:
     profile=raw/'profile'
     assert (raw/'exit_status.txt').read_text().strip()=='0'
@@ -82,8 +93,17 @@ def summarize(raw: Path) -> dict:
     assert len(selected)==7 and all(len(rows)==32 for rows in selected.values())
     assert complete['samples']==sum(map(len,selected.values()))==224
     summaries=json.loads((profile/'summary.json').read_text())
-    expected={lang+'/'+case for lang in selected for case in ('single_ts','stream_ts_b8')}
-    assert summaries.keys()==expected and complete['conditions']==len(expected)==14
+    comparison=env.get('comparison','greedy_kernels')
+    assert comparison in ('greedy_kernels','draft_budget')
+    exact=comparison=='greedy_kernels'
+    cases=('single_ts','stream_ts_b8') if exact else ('stream_ts_b8',)
+    assert env.get('classification','E')==('E' if exact else 'N')
+    assert tuple(env.get('cases',cases))==cases
+    if not exact:
+        assert env['classification']=='N' and env['draft_token_budgets']==dict(reference=256,candidate=128)
+        assert env['greedy_settings']['reference']==env['greedy_settings']['candidate']
+    expected={lang+'/'+case for lang in selected for case in cases}
+    assert summaries.keys()==expected and complete['conditions']==len(expected)
     result={}
     for name in sorted(expected):
         lang,case=name.split('/')
@@ -91,12 +111,12 @@ def summarize(raw: Path) -> dict:
         ids=[r['key'] for r in selected[lang]]
         assert len(set(ids))==len(ids)
         tokens=json.loads((folder/'tokens.json').read_text())
-        assert set(tokens)=={'reference','candidate'}
-        assert all(set(records)==set(ids) for records in tokens.values())
-        for key in ids:
-            assert all(tokens['reference'][key][f]==tokens['candidate'][key][f] for f in FIELDS),key
+        agreement=output_agreement(tokens,ids,exact)
+        assert agreement==summaries[name]['candidate']['agreement']
+        assert all(a==dict(equal=32,total=32,different_ids=[])
+                   for a in summaries[name]['reference']['agreement'].values())
         for variant in ('reference','candidate'):
-            assert all(v['equal']==v['total']==32 for v in summaries[name][variant]['agreement'].values())
+            assert all(v['total']==32 for v in summaries[name][variant]['agreement'].values())
             assert (folder/f'actual_dispatch_{variant}.json').is_file()
         cold=json.loads((folder/'cold.json').read_text())
         samples=json.loads((folder/'wall.json').read_text())
@@ -112,10 +132,13 @@ def summarize(raw: Path) -> dict:
     utilization=[float(r['utilization.gpu [%]'].split()[0]) for r in telemetry]
     memory=[float(r['memory.used [MiB]'].split()[0]) for r in telemetry]
     return dict(source=source,environment=env,scheduler=scheduler,complete=complete,conditions=result,
+        comparison=comparison,classification='E' if exact else 'N',
         gpu_telemetry=dict(utilization_percent=stats(utilization),device_memory_mib=stats(memory),
             scope='Five-second samples across loading/capture/warm/diagnostic calls and both variants; '
                   'not per-condition utilization or kernel occupancy.'),
-        scope='Same-engine combined public greedy switch on a balanced 224-input speech sample, '
+        scope=('Same-engine combined public greedy switch. ' if exact else
+               'N: same-engine public draft budget256/128, greedy kernels ON both; differences retained. ')+
+              'Balanced 224-input speech sample, '
               'not an independent quality holdout or corpus-weighted performance. Seven repeats '
               'are repeated timings, not additional evaluation inputs. Raw files retain per-call '
               'wall time/output/dispatch/cold metadata. No timing from the full-corpus one-pass audit.')

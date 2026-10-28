@@ -13,6 +13,7 @@ REPO=$PWD
 OUT="$REPO/outputs/runtime-${PBS_JOBID%%.*}"
 LOCAL="$PBS_LOCALDIR/expanded-profile"
 MODEL_NAME=${MODEL_NAME:-owsm_v4_medium_1B}
+COMPARISON=${COMPARISON:-greedy_kernels}
 CORPUS="$REPO/.cache/regression-expanded-v1"
 mkdir -p "$OUT" "$LOCAL" "$LOCAL/results" "$LOCAL/tmp" "$LOCAL/engines"
 export TMPDIR="$LOCAL/tmp" TRITON_CACHE_DIR="$LOCAL/triton" TORCHINDUCTOR_CACHE_DIR="$LOCAL/inductor"
@@ -67,10 +68,10 @@ if (( PROFILE_TIMEOUT < 300 )); then
     printf '%s\n' 'insufficient remaining allocation for profiling' > "$LOCAL/results/deferred_reason.txt"
     exit 1
 fi
-printf '%s\n' 'expanded greedy timing: 224 inputs, 7 alternating repeats, single and bulk' >> "$OUT/progress.log"
+printf '%s\n' "expanded greedy timing: 224 inputs, 7 alternating repeats, comparison=$COMPARISON" >> "$OUT/progress.log"
 timeout --kill-after=30 --preserve-status "$PROFILE_TIMEOUT" "$PY" "$LOCAL/scripts/profile_expanded_greedy.py" \
     --model "$LOCAL/$MODEL_NAME" --data "$LOCAL/corpus" --out "$LOCAL/results/profile" \
-    --per-language 32 --repeat 7 > "$LOCAL/results/profile.log" 2>&1 &
+    --per-language 32 --repeat 7 --comparison "$COMPARISON" > "$LOCAL/results/profile.log" 2>&1 &
 WORKER=$!
 wait "$WORKER"
 WORKER=""
