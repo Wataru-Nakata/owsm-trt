@@ -8,11 +8,13 @@ import shutil
 import tarfile
 import zipfile
 from pathlib import Path
+from types import SimpleNamespace
 
 import prepare_large_regression
 import pytest
 from audit_large_regression import (
     capture_failure,
+    draft_dispatch,
     input_groups,
     load_completed,
     record_differences,
@@ -110,6 +112,30 @@ def test_deterministic_selection_and_separate_long_form():
     assert select_rows(rows,'long',None)==[rows[2]]
     assert select_rows(rows,'beam_long',None)==[rows[2]]
     assert select_rows(rows,'beam_b1',['clean'])==[rows[0]]
+
+
+def test_bulk_groups_keep_language_and_long_api_boundaries():
+    rows=[dict(key=str(i),lang='eng' if i<75 else 'jpn',seconds=31 if i==69 else i%30+1)
+          for i in range(100)]
+    groups=list(input_groups(rows,64,30,False))
+    assert [r for batch,_ in groups for r in batch]==rows
+    assert any(len(batch)>8 and not joined for batch,joined in groups)
+    for batch,joined in groups:
+        assert len(batch)<=64 and len({r['lang'] for r in batch})==1
+        assert all((r['seconds']>30)==joined for r in batch)
+
+
+def test_draft_metadata_never_constructs_or_runs_a_lazy_bound():
+    def fail():
+        raise AssertionError('metadata must not execute GPU work')
+    fail.dispatch='test-decoder'
+    ready=SimpleNamespace(step=fail,graph=object(),notime_graph=None)
+    deferred=SimpleNamespace(step=None,factory=fail)
+    session=SimpleNamespace(_verify={(64,8):ready,(128,32):deferred},_verify_solo={(64,4):ready})
+    result=draft_dispatch(session)
+    assert set(result)=={'draft/solo=False/cache=64/window=8','draft/solo=True/cache=64/window=4'}
+    assert all(v['implementation']=='test-decoder' and v['graph_captured'] for v in result.values())
+    assert deferred.step is None and deferred.factory is fail
 
 
 def test_failure_keeps_reproduction_context_and_reraises(tmp_path,monkeypatch):

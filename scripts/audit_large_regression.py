@@ -94,6 +94,22 @@ def load_completed(publish: Path, rows: list[dict], chunk_size: int, config_dige
     return completed
 
 
+def draft_dispatch(session) -> dict:
+    """Inspect already bound verification functions without constructing lazy graphs or touching tensors."""
+    steps={}
+    for table,alone in (('_verify',False),('_verify_solo',True)):
+        for (bucket,window),bound in getattr(session,table,{}).items():
+            fn=bound.step
+            if fn is None:
+                continue
+            steps[f'draft/solo={alone}/cache={bucket}/window={window}']=dict(
+                implementation=getattr(fn,'dispatch',fn.__qualname__),module=fn.__module__,
+                fallback_reason=getattr(fn,'fallback_reason',None),
+                writes_cache=getattr(fn,'writes_cache',False),writes_pred=getattr(fn,'writes_pred',False),
+                graph_captured=bound.graph is not None,notime_graph_captured=bound.notime_graph is not None)
+    return steps
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--model',required=True)
@@ -102,7 +118,7 @@ def main():
     ap.add_argument('--publish',type=Path,required=True)
     ap.add_argument('--mode',choices=['beam_bound','beam_kernels','beam_combined','greedy_kernels','ring_split','serial64'],
                     default='beam_bound')
-    ap.add_argument('--case',choices=['beam_b1','beam_b3','beam_prompt','beam_long','plain_ts','draft_ts','translation','long'],default='beam_b1')
+    ap.add_argument('--case',choices=['beam_b1','beam_b3','beam_prompt','beam_long','plain_ts','draft_ts','draft_bulk','translation','long'],default='beam_b1')
     ap.add_argument('--datasets',nargs='+')
     ap.add_argument('--budget-seconds',type=int,default=2700)
     ap.add_argument('--chunk-size',type=int,
@@ -117,7 +133,12 @@ def main():
         ap.error('positive budget and chunk size required')
     beam_mode = args.mode.startswith('beam_')
     if beam_mode!=args.case.startswith('beam_'):
-        ap.error('beam modes require a beam case; other modes require single-row cases')
+        ap.error('beam modes require a beam case; other modes require a greedy case')
+    if args.case=='draft_bulk' and args.mode!='greedy_kernels':
+        ap.error('draft_bulk requires greedy_kernels; single-row scheduling knobs are not bulk ablations')
+    request_batch = 8 if args.case=='draft_bulk' else (3 if args.case=='beam_b3' else 1)
+    # More inputs than rows exercise row refill across batches in one public API call.
+    group_size = 64 if args.case=='draft_bulk' else request_batch
     args.out.mkdir(parents=True,exist_ok=True)
     args.publish.mkdir(parents=True,exist_ok=True)
     import soundfile as sf
@@ -150,6 +171,8 @@ def main():
         )
     if args.mode=='greedy_kernels':
         config['greedy_variants'] = dict(reference=False,candidate=True)
+    if args.case=='draft_bulk':
+        config.update(request_batch_size=request_batch,input_group_limit=group_size)
     config_path = args.publish/'config.json'
     if config_path.exists():
         assert json.loads(config_path.read_text())==config,'resume config/source/input changed'
@@ -194,8 +217,9 @@ def main():
             env['greedy_settings'] = {v:{k:value for k,value in vars(m).items() if k.startswith('greedy_')}
                                       for v,m in models.items()}
         env['decoder_dispatch'] = {v:{} for v in backends}
-        env['dispatch_scope'] = ('Configured single-token functions for observed sessions; listed buckets may '
-                                 'only have warmed/captured. Includes per-bucket observation jobs, not execution counts.')
+        env['dispatch_scope'] = ('Configured single-token and already bound drafted-verification functions '
+                                 'for observed sessions; listed buckets/windows may only have warmed/captured. '
+                                 'Includes per-entry observation jobs, not execution counts.')
         if (args.publish/'environment.json').exists():
             previous = json.loads((args.publish/'environment.json').read_text())
             assert previous['engine_sha256']==env['engine_sha256']
@@ -227,7 +251,7 @@ def main():
                 records = []
                 # B3 mixes lengths within the same language and supported API. A >window neighbour
                 # must not switch an ordinary short input to long-form semantics/token availability.
-                for batch,joined in input_groups(subset,3 if args.case=='beam_b3' else 1,
+                for batch,joined in input_groups(subset,group_size,
                                                  model.cfg.speech_seconds,args.case in ('long','beam_long')):
                     if stop[0]:
                         break
@@ -239,9 +263,9 @@ def main():
                         if beam_mode:
                             model.beam_upper_bound = config['beam_variants'][mode]['beam_upper_bound']
                             model.beam_kernels = config['beam_variants'][mode]['beam_kernels']
-                        model.ctc_draft = args.case in ('draft_ts','long')
+                        model.ctc_draft = args.case in ('draft_ts','draft_bulk','long')
                         kw = dict(lang=batch[0]['lang'],beam_size=5 if beam_mode else 1,
-                                  batch_size=3 if args.case=='beam_b3' else 1,
+                                  batch_size=request_batch,
                                   task='st_eng' if args.case=='translation' else 'asr')
                         if args.case=='beam_prompt':
                             kw['prompt'] = 'Previous speech context. '*20
@@ -260,9 +284,10 @@ def main():
                                 assert solo, 'serial64 plain audit did not activate the solo decoder route'
                             shape = f'batch={session_batch},beam={session_beam}'
                             previous_dispatch = env['decoder_dispatch'][mode].get(shape,{})
+                            steps = dispatch(session) | draft_dispatch(session)
                             observed = dict(plain_solo=solo,decoder=previous_dispatch.get('decoder',{}) | {
                                 str(bucket):info | dict(observed_job=os.environ.get('PBS_JOBID'))
-                                for bucket,info in dispatch(session).items()})
+                                for bucket,info in steps.items()})
                             if env['decoder_dispatch'][mode].get(shape)!=observed:
                                 env['decoder_dispatch'][mode][shape] = observed
                                 changed_dispatch = True

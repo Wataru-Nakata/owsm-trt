@@ -261,6 +261,10 @@ This grouping change has small fixture coverage and the complete B3 result above
 continuation stayed frozen at8151703.
 Each call in this audit handles one such group. Large multi-batch request behavior, row refill,
 encoder lookahead and file-prefetch coverage require separate cases; this audit does not establish them.
+The prepared `greedy_kernels/draft_bulk` case sends up to64 same-language, same-API inputs per call
+with requested batch8, so ordinary groups larger than8 exercise streaming/refill. Longer-than-window
+inputs keep long-form semantics and their unavailable token IDs. Full input-group keys and requested
+batch size are recorded. Its GPU validation is pending; the B1 result does not establish bulk parity.
 
 Additional ablations include `beam_kernels` (upper bound ON in both, search/state/cache kernels OFF/ON)
 and `beam_combined` (upper bound and beam kernels both OFF/ON), to cover bugs shared by both sides
@@ -366,6 +370,9 @@ job when a run resumes; a listed bucket may only have warmed/captured and is not
 The102M `serial64/plain_ts` audit requires the solo route to activate, so an inactive24/64 configuration
 cannot silently pass as the intended ablation. This metadata change does not alter inference and is
 not included in the completed frozen9e87cfaf B3 kernel run.
+Future snapshots also retain already bound drafted-verification functions by window/cache/solo mode.
+Telemetry skips unbound lazy entries without calling their factory or touching tensors; this has a
+small metadata fixture. Configured/captured entries remain distinct from actual execution counts.
 
 The preceding small public-split repeat2778800 was explicitly stopped when a fresh account query
 reported198 GPUs. PBS exit271 and partial publication are recorded in
