@@ -1,0 +1,2604 @@
+{
+  "source": {
+    "group": "gai51740",
+    "queue": "R9920261300",
+    "resource": "rt_HG",
+    "nodes": 1,
+    "gpus": 1,
+    "walltime": "01:00:00",
+    "account_gpu_cap": 192,
+    "approval": "Standing serial1GPU authorization;fresh account192/queue/no duplicate guard required.",
+    "model_name": "owsm_v4_base_102M",
+    "experiment": "runtime_expanded_frontend",
+    "comparison": "frontend_batches",
+    "expected_samples": 224,
+    "expected_conditions": 7,
+    "repeat": 7,
+    "per_language": 32,
+    "commit": "7ac9f15dde8113163b63c6885895cd90f9f299d3",
+    "runtime_tree": "a9ab5a575ef33008f254fac7c010af1bc817a765",
+    "snapshot": "/groups/gai51740/acc12576tt/github.com/owsm_trt/outputs/runtime-expanded-frontend-102m-submit-01/snapshot-7ac9f15d.tar",
+    "status": "approved_not_submitted",
+    "approved_jobs": 1,
+    "additional_jobs_submitted": 0,
+    "prepared_at": "2026-10-28T10:57:44.301366+00:00",
+    "purpose": "Public frontend graph maxbatch1/8 E timing;224input/7language/7repeats bulkB8. Fresh32entry caches perlanguage. Defaultunchanged.",
+    "checks": "10 focused CPU selection/aggregation checks,Ruff,bash-n,diff passed.",
+    "prerequisite": "Full2786900 E output audit anddefaultcontrol accepted;fresh192/queue/no duplicates."
+  },
+  "environment": {
+    "commit": "7ac9f15dde8113163b63c6885895cd90f9f299d3",
+    "job": "2786935.pbs1",
+    "checkpoint_sha256": "4702713d44ab3e239101f09182903cd28f7b51e565bb632008af12beefb37752",
+    "index_sha256": "213a5e54cf891cefdcfebffb4c2dbac392867f64bcecc9cc60c3bdf7e5057211",
+    "selection_sha256": "21037d881f14e1b1b7299167418157a9b4bdaea98f0133de07616256b519d583",
+    "engine_sha256": {
+      "encoder.engine": "f3da9563c8ef41b6252388c18d89fac46cc5781cfa505d6750837e0c12e0f481",
+      "decoder.engine": "b6065937220853d65633f6f59ce0edab80270717b8971c8afa53baf9a2bf5f72",
+      "verify.engine": "34a912836635a2c6928abef52e6ea5140c5215bc8fa178ee8b1af07bd5458dcb"
+    },
+    "gpu": "NVIDIA H200",
+    "cuda": "13.0",
+    "torch": "2.14.1+cu130",
+    "versions": {
+      "torch": "2.14.1",
+      "triton": "3.8.0",
+      "tensorrt": "11.4.0.106"
+    },
+    "nvidia_smi": "name, uuid, driver_version\nNVIDIA H200, GPU-13d7a0a7-f65c-a2e7-c87e-6547ddfa9cdf, 595.71.05",
+    "load_ms": 3756.9347549870145,
+    "greedy_settings": {
+      "reference": {
+        "greedy_skip_finished": true,
+        "greedy_plain_solo": true,
+        "greedy_fused_select": true,
+        "greedy_split_choose": true,
+        "greedy_fuse_accept": true,
+        "greedy_reuse_notime": false,
+        "greedy_cache_draft_flags": true,
+        "greedy_lazy_verify_graphs": true,
+        "greedy_lazy_plain": true
+      },
+      "candidate": {
+        "greedy_skip_finished": true,
+        "greedy_plain_solo": true,
+        "greedy_fused_select": true,
+        "greedy_split_choose": true,
+        "greedy_fuse_accept": true,
+        "greedy_reuse_notime": false,
+        "greedy_cache_draft_flags": true,
+        "greedy_lazy_verify_graphs": true,
+        "greedy_lazy_plain": true
+      }
+    },
+    "draft_token_budgets": {
+      "reference": 256,
+      "candidate": 256
+    },
+    "frontend_batch_limits": {
+      "reference": 1,
+      "candidate": 8
+    },
+    "comparison": "frontend_batches",
+    "classification": "E",
+    "cases": [
+      "stream_ts_b8"
+    ],
+    "repeat": 7,
+    "per_language": 32,
+    "scope": "Public frontend graph batch limit1/8. Same engine/checkpoint. Balanced language/duration/dataset sample excluding prior screening overlap, nonspeech and long-form. Not corpus-weighted performance or an independent quality holdout. Loaded audio outside measured calls; cold/capture and diagnostic dispatch counts separate. Both session pools resident."
+  },
+  "scheduler": {
+    "job": "2786935.pbs1",
+    "state": "F",
+    "exit_status": 0,
+    "stageout_status": 1,
+    "observed_at": "2026-10-28T11:05:00.499251+00:00",
+    "project": "gai51740",
+    "queue": "R9920261300",
+    "requested": {
+      "fs_factor": 1,
+      "mem": "160gb",
+      "mpiprocs": 1,
+      "ncpus": 16,
+      "ngpus": 1,
+      "njobs_rt_HG": 1,
+      "nodect": 1,
+      "ompthreads": 1,
+      "place": "scatter",
+      "select": "1:ncpus=16:mem=160gb:ngpus=1:njobs_rt_HG=1",
+      "walltime": "01:00:00"
+    },
+    "resources_used": {
+      "cpupercent": 101,
+      "cput": "00:01:43",
+      "mem": "24663296kb",
+      "ncpus": 16,
+      "vmem": "323688540kb",
+      "walltime": "00:01:40"
+    }
+  },
+  "complete": {
+    "job": "2786935.pbs1",
+    "complete": true,
+    "conditions": 7,
+    "samples": 224,
+    "repeat": 7
+  },
+  "conditions": {
+    "deu/stream_ts_b8": {
+      "variants": {
+        "reference": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 60.852320995763876,
+            "p95": 63.828837900655344,
+            "minimum": 60.740529996110126,
+            "maximum": 65.01099299930502,
+            "stdev": 1.4533422183272227,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 60.852320995763876,
+            "p95": 63.828837900655344,
+            "minimum": 60.740529996110126,
+            "maximum": 65.01099299930502,
+            "stdev": 1.4533422183272227,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 6640.56545060901,
+          "peak_allocated_bytes": 3202060288,
+          "draft_decoder_calls": 756
+        },
+        "candidate": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 59.87582499801647,
+            "p95": 60.81004469306208,
+            "minimum": 59.77671200525947,
+            "maximum": 61.06455899134744,
+            "stdev": 0.41728569077072697,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 59.87582499801647,
+            "p95": 60.81004469306208,
+            "minimum": 59.77671200525947,
+            "maximum": 61.06455899134744,
+            "stdev": 0.41728569077072697,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 6788.432396877599,
+          "peak_allocated_bytes": 3094834176,
+          "draft_decoder_calls": 756
+        }
+      },
+      "repeat_totals_ms": {
+        "reference": [
+          65.01099299930502,
+          60.89389001135714,
+          60.852320995763876,
+          60.83344800572377,
+          60.740529996110126,
+          60.80869399011135,
+          61.07047600380611
+        ],
+        "candidate": [
+          61.06455899134744,
+          59.859318993403576,
+          59.87582499801647,
+          59.86006099556107,
+          59.77671200525947,
+          60.216177997062914,
+          60.186773000168614
+        ]
+      },
+      "paired_rtfx_change_percent": {
+        "samples": [
+          6.462724161353184,
+          1.7283374340887114,
+          1.6308685479987206,
+          1.6261042738243692,
+          1.612363675616435,
+          0.9839814029334981,
+          1.468267793049849
+        ],
+        "stats": {
+          "n": 7,
+          "p50": 1.6261042738243692,
+          "p95": 5.042408143173839,
+          "minimum": 0.9839814029334981,
+          "maximum": 6.462724161353184,
+          "stdev": 1.7486397445599309,
+          "percentile_method": "linear interpolation at (n-1)*q"
+        },
+        "positive_repeats": 7
+      },
+      "pooled_rtfx_change_percent": 2.2267222176844514,
+      "request_median_comparisons": [
+        {
+          "ids": [
+            "fleurs_de_test--de_de-9539852546318281222",
+            "fleurs_de_test--de_de-322566282770044812",
+            "fleurs_de_test--de_de-5029291527905533581",
+            "fleurs_de_test--de_de-13619903763102250854",
+            "fleurs_de_test--de_de-5076330092750267209",
+            "fleurs_de_test--de_de-4625253856041369698",
+            "fleurs_de_test--de_de-12769451296103711814",
+            "fleurs_de_test--de_de-980502554629108510",
+            "fleurs_de_test--de_de-17194386507947520507",
+            "fleurs_de_test--de_de-8970395757894156280",
+            "fleurs_de_test--de_de-11858506543534190332",
+            "fleurs_de_test--de_de-5135202912458287728",
+            "fleurs_de_test--de_de-13681202748699137616",
+            "fleurs_de_test--de_de-2543601238923640800",
+            "fleurs_de_test--de_de-7519616025250741852",
+            "fleurs_de_test--de_de-7471549809031321156",
+            "fleurs_de_test--de_de-12096938210340365820",
+            "fleurs_de_test--de_de-1191248392415945452",
+            "fleurs_de_test--de_de-3984832977459170363",
+            "fleurs_de_test--de_de-361399504826739550",
+            "fleurs_de_test--de_de-4138553571604325890",
+            "fleurs_de_test--de_de-15701810135013960619",
+            "fleurs_de_test--de_de-16270727513661331945",
+            "fleurs_de_test--de_de-4253549905132833169",
+            "fleurs_de_test--de_de-7451112490045072794",
+            "fleurs_de_test--de_de-14232485927175061318",
+            "fleurs_de_test--de_de-16647831326365949411",
+            "fleurs_de_test--de_de-3439753945386479444",
+            "fleurs_de_test--de_de-16904905454695689678",
+            "fleurs_de_test--de_de-13785217042026043005",
+            "fleurs_de_test--de_de-985652190919708893",
+            "fleurs_de_test--de_de-1723516658369460617"
+          ],
+          "median_wall_ms": {
+            "reference": 60.852320995763876,
+            "candidate": 59.87582499801647
+          },
+          "rtfx_change_percent": 1.6308685479987206
+        }
+      ],
+      "requests_with_faster_candidate_median": 1,
+      "draft_call_differences": [],
+      "scope": "Single: per-input transcribe latency. Streaming: one complete multi-batch request. Pooled RTFx uses all warm wall samples; paired statistics use repeat totals. Draft-call counts are not all decoder steps. Memory includes both resident variant pools.",
+      "quality": {
+        "reference": {
+          "metric": "WER",
+          "reference_units": 575,
+          "errors": 80,
+          "rate": 0.1391304347826087,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "candidate": {
+          "metric": "WER",
+          "reference_units": 575,
+          "errors": 80,
+          "rate": 0.1391304347826087,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "cold": {
+        "reference": {
+          "warmup_ms": 3898.372407988063,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 12,
+              "normal_verify_graphs": 12,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "tensorrt: no kernel for rows": 4,
+              "uninitialized": 12,
+              "tensorrt: shape limit": 8
+            }
+          },
+          "allocated_delta_bytes": 1862489600,
+          "reserved_delta_bytes": 1818230784,
+          "frontend_graph": {
+            "captures": 0,
+            "max_entries": 32,
+            "max_batch": 1,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 0,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "full_verify_warmup_ms": 1127.0519820100162,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 24,
+              "normal_verify_graphs": 24,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          }
+        },
+        "candidate": {
+          "warmup_ms": 1934.1037300036987,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 12,
+              "normal_verify_graphs": 12,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "tensorrt: no kernel for rows": 4,
+              "uninitialized": 12,
+              "tensorrt: shape limit": 8
+            }
+          },
+          "allocated_delta_bytes": 370524160,
+          "reserved_delta_bytes": 715128832,
+          "frontend_graph": {
+            "captures": 4,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 58089600,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "full_verify_warmup_ms": 1120.0255650037434,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 24,
+              "normal_verify_graphs": 24,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          }
+        }
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        }
+      },
+      "artifact_sha256": {
+        "frontend_cache.json": "8da6f4c9d75f93535b7cae03a990eb98b59626fd88c24b8c373555e4470d96ce",
+        "wall.json": "a8d997f254cfb2037d0e8447d9be45155ae58a642bac3282e3615fd8242db18f",
+        "actual_dispatch_reference.json": "09c23234aa5db5bc7efb8af40ffd679658b6650e3f10a79903890835b5ed0251",
+        "actual_dispatch_candidate.json": "09c23234aa5db5bc7efb8af40ffd679658b6650e3f10a79903890835b5ed0251",
+        "summary.json": "04437a0501c623e2f1cc98b539801d21d13720467805ca2a7888f4191f99b3a4",
+        "tokens.json": "64c42df468bd9cb3566106008cc259201fc6a0531cd210f56332587eb7be49d9",
+        "cold.json": "7fe47d0ea11bcdb2aca961609a6752fae34e0bce1b6f5e86624633fe345ea0f6"
+      },
+      "frontend_cache": {
+        "reference": {
+          "captures": 0,
+          "max_entries": 32,
+          "max_batch": 1,
+          "reuse_warmup_stream": true,
+          "capture_stream": "exclusive native stream",
+          "fallbacks": 0,
+          "input_output_bytes": 0,
+          "workspace_bytes": null,
+          "memory_note": "input/output only; captured intermediate private pools are additional",
+          "shapes": []
+        },
+        "candidate": {
+          "captures": 4,
+          "max_entries": 32,
+          "max_batch": 8,
+          "reuse_warmup_stream": true,
+          "capture_stream": "exclusive native stream",
+          "fallbacks": 0,
+          "input_output_bytes": 58089600,
+          "workspace_bytes": null,
+          "memory_note": "input/output only; captured intermediate private pools are additional",
+          "shapes": [
+            [
+              8,
+              96097
+            ],
+            [
+              8,
+              144097
+            ],
+            [
+              8,
+              304097
+            ],
+            [
+              8,
+              464097
+            ]
+          ]
+        }
+      }
+    },
+    "eng/stream_ts_b8": {
+      "variants": {
+        "reference": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 43.405700009316206,
+            "p95": 46.406481305893976,
+            "minimum": 43.26677101198584,
+            "maximum": 47.54111100919545,
+            "stdev": 1.4404795926667187,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 43.405700009316206,
+            "p95": 46.406481305893976,
+            "minimum": 43.26677101198584,
+            "maximum": 47.54111100919545,
+            "stdev": 1.4404795926667187,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 7333.437614640603,
+          "peak_allocated_bytes": 3379755520,
+          "draft_decoder_calls": 511
+        },
+        "candidate": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 42.364206005004235,
+            "p95": 42.845713206043,
+            "minimum": 42.07613399194088,
+            "maximum": 42.98716501216404,
+            "stdev": 0.26674676726779173,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 42.364206005004235,
+            "p95": 42.845713206043,
+            "minimum": 42.07613399194088,
+            "maximum": 42.98716501216404,
+            "stdev": 0.26674676726779173,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 7613.947155304924,
+          "peak_allocated_bytes": 3283454976,
+          "draft_decoder_calls": 511
+        }
+      },
+      "repeat_totals_ms": {
+        "reference": [
+          47.54111100919545,
+          43.35981298936531,
+          43.26677101198584,
+          43.759011998190545,
+          43.405700009316206,
+          43.55734999990091,
+          43.33807299553882
+        ],
+        "candidate": [
+          42.98716501216404,
+          42.26046799158212,
+          42.515658991760574,
+          42.39092400530353,
+          42.27768600685522,
+          42.364206005004235,
+          42.07613399194088
+        ]
+      },
+      "paired_rtfx_change_percent": {
+        "samples": [
+          10.593734189595372,
+          2.6013554748191003,
+          1.7666714759632995,
+          3.227313452086711,
+          2.668107242856399,
+          2.8163964521269014,
+          2.999180019342207
+        ],
+        "stats": {
+          "n": 7,
+          "p50": 2.8163964521269014,
+          "p95": 8.383807968342769,
+          "minimum": 1.7666714759632995,
+          "maximum": 10.593734189595372,
+          "stdev": 2.8016113028780727,
+          "percentile_method": "linear interpolation at (n-1)*q"
+        },
+        "positive_repeats": 7
+      },
+      "pooled_rtfx_change_percent": 3.825075706709602,
+      "request_median_comparisons": [
+        {
+          "ids": [
+            "fleurs_en_validation--en_us-4913562629825440299",
+            "librispeech_dev_other--4323-55228-0004",
+            "librispeech_test_clean--3575-170457-0006",
+            "fleurs_en_validation--en_us-9909934339673808373",
+            "librispeech_dev_other--4831-25894-0030",
+            "librispeech_test_clean--5683-32866-0009",
+            "librispeech_dev_other--4572-112383-0000",
+            "librispeech_test_clean--7127-75947-0004",
+            "fleurs_en_validation--en_us-6733125851564557061",
+            "librispeech_dev_other--4572-112375-0009",
+            "librispeech_test_clean--7021-79759-0004",
+            "fleurs_en_validation--en_us-16834890005363592460",
+            "librispeech_dev_other--3915-57461-0023",
+            "librispeech_test_clean--5105-28240-0022",
+            "fleurs_en_validation--en_us-8840380835730314512",
+            "librispeech_dev_other--2506-11278-0005",
+            "librispeech_test_clean--2830-3980-0032",
+            "fleurs_en_validation--en_us-6840966447225121742",
+            "librispeech_dev_other--1630-141772-0015",
+            "librispeech_test_clean--2830-3980-0007",
+            "librispeech_dev_other--8288-274162-0062",
+            "librispeech_test_clean--8463-294828-0024",
+            "fleurs_en_validation--en_us-843704469654597326",
+            "librispeech_dev_other--5849-50873-0001",
+            "librispeech_test_clean--908-31957-0025",
+            "fleurs_en_validation--en_us-5710220425952785052",
+            "librispeech_dev_other--6841-88294-0037",
+            "librispeech_test_clean--6829-68769-0026",
+            "fleurs_en_validation--en_us-227756730022928180",
+            "librispeech_dev_other--116-288048-0030",
+            "librispeech_test_clean--7127-75947-0037",
+            "fleurs_en_validation--en_us-8091644035324618810"
+          ],
+          "median_wall_ms": {
+            "reference": 43.405700009316206,
+            "candidate": 42.364206005004235
+          },
+          "rtfx_change_percent": 2.4584291847437045
+        }
+      ],
+      "requests_with_faster_candidate_median": 1,
+      "draft_call_differences": [],
+      "scope": "Single: per-input transcribe latency. Streaming: one complete multi-batch request. Pooled RTFx uses all warm wall samples; paired statistics use repeat totals. Draft-call counts are not all decoder steps. Memory includes both resident variant pools.",
+      "quality": {
+        "reference": {
+          "metric": "WER",
+          "reference_units": 764,
+          "errors": 91,
+          "rate": 0.11910994764397906,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "candidate": {
+          "metric": "WER",
+          "reference_units": 764,
+          "errors": 91,
+          "rate": 0.11910994764397906,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "cold": {
+        "reference": {
+          "warmup_ms": 1426.3234800018836,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 9,
+              "normal_verify_graphs": 9,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "tensorrt: no kernel for rows": 3,
+              "uninitialized": 15,
+              "tensorrt: shape limit": 6
+            }
+          },
+          "allocated_delta_bytes": 313554944,
+          "reserved_delta_bytes": -178257920,
+          "frontend_graph": {
+            "captures": 0,
+            "max_entries": 32,
+            "max_batch": 1,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 0,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "full_verify_warmup_ms": 1257.2606239991728,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 24,
+              "normal_verify_graphs": 24,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          }
+        },
+        "candidate": {
+          "warmup_ms": 1434.8772689991165,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 9,
+              "normal_verify_graphs": 9,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "tensorrt: no kernel for rows": 3,
+              "uninitialized": 15,
+              "tensorrt: shape limit": 6
+            }
+          },
+          "allocated_delta_bytes": 361283584,
+          "reserved_delta_bytes": 683671552,
+          "frontend_graph": {
+            "captures": 4,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 48873600,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "full_verify_warmup_ms": 1290.4055150138447,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 24,
+              "normal_verify_graphs": 24,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          }
+        }
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        }
+      },
+      "artifact_sha256": {
+        "frontend_cache.json": "fb8bc8754362f70ed22c826fa8f7000921bd78d4517c86ad96313b724283bf8f",
+        "wall.json": "2e1e87a7d6a34159d686d5f955df12be1b5b6be3adfb9f71d241da2687be56c7",
+        "actual_dispatch_reference.json": "e47f2785ff24a552090dd607dfe6e3ca7f1e9cbbc11a0e60ae409727378ebd15",
+        "actual_dispatch_candidate.json": "e47f2785ff24a552090dd607dfe6e3ca7f1e9cbbc11a0e60ae409727378ebd15",
+        "summary.json": "4026efbc787938c4c9814b81e21bc2eb77aea2a71ef692c4583b5fec3300dc58",
+        "tokens.json": "4ee303b3a6725193ee2dda723e1744514c1669f90c07a04a1d5dc653058c297c",
+        "cold.json": "02e4e89971a46b8a3e1ae2d40941a9feadc7c647ad18c6ab5d51693b852f3ff9"
+      },
+      "frontend_cache": {
+        "reference": {
+          "captures": 0,
+          "max_entries": 32,
+          "max_batch": 1,
+          "reuse_warmup_stream": true,
+          "capture_stream": "exclusive native stream",
+          "fallbacks": 0,
+          "input_output_bytes": 0,
+          "workspace_bytes": null,
+          "memory_note": "input/output only; captured intermediate private pools are additional",
+          "shapes": []
+        },
+        "candidate": {
+          "captures": 4,
+          "max_entries": 32,
+          "max_batch": 8,
+          "reuse_warmup_stream": true,
+          "capture_stream": "exclusive native stream",
+          "fallbacks": 0,
+          "input_output_bytes": 48873600,
+          "workspace_bytes": null,
+          "memory_note": "input/output only; captured intermediate private pools are additional",
+          "shapes": [
+            [
+              8,
+              80097
+            ],
+            [
+              8,
+              144097
+            ],
+            [
+              8,
+              208097
+            ],
+            [
+              8,
+              416097
+            ]
+          ]
+        }
+      }
+    },
+    "fra/stream_ts_b8": {
+      "variants": {
+        "reference": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 84.29663399874698,
+            "p95": 87.77495060348883,
+            "minimum": 84.00828600861132,
+            "maximum": 88.85076800652314,
+            "stdev": 1.5949368359668272,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 84.29663399874698,
+            "p95": 87.77495060348883,
+            "minimum": 84.00828600861132,
+            "maximum": 88.85076800652314,
+            "stdev": 1.5949368359668272,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 3516.7842377927223,
+          "peak_allocated_bytes": 3537082368,
+          "draft_decoder_calls": 1113
+        },
+        "candidate": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 83.33479300199542,
+            "p95": 83.76886769692646,
+            "minimum": 83.06693600025028,
+            "maximum": 83.84740799374413,
+            "stdev": 0.2396404447784958,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 83.33479300199542,
+            "p95": 83.76886769692646,
+            "minimum": 83.06693600025028,
+            "maximum": 83.84740799374413,
+            "stdev": 0.2396404447784958,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 3585.4543659038955,
+          "peak_allocated_bytes": 3447832064,
+          "draft_decoder_calls": 1113
+        }
+      },
+      "repeat_totals_ms": {
+        "reference": [
+          88.85076800652314,
+          85.26470999640878,
+          84.29663399874698,
+          84.24195299448911,
+          84.2925750039285,
+          84.00828600861132,
+          84.39009900030214
+        ],
+        "candidate": [
+          83.06693600025028,
+          83.58560700435191,
+          83.27959399321117,
+          83.33479300199542,
+          83.55596000910737,
+          83.27242900850251,
+          83.84740799374413
+        ]
+      },
+      "paired_rtfx_change_percent": {
+        "samples": [
+          6.962857046100068,
+          2.008842254348231,
+          1.2212355473523617,
+          1.0885729235230235,
+          0.8815828275336113,
+          0.8836742351225002,
+          0.6472364734262381
+        ],
+        "stats": {
+          "n": 7,
+          "p50": 1.0885729235230235,
+          "p95": 5.476652608574513,
+          "minimum": 0.6472364734262381,
+          "maximum": 6.962857046100068,
+          "stdev": 2.0832952784550303,
+          "percentile_method": "linear interpolation at (n-1)*q"
+        },
+        "positive_repeats": 7
+      },
+      "pooled_rtfx_change_percent": 1.9526397830500253,
+      "request_median_comparisons": [
+        {
+          "ids": [
+            "fleurs_fr_validation--fr_fr-9043116753413356940",
+            "fleurs_fr_validation--fr_fr-4296075365761740410",
+            "fleurs_fr_validation--fr_fr-3973723344518157445",
+            "fleurs_fr_validation--fr_fr-8772738180808083935",
+            "fleurs_fr_validation--fr_fr-4828830814070141369",
+            "fleurs_fr_validation--fr_fr-7856890929576275663",
+            "fleurs_fr_validation--fr_fr-3082641598422437134",
+            "fleurs_fr_validation--fr_fr-2086639904747050008",
+            "fleurs_fr_validation--fr_fr-6472703079090575732",
+            "fleurs_fr_validation--fr_fr-14158452746636513305",
+            "fleurs_fr_validation--fr_fr-3920926992201662587",
+            "fleurs_fr_validation--fr_fr-11260516818449932039",
+            "fleurs_fr_validation--fr_fr-7821490262817434898",
+            "fleurs_fr_validation--fr_fr-12736265345443968280",
+            "fleurs_fr_validation--fr_fr-12705132069283854619",
+            "fleurs_fr_validation--fr_fr-11432635460748117065",
+            "fleurs_fr_validation--fr_fr-3403868515702274320",
+            "fleurs_fr_validation--fr_fr-9238703150285310547",
+            "fleurs_fr_validation--fr_fr-5238075320404703631",
+            "fleurs_fr_validation--fr_fr-8203846075890120872",
+            "fleurs_fr_validation--fr_fr-1284616974191518194",
+            "fleurs_fr_validation--fr_fr-343285770319720856",
+            "fleurs_fr_validation--fr_fr-17644422570830048369",
+            "fleurs_fr_validation--fr_fr-14468638584426924317",
+            "fleurs_fr_validation--fr_fr-12482409059971069823",
+            "fleurs_fr_validation--fr_fr-15862829295612263434",
+            "fleurs_fr_validation--fr_fr-14757781394291531658",
+            "fleurs_fr_validation--fr_fr-8685376275061251487",
+            "fleurs_fr_validation--fr_fr-5992216071413521711",
+            "fleurs_fr_validation--fr_fr-4280854297640590111",
+            "fleurs_fr_validation--fr_fr-13036198272031553548",
+            "fleurs_fr_validation--fr_fr-622196158886216764"
+          ],
+          "median_wall_ms": {
+            "reference": 84.29663399874698,
+            "candidate": 83.33479300199542
+          },
+          "rtfx_change_percent": 1.154188979300086
+        }
+      ],
+      "requests_with_faster_candidate_median": 1,
+      "draft_call_differences": [],
+      "scope": "Single: per-input transcribe latency. Streaming: one complete multi-batch request. Pooled RTFx uses all warm wall samples; paired statistics use repeat totals. Draft-call counts are not all decoder steps. Memory includes both resident variant pools.",
+      "quality": {
+        "reference": {
+          "metric": "WER",
+          "reference_units": 727,
+          "errors": 184,
+          "rate": 0.2530949105914718,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "candidate": {
+          "metric": "WER",
+          "reference_units": 727,
+          "errors": 184,
+          "rate": 0.2530949105914718,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "cold": {
+        "reference": {
+          "warmup_ms": 1380.419452994829,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 8,
+              "normal_verify_graphs": 8,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "uninitialized": 16,
+              "tensorrt: no kernel for rows": 2,
+              "tensorrt: shape limit": 6
+            }
+          },
+          "allocated_delta_bytes": 313554944,
+          "reserved_delta_bytes": -146800640,
+          "frontend_graph": {
+            "captures": 0,
+            "max_entries": 32,
+            "max_batch": 1,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 0,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "full_verify_warmup_ms": 1342.4396079935832,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 24,
+              "normal_verify_graphs": 24,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          }
+        },
+        "candidate": {
+          "warmup_ms": 1301.4660269982414,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 8,
+              "normal_verify_graphs": 8,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "uninitialized": 16,
+              "tensorrt: no kernel for rows": 2,
+              "tensorrt: shape limit": 6
+            }
+          },
+          "allocated_delta_bytes": 359731712,
+          "reserved_delta_bytes": 668991488,
+          "frontend_graph": {
+            "captures": 4,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 47030400,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "full_verify_warmup_ms": 1424.9631020065863,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 24,
+              "normal_verify_graphs": 24,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          }
+        }
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        }
+      },
+      "artifact_sha256": {
+        "frontend_cache.json": "959d3588328e1e6ef24ab17f6f57c884128e62e57585469f68a95b2afd93f03a",
+        "wall.json": "36e70075546feaafbeae24e86a808707e22fa2bc06ab0cde62fc16c670daf262",
+        "actual_dispatch_reference.json": "a7b8f89f9f581df16c51a053d73289b8a2839186c19a9c9f3826d1d24fd17084",
+        "actual_dispatch_candidate.json": "a7b8f89f9f581df16c51a053d73289b8a2839186c19a9c9f3826d1d24fd17084",
+        "summary.json": "54d74a1f56321cfd5900363052a99e7c27710fe1c74598d381ff691a036ad710",
+        "tokens.json": "0b2bc91e7972a21250fe3285df39652f41b392c5804d21311489e66ad96537a0",
+        "cold.json": "2d81cf4a3f49c4b2a6dbb77b7381a993061968d43eb384c4d7d6daf9a1bb4a88"
+      },
+      "frontend_cache": {
+        "reference": {
+          "captures": 0,
+          "max_entries": 32,
+          "max_batch": 1,
+          "reuse_warmup_stream": true,
+          "capture_stream": "exclusive native stream",
+          "fallbacks": 0,
+          "input_output_bytes": 0,
+          "workspace_bytes": null,
+          "memory_note": "input/output only; captured intermediate private pools are additional",
+          "shapes": []
+        },
+        "candidate": {
+          "captures": 4,
+          "max_entries": 32,
+          "max_batch": 8,
+          "reuse_warmup_stream": true,
+          "capture_stream": "exclusive native stream",
+          "fallbacks": 0,
+          "input_output_bytes": 47030400,
+          "workspace_bytes": null,
+          "memory_note": "input/output only; captured intermediate private pools are additional",
+          "shapes": [
+            [
+              8,
+              80097
+            ],
+            [
+              8,
+              144097
+            ],
+            [
+              8,
+              208097
+            ],
+            [
+              8,
+              384097
+            ]
+          ]
+        }
+      }
+    },
+    "jpn/stream_ts_b8": {
+      "variants": {
+        "reference": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 34.981466000317596,
+            "p95": 37.50363680446753,
+            "minimum": 34.30372399452608,
+            "maximum": 38.568842006498016,
+            "stdev": 1.3442461471927958,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 34.981466000317596,
+            "p95": 37.50363680446753,
+            "minimum": 34.30372399452608,
+            "maximum": 38.568842006498016,
+            "stdev": 1.3442461471927958,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 8756.262247969853,
+          "peak_allocated_bytes": 3649112576,
+          "draft_decoder_calls": 350
+        },
+        "candidate": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 34.03335000621155,
+            "p95": 34.495507295650896,
+            "minimum": 33.683267000014894,
+            "maximum": 34.59913299593609,
+            "stdev": 0.2859536563589423,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 34.03335000621155,
+            "p95": 34.495507295650896,
+            "minimum": 33.683267000014894,
+            "maximum": 34.59913299593609,
+            "stdev": 0.2859536563589423,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 9081.611132159058,
+          "peak_allocated_bytes": 3552812032,
+          "draft_decoder_calls": 350
+        }
+      },
+      "repeat_totals_ms": {
+        "reference": [
+          38.568842006498016,
+          35.01815799972974,
+          34.64380500372499,
+          34.30372399452608,
+          35.003006996703334,
+          34.981466000317596,
+          34.773964012856595
+        ],
+        "candidate": [
+          34.59913299593609,
+          34.02403800282627,
+          34.03335000621155,
+          34.253713994985446,
+          33.74524399987422,
+          34.094945003744215,
+          33.683267000014894
+        ]
+      },
+      "paired_rtfx_change_percent": {
+        "samples": [
+          11.473434929794912,
+          2.9218166192410466,
+          1.7936964694983848,
+          0.1459987654125694,
+          3.727230411591642,
+          2.6001537661258123,
+          3.238097459017908
+        ],
+        "stats": {
+          "n": 7,
+          "p50": 2.9218166192410466,
+          "p95": 9.149573574333925,
+          "minimum": 0.1459987654125694,
+          "maximum": 11.473434929794912,
+          "stdev": 3.3534744258183666,
+          "percentile_method": "linear interpolation at (n-1)*q"
+        },
+        "positive_repeats": 7
+      },
+      "pooled_rtfx_change_percent": 3.7156137513427945,
+      "request_median_comparisons": [
+        {
+          "ids": [
+            "fleurs_ja_validation--ja_jp-3171694045962175263",
+            "jvs_nonpara90--jvs083-BASIC5000_2066",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_052",
+            "fleurs_ja_validation--ja_jp-17595107070656151202",
+            "jvs_nonpara90--jvs042-BASIC5000_3007",
+            "jvs_parallel10--jvs005-VOICEACTRESS100_084",
+            "jvs_nonpara90--jvs009-TRAVEL1000_0787",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_095",
+            "fleurs_ja_validation--ja_jp-2099970133610103443",
+            "jvs_nonpara90--jvs018-BASIC5000_2161",
+            "jvs_nonpara90--jvs021-TRAVEL1000_0045",
+            "jvs_parallel10--jvs008-VOICEACTRESS100_091",
+            "fleurs_ja_validation--ja_jp-6522611377317710498",
+            "jvs_nonpara90--jvs048-BASIC5000_2389",
+            "jvs_parallel10--jvs001-VOICEACTRESS100_029",
+            "fleurs_ja_validation--ja_jp-1819289275454271168",
+            "jvs_nonpara90--jvs080-BASIC5000_3053",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_005",
+            "jvs_nonpara90--jvs009-BASIC5000_2571",
+            "fleurs_ja_validation--ja_jp-5116751292495283703",
+            "jvs_nonpara90--jvs023-BASIC5000_1027",
+            "jvs_parallel10--jvs003-VOICEACTRESS100_055",
+            "fleurs_ja_validation--ja_jp-14672974986823750874",
+            "jvs_nonpara90--jvs003-UT-PARAPHRASE-sent239-phrase2",
+            "jvs_parallel10--jvs005-VOICEACTRESS100_057",
+            "fleurs_ja_validation--ja_jp-1286876112474128683",
+            "jvs_nonpara90--jvs066-BASIC5000_1954",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_097",
+            "fleurs_ja_validation--ja_jp-8681003617933384964",
+            "jvs_nonpara90--jvs041-BASIC5000_1011",
+            "jvs_parallel10--jvs004-VOICEACTRESS100_040",
+            "fleurs_ja_validation--ja_jp-16626033026082560289"
+          ],
+          "median_wall_ms": {
+            "reference": 34.981466000317596,
+            "candidate": 34.03335000621155
+          },
+          "rtfx_change_percent": 2.7858438676563013
+        }
+      ],
+      "requests_with_faster_candidate_median": 1,
+      "draft_call_differences": [],
+      "scope": "Single: per-input transcribe latency. Streaming: one complete multi-batch request. Pooled RTFx uses all warm wall samples; paired statistics use repeat totals. Draft-call counts are not all decoder steps. Memory includes both resident variant pools.",
+      "quality": {
+        "reference": {
+          "metric": "CER",
+          "reference_units": 1262,
+          "errors": 214,
+          "rate": 0.16957210776545167,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "candidate": {
+          "metric": "CER",
+          "reference_units": 1262,
+          "errors": 214,
+          "rate": 0.16957210776545167,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "cold": {
+        "reference": {
+          "warmup_ms": 1250.4921299987473,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 6,
+              "normal_verify_graphs": 6,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "tensorrt: no kernel for rows": 2,
+              "uninitialized": 18,
+              "tensorrt: shape limit": 4
+            }
+          },
+          "allocated_delta_bytes": 313554944,
+          "reserved_delta_bytes": -132120576,
+          "frontend_graph": {
+            "captures": 0,
+            "max_entries": 32,
+            "max_batch": 1,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 0,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "full_verify_warmup_ms": 1641.320523005561,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 24,
+              "normal_verify_graphs": 24,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          }
+        },
+        "candidate": {
+          "warmup_ms": 1244.716083005187,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 6,
+              "normal_verify_graphs": 6,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "tensorrt: no kernel for rows": 2,
+              "uninitialized": 18,
+              "tensorrt: shape limit": 4
+            }
+          },
+          "allocated_delta_bytes": 362205184,
+          "reserved_delta_bytes": 679477248,
+          "frontend_graph": {
+            "captures": 4,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 49795200,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "full_verify_warmup_ms": 1634.884366998449,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 24,
+              "normal_verify_graphs": 24,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          }
+        }
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        }
+      },
+      "artifact_sha256": {
+        "frontend_cache.json": "43a1f8c2898f489ad5d5a206a2b16c5d4728e1315ea0a9e02f6c518420cb91b7",
+        "wall.json": "19450bf31dc948dad175fee6d4e5bcb3a59099f75654b33daf0f95340cbf6bf5",
+        "actual_dispatch_reference.json": "3b0f066ee95e8938276811e7755466f940321da65096a26acdae6a29340981c1",
+        "actual_dispatch_candidate.json": "3b0f066ee95e8938276811e7755466f940321da65096a26acdae6a29340981c1",
+        "summary.json": "51e778d396b13d8a988eda5dc267636e1b1453100cb84dc79713a3ea40839ebd",
+        "tokens.json": "01c5847ac8fac9b060a620d9a27355bc738eace19be93ebd658739159c6726ef",
+        "cold.json": "ac691c69da716da8ab5061da7de1209aff41fb186c4196ee2c0b9a7f06b91768"
+      },
+      "frontend_cache": {
+        "reference": {
+          "captures": 0,
+          "max_entries": 32,
+          "max_batch": 1,
+          "reuse_warmup_stream": true,
+          "capture_stream": "exclusive native stream",
+          "fallbacks": 0,
+          "input_output_bytes": 0,
+          "workspace_bytes": null,
+          "memory_note": "input/output only; captured intermediate private pools are additional",
+          "shapes": []
+        },
+        "candidate": {
+          "captures": 4,
+          "max_entries": 32,
+          "max_batch": 8,
+          "reuse_warmup_stream": true,
+          "capture_stream": "exclusive native stream",
+          "fallbacks": 0,
+          "input_output_bytes": 49795200,
+          "workspace_bytes": null,
+          "memory_note": "input/output only; captured intermediate private pools are additional",
+          "shapes": [
+            [
+              8,
+              80097
+            ],
+            [
+              8,
+              160097
+            ],
+            [
+              8,
+              208097
+            ],
+            [
+              8,
+              416097
+            ]
+          ]
+        }
+      }
+    },
+    "rus/stream_ts_b8": {
+      "variants": {
+        "reference": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 77.01234798878431,
+            "p95": 80.10238539427519,
+            "minimum": 76.46659499732777,
+            "maximum": 81.12641799380071,
+            "stdev": 1.5270818321670119,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 77.01234798878431,
+            "p95": 80.10238539427519,
+            "minimum": 76.46659499732777,
+            "maximum": 81.12641799380071,
+            "stdev": 1.5270818321670119,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 4710.453870681174,
+          "peak_allocated_bytes": 3720201728,
+          "draft_decoder_calls": 1015
+        },
+        "candidate": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 75.77566801046487,
+            "p95": 76.0895763974986,
+            "minimum": 74.9497859942494,
+            "maximum": 76.10167599341366,
+            "stdev": 0.3952449738898601,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 75.77566801046487,
+            "p95": 76.0895763974986,
+            "minimum": 74.9497859942494,
+            "maximum": 76.10167599341366,
+            "stdev": 0.3952449738898601,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 4825.871828481901,
+          "peak_allocated_bytes": 3623901184,
+          "draft_decoder_calls": 1015
+        }
+      },
+      "repeat_totals_ms": {
+        "reference": [
+          81.12641799380071,
+          77.7129759953823,
+          77.31202100694645,
+          77.01234798878431,
+          76.51395400171168,
+          76.46659499732777,
+          76.59319700906053
+        ],
+        "candidate": [
+          76.06134400703013,
+          75.77566801046487,
+          75.7310829940252,
+          75.88547600607853,
+          75.25209500454366,
+          74.9497859942494,
+          76.10167599341366
+        ]
+      },
+      "paired_rtfx_change_percent": {
+        "samples": [
+          6.6591960119747995,
+          2.556635970071386,
+          2.0875682090086833,
+          1.4849639773169665,
+          1.6768423484978534,
+          2.023766956712536,
+          0.6458741009717217
+        ],
+        "stats": {
+          "n": 7,
+          "p50": 2.023766956712536,
+          "p95": 5.428427999403772,
+          "minimum": 0.6458741009717217,
+          "maximum": 6.6591960119747995,
+          "stdev": 1.8057700552442422,
+          "percentile_method": "linear interpolation at (n-1)*q"
+        },
+        "positive_repeats": 7
+      },
+      "pooled_rtfx_change_percent": 2.450251312704954,
+      "request_median_comparisons": [
+        {
+          "ids": [
+            "fleurs_ru_validation--ru_ru-8240168270690220831",
+            "fleurs_ru_validation--ru_ru-3765091626090272810",
+            "fleurs_ru_validation--ru_ru-17553996289576040758",
+            "fleurs_ru_validation--ru_ru-10221250944584729444",
+            "fleurs_ru_validation--ru_ru-10948790688582597154",
+            "fleurs_ru_validation--ru_ru-6463542239715166414",
+            "fleurs_ru_validation--ru_ru-10506159478104812570",
+            "fleurs_ru_validation--ru_ru-15443112433434816718",
+            "fleurs_ru_validation--ru_ru-14160035423126532654",
+            "fleurs_ru_validation--ru_ru-11322082307290188515",
+            "fleurs_ru_validation--ru_ru-14830840801014847376",
+            "fleurs_ru_validation--ru_ru-15825714963268274725",
+            "fleurs_ru_validation--ru_ru-3832089573134621088",
+            "fleurs_ru_validation--ru_ru-1342451616691576012",
+            "fleurs_ru_validation--ru_ru-12022741181094187209",
+            "fleurs_ru_validation--ru_ru-13181303627914742171",
+            "fleurs_ru_validation--ru_ru-8470716290913652079",
+            "fleurs_ru_validation--ru_ru-17328283931145121684",
+            "fleurs_ru_validation--ru_ru-17431219596452103138",
+            "fleurs_ru_validation--ru_ru-7711642424955050982",
+            "fleurs_ru_validation--ru_ru-4969910361235257757",
+            "fleurs_ru_validation--ru_ru-4742160061512262204",
+            "fleurs_ru_validation--ru_ru-3247088092324256031",
+            "fleurs_ru_validation--ru_ru-689656087570225264",
+            "fleurs_ru_validation--ru_ru-2653568755678748277",
+            "fleurs_ru_validation--ru_ru-8613300018964988460",
+            "fleurs_ru_validation--ru_ru-11516705399449231913",
+            "fleurs_ru_validation--ru_ru-5417220094059359927",
+            "fleurs_ru_validation--ru_ru-8154344926749652940",
+            "fleurs_ru_validation--ru_ru-10708884047933543059",
+            "fleurs_ru_validation--ru_ru-10479463149729837036",
+            "fleurs_ru_validation--ru_ru-7856258512050419015"
+          ],
+          "median_wall_ms": {
+            "reference": 77.01234798878431,
+            "candidate": 75.77566801046487
+          },
+          "rtfx_change_percent": 1.6320278141904954
+        }
+      ],
+      "requests_with_faster_candidate_median": 1,
+      "draft_call_differences": [],
+      "scope": "Single: per-input transcribe latency. Streaming: one complete multi-batch request. Pooled RTFx uses all warm wall samples; paired statistics use repeat totals. Draft-call counts are not all decoder steps. Memory includes both resident variant pools.",
+      "quality": {
+        "reference": {
+          "metric": "WER",
+          "reference_units": 648,
+          "errors": 152,
+          "rate": 0.2345679012345679,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "candidate": {
+          "metric": "WER",
+          "reference_units": 648,
+          "errors": 152,
+          "rate": 0.2345679012345679,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "cold": {
+        "reference": {
+          "warmup_ms": 1274.9878149916185,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 6,
+              "normal_verify_graphs": 6,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "tensorrt: no kernel for rows": 2,
+              "uninitialized": 18,
+              "tensorrt: shape limit": 4
+            }
+          },
+          "allocated_delta_bytes": 313554944,
+          "reserved_delta_bytes": -142606336,
+          "frontend_graph": {
+            "captures": 0,
+            "max_entries": 32,
+            "max_batch": 1,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 0,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "full_verify_warmup_ms": 1650.5822550097946,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 24,
+              "normal_verify_graphs": 24,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          }
+        },
+        "candidate": {
+          "warmup_ms": 1282.4432849884033,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 6,
+              "normal_verify_graphs": 6,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "tensorrt: no kernel for rows": 2,
+              "uninitialized": 18,
+              "tensorrt: shape limit": 4
+            }
+          },
+          "allocated_delta_bytes": 366185472,
+          "reserved_delta_bytes": 664797184,
+          "frontend_graph": {
+            "captures": 4,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 53481600,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "full_verify_warmup_ms": 1649.5498060103273,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 24,
+              "normal_verify_graphs": 24,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          }
+        }
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        }
+      },
+      "artifact_sha256": {
+        "frontend_cache.json": "21640696833e87868e6937027a2eb410ecf17aa10770b958205cda45b1045fa8",
+        "wall.json": "595c50c1537451aa794f91367ba621d166cebc99fafe64c6b7d05470f1a14cc1",
+        "actual_dispatch_reference.json": "4774e36f302eb60ed5c281646c385cda94b057c06cbd3f11937c5a0f699e6ecb",
+        "actual_dispatch_candidate.json": "4774e36f302eb60ed5c281646c385cda94b057c06cbd3f11937c5a0f699e6ecb",
+        "summary.json": "cac728ee0090eb66df3775c809368c04c40b3609ffa465843d8af9608c625f1a",
+        "tokens.json": "f651dad329143f8b28a2c047ed4d03f5f61f754b6dd278af84ee99970a2639ed",
+        "cold.json": "4f0063b29f7e47b593bd23d1c817cc4220f36b9d2373f57ffdbb53a6cf007229"
+      },
+      "frontend_cache": {
+        "reference": {
+          "captures": 0,
+          "max_entries": 32,
+          "max_batch": 1,
+          "reuse_warmup_stream": true,
+          "capture_stream": "exclusive native stream",
+          "fallbacks": 0,
+          "input_output_bytes": 0,
+          "workspace_bytes": null,
+          "memory_note": "input/output only; captured intermediate private pools are additional",
+          "shapes": []
+        },
+        "candidate": {
+          "captures": 4,
+          "max_entries": 32,
+          "max_batch": 8,
+          "reuse_warmup_stream": true,
+          "capture_stream": "exclusive native stream",
+          "fallbacks": 0,
+          "input_output_bytes": 53481600,
+          "workspace_bytes": null,
+          "memory_note": "input/output only; captured intermediate private pools are additional",
+          "shapes": [
+            [
+              8,
+              128097
+            ],
+            [
+              8,
+              160097
+            ],
+            [
+              8,
+              224097
+            ],
+            [
+              8,
+              416097
+            ]
+          ]
+        }
+      }
+    },
+    "spa/stream_ts_b8": {
+      "variants": {
+        "reference": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 58.65692401130218,
+            "p95": 61.45158669387456,
+            "minimum": 58.49104099615943,
+            "maximum": 62.639436990139075,
+            "stdev": 1.4109258939626834,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 58.65692401130218,
+            "p95": 61.45158669387456,
+            "minimum": 58.49104099615943,
+            "maximum": 62.639436990139075,
+            "stdev": 1.4109258939626834,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 7365.861136640371,
+          "peak_allocated_bytes": 3797403136,
+          "draft_decoder_calls": 721
+        },
+        "candidate": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 57.658866004203446,
+            "p95": 58.758515400404576,
+            "minimum": 57.53297499904875,
+            "maximum": 59.10221399972215,
+            "stdev": 0.5171805720660936,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 57.658866004203446,
+            "p95": 58.758515400404576,
+            "minimum": 57.53297499904875,
+            "maximum": 59.10221399972215,
+            "stdev": 0.5171805720660936,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 7530.257925002952,
+          "peak_allocated_bytes": 3701102592,
+          "draft_decoder_calls": 721
+        }
+      },
+      "repeat_totals_ms": {
+        "reference": [
+          62.639436990139075,
+          58.56946400308516,
+          58.49104099615943,
+          58.6072189908009,
+          58.661916002165526,
+          58.67993600259069,
+          58.65692401130218
+        ],
+        "candidate": [
+          59.10221399972215,
+          57.9565520019969,
+          57.5354070024332,
+          57.658866004203446,
+          57.53297499904875,
+          57.58677299309056,
+          57.88823199691251
+        ]
+      },
+      "paired_rtfx_change_percent": {
+        "samples": [
+          5.984924677159387,
+          1.0575370340650148,
+          1.6609493936243558,
+          1.644765241356505,
+          1.962250349708916,
+          1.898288361515399,
+          1.3278899490844154
+        ],
+        "stats": {
+          "n": 7,
+          "p50": 1.6609493936243558,
+          "p95": 4.778122378924243,
+          "minimum": 1.0575370340650148,
+          "maximum": 5.984924677159387,
+          "stdev": 1.564572170495922,
+          "percentile_method": "linear interpolation at (n-1)*q"
+        },
+        "positive_repeats": 7
+      },
+      "pooled_rtfx_change_percent": 2.2318746622144836,
+      "request_median_comparisons": [
+        {
+          "ids": [
+            "fleurs_es_test--es_419-10589251314781768344",
+            "fleurs_es_test--es_419-10234623649795772963",
+            "fleurs_es_test--es_419-3873350128853031296",
+            "fleurs_es_test--es_419-390658848617539020",
+            "fleurs_es_test--es_419-5859386036374111061",
+            "fleurs_es_test--es_419-9633703226199096522",
+            "fleurs_es_test--es_419-8898033152301134515",
+            "fleurs_es_test--es_419-6978180619280489223",
+            "fleurs_es_test--es_419-17679286535662041524",
+            "fleurs_es_test--es_419-11972630248341529626",
+            "fleurs_es_test--es_419-8616615381295825121",
+            "fleurs_es_test--es_419-916453851137046048",
+            "fleurs_es_test--es_419-17124063481425082418",
+            "fleurs_es_test--es_419-10891154757063940475",
+            "fleurs_es_test--es_419-11603681517704231177",
+            "fleurs_es_test--es_419-8534628782326212080",
+            "fleurs_es_test--es_419-1254626507182510256",
+            "fleurs_es_test--es_419-10286137499198568147",
+            "fleurs_es_test--es_419-13302816037308807402",
+            "fleurs_es_test--es_419-13997737119505689253",
+            "fleurs_es_test--es_419-11444088495955610827",
+            "fleurs_es_test--es_419-11546411932607639194",
+            "fleurs_es_test--es_419-3585803545555373032",
+            "fleurs_es_test--es_419-416124317841544182",
+            "fleurs_es_test--es_419-17736040977613383649",
+            "fleurs_es_test--es_419-18103809775608034391",
+            "fleurs_es_test--es_419-17752586354715492019",
+            "fleurs_es_test--es_419-10764228514996022810",
+            "fleurs_es_test--es_419-5970990648174807758",
+            "fleurs_es_test--es_419-8959429617551765590",
+            "fleurs_es_test--es_419-6725969256029359068",
+            "fleurs_es_test--es_419-13500300560093598250"
+          ],
+          "median_wall_ms": {
+            "reference": 58.65692401130218,
+            "candidate": 57.658866004203446
+          },
+          "rtfx_change_percent": 1.7309705796606734
+        }
+      ],
+      "requests_with_faster_candidate_median": 1,
+      "draft_call_differences": [],
+      "scope": "Single: per-input transcribe latency. Streaming: one complete multi-batch request. Pooled RTFx uses all warm wall samples; paired statistics use repeat totals. Draft-call counts are not all decoder steps. Memory includes both resident variant pools.",
+      "quality": {
+        "reference": {
+          "metric": "WER",
+          "reference_units": 948,
+          "errors": 112,
+          "rate": 0.11814345991561181,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "candidate": {
+          "metric": "WER",
+          "reference_units": 948,
+          "errors": 112,
+          "rate": 0.11814345991561181,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "cold": {
+        "reference": {
+          "warmup_ms": 1347.4020379944704,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 7,
+              "normal_verify_graphs": 7,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "tensorrt: no kernel for rows": 2,
+              "uninitialized": 17,
+              "tensorrt: shape limit": 5
+            }
+          },
+          "allocated_delta_bytes": 313554944,
+          "reserved_delta_bytes": -121634816,
+          "frontend_graph": {
+            "captures": 0,
+            "max_entries": 32,
+            "max_batch": 1,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 0,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "full_verify_warmup_ms": 1539.563166006701,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 24,
+              "normal_verify_graphs": 24,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          }
+        },
+        "candidate": {
+          "warmup_ms": 1368.872774997726,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 7,
+              "normal_verify_graphs": 7,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "tensorrt: no kernel for rows": 2,
+              "uninitialized": 17,
+              "tensorrt: shape limit": 5
+            }
+          },
+          "allocated_delta_bytes": 376278016,
+          "reserved_delta_bytes": 740294656,
+          "frontend_graph": {
+            "captures": 4,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 63619200,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "full_verify_warmup_ms": 1549.044387997128,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 24,
+              "normal_verify_graphs": 24,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          }
+        }
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        }
+      },
+      "artifact_sha256": {
+        "frontend_cache.json": "ddc5386dca01f788b80516473bd04e5d89e034ab3ea0273fbdf2f58ff2a478f7",
+        "wall.json": "79166922d509f20d81c8a22fa9ea3eb02bfded1ea5c8730168ba3f9ae92ec4cb",
+        "actual_dispatch_reference.json": "40929515872955a29435f6645e837a66b18372a823fbaf6a5d068d85540ca0a6",
+        "actual_dispatch_candidate.json": "40929515872955a29435f6645e837a66b18372a823fbaf6a5d068d85540ca0a6",
+        "summary.json": "9a1bd2470d578740024bb8ca5b599ecbf410826acf28e69909d8ac4b0d89771f",
+        "tokens.json": "dd076988129919b0cf16d0f0419f56da99a1ff4b791b9bc23771abd2752ee261",
+        "cold.json": "a7d66e25174a954929a6547e59aa4aecfc13c6109179099d924e5021dc6fd7e5"
+      },
+      "frontend_cache": {
+        "reference": {
+          "captures": 0,
+          "max_entries": 32,
+          "max_batch": 1,
+          "reuse_warmup_stream": true,
+          "capture_stream": "exclusive native stream",
+          "fallbacks": 0,
+          "input_output_bytes": 0,
+          "workspace_bytes": null,
+          "memory_note": "input/output only; captured intermediate private pools are additional",
+          "shapes": []
+        },
+        "candidate": {
+          "captures": 4,
+          "max_entries": 32,
+          "max_batch": 8,
+          "reuse_warmup_stream": true,
+          "capture_stream": "exclusive native stream",
+          "fallbacks": 0,
+          "input_output_bytes": 63619200,
+          "workspace_bytes": null,
+          "memory_note": "input/output only; captured intermediate private pools are additional",
+          "shapes": [
+            [
+              8,
+              160097
+            ],
+            [
+              8,
+              192097
+            ],
+            [
+              8,
+              336097
+            ],
+            [
+              8,
+              416097
+            ]
+          ]
+        }
+      }
+    },
+    "zho/stream_ts_b8": {
+      "variants": {
+        "reference": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 45.43382799602114,
+            "p95": 49.49478210328379,
+            "minimum": 45.31873400264885,
+            "maximum": 51.09357900801115,
+            "stdev": 1.9638700803202764,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 45.43382799602114,
+            "p95": 49.49478210328379,
+            "minimum": 45.31873400264885,
+            "maximum": 51.09357900801115,
+            "stdev": 1.9638700803202764,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 8394.113665687224,
+          "peak_allocated_bytes": 3856914944,
+          "draft_decoder_calls": 469
+        },
+        "candidate": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 44.285040989052504,
+            "p95": 45.313991997682024,
+            "minimum": 43.85125599219464,
+            "maximum": 45.6603089987766,
+            "stdev": 0.5265838873690996,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 44.285040989052504,
+            "p95": 45.313991997682024,
+            "minimum": 43.85125599219464,
+            "maximum": 45.6603089987766,
+            "stdev": 0.5265838873690996,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 8742.633527375845,
+          "peak_allocated_bytes": 3760614400,
+          "draft_decoder_calls": 469
+        }
+      },
+      "repeat_totals_ms": {
+        "reference": [
+          51.09357900801115,
+          45.59399599384051,
+          45.31873400264885,
+          45.43382799602114,
+          45.429204008542,
+          45.426822995068505,
+          45.76425599225331
+        ],
+        "candidate": [
+          45.6603089987766,
+          44.50591899512801,
+          44.297209999058396,
+          44.27346200100146,
+          44.26874800992664,
+          43.85125599219464,
+          44.285040989052504
+        ]
+      },
+      "paired_rtfx_change_percent": {
+        "samples": [
+          11.899328165694456,
+          2.4447916665457647,
+          2.3060684941832,
+          2.620906390815847,
+          2.621388791829271,
+          3.592980331405582,
+          3.340213693302152
+        ],
+        "stats": {
+          "n": 7,
+          "p50": 2.621388791829271,
+          "p95": 9.407423815407789,
+          "minimum": 2.3060684941832,
+          "maximum": 11.899328165694456,
+          "stdev": 3.2069906118323788,
+          "percentile_method": "linear interpolation at (n-1)*q"
+        },
+        "positive_repeats": 7
+      },
+      "pooled_rtfx_change_percent": 4.151955472240898,
+      "request_median_comparisons": [
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-5359218493314493777",
+            "fleurs_zh_test--cmn_hans_cn-7485992766206519433",
+            "fleurs_zh_test--cmn_hans_cn-608809329260395375",
+            "fleurs_zh_test--cmn_hans_cn-14452059866858390995",
+            "fleurs_zh_test--cmn_hans_cn-9699581877784184472",
+            "fleurs_zh_test--cmn_hans_cn-2512442429278456870",
+            "fleurs_zh_test--cmn_hans_cn-1626393343718951419",
+            "fleurs_zh_test--cmn_hans_cn-17738549684744212080",
+            "fleurs_zh_test--cmn_hans_cn-14948927894507528293",
+            "fleurs_zh_test--cmn_hans_cn-17084587270054163808",
+            "fleurs_zh_test--cmn_hans_cn-18059580157250761435",
+            "fleurs_zh_test--cmn_hans_cn-9674297047338995817",
+            "fleurs_zh_test--cmn_hans_cn-3701454187093730515",
+            "fleurs_zh_test--cmn_hans_cn-12915718546983056859",
+            "fleurs_zh_test--cmn_hans_cn-4543746568663720408",
+            "fleurs_zh_test--cmn_hans_cn-5473826726739727303",
+            "fleurs_zh_test--cmn_hans_cn-16785823246087242981",
+            "fleurs_zh_test--cmn_hans_cn-6883634606271964216",
+            "fleurs_zh_test--cmn_hans_cn-14300870981631473855",
+            "fleurs_zh_test--cmn_hans_cn-5479411876618006152",
+            "fleurs_zh_test--cmn_hans_cn-3344315741210503938",
+            "fleurs_zh_test--cmn_hans_cn-17731746061944982790",
+            "fleurs_zh_test--cmn_hans_cn-12263293608573146837",
+            "fleurs_zh_test--cmn_hans_cn-16549419822262830660",
+            "fleurs_zh_test--cmn_hans_cn-7208321975419226278",
+            "fleurs_zh_test--cmn_hans_cn-17739918928868205471",
+            "fleurs_zh_test--cmn_hans_cn-4670237890473852788",
+            "fleurs_zh_test--cmn_hans_cn-454772499289221744",
+            "fleurs_zh_test--cmn_hans_cn-1217058574298081955",
+            "fleurs_zh_test--cmn_hans_cn-12625997379895833919",
+            "fleurs_zh_test--cmn_hans_cn-5822785433218729093",
+            "fleurs_zh_test--cmn_hans_cn-12537777433733171491"
+          ],
+          "median_wall_ms": {
+            "reference": 45.43382799602114,
+            "candidate": 44.285040989052504
+          },
+          "rtfx_change_percent": 2.594074615969344
+        }
+      ],
+      "requests_with_faster_candidate_median": 1,
+      "draft_call_differences": [],
+      "scope": "Single: per-input transcribe latency. Streaming: one complete multi-batch request. Pooled RTFx uses all warm wall samples; paired statistics use repeat totals. Draft-call counts are not all decoder steps. Memory includes both resident variant pools.",
+      "quality": {
+        "reference": {
+          "metric": "CER",
+          "reference_units": 1282,
+          "errors": 280,
+          "rate": 0.21840873634945399,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "candidate": {
+          "metric": "CER",
+          "reference_units": 1282,
+          "errors": 280,
+          "rate": 0.21840873634945399,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "cold": {
+        "reference": {
+          "warmup_ms": 1379.6455610136036,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 7,
+              "normal_verify_graphs": 7,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "uninitialized": 17,
+              "tensorrt: no kernel for rows": 1,
+              "tensorrt: shape limit": 6
+            }
+          },
+          "allocated_delta_bytes": 313554944,
+          "reserved_delta_bytes": -190840832,
+          "frontend_graph": {
+            "captures": 0,
+            "max_entries": 32,
+            "max_batch": 1,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 0,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "full_verify_warmup_ms": 1491.7576979933074,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 24,
+              "normal_verify_graphs": 24,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          }
+        },
+        "candidate": {
+          "warmup_ms": 1387.057913991157,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 7,
+              "normal_verify_graphs": 7,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "uninitialized": 17,
+              "tensorrt: no kernel for rows": 1,
+              "tensorrt: shape limit": 6
+            }
+          },
+          "allocated_delta_bytes": 368680960,
+          "reserved_delta_bytes": 696254464,
+          "frontend_graph": {
+            "captures": 4,
+            "max_entries": 32,
+            "max_batch": 8,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 56246400,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          },
+          "full_verify_warmup_ms": 1506.9000000075903,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 24,
+              "normal_verify_graphs": 24,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          }
+        }
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        }
+      },
+      "artifact_sha256": {
+        "frontend_cache.json": "3c222a31e907a5f1c4310a78dff69b3262adbca910336ac5811bb7772413214d",
+        "wall.json": "380fbe79fd05cff3da8c8bcfd9fef173c5c801a447d538f57884c5851625477c",
+        "actual_dispatch_reference.json": "3327488910a4cca532cfd46a27823f0c1df8ab51d5c209000aeb2c7c5e779672",
+        "actual_dispatch_candidate.json": "3327488910a4cca532cfd46a27823f0c1df8ab51d5c209000aeb2c7c5e779672",
+        "summary.json": "c1f12a407d4bee60c482475b8685bcd51143cdedffcc161de4d3779531427717",
+        "tokens.json": "d5cfe2c768374583d97a5e1ebf4285ca48e31606a8d5dfca2adb51e1c78b9f8c",
+        "cold.json": "70748de6d09fd18ead4f6593c278ae36c32e506cf6ec68b67679310482de4e31"
+      },
+      "frontend_cache": {
+        "reference": {
+          "captures": 0,
+          "max_entries": 32,
+          "max_batch": 1,
+          "reuse_warmup_stream": true,
+          "capture_stream": "exclusive native stream",
+          "fallbacks": 0,
+          "input_output_bytes": 0,
+          "workspace_bytes": null,
+          "memory_note": "input/output only; captured intermediate private pools are additional",
+          "shapes": []
+        },
+        "candidate": {
+          "captures": 4,
+          "max_entries": 32,
+          "max_batch": 8,
+          "reuse_warmup_stream": true,
+          "capture_stream": "exclusive native stream",
+          "fallbacks": 0,
+          "input_output_bytes": 56246400,
+          "workspace_bytes": null,
+          "memory_note": "input/output only; captured intermediate private pools are additional",
+          "shapes": [
+            [
+              8,
+              96097
+            ],
+            [
+              8,
+              160097
+            ],
+            [
+              8,
+              304097
+            ],
+            [
+              8,
+              416097
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "comparison": "frontend_batches",
+  "classification": "E",
+  "gpu_telemetry": {
+    "utilization_percent": {
+      "n": 15,
+      "p50": 8.0,
+      "p95": 17.499999999999993,
+      "minimum": 0.0,
+      "maximum": 21.0,
+      "stdev": 6.897342483401367,
+      "percentile_method": "linear interpolation at (n-1)*q"
+    },
+    "device_memory_mib": {
+      "n": 15,
+      "p50": 4849.0,
+      "p95": 6884.2,
+      "minimum": 0.0,
+      "maximum": 7279.0,
+      "stdev": 1782.1732226569773,
+      "percentile_method": "linear interpolation at (n-1)*q"
+    },
+    "scope": "Five-second samples across loading/capture/warm/diagnostic calls and both variants; not per-condition utilization or kernel occupancy."
+  },
+  "scope": "Public frontend graph batch limit1/8, fresh bounded cache per language. Balanced 224-input speech sample, not an independent quality holdout or corpus-weighted performance. Seven repeats are repeated timings, not additional evaluation inputs. Raw files retain per-call wall time/output/dispatch/cold metadata. No timing from the full-corpus one-pass audit."
+}

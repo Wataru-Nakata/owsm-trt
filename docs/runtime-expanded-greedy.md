@@ -133,11 +133,44 @@ Reproduce with `--comparison draft_budget` and the frozen source in
 `outputs/runtime-expanded-budget-1b-submit-01`; all raw timing/output/dispatch artifacts are under
 `outputs/runtime-2786772/profile`.
 
-## Prepared frontend batch graph comparison
+## Frontend batch graph comparison / 102M
 
 `--comparison frontend_batches` compares public frontend graph limits1/8 on bulk B8, with budget256
 and greedy optimizations ON in both. The E equality gate and stable-output/no-new-capture checks
 remain mandatory. Each language gets fresh separate32-entry caches so earlier language shapes
 cannot consume its cache capacity; the large corpus audit separately measures cache saturation.
 Saved cache shapes and resolved limits must demonstrate a batched graph actually captured.
-Ten existing small selection/aggregation checks pass; GPU timing remains pending. No default changes.
+Ten existing small selection/aggregation checks pass; reaggregation preserves all35 previously
+measured E/N condition statistics. No default changes.
+
+[Job2786935](runtime-expanded-frontend-2786935.json), frozen7ac9f15, completed PBS/publication exit0.
+All224 outputs and draft-decoder-call counts match across variants; the reference also matches the
+saved102M public-ON outputs from2786438 with the same inputs/groups/runtime tree/checkpoint/engines
+and software. The separate full-corpus graph comparison passes13,232 outputs, including cache
+saturation ([audit](runtime-large-regression-2786900.json)).
+
+| Language | RTFx change | Request p50 ms limit1 →8 | Request p95 ms limit1 →8 | Positive pairs |
+|---|---:|---:|---:|---:|
+| German |+2.23%|60.852 →59.876|63.829 →60.810|7/7|
+| English |+3.83%|43.406 →42.364|46.406 →42.846|7/7|
+| French |+1.95%|84.297 →83.335|87.775 →83.769|7/7|
+| Japanese |+3.72%|34.981 →34.033|37.504 →34.496|7/7|
+| Russian |+2.45%|77.012 →75.776|80.102 →76.090|7/7|
+| Spanish |+2.23%|58.657 →57.659|61.452 →58.759|7/7|
+| Chinese |+4.15%|45.434 →44.285|49.495 →45.314|7/7|
+
+Each request streams32 inputs at B8. Every paired repeat improves in all seven languages, with lower
+request p50/p95 and unchanged outputs. These gains are relative to the current optimized runtime
+with frontend limit1, not cumulative gains over the original repository. The candidate captures four
+B8 shapes per language with zero capacity fallbacks; the reference runs these B8 features eagerly.
+Captured input/output buffers occupy44.85–60.67MiB per language, excluding graph intermediates and
+workspaces. Model load is3.757seconds; capture/audio/cold work is separate. Both variant session pools
+are resident during timing, so recorded allocation peaks are not isolated deployment peaks.
+The full-corpus saturated cache requires more buffers and falls back on unseen shapes; this fresh-cache
+performance sample does not establish saturated-cache throughput or another checkpoint/GPU's gain.
+
+Use `OWSM.from_pretrained(..., frontend_graph_max_batch=8)` to opt in. Reproduce the timing with
+`--comparison frontend_batches` and `outputs/runtime-expanded-frontend-102m-submit-01`'s frozen
+source. Raw timings/cold/cache/output/dispatch data and the previous-output control are retained in
+`outputs/runtime-2786935/`. The default remains1 for the memory/performance tradeoff and mixed
+earlier1B measurements; the larger1B frontend audit is separate.

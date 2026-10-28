@@ -214,7 +214,12 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   features/tokens/segments. The default captures B1; `frontend_graph_max_batch=8` optionally captures
   batches up to8, with a32-shape cache and eager fallback above the selected limit, on CPU/autocast,
   or at capacity. H200/102M timestamped B8 throughput improved6.0% English/2.7% Japanese in independent
-  public validation;1B gains were small/mixed, so the default stays1. Dedicated-stream warm-up also
+  public validation;1B gains were small/mixed, so the default stays1. A larger102M audit matches
+  all13,232 outputs; seven-language
+  B8 timing shows+1.95–4.15% RTFx with all7 paired repeats improving per language and identical
+  outputs. Fresh caches are used per language; a saturated cache requires more memory and can fall
+  back eagerly. [Expanded frontend comparison](docs/runtime-expanded-greedy.md).
+  Dedicated-stream warm-up also
   avoids accumulating per-stream workspaces: the English B1 feature allocation delta fell596.5–596.9
   to52.5–52.9MiB, reproduced with reversed measurement order. This is a memory result, not a warm
   speed claim; graph buffers still add cold work and memory. An exclusive native capture stream prevents pooled-stream workspace
