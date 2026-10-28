@@ -192,8 +192,9 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
     while long ones decode (+1.5-6%, same output).
 * **CTC drafts (greedy).** The encoder-decoder models also have a CTC head. Its best path is a draft of the
   transcript, usually right down to casing and punctuation. One decoder call checks up to 31 drafted tokens per
-  utterance and keeps those that equal the decoder's own choice, so the output is exactly the greedy output with far
-  fewer calls (almost half of the test utterances need a single call). In a batch every utterance advances by its own
+  utterance and keeps those that equal the decoder's own choice. This preserves greedy verification semantics with
+  fewer calls, but fp16 verification/batch shapes can change the decoder's numerical choices; the
+  [large output comparison](docs/runtime-large-regression.md) retains those differences. In a batch every utterance advances by its own
   amount, at its own cache offset. When the decoder and the draft disagree, the draft is re-anchored on the last few
   emitted tokens; a token found nowhere near is taken to replace the drafted one, unless it is punctuation the
   draft lacks (CTC drafts often miss commas). Tuned by replaying the drafts and outputs of LibriSpeech test-clean
@@ -203,7 +204,10 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   256 tokens (rows × window), so at batch 16 a row gets up to 15 drafted tokens per call: wider calls cost more than
   they save. `draft_token_budget=128` is an opt-in for H200/1B B8: timestamped throughput improved
   4.2% English/6.8% Japanese in the public-API replication. Smaller windows can change fp16 output and are not
-  always faster; the default remains 256. [API validation](docs/runtime-results-2771267.md) and [all window settings/differences](docs/runtime-results-2771126.md).
+  always faster; the default remains 256. The expanded seven-language run found mixed tail latency
+  and63 changed inputs in the13,232-input quality audit; see the
+  [expanded budget results](docs/runtime-expanded-greedy.md#numerical-budget-comparison-1b).
+  [API validation](docs/runtime-results-2771267.md) and [all window settings/differences](docs/runtime-results-2771126.md).
 * **Single-utterance frontend graphs.** STFT/mel/normalization use a bounded CUDA graph cache by default;
   `frontend_graph=False` restores eager execution. H200 measurements with identical engines found single
   greedy RTFx +4.3% for v4 medium 1B and +11.5% for base 102M (English 73, five alternating repeats), with exact

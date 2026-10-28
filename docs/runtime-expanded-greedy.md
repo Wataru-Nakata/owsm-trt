@@ -89,7 +89,7 @@ Raw data and the B1 audit control are in`outputs/runtime-2786438/`; the immutabl
 `outputs/runtime-expanded-greedy-102m-submit-01`. Reproduction uses the same commands above with
 the102M checkpoint and result directory.
 
-## Prepared numerical budget comparison
+## Numerical budget comparison / 1B
 
 `--comparison draft_budget` compares the existing public budget256/128 on bulk B8 only (seven
 language conditions), holding the public greedy optimizations ON in both. Separate session pools
@@ -97,5 +97,38 @@ and the same warm/alternating protocol are retained. It records the resolved bud
 retains N output differences, and still rejects unstable repeated outputs or backend failures.
 The summarizer recomputes agreement from saved full outputs; its explicit N mode does not weaken
 the E-mode equality check. Ten small sampler/aggregation fixtures pass, and re-summarizing both
-completed E jobs preserves all28 conditions' statistics exactly. GPU budget timing is pending;
-this adds no new default, kernel, precision or decoder route.
+completed E jobs preserves all28 conditions' statistics exactly.
+
+[Job2786772](runtime-expanded-budget-2786772.json), frozen e755b49, completed all seven conditions
+with PBS/publication exit0. Its budget256 reference matches all224 saved budget256/greedy-ON outputs
+from2786368, with identical inputs/groups, runtime tree, checkpoint/engines and software versions
+(`outputs/runtime-2786772/audit-output-control.json`). This is a within-job256/128 comparison,
+not a speed comparison between jobs.
+
+| Language | Pooled RTFx change | Request p50 ms 256 →128 | Request p95 ms 256 →128 | Positive pairs |
+|---|---:|---:|---:|---:|
+| German |+7.60%|119.438 →110.437|120.830 →111.452|7/7|
+| English |+10.26%|126.176 →114.413|126.325 →115.289|7/7|
+| French |+0.08%|135.619 →125.476|137.038 →171.661|6/7|
+| Japanese |+13.68%|111.154 →99.196|129.449 →112.971|7/7|
+| Russian |+10.74%|163.349 →146.975|163.889 →148.729|7/7|
+| Spanish |+6.41%|132.683 →124.292|133.129 →125.064|7/7|
+| Chinese |−3.59%|130.976 →116.908|132.107 →196.435|5/7|
+
+Each request contains32 inputs, internally streamed at B8. All medians improve, but French and
+Chinese have worse p95 and large candidate outliers (190.851ms and219.547ms); none are removed.
+Seven repeats are insufficient to establish stable tail behavior or explain these outliers.
+Four inputs change tokens/text/segments (two Japanese, one Russian, one Chinese); all224 timestamp
+token sequences match. Russian word errors increase65→66/648 words, Chinese character errors
+decrease148→147/1282 characters; the other language error totals are unchanged. Each variant's
+repeated output is stable. The separate [13,232-input audit](runtime-large-regression-2786743.json)
+retains63 changed inputs including nine changed timestamp sequences; the smaller timing sample's
+timestamp agreement must not be generalized.
+
+Model load is7.740seconds, with cold captures and audio loading excluded from warm request time.
+Draft-decoder calls increase in six languages, staying equal in English; smaller verification windows
+trade work per call for call count. Shared-pool allocator peaks and broad five-second utilization
+samples retain the limitations above. No new default, kernel, precision or decoder route is adopted.
+Reproduce with `--comparison draft_budget` and the frozen source in
+`outputs/runtime-expanded-budget-1b-submit-01`; all raw timing/output/dispatch artifacts are under
+`outputs/runtime-2786772/profile`.
