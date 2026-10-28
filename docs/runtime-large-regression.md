@@ -5,7 +5,8 @@ coverage of uncommon inputs. Large output regressions are now a separate accepta
 small, repeated latency benchmark. The1B/beam5/timestamp/B1 and B3 upper-bound OFF/ON audits each completed with
 zero output differences across13,232 inputs. The search-kernel OFF/ON audits also completed at B1 and B3,
 and the102M plain timestamp serial64-versus24 audit passes the same13,232 inputs;
-the102M drafted timestamp public greedy-kernel switch also passes all13,232 inputs at B1 and bulk B8.
+the102M drafted timestamp public greedy-kernel switch also passes all13,232 inputs at B1 and bulk B8,
+and the1B bulk B8 audit passes the same corpus.
 Other large-corpus ablations and timing remain pending.
 
 Completed ordinary/stress-corpus E checks are listed below. Each row uses the same checkpoint and
@@ -21,6 +22,7 @@ corpus; their counts must not be added to claim more independent evaluation inpu
 |102M plain greedy B1|Serial Ring24 /64 CTAs|13,232|13,191|[2781184](runtime-large-regression-2781184.json)|
 |102M CTC-drafted greedy B1|Public greedy-kernel switch OFF / ON|13,232|13,191|[2785506](runtime-large-regression-2785506.json)|
 |102M CTC-drafted greedy bulk B8|Public greedy-kernel switch OFF / ON|13,232|13,191|[2786149](runtime-large-regression-2786149.json)|
+|1B CTC-drafted greedy bulk B8|Public greedy-kernel switch OFF / ON|13,232|13,191|[2786249](runtime-large-regression-2786249.json)|
 
 All rows enable timestamps. Beam upper-bound comparisons keep search kernels ON; search-kernel
 comparisons keep the upper bound ON. These are separate ablations, not whole-version parity.
@@ -275,6 +277,16 @@ shapes, while bound batch1 functions include Ring. These are configured/captured
 counts. Both variants retain51 diagnostic inputs, including21 invalid/out-of-range segments and16
 unpaired timestamp sequences. This validates the combined public switch within bulk requests;
 it does not establish B1/B8 numerical identity, per-flag execution, file-prefetch coverage or a speed gain.
+
+The [1B bulk result2786249](runtime-large-regression-2786249.json) uses the same3976d7f source and
+request grouping, and also passes all104 chunks and13,232 text/segment pairs plus13,191 available
+token/timestamp pairs (PBS F/exit0, publication exit0). Bound batch8 verification functions include
+Gluon and TensorRT shape-limit fallbacks, identical between variants. Both sides retain106 distinct
+diagnostic inputs:87 invalid/out-of-range segment inputs,28 nonspeech text outputs,7 repeated-fourgram
+indicators,5 unpaired timestamp sequences,2 empty segments and1 repeated-token indicator; categories
+overlap. All unpaired/repeated-token cases in this pass are generated nonspeech probes. Speech-only
+WER/CER and the complete flagged-input catalogue are retained; no new timing or per-function execution
+claim follows from this audit. The1B B1 comparison is still pending.
 
 The [102M B1-versus-bulk saved-output comparison](runtime-greedy-bulk-numerics-102m-13232.json)
 holds the candidate runtime tree, checkpoint/engines, software and configured greedy/decoder settings
