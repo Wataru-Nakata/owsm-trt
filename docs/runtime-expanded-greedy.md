@@ -132,3 +132,12 @@ samples retain the limitations above. No new default, kernel, precision or decod
 Reproduce with `--comparison draft_budget` and the frozen source in
 `outputs/runtime-expanded-budget-1b-submit-01`; all raw timing/output/dispatch artifacts are under
 `outputs/runtime-2786772/profile`.
+
+## Prepared frontend batch graph comparison
+
+`--comparison frontend_batches` compares public frontend graph limits1/8 on bulk B8, with budget256
+and greedy optimizations ON in both. The E equality gate and stable-output/no-new-capture checks
+remain mandatory. Each language gets fresh separate32-entry caches so earlier language shapes
+cannot consume its cache capacity; the large corpus audit separately measures cache saturation.
+Saved cache shapes and resolved limits must demonstrate a batched graph actually captured.
+Ten existing small selection/aggregation checks pass; GPU timing remains pending. No default changes.

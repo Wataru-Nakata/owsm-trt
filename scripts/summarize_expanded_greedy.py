@@ -94,13 +94,17 @@ def summarize(raw: Path) -> dict:
     assert complete['samples']==sum(map(len,selected.values()))==224
     summaries=json.loads((profile/'summary.json').read_text())
     comparison=env.get('comparison','greedy_kernels')
-    assert comparison in ('greedy_kernels','draft_budget')
-    exact=comparison=='greedy_kernels'
-    cases=('single_ts','stream_ts_b8') if exact else ('stream_ts_b8',)
+    assert comparison in ('greedy_kernels','draft_budget','frontend_batches')
+    exact=comparison!='draft_budget'
+    cases=('single_ts','stream_ts_b8') if comparison=='greedy_kernels' else ('stream_ts_b8',)
     assert env.get('classification','E')==('E' if exact else 'N')
     assert tuple(env.get('cases',cases))==cases
     if not exact:
         assert env['classification']=='N' and env['draft_token_budgets']==dict(reference=256,candidate=128)
+        assert env['greedy_settings']['reference']==env['greedy_settings']['candidate']
+    if comparison=='frontend_batches':
+        assert env['frontend_batch_limits']==dict(reference=1,candidate=8)
+        assert env['draft_token_budgets']==dict(reference=256,candidate=256)
         assert env['greedy_settings']['reference']==env['greedy_settings']['candidate']
     expected={lang+'/'+case for lang in selected for case in cases}
     assert summaries.keys()==expected and complete['conditions']==len(expected)
@@ -126,6 +130,15 @@ def summarize(raw: Path) -> dict:
         value.update(quality={v:summaries[name][v]['quality'] for v in ('reference','candidate')},
             cold=cold,agreement=summaries[name]['candidate']['agreement'],
             artifact_sha256={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in folder.glob('*.json')})
+        if comparison=='frontend_batches':
+            caches=json.loads((folder/'frontend_cache.json').read_text())
+            for variant,limit in env['frontend_batch_limits'].items():
+                cache=caches[variant]
+                assert cache['max_batch']==limit and cache['max_entries']==32 and cache['reuse_warmup_stream']
+                assert cache['captures']==len(cache['shapes'])<=32
+                assert all(1<=shape[0]<=limit for shape in cache['shapes'])
+            assert any(shape[0]>1 for shape in caches['candidate']['shapes']),'batched frontend never captured'
+            value['frontend_cache']=caches
         result[name]=value
     with (raw/'gpu_utilization.csv').open() as stream:
         telemetry=[{k.strip():v.strip() for k,v in row.items()} for row in csv.DictReader(stream)]
@@ -136,7 +149,8 @@ def summarize(raw: Path) -> dict:
         gpu_telemetry=dict(utilization_percent=stats(utilization),device_memory_mib=stats(memory),
             scope='Five-second samples across loading/capture/warm/diagnostic calls and both variants; '
                   'not per-condition utilization or kernel occupancy.'),
-        scope=('Same-engine combined public greedy switch. ' if exact else
+        scope=('Same-engine combined public greedy switch. ' if comparison=='greedy_kernels' else
+               'Public frontend graph batch limit1/8, fresh bounded cache per language. ' if comparison=='frontend_batches' else
                'N: same-engine public draft budget256/128, greedy kernels ON both; differences retained. ')+
               'Balanced 224-input speech sample, '
               'not an independent quality holdout or corpus-weighted performance. Seven repeats '
