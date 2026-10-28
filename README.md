@@ -417,6 +417,10 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   `beam_fused_lse=True` measures7.99–8.72% more RTFx for B1 single requests and17.99–27.05% for
   duration-sorted B2/B3 whole-corpus requests versus current defaults. The same opt-in limitations
   apply: one English end shifts20ms at B2/B3, silence differs, and WER/CER stays equal on these samples.
+  The [larger B3 comparison](docs/runtime-large-regression.md) finds238 changed
+  inputs among13,232, including178 text differences and58 timestamp sequences. Speech edit counts
+  improve in some languages and worsen in others; two additional inputs exceed the existing timestamp
+  range tolerance. These options remain N-class and off by default.
 * **Timestamp rules.** Like ESPnet, every search applies its `ScoreFilter`: no timestamps after `<notimestamps>`;
   otherwise the output starts with a timestamp, timestamps come in increasing pairs, and `<eos>` only after a
   complete pair.
