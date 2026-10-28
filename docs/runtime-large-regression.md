@@ -355,6 +355,18 @@ Only bulk is permitted: these budgets do not change the available single-row win
 budgets and already bound verification routes are recorded and checked on resume. This is N because
 verification shapes can change numerical outputs. Large-corpus results are pending; no default or
 new kernel change is part of this audit addition.
+Job2786632 (frozen529a97c) published all13,232 outputs/104 chunks before the account rose to194 GPUs.
+The parent confirmed the overage and cancelled only its1GPU allocation. PBS exits271 and raw publication
+exits143; this is not a clean completed allocation. The [preserved outputs](runtime-large-regression-2786632-interrupted.json)
+pass full config/order/hash/group/route checks and the256 reference matches the earlier default bulk
+candidate on every available field. Resolved budgets256/128 and bound B8 windows32/16 are confirmed.
+Budget128 changes63 inputs: tokens13,130/13,191, timestamp tokens13,182/13,191, text13,181/13,232
+and segments13,172/13,232 match. Speech edit deltas are Japanese−3, English+3, German+1, French0,
+Russian−3, Spanish0 and Chinese+4. Nine comparable boundaries move (median20ms, p95/max80ms), with
+51 incompatible text/segment outputs excluded. Invalid-segment totals change87→86; this is not human
+timing accuracy. A same-source continuation is prepared to reuse all104 chunks without rerunning the
+input inference, once fresh account admission is available. The quota interruption and its logs remain
+visible; no steady-state speed or default adoption is established by these preserved outputs.
 The `greedy_kernels` audit mode compares the public constructor's OFF/ON switch with shared
 loaded weights/engines and separate pipeline/session state. It records the resolved greedy settings,
 uses the same corpus/order/hash/resume checks and requires exact full outputs. The [102M drafted timestamp
