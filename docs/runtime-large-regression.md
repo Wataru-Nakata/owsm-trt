@@ -523,3 +523,13 @@ apply. These are the same13,232 corpus inputs evaluated on a second model, not a
 audio. Immutable source and logs are under `outputs/runtime-large-audit-1b-frontend-submit-01` and
 `outputs/runtime-2786953`; the [separate repeated timing](runtime-expanded-greedy.md) finds small
 mixed1B gains, so the default remains1.
+
+### Prepared public beam preset audit
+
+`--mode beam_preset --case beam_b3` (also B1) compares the existing opt-in grouped cross attention,
+compact tail and fused LSE together against the optimized default. Upper-bound stopping and search
+kernels stay ON in both. It uses separate public pipeline/session state with the same engine/checkpoint,
+requires H200132SM/1B, records effective search/decoder/tail routes, and fails on grouped-backend
+errors. All generated N differences remain visible; no new search rule, kernel or default is added.
+Eight focused metadata/configuration/resume checks pass. Prior small measurements showed throughput
+gains and timestamp/silence differences;13,232-input coverage is pending, with no new quality claim.

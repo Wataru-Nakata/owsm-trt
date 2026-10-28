@@ -20,6 +20,18 @@ from prepare_large_regression import publish_file, sha256
 FIELDS = ('tokens','timestamp_tokens','segments','text')
 
 
+def beam_variants(mode: str) -> dict:
+    variants=dict(
+        reference=dict(beam_upper_bound=mode in ('beam_kernels','beam_preset'),
+                       beam_kernels=mode in ('beam_bound','beam_preset')),
+        candidate=dict(beam_upper_bound=True,beam_kernels=True))
+    if mode=='beam_preset':
+        for variant in variants:
+            variants[variant].update(beam_grouped_cross=variant=='candidate',
+                beam_compact_tail=variant=='candidate',beam_fused_lse=variant=='candidate')
+    return variants
+
+
 def record_differences(reference: dict, actual: dict) -> list[str]:
     return [field for field in FIELDS if reference[field]!=actual[field]]
 
@@ -116,7 +128,7 @@ def main():
     ap.add_argument('--data',type=Path,required=True)
     ap.add_argument('--out',type=Path,required=True)
     ap.add_argument('--publish',type=Path,required=True)
-    ap.add_argument('--mode',choices=['beam_bound','beam_kernels','beam_combined','greedy_kernels','ring_split','serial64','draft_budget','frontend_batches'],
+    ap.add_argument('--mode',choices=['beam_bound','beam_kernels','beam_combined','beam_preset','greedy_kernels','ring_split','serial64','draft_budget','frontend_batches'],
                     default='beam_bound')
     ap.add_argument('--case',choices=['beam_b1','beam_b3','beam_prompt','beam_long','plain_ts','draft_ts','draft_bulk','translation','long'],default='beam_b1')
     ap.add_argument('--datasets',nargs='+')
@@ -134,6 +146,8 @@ def main():
     beam_mode = args.mode.startswith('beam_')
     if beam_mode!=args.case.startswith('beam_'):
         ap.error('beam modes require a beam case; other modes require a greedy case')
+    if args.mode=='beam_preset' and args.case not in ('beam_b1','beam_b3'):
+        ap.error('beam_preset requires beam_b1 or beam_b3 for this ordinary-corpus comparison')
     if args.case=='draft_bulk' and args.mode not in ('greedy_kernels','draft_budget','frontend_batches'):
         ap.error('draft_bulk requires greedy_kernels, draft_budget or frontend_batches; single-row scheduling knobs are not bulk ablations')
     if args.mode=='draft_budget' and args.case!='draft_bulk':
@@ -169,10 +183,7 @@ def main():
     if prompt_limit is not None:
         config['prompt_window_seconds'] = prompt_limit
     if beam_mode:
-        config['beam_variants'] = dict(
-            reference=dict(beam_upper_bound=args.mode=='beam_kernels',beam_kernels=args.mode=='beam_bound'),
-            candidate=dict(beam_upper_bound=True,beam_kernels=True),
-        )
+        config['beam_variants'] = beam_variants(args.mode)
     if args.mode=='greedy_kernels':
         config['greedy_variants'] = dict(reference=False,candidate=True)
     if args.mode=='draft_budget':
@@ -196,8 +207,13 @@ def main():
     with torch.inference_mode():
         model = OWSM.from_pretrained(args.model,decoder_kernel='ring:split' if args.mode=='ring_split' else 'auto',
                                     draft_token_budget=128 if args.mode=='draft_budget' else 256,
-                                    frontend_graph_max_batch=8 if args.mode=='frontend_batches' else 1)
+                                    frontend_graph_max_batch=8 if args.mode=='frontend_batches' else 1,
+                                    **(config['beam_variants']['candidate'] if beam_mode else {}))
         assert isinstance(model.backend,megakernel.MegaBackend),'required backend unavailable'
+        if args.mode=='beam_preset':
+            gpu=torch.cuda.get_device_properties(model.device)
+            assert (model.cfg.dec_layers,model.cfg.d_model,gpu.name,gpu.multi_processor_count)==(
+                18,1024,'NVIDIA H200',132),'beam_preset audit requires the verified H200/1B route'
         current = model.backend
         if args.mode=='ring_split':
             assert current.kernel.single_cross_splits in (4,8),'public split did not activate'
@@ -221,6 +237,9 @@ def main():
         elif args.mode=='frontend_batches':
             models['reference'] = OWSM(model.cfg,model.tokenizer,model.frontend,current,model.opts,
                 model.device,use_cuda_graph=model.use_cuda_graph,frontend_graph_max_batch=1)
+        elif args.mode=='beam_preset':
+            models['reference'] = OWSM(model.cfg,model.tokenizer,model.frontend,current,model.opts,
+                model.device,use_cuda_graph=model.use_cuda_graph,**config['beam_variants']['reference'])
         pools = {v:OrderedDict() for v in backends}
         engines = hub.cache_dir()/files.name.replace('/','--')/engine_tag(model.opts)
         env = dict(engine_sha256={p.name:sha256(p) for p in engines.glob('*.engine')},gpu=torch.cuda.get_device_name(),
@@ -229,6 +248,10 @@ def main():
         env['decoder_settings'] = {v:dict(kernel=type(b.kernel).__name__,
             programs=getattr(b.kernel,'P',None),solo_programs=getattr(b.kernel,'P_solo',None),
             single_cross_splits=getattr(b.kernel,'single_cross_splits',None)) for v,b in backends.items()}
+        if args.mode=='beam_preset':
+            env['beam_settings'] = {v:{key:getattr(m,key) for key in config['beam_variants'][v]}
+                                    for v,m in models.items()}
+            assert env['beam_settings']==config['beam_variants']
         if args.mode in ('greedy_kernels','draft_budget','frontend_batches'):
             env['greedy_settings'] = {v:{k:value for k,value in vars(m).items() if k.startswith('greedy_')}
                                       for v,m in models.items()}
@@ -260,6 +283,7 @@ def main():
             assert previous.get('greedy_settings')==env.get('greedy_settings'), 'greedy settings changed on resume'
             assert previous.get('draft_token_budgets')==env.get('draft_token_budgets'), 'draft budget changed on resume'
             assert previous.get('frontend_batch_limits')==env.get('frontend_batch_limits'), 'frontend limits changed on resume'
+            assert previous.get('beam_settings')==env.get('beam_settings'), 'beam options changed on resume'
             if args.mode=='frontend_batches':
                 env['frontend_observations'] = previous['frontend_observations']
         (args.out/'environment.json').write_text(json.dumps(env,indent=2)+'\n')
@@ -295,8 +319,8 @@ def main():
                         model = models[mode]
                         model.backend,model._sessions = backends[mode],pools[mode]
                         if beam_mode:
-                            model.beam_upper_bound = config['beam_variants'][mode]['beam_upper_bound']
-                            model.beam_kernels = config['beam_variants'][mode]['beam_kernels']
+                            for key,value in config['beam_variants'][mode].items():
+                                setattr(model,key,value)
                         model.ctc_draft = args.case in ('draft_ts','draft_bulk','long')
                         kw = dict(lang=batch[0]['lang'],beam_size=5 if beam_mode else 1,
                                   batch_size=request_batch,
@@ -307,6 +331,7 @@ def main():
                             values = (model.transcribe_long(waves,**kw) if joined
                                       else model.transcribe(waves,timestamps=True,**kw))
                             assert not model.backend.failed,f'backend fallback: {mode}'
+                            assert not getattr(model._beam_backend,'failed',set()),f'grouped decoder fallback: {mode}'
                             assert len(values)==len(batch),'output count mismatch'
                             return values
                         values = capture_failure(decode,dict(config=config,variant=mode,options=kw,
@@ -322,6 +347,10 @@ def main():
                             observed = dict(plain_solo=solo,decoder=previous_dispatch.get('decoder',{}) | {
                                 str(bucket):info | dict(observed_job=os.environ.get('PBS_JOBID'))
                                 for bucket,info in steps.items()})
+                            if args.mode=='beam_preset':
+                                observed['search'] = {key:getattr(session,key) for key in (
+                                    'fused_lse','compact_tail','compact_tail_fallback','share_cross_kv','cross_kv_fallback','chunk')}
+                                assert session.fused_lse==model.beam_fused_lse
                             if env['decoder_dispatch'][mode].get(shape)!=observed:
                                 env['decoder_dispatch'][mode][shape] = observed
                                 changed_dispatch = True
@@ -377,7 +406,7 @@ def main():
         differences=sum(x['differences'] for x in completed.values()),chunks=completed,
         complete=sum(x['samples'] for x in completed.values())==len(rows),
         job=os.environ.get('PBS_JOBID'),
-        classification='N' if args.mode in ('ring_split','draft_budget') else 'E',
+        classification='N' if args.mode in ('ring_split','draft_budget','beam_preset') else 'E',
         interrupted=stop[0],elapsed_seconds=time.monotonic()-started)
     (args.out/'status.json').write_text(json.dumps(status,indent=2)+'\n')
     publish_file(args.out/'status.json',args.publish/'status.json')

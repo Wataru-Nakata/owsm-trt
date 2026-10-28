@@ -14,6 +14,7 @@ import audit_large_regression
 import prepare_large_regression
 import pytest
 from audit_large_regression import (
+    beam_variants,
     capture_failure,
     draft_dispatch,
     input_groups,
@@ -37,6 +38,7 @@ from summarize_large_regression import summarize
 @pytest.mark.parametrize('mode,case,message',[
     ('draft_budget','draft_ts','draft_budget requires draft_bulk'),
     ('frontend_batches','draft_ts','frontend_batches requires draft_bulk'),
+    ('beam_preset','beam_prompt','beam_preset requires beam_b1 or beam_b3'),
     ('ring_split','draft_bulk','single-row scheduling knobs are not bulk ablations'),
 ])
 def test_bulk_ablation_rejects_inactive_or_unrelated_scheduling_options(monkeypatch,capsys,mode,case,message):
@@ -46,6 +48,17 @@ def test_bulk_ablation_rejects_inactive_or_unrelated_scheduling_options(monkeypa
     with pytest.raises(SystemExit) as error:
         audit_large_regression.main()
     assert error.value.code==2 and message in capsys.readouterr().err
+
+
+def test_numerical_preset_keeps_existing_search_optimizations_on_in_both_variants():
+    modes=beam_variants('beam_preset')
+    for name,settings in modes.items():
+        assert settings['beam_upper_bound'] and settings['beam_kernels']
+        assert all(settings[key] is (name=='candidate') for key in (
+            'beam_grouped_cross','beam_compact_tail','beam_fused_lse'))
+    assert beam_variants('beam_bound')['reference']==dict(beam_upper_bound=False,beam_kernels=True)
+    assert beam_variants('beam_kernels')['reference']==dict(beam_upper_bound=True,beam_kernels=False)
+    assert beam_variants('beam_combined')['reference']==dict(beam_upper_bound=False,beam_kernels=False)
 
 
 @pytest.mark.parametrize('key',['','../outside','folder/item','a.b','bad key'])
