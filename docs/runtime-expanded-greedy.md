@@ -244,3 +244,16 @@ remove the63 full-corpus output changes or establish tail guarantees. Reproduce 
 `outputs/runtime-expanded-budget-tail-submit-01` with `HOST_ROTATED=1`; raw `host_profile` and
 ordinary `profile` remain separate under `outputs/runtime-2787097/`. The validation command is
 `PYTHONPATH=scripts python outputs/runtime-expanded-budget-tail-preparation/validate.py`.
+
+## Prepared expanded beam preset timing
+
+`--comparison beam_preset` uses the same224 selected inputs at individual B1 and whole32-input
+requests streamed in fixed B3 beam groups (14 language/case conditions), beam5/timestamps throughout.
+It compares the existing public grouped-cross/compact-tail/fused-LSE combination against the optimized
+default, holding upper-bound stopping/search kernels ON. H200/1B is required; actual session routes,
+normalizer flags and the last diagnostic request's tail transition are retained. Draft-call counters
+are not beam decoder step counts. Separate session pools, alternating7 repeats, full within-mode
+output stability, no new warm captures and rejection of failed grouped decoders stay mandatory.
+N output/quality differences remain visible. Nineteen targeted metadata/configuration checks pass;
+all56 previously published condition statistics remain unchanged under the extended summarizer.
+This adds no runtime/default change or speed claim; the full-corpus B3 audit must complete first.

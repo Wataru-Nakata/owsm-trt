@@ -12,6 +12,13 @@ from contextlib import ExitStack, nullcontext
 from pathlib import Path
 from types import SimpleNamespace
 
+COMPARISON_CASES = {
+    'greedy_kernels': ('single_ts','stream_ts_b8'),
+    'draft_budget': ('stream_ts_b8',),
+    'frontend_batches': ('stream_ts_b8',),
+    'beam_preset': ('beam_single_ts','beam_stream_ts_b3'),
+}
+
 
 def select_inputs(rows: list[dict], per_language: int, window_seconds: float) -> dict[str, list[dict]]:
     if per_language<1 or window_seconds<=0:
@@ -49,7 +56,7 @@ def main():
     ap.add_argument('--out',type=Path,required=True)
     ap.add_argument('--per-language',type=int,default=32)
     ap.add_argument('--repeat',type=int,default=7)
-    ap.add_argument('--comparison',choices=['greedy_kernels','draft_budget','frontend_batches'],default='greedy_kernels')
+    ap.add_argument('--comparison',choices=list(COMPARISON_CASES),default='greedy_kernels')
     ap.add_argument('--host-diagnostics',action='store_true',help='separate instrumented GC/CPU pass; not warm latency')
     ap.add_argument('--candidate-first',action='store_true',help='reverse the initial warmup/alternating variant order')
     args=ap.parse_args()
@@ -69,21 +76,38 @@ def main():
 
     with torch.inference_mode():
         variants=['candidate','reference'] if args.candidate_first else ['reference','candidate']
-        numerical=args.comparison=='draft_budget'
+        budget=args.comparison=='draft_budget'
+        beam=args.comparison=='beam_preset'
+        numerical=budget or beam
         frontend=args.comparison=='frontend_batches'
-        cases=('single_ts','stream_ts_b8') if args.comparison=='greedy_kernels' else ('stream_ts_b8',)
+        cases=COMPARISON_CASES[args.comparison]
+        beam_settings=None
+        if beam:
+            from audit_large_regression import beam_variants
+            from profile_beam_presets import PRESET_CASES
+            from profile_runtime import CASES
+            CASES.update(PRESET_CASES)
+            beam_settings=beam_variants('beam_preset')
         model,load_ms=wall(lambda:OWSM.from_pretrained(args.model,greedy_kernels=True,
-            draft_token_budget=128 if numerical else 256,frontend_graph_max_batch=8 if frontend else 1))
+            draft_token_budget=128 if budget else 256,frontend_graph_max_batch=8 if frontend else 1,
+            **(beam_settings['candidate'] if beam else {})))
         if not isinstance(model.backend,megakernel.MegaBackend):
             raise RuntimeError('expected auto decoder backend unavailable')
         reference=OWSM(model.cfg,model.tokenizer,model.frontend,model.backend,model.opts,
                        model.device,use_cuda_graph=model.use_cuda_graph,greedy_kernels=numerical or frontend,
-                       draft_token_budget=256)
+                       draft_token_budget=256,**(beam_settings['reference'] if beam else {}))
         settings={name:{k:v for k,v in vars(m).items() if k.startswith('greedy_')}
                   for name,m in [('reference',reference),('candidate',model)]}
         budgets=dict(reference=reference.draft_token_budget,candidate=model.draft_token_budget)
-        if numerical:
+        if budget:
             assert settings['reference']==settings['candidate'] and budgets==dict(reference=256,candidate=128)
+        if beam:
+            gpu=torch.cuda.get_device_properties(model.device)
+            assert (model.cfg.dec_layers,model.cfg.d_model,gpu.name,gpu.multi_processor_count)==(
+                18,1024,'NVIDIA H200',132),'beam_preset comparison requires H200/1B'
+            resolved={v:{key:getattr(m,key) for key in beam_settings[v]}
+                      for v,m in [('reference',reference),('candidate',model)]}
+            assert resolved==beam_settings and settings['reference']==settings['candidate']
         frontend_limits=dict(reference=reference._frontend_graph_batch_limit,candidate=model._frontend_graph_batch_limit)
         if frontend:
             assert frontend_limits==dict(reference=1,candidate=8)
@@ -101,11 +125,13 @@ def main():
             versions={n:importlib.metadata.version(n) for n in ('torch','triton','tensorrt')},
             nvidia_smi=command(['nvidia-smi','--query-gpu=name,uuid,driver_version','--format=csv']),
             load_ms=load_ms,greedy_settings=settings,draft_token_budgets=budgets,frontend_batch_limits=frontend_limits,
+            beam_settings=beam_settings,
             comparison=args.comparison,classification='N' if numerical else 'E',cases=cases,
             host_diagnostics=args.host_diagnostics,variant_order=variants,
             repeat=args.repeat,per_language=args.per_language,
             scope=('INSTRUMENTED host diagnostic; not warm latency. ' if args.host_diagnostics else
-                   'Uninstrumented warm request timing. ')+('N: public draft budget256/128, greedy kernels ON both. ' if numerical
+                   'Uninstrumented warm request timing. ')+('N: public draft budget256/128, greedy kernels ON both. ' if budget
+                   else 'N: public grouped cross/tail/LSE beam preset, optimized default control. ' if beam
                    else 'Public frontend graph batch limit1/8. ' if frontend
                    else 'Combined public greedy switch. ')+'Same engine/checkpoint. Balanced language/duration/dataset '
                   'sample excluding prior screening overlap, nonspeech and long-form. Not corpus-weighted '
@@ -116,9 +142,24 @@ def main():
             for key,value in settings[variant].items():
                 setattr(m,key,value)
             m.draft_token_budget=budgets[variant]
+            if beam:
+                for key,value in beam_settings[variant].items():
+                    setattr(m,key,value)
             if frontend:
                 m._frontend_graph_batch_limit=frontend_limits[variant]
                 m._frontend_replay=frontend_pools[variant]
+
+        def observe(m,call):
+            result=count_decoder_dispatch(m,call)
+            if beam:
+                from profile_beam import dispatch
+                result['sessions']={str(key):dict(dispatch=dispatch(s),fused_lse=s.fused_lse,
+                    compact_tail=s.compact_tail,chunk=s.chunk,last_request_tail_start=s._tail_started)
+                    for key,s in m._sessions.items()}
+                result['scope']+=' Beam decoder_calls counts post-prefill decoder replays; selection0 after prefill is separate.'
+                assert all(s.fused_lse==m.beam_fused_lse for s in m._sessions.values())
+                assert not getattr(m._beam_backend,'failed',set()),'grouped decoder failed'
+            return result
 
         summaries={}
         with ExitStack() as stack:
@@ -151,13 +192,14 @@ def main():
                         from host_latency import HostLatency
                     with HostLatency() if args.host_diagnostics else nullcontext() as host:
                         result=run_case(model,options,case,items,waves,configure=configure,
-                                        observe=count_decoder_dispatch,measure=host.measure if host else None)
+                                        observe=observe,measure=host.measure if host else None)
                     if host:
                         samples=json.loads((args.out/lang/case/'wall.json').read_text())
                         save(args.out/lang/case/'host.json',host.report(samples))
                     summaries[lang+'/'+case]=result
                     save(args.out/'summary.json',summaries)
                     assert not model.backend.failed,'decoder failed; refuse fallback timing'
+                    assert not getattr(model._beam_backend,'failed',set()),'grouped decoder failed'
                     if not numerical:
                         assert all(a['equal']==a['total'] for v in result.values()
                                    for a in v['agreement'].values()),f'output differences: {lang}/{case}'

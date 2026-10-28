@@ -95,14 +95,20 @@ def summarize(raw: Path) -> dict:
     assert complete['samples']==sum(map(len,selected.values()))==224
     summaries=json.loads((profile/'summary.json').read_text())
     comparison=env.get('comparison','greedy_kernels')
-    assert comparison in ('greedy_kernels','draft_budget','frontend_batches')
-    exact=comparison!='draft_budget'
-    cases=('single_ts','stream_ts_b8') if comparison=='greedy_kernels' else ('stream_ts_b8',)
+    from profile_expanded_greedy import COMPARISON_CASES
+    assert comparison in COMPARISON_CASES
+    exact=comparison in ('greedy_kernels','frontend_batches')
+    cases=COMPARISON_CASES[comparison]
     assert env.get('classification','E')==('E' if exact else 'N')
     assert tuple(env.get('cases',cases))==cases
-    if not exact:
+    if comparison=='draft_budget':
         assert env['classification']=='N' and env['draft_token_budgets']==dict(reference=256,candidate=128)
         assert env['greedy_settings']['reference']==env['greedy_settings']['candidate']
+    if comparison=='beam_preset':
+        from audit_large_regression import beam_variants
+        assert env['beam_settings']==beam_variants('beam_preset')
+        assert env['greedy_settings']['reference']==env['greedy_settings']['candidate']
+        assert env['draft_token_budgets']==dict(reference=256,candidate=256)
     if comparison=='frontend_batches':
         assert env['frontend_batch_limits']==dict(reference=1,candidate=8)
         assert env['draft_token_budgets']==dict(reference=256,candidate=256)
@@ -125,7 +131,7 @@ def summarize(raw: Path) -> dict:
             assert (folder/f'actual_dispatch_{variant}.json').is_file()
         cold=json.loads((folder/'cold.json').read_text())
         samples=json.loads((folder/'wall.json').read_text())
-        value=aggregate(samples,ids,env['repeat'],case=='stream_ts_b8')
+        value=aggregate(samples,ids,env['repeat'],case in ('stream_ts_b8','beam_stream_ts_b3'))
         for variant in ('reference','candidate'):
             assert math.isclose(value['variants'][variant]['pooled_rtfx'],summaries[name][variant]['rtfx'],rel_tol=1e-12)
         value.update(quality={v:summaries[name][v]['quality'] for v in ('reference','candidate')},
@@ -140,6 +146,17 @@ def summarize(raw: Path) -> dict:
                 assert all(1<=shape[0]<=limit for shape in cache['shapes'])
             assert any(shape[0]>1 for shape in caches['candidate']['shapes']),'batched frontend never captured'
             value['frontend_cache']=caches
+        if comparison=='beam_preset':
+            value['beam_decoder_diagnostics']={}
+            for variant in ('reference','candidate'):
+                observed=json.loads((folder/f'actual_dispatch_{variant}.json').read_text())
+                batches=observed['plain_batches']
+                assert sum(len(b['output_lengths']) for b in batches)==32
+                assert all(b['beam'] and b['rows']==5*len(b['output_lengths'])
+                           and b['decoder_calls']>=0 for b in batches)
+                value['beam_decoder_diagnostics'][variant]=dict(
+                    decoder_calls=sum(b['decoder_calls'] for b in batches),prefill_selections=len(batches),
+                    batches=batches,sessions=observed['sessions'],scope=observed['scope'])
         result[name]=value
     with (raw/'gpu_utilization.csv').open() as stream:
         telemetry=[{k.strip():v.strip() for k,v in row.items()} for row in csv.DictReader(stream)]
@@ -152,6 +169,7 @@ def summarize(raw: Path) -> dict:
                   'not per-condition utilization or kernel occupancy.'),
         scope=('Same-engine combined public greedy switch. ' if comparison=='greedy_kernels' else
                'Public frontend graph batch limit1/8, fresh bounded cache per language. ' if comparison=='frontend_batches' else
+               'N: existing grouped cross/tail/LSE beam preset versus optimized default. ' if comparison=='beam_preset' else
                'N: same-engine public draft budget256/128, greedy kernels ON both; differences retained. ')+
               'Balanced 224-input speech sample, '
               'not an independent quality holdout or corpus-weighted performance. Seven repeats '
