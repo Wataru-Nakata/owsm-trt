@@ -89,7 +89,7 @@ Raw data and the B1 audit control are in`outputs/runtime-2786438/`; the immutabl
 `outputs/runtime-expanded-greedy-102m-submit-01`. Reproduction uses the same commands above with
 the102M checkpoint and result directory.
 
-## Numerical budget comparison / 1B
+## Numerical budget comparison (1B)
 
 `--comparison draft_budget` compares the existing public budget256/128 on bulk B8 only (seven
 language conditions), holding the public greedy optimizations ON in both. Separate session pools

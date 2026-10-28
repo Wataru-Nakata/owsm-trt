@@ -353,7 +353,9 @@ The next `draft_budget/draft_bulk` audit compares the existing public token budg
 using separate model/session state, identical greedy optimizations and unchanged decoder routing.
 Only bulk is permitted: these budgets do not change the available single-row windows. Resolved
 budgets and already bound verification routes are recorded and checked on resume. This is N because
-verification shapes can change numerical outputs. The clean continuation below is complete; timing is pending. No default or
+verification shapes can change numerical outputs. The clean continuation below is complete; the
+[separate seven-language timing](runtime-expanded-greedy.md#numerical-budget-comparison-1b) retains
+mixed tail latency and output differences. No default or
 new kernel change is part of this audit addition.
 Job2786632 (frozen529a97c) published all13,232 outputs/104 chunks before the account rose to194 GPUs.
 The parent confirmed the overage and cancelled only its1GPU allocation. PBS exits271 and raw publication
@@ -483,7 +485,7 @@ The proposed frontend direct-input retry was withdrawn before submission: earlie
 already tested the same basic idea without a broad gain. Its temporary runtime prototypefc02d74
 was reverted in4f6041e. Expanded coverage takes priority over repeating that small screening test.
 
-### Prepared frontend batch graph audit
+### Frontend batch graph audit / 102M
 
 `--mode frontend_batches --case draft_bulk` compares the existing public
 `frontend_graph_max_batch=1/8` switch with greedy optimizations ON and budget256 in both variants.
@@ -493,5 +495,21 @@ requested B8, preserving long-input API boundaries. Graph limits and per-job cac
 capacity fallback counts and input/output bytes are recorded after each completed chunk. Above-limit
 eager calls are not included in the cache-capacity fallback counter; graph-private intermediates and
 workspaces are not included in the byte count. Cache capacity stays32 without eviction.
-Six focused CPU metadata/guard/resume fixtures pass; this preparation makes no GPU parity or speed
-claim. The default remains1 pending large output validation and separate repeated timing.
+Six focused CPU metadata/guard/resume fixtures pass.
+
+[Job2786900](runtime-large-regression-2786900.json), frozen e9a465f, completed with PBS/publication
+exit0. All104 chunks,13,232 text/segment pairs and13,191 available token/timestamp pairs match.
+The reference also matches the earlier102M public-ON bulk candidate on every available field, with
+identical grouping/order, checkpoint/engines, runtime tree and resolved decoder/greedy settings.
+The293 requests include237 ordinary requests larger than8;41 long-input outputs have no joined
+token IDs. All51 baseline diagnostic inputs remain unchanged. This audit checks generated outputs,
+not bitwise feature tensors or annotation-based timestamp accuracy.
+
+The reference captures23 single-row shapes; the candidate reaches the32-shape bound, including
+B4/7/8, and falls back eagerly124 times for new shapes after saturation. Its retained input/output
+buffers occupy398.44MiB versus34.74MiB for reference; graph-private intermediates/workspaces are
+additional. This is not a deployment peak or isolated memory comparison. Capacity fallback is part
+of the tested behavior, not a decode failure. The default remains1; separate warm timing follows.
+Reproduce with `scripts/audit_large_regression.pbs` and the immutable source in
+`outputs/runtime-large-audit-102m-frontend-submit-01`. Complete raw outputs and the chunk validator
+are under `outputs/runtime-large-audit/`; final PBS evidence is in `outputs/runtime-2786900/`.
