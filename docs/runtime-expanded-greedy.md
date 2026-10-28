@@ -200,7 +200,7 @@ Keep limit1 by default and limit8 as an explicit memory/performance choice. Raw 
 previous-output control are in `outputs/runtime-2787087/`; the immutable source is
 `outputs/runtime-expanded-frontend-1b-submit-01`.
 
-## Prepared budget tail diagnosis
+## Budget tail diagnosis and rotated repeat
 
 `--host-diagnostics` records GC overlap, process CPU time, faults and context switches through the
 existing `HostLatency` observer; it does not change GC thresholds or subtract collection time.
@@ -208,5 +208,39 @@ existing `HostLatency` observer; it does not change GC thresholds or subtract co
 driver runs the diagnostic and rotated ordinary measurement in separate Python processes, saving
 `host_profile` and `profile` separately. The standard warm summarizer rejects instrumented metadata;
 eleven small selection/aggregation fixtures pass, including that guard. The three observer callback/
-exception/overlap tests run on the compute node before the diagnostic. These changes are prepared
-for the budget256/128 tail excursions; no cause or new performance conclusion is established yet.
+exception/overlap tests run on the compute node before the diagnostic.
+
+Job2787097, frozen3f5be9a, completed PBS/publication exit0 and all three observer tests. Both separate
+processes complete7 conditions/224 inputs/7 repeats. Both variants in both processes exactly match
+their saved2786772 outputs on every token/time/text/segment field; the four cross-variant differences
+remain. Checkpoints/engines/software/settings match. The source-tree hash changes only because of
+the corrected CTC draft API docstring: all other runtime files are byte-identical and the pipeline
+AST is identical after removing docstrings. The explicit source/output controls are retained in
+the [diagnostic artifact](runtime-expanded-budget-host-2787097.json).
+
+The independent [uninstrumented candidate-first repeat](runtime-expanded-budget-2787097.json)
+retains all samples:
+
+| Language | RTFx change128 vs256 | Request p50 ms 256 →128 | Request p95 ms 256 →128 | Positive pairs |
+|---|---:|---:|---:|---:|
+| German |+8.46%|119.675 →109.960|120.632 →110.902|7/7|
+| English |+9.69%|125.817 →114.436|126.598 →115.627|7/7|
+| French |+8.59%|136.233 →124.917|136.702 →125.870|7/7|
+| Japanese |+10.83%|108.996 →98.533|110.137 →99.343|7/7|
+| Russian |+10.26%|163.597 →148.056|164.135 →148.659|7/7|
+| Spanish |+6.89%|132.633 →123.744|133.404 →125.175|7/7|
+| Chinese |+11.35%|131.427 →117.193|131.860 →118.151|7/7|
+
+All49 pairs improve and all p50/p95 decrease in this repeat. The earlier French/Chinese excursions
+do not recur; they remain in2786772 and are not replaced by this result. In the separate instrumented
+pass, seven measured calls overlap GC for only0.106–0.134ms. The large pause is not reproduced and
+its original cause remains unknown. No collection time is subtracted, and no runtime GC policy changes.
+CPU time includes all process threads; callbacks/context-switch observations are not GPU kernel time.
+The rotated process's2.993second model load follows the diagnostic's access to the same staged files;
+this is not an independent cold-start improvement. Five-second GPU samples cover both processes.
+
+Keep budget128 opt-in: this run supports a warm-throughput benefit on these B8 groups, but does not
+remove the63 full-corpus output changes or establish tail guarantees. Reproduce using the source in
+`outputs/runtime-expanded-budget-tail-submit-01` with `HOST_ROTATED=1`; raw `host_profile` and
+ordinary `profile` remain separate under `outputs/runtime-2787097/`. The validation command is
+`PYTHONPATH=scripts python outputs/runtime-expanded-budget-tail-preparation/validate.py`.

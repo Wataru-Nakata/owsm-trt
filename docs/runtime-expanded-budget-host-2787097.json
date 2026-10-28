@@ -1,0 +1,677 @@
+{
+  "job": "2787097.pbs1",
+  "scheduler": {
+    "job": "2787097.pbs1",
+    "state": "F",
+    "exit_status": 0,
+    "stageout_status": 1,
+    "observed_at": "2026-10-28T11:31:18.717504+00:00",
+    "project": "gai51740",
+    "queue": "R9920261300",
+    "requested": {
+      "fs_factor": 1,
+      "mem": "160gb",
+      "mpiprocs": 1,
+      "ncpus": 16,
+      "ngpus": 1,
+      "njobs_rt_HG": 1,
+      "nodect": 1,
+      "ompthreads": 1,
+      "place": "scatter",
+      "select": "1:ncpus=16:mem=160gb:ngpus=1:njobs_rt_HG=1",
+      "walltime": "01:00:00"
+    },
+    "resources_used": {
+      "cpupercent": 108,
+      "cput": "00:05:32",
+      "mem": "34704176kb",
+      "ncpus": 16,
+      "vmem": "336626248kb",
+      "walltime": "00:05:35"
+    }
+  },
+  "source": {
+    "group": "gai51740",
+    "queue": "R9920261300",
+    "resource": "rt_HG",
+    "nodes": 1,
+    "gpus": 1,
+    "walltime": "01:00:00",
+    "account_gpu_cap": 192,
+    "approval": "Standing serial 1GPU authorization; fresh account192/queue/no duplicate guard before submission.",
+    "model_name": "owsm_v4_medium_1B",
+    "expected_samples": 224,
+    "repeat": 7,
+    "per_language": 32,
+    "experiment": "runtime_expanded_budget_tail",
+    "comparison": "draft_budget",
+    "expected_conditions": 7,
+    "commit": "3f5be9a3105a7651c7c32afdc0645225bc540099",
+    "runtime_tree": "0852f348ec6e2b0b8b4e7a03acdfe6248b25eb6f",
+    "snapshot": "/groups/gai51740/acc12576tt/github.com/owsm_trt/outputs/runtime-expanded-budget-tail-submit-01/snapshot-3f5be9a3.tar",
+    "status": "approved_not_submitted",
+    "approved_jobs": 1,
+    "additional_jobs_submitted": 0,
+    "prepared_at": "2026-10-28T11:19:11.355726+00:00",
+    "purpose": "1B budget256/128 GC/CPU tail diagnostic andindependentcandidate-first uninstrumented repeat;separateprocesses/artefacts,alloutliers retained.",
+    "classification": "N: verification shapes under existing public drafttokenbudget256/128,greedyONboth,sameengine/checkpoint.",
+    "prerequisite": "Full13232budget N control2786743 andprior224timing2786772;1Bfrontend2787087 terminalvalidated beforeqsub,fresh192guard.",
+    "checks": "11 focused CPU selection/aggregation tests,Ruff/bash-n/diff;compute-node3 observer checks scheduled;runtime ASTdoc-onlycontrol verified.",
+    "host_rotated": true,
+    "runtime_source_control": "outputs/runtime-expanded-budget-tail-preparation/runtime-doc-control.json"
+  },
+  "runtime_source_control": {
+    "base_commit": "e755b4951a87ab1ed015e9fd594923e8bcf96c70",
+    "current_commit": "3f5be9a3105a7651c7c32afdc0645225bc540099",
+    "changed_runtime_files": [
+      "src/owsm_trt/pipeline.py"
+    ],
+    "runtime_trees": [
+      "a9ab5a575ef33008f254fac7c010af1bc817a765",
+      "0852f348ec6e2b0b8b4e7a03acdfe6248b25eb6f"
+    ],
+    "pipeline_sha256": [
+      "12ef22296abb3236503970a3fae2c21458d7f43cac5780bd8a70e3218a2c36a3",
+      "0495cc8c629cfbb4dcac2ee3fb08f994c07290e1a158de7babc1753c3865d3b7"
+    ],
+    "pipeline_ast_without_docstrings_sha256": "5d3c7944b4dc2b08123038976093bdd85e9db185b6285caee2805410b06d2649",
+    "scope": "Allother runtimefiles byteidentical. pipelineAST identical after removing docstrings only; currentedit corrects CTCdraft API explanation. Fullsource tree hashes deliberately differ; no inference executed."
+  },
+  "frozen_output_control": {
+    "prior": "outputs/runtime-2786772/profile",
+    "agreement": {
+      "host_profile": {
+        "reference": {
+          "tokens": {
+            "equal": 224,
+            "total": 224
+          },
+          "timestamp_tokens": {
+            "equal": 224,
+            "total": 224
+          },
+          "segments": {
+            "equal": 224,
+            "total": 224
+          },
+          "text": {
+            "equal": 224,
+            "total": 224
+          }
+        },
+        "candidate": {
+          "tokens": {
+            "equal": 224,
+            "total": 224
+          },
+          "timestamp_tokens": {
+            "equal": 224,
+            "total": 224
+          },
+          "segments": {
+            "equal": 224,
+            "total": 224
+          },
+          "text": {
+            "equal": 224,
+            "total": 224
+          }
+        }
+      },
+      "profile": {
+        "reference": {
+          "tokens": {
+            "equal": 224,
+            "total": 224
+          },
+          "timestamp_tokens": {
+            "equal": 224,
+            "total": 224
+          },
+          "segments": {
+            "equal": 224,
+            "total": 224
+          },
+          "text": {
+            "equal": 224,
+            "total": 224
+          }
+        },
+        "candidate": {
+          "tokens": {
+            "equal": 224,
+            "total": 224
+          },
+          "timestamp_tokens": {
+            "equal": 224,
+            "total": 224
+          },
+          "segments": {
+            "equal": 224,
+            "total": 224
+          },
+          "text": {
+            "equal": 224,
+            "total": 224
+          }
+        }
+      }
+    }
+  },
+  "host_diagnostics": {
+    "deu": {
+      "scope": "Instrumented host diagnostic only; wall includes callback/measurement overhead. Process CPU time includes all threads; GC overlap is not a corrected latency. No GC thresholds, enabled state or runtime scheduling changed.",
+      "gc_enabled": true,
+      "gc_threshold": [
+        700,
+        10,
+        10
+      ],
+      "sample_count": 14,
+      "overlapping_samples": [
+        {
+          "variant": "reference",
+          "repeat": 5,
+          "wall_ms": 119.841891,
+          "cpu_ms": 160.617439,
+          "gc_overlap_ms": 0.105982,
+          "gc": [
+            {
+              "start_ns": 108788123357891,
+              "end_ns": 108788123463873,
+              "generation": 0,
+              "collected": 0,
+              "uncollectable": 0
+            }
+          ],
+          "voluntary_switches": 11,
+          "involuntary_switches": 21,
+          "minor_faults": 11,
+          "major_faults": 0
+        }
+      ],
+      "slowest_samples": [
+        {
+          "variant": "reference",
+          "repeat": 2,
+          "wall_ms": 121.130143,
+          "cpu_ms": 160.673192,
+          "gc_overlap_ms": 0.0,
+          "gc": [],
+          "voluntary_switches": 11,
+          "involuntary_switches": 12,
+          "minor_faults": 0,
+          "major_faults": 0
+        },
+        {
+          "variant": "reference",
+          "repeat": 5,
+          "wall_ms": 119.841891,
+          "cpu_ms": 160.617439,
+          "gc_overlap_ms": 0.105982,
+          "gc": [
+            {
+              "start_ns": 108788123357891,
+              "end_ns": 108788123463873,
+              "generation": 0,
+              "collected": 0,
+              "uncollectable": 0
+            }
+          ],
+          "voluntary_switches": 11,
+          "involuntary_switches": 21,
+          "minor_faults": 11,
+          "major_faults": 0
+        },
+        {
+          "variant": "reference",
+          "repeat": 6,
+          "wall_ms": 119.726844,
+          "cpu_ms": 161.322677,
+          "gc_overlap_ms": 0.0,
+          "gc": [],
+          "voluntary_switches": 13,
+          "involuntary_switches": 19,
+          "minor_faults": 11,
+          "major_faults": 0
+        }
+      ],
+      "maximum_overlap_ms": 0.105982,
+      "host_sha256": "55e9b09b14296845c75cf4901110d08a003d6728c6fd40f9710cbe45dd021b55"
+    },
+    "eng": {
+      "scope": "Instrumented host diagnostic only; wall includes callback/measurement overhead. Process CPU time includes all threads; GC overlap is not a corrected latency. No GC thresholds, enabled state or runtime scheduling changed.",
+      "gc_enabled": true,
+      "gc_threshold": [
+        700,
+        10,
+        10
+      ],
+      "sample_count": 14,
+      "overlapping_samples": [
+        {
+          "variant": "candidate",
+          "repeat": 1,
+          "wall_ms": 112.770976,
+          "cpu_ms": 158.374696,
+          "gc_overlap_ms": 0.118154,
+          "gc": [
+            {
+              "start_ns": 108804898718323,
+              "end_ns": 108804898836477,
+              "generation": 0,
+              "collected": 0,
+              "uncollectable": 0
+            }
+          ],
+          "voluntary_switches": 11,
+          "involuntary_switches": 12,
+          "minor_faults": 1074,
+          "major_faults": 0
+        }
+      ],
+      "slowest_samples": [
+        {
+          "variant": "reference",
+          "repeat": 6,
+          "wall_ms": 127.046527,
+          "cpu_ms": 165.398604,
+          "gc_overlap_ms": 0.0,
+          "gc": [],
+          "voluntary_switches": 11,
+          "involuntary_switches": 17,
+          "minor_faults": 0,
+          "major_faults": 0
+        },
+        {
+          "variant": "reference",
+          "repeat": 2,
+          "wall_ms": 126.495961,
+          "cpu_ms": 171.811066,
+          "gc_overlap_ms": 0.0,
+          "gc": [],
+          "voluntary_switches": 12,
+          "involuntary_switches": 16,
+          "minor_faults": 0,
+          "major_faults": 0
+        },
+        {
+          "variant": "reference",
+          "repeat": 1,
+          "wall_ms": 126.453894,
+          "cpu_ms": 164.084086,
+          "gc_overlap_ms": 0.0,
+          "gc": [],
+          "voluntary_switches": 11,
+          "involuntary_switches": 17,
+          "minor_faults": 0,
+          "major_faults": 0
+        }
+      ],
+      "maximum_overlap_ms": 0.118154,
+      "host_sha256": "b13a44516871f81a793ceb1c21948de9d1e874ca0e2675cca4d5e958fc4cfdcb"
+    },
+    "fra": {
+      "scope": "Instrumented host diagnostic only; wall includes callback/measurement overhead. Process CPU time includes all threads; GC overlap is not a corrected latency. No GC thresholds, enabled state or runtime scheduling changed.",
+      "gc_enabled": true,
+      "gc_threshold": [
+        700,
+        10,
+        10
+      ],
+      "sample_count": 14,
+      "overlapping_samples": [
+        {
+          "variant": "candidate",
+          "repeat": 1,
+          "wall_ms": 123.940125,
+          "cpu_ms": 163.192915,
+          "gc_overlap_ms": 0.132104,
+          "gc": [
+            {
+              "start_ns": 108821230994014,
+              "end_ns": 108821231126118,
+              "generation": 0,
+              "collected": 0,
+              "uncollectable": 0
+            }
+          ],
+          "voluntary_switches": 11,
+          "involuntary_switches": 12,
+          "minor_faults": 0,
+          "major_faults": 0
+        }
+      ],
+      "slowest_samples": [
+        {
+          "variant": "reference",
+          "repeat": 5,
+          "wall_ms": 136.772089,
+          "cpu_ms": 175.668271,
+          "gc_overlap_ms": 0.0,
+          "gc": [],
+          "voluntary_switches": 12,
+          "involuntary_switches": 11,
+          "minor_faults": 0,
+          "major_faults": 0
+        },
+        {
+          "variant": "reference",
+          "repeat": 4,
+          "wall_ms": 136.728042,
+          "cpu_ms": 176.376045,
+          "gc_overlap_ms": 0.0,
+          "gc": [],
+          "voluntary_switches": 12,
+          "involuntary_switches": 17,
+          "minor_faults": 0,
+          "major_faults": 0
+        },
+        {
+          "variant": "reference",
+          "repeat": 6,
+          "wall_ms": 136.515594,
+          "cpu_ms": 175.593347,
+          "gc_overlap_ms": 0.0,
+          "gc": [],
+          "voluntary_switches": 11,
+          "involuntary_switches": 13,
+          "minor_faults": 0,
+          "major_faults": 0
+        }
+      ],
+      "maximum_overlap_ms": 0.132104,
+      "host_sha256": "a9337eb5904dee693517bafbbddaa9c4db6e3c9a83cb44a0d0d2c7b2b5ad77c3"
+    },
+    "jpn": {
+      "scope": "Instrumented host diagnostic only; wall includes callback/measurement overhead. Process CPU time includes all threads; GC overlap is not a corrected latency. No GC thresholds, enabled state or runtime scheduling changed.",
+      "gc_enabled": true,
+      "gc_threshold": [
+        700,
+        10,
+        10
+      ],
+      "sample_count": 14,
+      "overlapping_samples": [
+        {
+          "variant": "candidate",
+          "repeat": 1,
+          "wall_ms": 99.250978,
+          "cpu_ms": 139.155312,
+          "gc_overlap_ms": 0.124577,
+          "gc": [
+            {
+              "start_ns": 108838400926556,
+              "end_ns": 108838401051133,
+              "generation": 0,
+              "collected": 0,
+              "uncollectable": 0
+            }
+          ],
+          "voluntary_switches": 11,
+          "involuntary_switches": 12,
+          "minor_faults": 7,
+          "major_faults": 0
+        }
+      ],
+      "slowest_samples": [
+        {
+          "variant": "reference",
+          "repeat": 2,
+          "wall_ms": 110.531277,
+          "cpu_ms": 154.692109,
+          "gc_overlap_ms": 0.0,
+          "gc": [],
+          "voluntary_switches": 11,
+          "involuntary_switches": 19,
+          "minor_faults": 0,
+          "major_faults": 0
+        },
+        {
+          "variant": "reference",
+          "repeat": 3,
+          "wall_ms": 110.311879,
+          "cpu_ms": 152.379101,
+          "gc_overlap_ms": 0.0,
+          "gc": [],
+          "voluntary_switches": 11,
+          "involuntary_switches": 20,
+          "minor_faults": 0,
+          "major_faults": 0
+        },
+        {
+          "variant": "reference",
+          "repeat": 5,
+          "wall_ms": 110.126294,
+          "cpu_ms": 153.090438,
+          "gc_overlap_ms": 0.0,
+          "gc": [],
+          "voluntary_switches": 11,
+          "involuntary_switches": 23,
+          "minor_faults": 0,
+          "major_faults": 0
+        }
+      ],
+      "maximum_overlap_ms": 0.124577,
+      "host_sha256": "b0be5684b295a32255acbe4ee790305243ea4e4fd384575c7f62e56a57815024"
+    },
+    "rus": {
+      "scope": "Instrumented host diagnostic only; wall includes callback/measurement overhead. Process CPU time includes all threads; GC overlap is not a corrected latency. No GC thresholds, enabled state or runtime scheduling changed.",
+      "gc_enabled": true,
+      "gc_threshold": [
+        700,
+        10,
+        10
+      ],
+      "sample_count": 14,
+      "overlapping_samples": [
+        {
+          "variant": "candidate",
+          "repeat": 1,
+          "wall_ms": 143.645588,
+          "cpu_ms": 184.681891,
+          "gc_overlap_ms": 0.127253,
+          "gc": [
+            {
+              "start_ns": 108855709775622,
+              "end_ns": 108855709902875,
+              "generation": 0,
+              "collected": 0,
+              "uncollectable": 0
+            }
+          ],
+          "voluntary_switches": 12,
+          "involuntary_switches": 22,
+          "minor_faults": 11,
+          "major_faults": 0
+        }
+      ],
+      "slowest_samples": [
+        {
+          "variant": "reference",
+          "repeat": 0,
+          "wall_ms": 164.696192,
+          "cpu_ms": 225.927845,
+          "gc_overlap_ms": 0.0,
+          "gc": [],
+          "voluntary_switches": 12,
+          "involuntary_switches": 25,
+          "minor_faults": 3584,
+          "major_faults": 0
+        },
+        {
+          "variant": "reference",
+          "repeat": 5,
+          "wall_ms": 164.297614,
+          "cpu_ms": 207.988768,
+          "gc_overlap_ms": 0.0,
+          "gc": [],
+          "voluntary_switches": 12,
+          "involuntary_switches": 26,
+          "minor_faults": 0,
+          "major_faults": 0
+        },
+        {
+          "variant": "reference",
+          "repeat": 2,
+          "wall_ms": 164.089443,
+          "cpu_ms": 209.987911,
+          "gc_overlap_ms": 0.0,
+          "gc": [],
+          "voluntary_switches": 12,
+          "involuntary_switches": 25,
+          "minor_faults": 512,
+          "major_faults": 0
+        }
+      ],
+      "maximum_overlap_ms": 0.127253,
+      "host_sha256": "b050b10b3742044a66f2ab61e03f699aa3d14cd3215469a930e3c002dbf01234"
+    },
+    "spa": {
+      "scope": "Instrumented host diagnostic only; wall includes callback/measurement overhead. Process CPU time includes all threads; GC overlap is not a corrected latency. No GC thresholds, enabled state or runtime scheduling changed.",
+      "gc_enabled": true,
+      "gc_threshold": [
+        700,
+        10,
+        10
+      ],
+      "sample_count": 14,
+      "overlapping_samples": [
+        {
+          "variant": "candidate",
+          "repeat": 1,
+          "wall_ms": 123.611949,
+          "cpu_ms": 167.944142,
+          "gc_overlap_ms": 0.134443,
+          "gc": [
+            {
+              "start_ns": 108873618810248,
+              "end_ns": 108873618944691,
+              "generation": 0,
+              "collected": 0,
+              "uncollectable": 0
+            }
+          ],
+          "voluntary_switches": 12,
+          "involuntary_switches": 25,
+          "minor_faults": 527,
+          "major_faults": 0
+        }
+      ],
+      "slowest_samples": [
+        {
+          "variant": "reference",
+          "repeat": 4,
+          "wall_ms": 133.788789,
+          "cpu_ms": 177.06384,
+          "gc_overlap_ms": 0.0,
+          "gc": [],
+          "voluntary_switches": 11,
+          "involuntary_switches": 23,
+          "minor_faults": 0,
+          "major_faults": 0
+        },
+        {
+          "variant": "reference",
+          "repeat": 5,
+          "wall_ms": 133.446285,
+          "cpu_ms": 176.6046,
+          "gc_overlap_ms": 0.0,
+          "gc": [],
+          "voluntary_switches": 11,
+          "involuntary_switches": 14,
+          "minor_faults": 0,
+          "major_faults": 0
+        },
+        {
+          "variant": "reference",
+          "repeat": 6,
+          "wall_ms": 133.356894,
+          "cpu_ms": 176.459088,
+          "gc_overlap_ms": 0.0,
+          "gc": [],
+          "voluntary_switches": 12,
+          "involuntary_switches": 23,
+          "minor_faults": 0,
+          "major_faults": 0
+        }
+      ],
+      "maximum_overlap_ms": 0.134443,
+      "host_sha256": "1a2b7262d8c4d88a830d7d6441f38eb874ee01077eb366bd9ffcb64b6f0b3c9f"
+    },
+    "zho": {
+      "scope": "Instrumented host diagnostic only; wall includes callback/measurement overhead. Process CPU time includes all threads; GC overlap is not a corrected latency. No GC thresholds, enabled state or runtime scheduling changed.",
+      "gc_enabled": true,
+      "gc_threshold": [
+        700,
+        10,
+        10
+      ],
+      "sample_count": 14,
+      "overlapping_samples": [
+        {
+          "variant": "candidate",
+          "repeat": 1,
+          "wall_ms": 118.109273,
+          "cpu_ms": 167.281448,
+          "gc_overlap_ms": 0.133367,
+          "gc": [
+            {
+              "start_ns": 108891183534008,
+              "end_ns": 108891183667375,
+              "generation": 0,
+              "collected": 0,
+              "uncollectable": 0
+            }
+          ],
+          "voluntary_switches": 11,
+          "involuntary_switches": 4,
+          "minor_faults": 522,
+          "major_faults": 0
+        }
+      ],
+      "slowest_samples": [
+        {
+          "variant": "reference",
+          "repeat": 1,
+          "wall_ms": 134.458731,
+          "cpu_ms": 180.780211,
+          "gc_overlap_ms": 0.0,
+          "gc": [],
+          "voluntary_switches": 11,
+          "involuntary_switches": 16,
+          "minor_faults": 1,
+          "major_faults": 0
+        },
+        {
+          "variant": "reference",
+          "repeat": 4,
+          "wall_ms": 132.319367,
+          "cpu_ms": 169.793095,
+          "gc_overlap_ms": 0.0,
+          "gc": [],
+          "voluntary_switches": 13,
+          "involuntary_switches": 21,
+          "minor_faults": 0,
+          "major_faults": 0
+        },
+        {
+          "variant": "reference",
+          "repeat": 3,
+          "wall_ms": 132.119667,
+          "cpu_ms": 177.978293,
+          "gc_overlap_ms": 0.0,
+          "gc": [],
+          "voluntary_switches": 11,
+          "involuntary_switches": 24,
+          "minor_faults": 0,
+          "major_faults": 0
+        }
+      ],
+      "maximum_overlap_ms": 0.133367,
+      "host_sha256": "e567696acd8094ac417b273e97e2db5508d7a59454c2b67cdb25fee4e3f2aac4"
+    }
+  },
+  "rotated_warm_result": "docs/runtime-expanded-budget-2787097.json",
+  "scope": "Instrumented host diagnostics are separate from candidate-first ordinary timings. Same224 inputs reused, not additional independent quality samples. No removed samples, GC-subtracted latency or runtime GC policy changes. Overlap in this diagnostic is not a direct measurement of earlier uninstrumented outlier causes."
+}

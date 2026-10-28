@@ -1,0 +1,3829 @@
+{
+  "source": {
+    "group": "gai51740",
+    "queue": "R9920261300",
+    "resource": "rt_HG",
+    "nodes": 1,
+    "gpus": 1,
+    "walltime": "01:00:00",
+    "account_gpu_cap": 192,
+    "approval": "Standing serial 1GPU authorization; fresh account192/queue/no duplicate guard before submission.",
+    "model_name": "owsm_v4_medium_1B",
+    "expected_samples": 224,
+    "repeat": 7,
+    "per_language": 32,
+    "experiment": "runtime_expanded_budget_tail",
+    "comparison": "draft_budget",
+    "expected_conditions": 7,
+    "commit": "3f5be9a3105a7651c7c32afdc0645225bc540099",
+    "runtime_tree": "0852f348ec6e2b0b8b4e7a03acdfe6248b25eb6f",
+    "snapshot": "/groups/gai51740/acc12576tt/github.com/owsm_trt/outputs/runtime-expanded-budget-tail-submit-01/snapshot-3f5be9a3.tar",
+    "status": "approved_not_submitted",
+    "approved_jobs": 1,
+    "additional_jobs_submitted": 0,
+    "prepared_at": "2026-10-28T11:19:11.355726+00:00",
+    "purpose": "1B budget256/128 GC/CPU tail diagnostic andindependentcandidate-first uninstrumented repeat;separateprocesses/artefacts,alloutliers retained.",
+    "classification": "N: verification shapes under existing public drafttokenbudget256/128,greedyONboth,sameengine/checkpoint.",
+    "prerequisite": "Full13232budget N control2786743 andprior224timing2786772;1Bfrontend2787087 terminalvalidated beforeqsub,fresh192guard.",
+    "checks": "11 focused CPU selection/aggregation tests,Ruff/bash-n/diff;compute-node3 observer checks scheduled;runtime ASTdoc-onlycontrol verified.",
+    "host_rotated": true,
+    "runtime_source_control": "outputs/runtime-expanded-budget-tail-preparation/runtime-doc-control.json"
+  },
+  "environment": {
+    "commit": "3f5be9a3105a7651c7c32afdc0645225bc540099",
+    "job": "2787097.pbs1",
+    "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+    "index_sha256": "213a5e54cf891cefdcfebffb4c2dbac392867f64bcecc9cc60c3bdf7e5057211",
+    "selection_sha256": "21037d881f14e1b1b7299167418157a9b4bdaea98f0133de07616256b519d583",
+    "engine_sha256": {
+      "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+      "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+      "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+    },
+    "gpu": "NVIDIA H200",
+    "cuda": "13.0",
+    "torch": "2.14.1+cu130",
+    "versions": {
+      "torch": "2.14.1",
+      "triton": "3.8.0",
+      "tensorrt": "11.4.0.106"
+    },
+    "nvidia_smi": "name, uuid, driver_version\nNVIDIA H200, GPU-13d7a0a7-f65c-a2e7-c87e-6547ddfa9cdf, 595.71.05",
+    "load_ms": 2992.576418997487,
+    "greedy_settings": {
+      "reference": {
+        "greedy_skip_finished": true,
+        "greedy_plain_solo": true,
+        "greedy_fused_select": true,
+        "greedy_split_choose": true,
+        "greedy_fuse_accept": true,
+        "greedy_reuse_notime": false,
+        "greedy_cache_draft_flags": true,
+        "greedy_lazy_verify_graphs": true,
+        "greedy_lazy_plain": true
+      },
+      "candidate": {
+        "greedy_skip_finished": true,
+        "greedy_plain_solo": true,
+        "greedy_fused_select": true,
+        "greedy_split_choose": true,
+        "greedy_fuse_accept": true,
+        "greedy_reuse_notime": false,
+        "greedy_cache_draft_flags": true,
+        "greedy_lazy_verify_graphs": true,
+        "greedy_lazy_plain": true
+      }
+    },
+    "draft_token_budgets": {
+      "reference": 256,
+      "candidate": 128
+    },
+    "frontend_batch_limits": {
+      "reference": 1,
+      "candidate": 1
+    },
+    "comparison": "draft_budget",
+    "classification": "N",
+    "cases": [
+      "stream_ts_b8"
+    ],
+    "host_diagnostics": false,
+    "variant_order": [
+      "candidate",
+      "reference"
+    ],
+    "repeat": 7,
+    "per_language": 32,
+    "scope": "Uninstrumented warm request timing. N: public draft budget256/128, greedy kernels ON both. Same engine/checkpoint. Balanced language/duration/dataset sample excluding prior screening overlap, nonspeech and long-form. Not corpus-weighted performance or an independent quality holdout. Loaded audio outside measured calls; cold/capture and diagnostic dispatch counts separate. Both session pools resident."
+  },
+  "scheduler": {
+    "job": "2787097.pbs1",
+    "state": "F",
+    "exit_status": 0,
+    "stageout_status": 1,
+    "observed_at": "2026-10-28T11:31:18.717504+00:00",
+    "project": "gai51740",
+    "queue": "R9920261300",
+    "requested": {
+      "fs_factor": 1,
+      "mem": "160gb",
+      "mpiprocs": 1,
+      "ncpus": 16,
+      "ngpus": 1,
+      "njobs_rt_HG": 1,
+      "nodect": 1,
+      "ompthreads": 1,
+      "place": "scatter",
+      "select": "1:ncpus=16:mem=160gb:ngpus=1:njobs_rt_HG=1",
+      "walltime": "01:00:00"
+    },
+    "resources_used": {
+      "cpupercent": 108,
+      "cput": "00:05:32",
+      "mem": "34704176kb",
+      "ncpus": 16,
+      "vmem": "336626248kb",
+      "walltime": "00:05:35"
+    }
+  },
+  "complete": {
+    "job": "2787097.pbs1",
+    "complete": true,
+    "conditions": 7,
+    "samples": 224,
+    "repeat": 7
+  },
+  "conditions": {
+    "deu/stream_ts_b8": {
+      "variants": {
+        "reference": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 119.6751280076569,
+            "p95": 120.63150430331007,
+            "minimum": 115.37048900208902,
+            "maximum": 120.96734200895298,
+            "stdev": 1.6961235319105354,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 119.6751280076569,
+            "p95": 120.63150430331007,
+            "minimum": 115.37048900208902,
+            "maximum": 120.96734200895298,
+            "stdev": 1.6961235319105354,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 3428.377097067725,
+          "peak_allocated_bytes": 9148273152,
+          "draft_decoder_calls": 266
+        },
+        "candidate": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 109.9598610016983,
+            "p95": 110.90211900445865,
+            "minimum": 108.44522800471168,
+            "maximum": 111.18307200376876,
+            "stdev": 0.8994107607549406,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 109.9598610016983,
+            "p95": 110.90211900445865,
+            "minimum": 108.44522800471168,
+            "maximum": 111.18307200376876,
+            "stdev": 0.8994107607549406,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 3718.4717015947504,
+          "peak_allocated_bytes": 9114718720,
+          "draft_decoder_calls": 287
+        }
+      },
+      "repeat_totals_ms": {
+        "reference": [
+          115.37048900208902,
+          118.04083800234366,
+          119.6751280076569,
+          119.84788299014326,
+          119.84485700668301,
+          120.96734200895298,
+          119.5456940040458
+        ],
+        "candidate": [
+          108.56631300703157,
+          111.18307200376876,
+          110.2074310038006,
+          108.44522800471168,
+          110.24656200606842,
+          109.67491100018378,
+          109.9598610016983
+        ]
+      },
+      "paired_rtfx_change_percent": {
+        "samples": [
+          6.2672995025784495,
+          6.1679947090708565,
+          8.590797297080455,
+          10.514667353492179,
+          8.706207999562166,
+          10.296275516239328,
+          8.71757468136436
+        ],
+        "stats": {
+          "n": 7,
+          "p50": 8.706207999562166,
+          "p95": 10.449149802316324,
+          "minimum": 6.1679947090708565,
+          "maximum": 10.514667353492179,
+          "stdev": 1.5945721528233923,
+          "percentile_method": "linear interpolation at (n-1)*q"
+        },
+        "positive_repeats": 7
+      },
+      "pooled_rtfx_change_percent": 8.461572234137883,
+      "request_median_comparisons": [
+        {
+          "ids": [
+            "fleurs_de_test--de_de-9539852546318281222",
+            "fleurs_de_test--de_de-322566282770044812",
+            "fleurs_de_test--de_de-5029291527905533581",
+            "fleurs_de_test--de_de-13619903763102250854",
+            "fleurs_de_test--de_de-5076330092750267209",
+            "fleurs_de_test--de_de-4625253856041369698",
+            "fleurs_de_test--de_de-12769451296103711814",
+            "fleurs_de_test--de_de-980502554629108510",
+            "fleurs_de_test--de_de-17194386507947520507",
+            "fleurs_de_test--de_de-8970395757894156280",
+            "fleurs_de_test--de_de-11858506543534190332",
+            "fleurs_de_test--de_de-5135202912458287728",
+            "fleurs_de_test--de_de-13681202748699137616",
+            "fleurs_de_test--de_de-2543601238923640800",
+            "fleurs_de_test--de_de-7519616025250741852",
+            "fleurs_de_test--de_de-7471549809031321156",
+            "fleurs_de_test--de_de-12096938210340365820",
+            "fleurs_de_test--de_de-1191248392415945452",
+            "fleurs_de_test--de_de-3984832977459170363",
+            "fleurs_de_test--de_de-361399504826739550",
+            "fleurs_de_test--de_de-4138553571604325890",
+            "fleurs_de_test--de_de-15701810135013960619",
+            "fleurs_de_test--de_de-16270727513661331945",
+            "fleurs_de_test--de_de-4253549905132833169",
+            "fleurs_de_test--de_de-7451112490045072794",
+            "fleurs_de_test--de_de-14232485927175061318",
+            "fleurs_de_test--de_de-16647831326365949411",
+            "fleurs_de_test--de_de-3439753945386479444",
+            "fleurs_de_test--de_de-16904905454695689678",
+            "fleurs_de_test--de_de-13785217042026043005",
+            "fleurs_de_test--de_de-985652190919708893",
+            "fleurs_de_test--de_de-1723516658369460617"
+          ],
+          "median_wall_ms": {
+            "reference": 119.6751280076569,
+            "candidate": 109.9598610016983
+          },
+          "rtfx_change_percent": 8.835284909835007
+        }
+      ],
+      "requests_with_faster_candidate_median": 1,
+      "draft_call_differences": [
+        {
+          "repeat": 0,
+          "ids": [
+            "fleurs_de_test--de_de-9539852546318281222",
+            "fleurs_de_test--de_de-322566282770044812",
+            "fleurs_de_test--de_de-5029291527905533581",
+            "fleurs_de_test--de_de-13619903763102250854",
+            "fleurs_de_test--de_de-5076330092750267209",
+            "fleurs_de_test--de_de-4625253856041369698",
+            "fleurs_de_test--de_de-12769451296103711814",
+            "fleurs_de_test--de_de-980502554629108510",
+            "fleurs_de_test--de_de-17194386507947520507",
+            "fleurs_de_test--de_de-8970395757894156280",
+            "fleurs_de_test--de_de-11858506543534190332",
+            "fleurs_de_test--de_de-5135202912458287728",
+            "fleurs_de_test--de_de-13681202748699137616",
+            "fleurs_de_test--de_de-2543601238923640800",
+            "fleurs_de_test--de_de-7519616025250741852",
+            "fleurs_de_test--de_de-7471549809031321156",
+            "fleurs_de_test--de_de-12096938210340365820",
+            "fleurs_de_test--de_de-1191248392415945452",
+            "fleurs_de_test--de_de-3984832977459170363",
+            "fleurs_de_test--de_de-361399504826739550",
+            "fleurs_de_test--de_de-4138553571604325890",
+            "fleurs_de_test--de_de-15701810135013960619",
+            "fleurs_de_test--de_de-16270727513661331945",
+            "fleurs_de_test--de_de-4253549905132833169",
+            "fleurs_de_test--de_de-7451112490045072794",
+            "fleurs_de_test--de_de-14232485927175061318",
+            "fleurs_de_test--de_de-16647831326365949411",
+            "fleurs_de_test--de_de-3439753945386479444",
+            "fleurs_de_test--de_de-16904905454695689678",
+            "fleurs_de_test--de_de-13785217042026043005",
+            "fleurs_de_test--de_de-985652190919708893",
+            "fleurs_de_test--de_de-1723516658369460617"
+          ],
+          "reference": 38,
+          "candidate": 41
+        },
+        {
+          "repeat": 1,
+          "ids": [
+            "fleurs_de_test--de_de-9539852546318281222",
+            "fleurs_de_test--de_de-322566282770044812",
+            "fleurs_de_test--de_de-5029291527905533581",
+            "fleurs_de_test--de_de-13619903763102250854",
+            "fleurs_de_test--de_de-5076330092750267209",
+            "fleurs_de_test--de_de-4625253856041369698",
+            "fleurs_de_test--de_de-12769451296103711814",
+            "fleurs_de_test--de_de-980502554629108510",
+            "fleurs_de_test--de_de-17194386507947520507",
+            "fleurs_de_test--de_de-8970395757894156280",
+            "fleurs_de_test--de_de-11858506543534190332",
+            "fleurs_de_test--de_de-5135202912458287728",
+            "fleurs_de_test--de_de-13681202748699137616",
+            "fleurs_de_test--de_de-2543601238923640800",
+            "fleurs_de_test--de_de-7519616025250741852",
+            "fleurs_de_test--de_de-7471549809031321156",
+            "fleurs_de_test--de_de-12096938210340365820",
+            "fleurs_de_test--de_de-1191248392415945452",
+            "fleurs_de_test--de_de-3984832977459170363",
+            "fleurs_de_test--de_de-361399504826739550",
+            "fleurs_de_test--de_de-4138553571604325890",
+            "fleurs_de_test--de_de-15701810135013960619",
+            "fleurs_de_test--de_de-16270727513661331945",
+            "fleurs_de_test--de_de-4253549905132833169",
+            "fleurs_de_test--de_de-7451112490045072794",
+            "fleurs_de_test--de_de-14232485927175061318",
+            "fleurs_de_test--de_de-16647831326365949411",
+            "fleurs_de_test--de_de-3439753945386479444",
+            "fleurs_de_test--de_de-16904905454695689678",
+            "fleurs_de_test--de_de-13785217042026043005",
+            "fleurs_de_test--de_de-985652190919708893",
+            "fleurs_de_test--de_de-1723516658369460617"
+          ],
+          "reference": 38,
+          "candidate": 41
+        },
+        {
+          "repeat": 2,
+          "ids": [
+            "fleurs_de_test--de_de-9539852546318281222",
+            "fleurs_de_test--de_de-322566282770044812",
+            "fleurs_de_test--de_de-5029291527905533581",
+            "fleurs_de_test--de_de-13619903763102250854",
+            "fleurs_de_test--de_de-5076330092750267209",
+            "fleurs_de_test--de_de-4625253856041369698",
+            "fleurs_de_test--de_de-12769451296103711814",
+            "fleurs_de_test--de_de-980502554629108510",
+            "fleurs_de_test--de_de-17194386507947520507",
+            "fleurs_de_test--de_de-8970395757894156280",
+            "fleurs_de_test--de_de-11858506543534190332",
+            "fleurs_de_test--de_de-5135202912458287728",
+            "fleurs_de_test--de_de-13681202748699137616",
+            "fleurs_de_test--de_de-2543601238923640800",
+            "fleurs_de_test--de_de-7519616025250741852",
+            "fleurs_de_test--de_de-7471549809031321156",
+            "fleurs_de_test--de_de-12096938210340365820",
+            "fleurs_de_test--de_de-1191248392415945452",
+            "fleurs_de_test--de_de-3984832977459170363",
+            "fleurs_de_test--de_de-361399504826739550",
+            "fleurs_de_test--de_de-4138553571604325890",
+            "fleurs_de_test--de_de-15701810135013960619",
+            "fleurs_de_test--de_de-16270727513661331945",
+            "fleurs_de_test--de_de-4253549905132833169",
+            "fleurs_de_test--de_de-7451112490045072794",
+            "fleurs_de_test--de_de-14232485927175061318",
+            "fleurs_de_test--de_de-16647831326365949411",
+            "fleurs_de_test--de_de-3439753945386479444",
+            "fleurs_de_test--de_de-16904905454695689678",
+            "fleurs_de_test--de_de-13785217042026043005",
+            "fleurs_de_test--de_de-985652190919708893",
+            "fleurs_de_test--de_de-1723516658369460617"
+          ],
+          "reference": 38,
+          "candidate": 41
+        },
+        {
+          "repeat": 3,
+          "ids": [
+            "fleurs_de_test--de_de-9539852546318281222",
+            "fleurs_de_test--de_de-322566282770044812",
+            "fleurs_de_test--de_de-5029291527905533581",
+            "fleurs_de_test--de_de-13619903763102250854",
+            "fleurs_de_test--de_de-5076330092750267209",
+            "fleurs_de_test--de_de-4625253856041369698",
+            "fleurs_de_test--de_de-12769451296103711814",
+            "fleurs_de_test--de_de-980502554629108510",
+            "fleurs_de_test--de_de-17194386507947520507",
+            "fleurs_de_test--de_de-8970395757894156280",
+            "fleurs_de_test--de_de-11858506543534190332",
+            "fleurs_de_test--de_de-5135202912458287728",
+            "fleurs_de_test--de_de-13681202748699137616",
+            "fleurs_de_test--de_de-2543601238923640800",
+            "fleurs_de_test--de_de-7519616025250741852",
+            "fleurs_de_test--de_de-7471549809031321156",
+            "fleurs_de_test--de_de-12096938210340365820",
+            "fleurs_de_test--de_de-1191248392415945452",
+            "fleurs_de_test--de_de-3984832977459170363",
+            "fleurs_de_test--de_de-361399504826739550",
+            "fleurs_de_test--de_de-4138553571604325890",
+            "fleurs_de_test--de_de-15701810135013960619",
+            "fleurs_de_test--de_de-16270727513661331945",
+            "fleurs_de_test--de_de-4253549905132833169",
+            "fleurs_de_test--de_de-7451112490045072794",
+            "fleurs_de_test--de_de-14232485927175061318",
+            "fleurs_de_test--de_de-16647831326365949411",
+            "fleurs_de_test--de_de-3439753945386479444",
+            "fleurs_de_test--de_de-16904905454695689678",
+            "fleurs_de_test--de_de-13785217042026043005",
+            "fleurs_de_test--de_de-985652190919708893",
+            "fleurs_de_test--de_de-1723516658369460617"
+          ],
+          "reference": 38,
+          "candidate": 41
+        },
+        {
+          "repeat": 4,
+          "ids": [
+            "fleurs_de_test--de_de-9539852546318281222",
+            "fleurs_de_test--de_de-322566282770044812",
+            "fleurs_de_test--de_de-5029291527905533581",
+            "fleurs_de_test--de_de-13619903763102250854",
+            "fleurs_de_test--de_de-5076330092750267209",
+            "fleurs_de_test--de_de-4625253856041369698",
+            "fleurs_de_test--de_de-12769451296103711814",
+            "fleurs_de_test--de_de-980502554629108510",
+            "fleurs_de_test--de_de-17194386507947520507",
+            "fleurs_de_test--de_de-8970395757894156280",
+            "fleurs_de_test--de_de-11858506543534190332",
+            "fleurs_de_test--de_de-5135202912458287728",
+            "fleurs_de_test--de_de-13681202748699137616",
+            "fleurs_de_test--de_de-2543601238923640800",
+            "fleurs_de_test--de_de-7519616025250741852",
+            "fleurs_de_test--de_de-7471549809031321156",
+            "fleurs_de_test--de_de-12096938210340365820",
+            "fleurs_de_test--de_de-1191248392415945452",
+            "fleurs_de_test--de_de-3984832977459170363",
+            "fleurs_de_test--de_de-361399504826739550",
+            "fleurs_de_test--de_de-4138553571604325890",
+            "fleurs_de_test--de_de-15701810135013960619",
+            "fleurs_de_test--de_de-16270727513661331945",
+            "fleurs_de_test--de_de-4253549905132833169",
+            "fleurs_de_test--de_de-7451112490045072794",
+            "fleurs_de_test--de_de-14232485927175061318",
+            "fleurs_de_test--de_de-16647831326365949411",
+            "fleurs_de_test--de_de-3439753945386479444",
+            "fleurs_de_test--de_de-16904905454695689678",
+            "fleurs_de_test--de_de-13785217042026043005",
+            "fleurs_de_test--de_de-985652190919708893",
+            "fleurs_de_test--de_de-1723516658369460617"
+          ],
+          "reference": 38,
+          "candidate": 41
+        },
+        {
+          "repeat": 5,
+          "ids": [
+            "fleurs_de_test--de_de-9539852546318281222",
+            "fleurs_de_test--de_de-322566282770044812",
+            "fleurs_de_test--de_de-5029291527905533581",
+            "fleurs_de_test--de_de-13619903763102250854",
+            "fleurs_de_test--de_de-5076330092750267209",
+            "fleurs_de_test--de_de-4625253856041369698",
+            "fleurs_de_test--de_de-12769451296103711814",
+            "fleurs_de_test--de_de-980502554629108510",
+            "fleurs_de_test--de_de-17194386507947520507",
+            "fleurs_de_test--de_de-8970395757894156280",
+            "fleurs_de_test--de_de-11858506543534190332",
+            "fleurs_de_test--de_de-5135202912458287728",
+            "fleurs_de_test--de_de-13681202748699137616",
+            "fleurs_de_test--de_de-2543601238923640800",
+            "fleurs_de_test--de_de-7519616025250741852",
+            "fleurs_de_test--de_de-7471549809031321156",
+            "fleurs_de_test--de_de-12096938210340365820",
+            "fleurs_de_test--de_de-1191248392415945452",
+            "fleurs_de_test--de_de-3984832977459170363",
+            "fleurs_de_test--de_de-361399504826739550",
+            "fleurs_de_test--de_de-4138553571604325890",
+            "fleurs_de_test--de_de-15701810135013960619",
+            "fleurs_de_test--de_de-16270727513661331945",
+            "fleurs_de_test--de_de-4253549905132833169",
+            "fleurs_de_test--de_de-7451112490045072794",
+            "fleurs_de_test--de_de-14232485927175061318",
+            "fleurs_de_test--de_de-16647831326365949411",
+            "fleurs_de_test--de_de-3439753945386479444",
+            "fleurs_de_test--de_de-16904905454695689678",
+            "fleurs_de_test--de_de-13785217042026043005",
+            "fleurs_de_test--de_de-985652190919708893",
+            "fleurs_de_test--de_de-1723516658369460617"
+          ],
+          "reference": 38,
+          "candidate": 41
+        },
+        {
+          "repeat": 6,
+          "ids": [
+            "fleurs_de_test--de_de-9539852546318281222",
+            "fleurs_de_test--de_de-322566282770044812",
+            "fleurs_de_test--de_de-5029291527905533581",
+            "fleurs_de_test--de_de-13619903763102250854",
+            "fleurs_de_test--de_de-5076330092750267209",
+            "fleurs_de_test--de_de-4625253856041369698",
+            "fleurs_de_test--de_de-12769451296103711814",
+            "fleurs_de_test--de_de-980502554629108510",
+            "fleurs_de_test--de_de-17194386507947520507",
+            "fleurs_de_test--de_de-8970395757894156280",
+            "fleurs_de_test--de_de-11858506543534190332",
+            "fleurs_de_test--de_de-5135202912458287728",
+            "fleurs_de_test--de_de-13681202748699137616",
+            "fleurs_de_test--de_de-2543601238923640800",
+            "fleurs_de_test--de_de-7519616025250741852",
+            "fleurs_de_test--de_de-7471549809031321156",
+            "fleurs_de_test--de_de-12096938210340365820",
+            "fleurs_de_test--de_de-1191248392415945452",
+            "fleurs_de_test--de_de-3984832977459170363",
+            "fleurs_de_test--de_de-361399504826739550",
+            "fleurs_de_test--de_de-4138553571604325890",
+            "fleurs_de_test--de_de-15701810135013960619",
+            "fleurs_de_test--de_de-16270727513661331945",
+            "fleurs_de_test--de_de-4253549905132833169",
+            "fleurs_de_test--de_de-7451112490045072794",
+            "fleurs_de_test--de_de-14232485927175061318",
+            "fleurs_de_test--de_de-16647831326365949411",
+            "fleurs_de_test--de_de-3439753945386479444",
+            "fleurs_de_test--de_de-16904905454695689678",
+            "fleurs_de_test--de_de-13785217042026043005",
+            "fleurs_de_test--de_de-985652190919708893",
+            "fleurs_de_test--de_de-1723516658369460617"
+          ],
+          "reference": 38,
+          "candidate": 41
+        }
+      ],
+      "scope": "Single: per-input transcribe latency. Streaming: one complete multi-batch request. Pooled RTFx uses all warm wall samples; paired statistics use repeat totals. Draft-call counts are not all decoder steps. Memory includes both resident variant pools.",
+      "quality": {
+        "reference": {
+          "metric": "WER",
+          "reference_units": 575,
+          "errors": 34,
+          "rate": 0.059130434782608696,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "candidate": {
+          "metric": "WER",
+          "reference_units": 575,
+          "errors": 34,
+          "rate": 0.059130434782608696,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "cold": {
+        "candidate": {
+          "warmup_ms": 2861.911557993153,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 20,
+              "ready_verify_steps": 3,
+              "normal_verify_graphs": 3,
+              "notime_graphs": 0,
+              "selection_fused_windows": 5,
+              "selection_split_windows": 5
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "megakernel-gluon": 1,
+              "uninitialized": 17,
+              "tensorrt: shape limit": 2
+            }
+          },
+          "allocated_delta_bytes": 5434077184,
+          "reserved_delta_bytes": 5110759424,
+          "frontend_graph": null,
+          "full_verify_warmup_ms": 2464.1499930003192,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 20,
+              "ready_verify_steps": 20,
+              "normal_verify_graphs": 20,
+              "notime_graphs": 0,
+              "selection_fused_windows": 5,
+              "selection_split_windows": 5
+            }
+          }
+        },
+        "reference": {
+          "warmup_ms": 3234.2150030017365,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 4,
+              "normal_verify_graphs": 4,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "megakernel-gluon": 1,
+              "uninitialized": 20,
+              "tensorrt: shape limit": 3
+            }
+          },
+          "allocated_delta_bytes": 1420378624,
+          "reserved_delta_bytes": 1405091840,
+          "frontend_graph": null,
+          "full_verify_warmup_ms": 3168.0601139960345,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 24,
+              "normal_verify_graphs": 24,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          }
+        }
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        }
+      },
+      "artifact_sha256": {
+        "cold.json": "c8a07813723244fb54331d1e0d029c66e18b0febc24a9ec1f071fdbb190919bb",
+        "actual_dispatch_candidate.json": "55a420215d8aa666631ef0cc33f8c969b62df47c6c96a4317c8d6ac8b935382c",
+        "tokens.json": "e479cf52512bf7ea1e0696e0a40f3e0438fd47e78c20c57d95545883d1d55504",
+        "actual_dispatch_reference.json": "41579785122b97105a8699597d29e812dc940d5cfe26464559ed380aae2269dc",
+        "summary.json": "01ddd1144df627b260bc3f958ba05e905f80bb75d667d20727621d71d1331885",
+        "wall.json": "fc9526e492f700caeb79462d89e0b565f81521b6c671cf4d358858f79c0baf0b"
+      }
+    },
+    "eng/stream_ts_b8": {
+      "variants": {
+        "reference": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 125.81732599937823,
+            "p95": 126.59795230283635,
+            "minimum": 122.70095599524211,
+            "maximum": 126.64333599968813,
+            "stdev": 1.26917279559067,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 125.81732599937823,
+            "p95": 126.59795230283635,
+            "minimum": 122.70095599524211,
+            "maximum": 126.64333599968813,
+            "stdev": 1.26917279559067,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 2573.5370885828306,
+          "peak_allocated_bytes": 9368763392,
+          "draft_decoder_calls": 329
+        },
+        "candidate": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 114.43585999950301,
+            "p95": 115.62665180681506,
+            "minimum": 112.60757599666249,
+            "maximum": 115.66413500986528,
+            "stdev": 1.2034012100125375,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 114.43585999950301,
+            "p95": 115.62665180681506,
+            "minimum": 112.60757599666249,
+            "maximum": 115.66413500986528,
+            "stdev": 1.2034012100125375,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 2822.984480738618,
+          "peak_allocated_bytes": 9335208960,
+          "draft_decoder_calls": 329
+        }
+      },
+      "repeat_totals_ms": {
+        "reference": [
+          122.70095599524211,
+          126.64333599968813,
+          125.81732599937823,
+          126.49205701018218,
+          125.59075899480376,
+          124.81172100524418,
+          126.25625499640591
+        ],
+        "candidate": [
+          112.60757599666249,
+          114.43585999950301,
+          112.73275200801436,
+          115.66413500986528,
+          114.21963099564891,
+          115.5391909996979,
+          115.5029410001589
+        ]
+      },
+      "paired_rtfx_change_percent": {
+        "samples": [
+          8.96332232467092,
+          10.667526770225821,
+          11.606719217174488,
+          9.36152075091674,
+          9.955493552231864,
+          8.025441346192675,
+          9.30999150595846
+        ],
+        "stats": {
+          "n": 7,
+          "p50": 9.36152075091674,
+          "p95": 11.324961483089888,
+          "minimum": 8.025441346192675,
+          "maximum": 11.606719217174488,
+          "stdev": 1.0856508546736878,
+          "percentile_method": "linear interpolation at (n-1)*q"
+        },
+        "positive_repeats": 7
+      },
+      "pooled_rtfx_change_percent": 9.69278403884013,
+      "request_median_comparisons": [
+        {
+          "ids": [
+            "fleurs_en_validation--en_us-4913562629825440299",
+            "librispeech_dev_other--4323-55228-0004",
+            "librispeech_test_clean--3575-170457-0006",
+            "fleurs_en_validation--en_us-9909934339673808373",
+            "librispeech_dev_other--4831-25894-0030",
+            "librispeech_test_clean--5683-32866-0009",
+            "librispeech_dev_other--4572-112383-0000",
+            "librispeech_test_clean--7127-75947-0004",
+            "fleurs_en_validation--en_us-6733125851564557061",
+            "librispeech_dev_other--4572-112375-0009",
+            "librispeech_test_clean--7021-79759-0004",
+            "fleurs_en_validation--en_us-16834890005363592460",
+            "librispeech_dev_other--3915-57461-0023",
+            "librispeech_test_clean--5105-28240-0022",
+            "fleurs_en_validation--en_us-8840380835730314512",
+            "librispeech_dev_other--2506-11278-0005",
+            "librispeech_test_clean--2830-3980-0032",
+            "fleurs_en_validation--en_us-6840966447225121742",
+            "librispeech_dev_other--1630-141772-0015",
+            "librispeech_test_clean--2830-3980-0007",
+            "librispeech_dev_other--8288-274162-0062",
+            "librispeech_test_clean--8463-294828-0024",
+            "fleurs_en_validation--en_us-843704469654597326",
+            "librispeech_dev_other--5849-50873-0001",
+            "librispeech_test_clean--908-31957-0025",
+            "fleurs_en_validation--en_us-5710220425952785052",
+            "librispeech_dev_other--6841-88294-0037",
+            "librispeech_test_clean--6829-68769-0026",
+            "fleurs_en_validation--en_us-227756730022928180",
+            "librispeech_dev_other--116-288048-0030",
+            "librispeech_test_clean--7127-75947-0037",
+            "fleurs_en_validation--en_us-8091644035324618810"
+          ],
+          "median_wall_ms": {
+            "reference": 125.81732599937823,
+            "candidate": 114.43585999950301
+          },
+          "rtfx_change_percent": 9.945716316480379
+        }
+      ],
+      "requests_with_faster_candidate_median": 1,
+      "draft_call_differences": [],
+      "scope": "Single: per-input transcribe latency. Streaming: one complete multi-batch request. Pooled RTFx uses all warm wall samples; paired statistics use repeat totals. Draft-call counts are not all decoder steps. Memory includes both resident variant pools.",
+      "quality": {
+        "reference": {
+          "metric": "WER",
+          "reference_units": 764,
+          "errors": 52,
+          "rate": 0.06806282722513089,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "candidate": {
+          "metric": "WER",
+          "reference_units": 764,
+          "errors": 52,
+          "rate": 0.06806282722513089,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "cold": {
+        "candidate": {
+          "warmup_ms": 2605.1142889918992,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 20,
+              "ready_verify_steps": 5,
+              "normal_verify_graphs": 5,
+              "notime_graphs": 0,
+              "selection_fused_windows": 5,
+              "selection_split_windows": 5
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "megakernel-gluon": 3,
+              "uninitialized": 15,
+              "tensorrt: shape limit": 2
+            }
+          },
+          "allocated_delta_bytes": 1352477696,
+          "reserved_delta_bytes": 1029701632,
+          "frontend_graph": null,
+          "full_verify_warmup_ms": 2168.36675000377,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 20,
+              "ready_verify_steps": 20,
+              "normal_verify_graphs": 20,
+              "notime_graphs": 0,
+              "selection_fused_windows": 5,
+              "selection_split_windows": 5
+            }
+          }
+        },
+        "reference": {
+          "warmup_ms": 3115.859861005447,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 6,
+              "normal_verify_graphs": 6,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "megakernel-gluon": 2,
+              "uninitialized": 18,
+              "tensorrt: shape limit": 4
+            }
+          },
+          "allocated_delta_bytes": 1420897792,
+          "reserved_delta_bytes": 1405091840,
+          "frontend_graph": null,
+          "full_verify_warmup_ms": 2589.034831005847,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 24,
+              "normal_verify_graphs": 24,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          }
+        }
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        }
+      },
+      "artifact_sha256": {
+        "cold.json": "5e9bb8d8b50ceb388169f339d9ce5f144a17186af6f3c79aeb825b07173972f2",
+        "actual_dispatch_candidate.json": "d96b63394f6136aa02afbd734248771c3aec899dbf75777381e7dd1a5249ae6a",
+        "tokens.json": "006c4a6307906b076ee4cad87796ef3a1c4ba14b16e68c0376e01cb08c259a2f",
+        "actual_dispatch_reference.json": "d0fa144201314f4a4f54695a9208642aca7ad868ca5359353e820e3cdbb1052d",
+        "summary.json": "3f4a78876c554a17ae7035298ad4b02383e0fbbf01f211d461f04f210edf29af",
+        "wall.json": "d4d5845b0cb5fb8cf6a1e09a4870c13a791515a2a38d4091c1399335833705ee"
+      }
+    },
+    "fra/stream_ts_b8": {
+      "variants": {
+        "reference": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 136.2325499940198,
+            "p95": 136.70188700489234,
+            "minimum": 130.07177600229625,
+            "maximum": 136.76131100510247,
+            "stdev": 2.176208620098566,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 136.2325499940198,
+            "p95": 136.70188700489234,
+            "minimum": 130.07177600229625,
+            "maximum": 136.76131100510247,
+            "stdev": 2.176208620098566,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 2212.0686401331886,
+          "peak_allocated_bytes": 9561196544,
+          "draft_decoder_calls": 343
+        },
+        "candidate": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 124.91691700415686,
+            "p95": 125.8700939026312,
+            "minimum": 123.05209200712852,
+            "maximum": 125.96303000464104,
+            "stdev": 1.1667251508391432,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 124.91691700415686,
+            "p95": 125.8700939026312,
+            "minimum": 123.05209200712852,
+            "maximum": 125.96303000464104,
+            "stdev": 1.1667251508391432,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 2402.0588827650067,
+          "peak_allocated_bytes": 9527642112,
+          "draft_decoder_calls": 378
+        }
+      },
+      "repeat_totals_ms": {
+        "reference": [
+          136.32582500576973,
+          134.93972799915355,
+          136.76131100510247,
+          136.2325499940198,
+          135.59519599948544,
+          136.56323100440204,
+          130.07177600229625
+        ],
+        "candidate": [
+          123.29353000677656,
+          123.30110800394323,
+          123.05209200712852,
+          124.91691700415686,
+          125.44733899994753,
+          125.96303000464104,
+          125.65324299794156
+        ]
+      },
+      "paired_rtfx_change_percent": {
+        "samples": [
+          10.57013697172664,
+          9.43918524628189,
+          11.140988157421795,
+          9.058527268557537,
+          8.0893361951202,
+          8.415327099840674,
+          3.5164496346720364
+        ],
+        "stats": {
+          "n": 7,
+          "p50": 9.058527268557537,
+          "p95": 10.969732801713247,
+          "minimum": 3.5164496346720364,
+          "maximum": 11.140988157421795,
+          "stdev": 2.3111462031851766,
+          "percentile_method": "linear interpolation at (n-1)*q"
+        },
+        "positive_repeats": 7
+      },
+      "pooled_rtfx_change_percent": 8.588804125914407,
+      "request_median_comparisons": [
+        {
+          "ids": [
+            "fleurs_fr_validation--fr_fr-9043116753413356940",
+            "fleurs_fr_validation--fr_fr-4296075365761740410",
+            "fleurs_fr_validation--fr_fr-3973723344518157445",
+            "fleurs_fr_validation--fr_fr-8772738180808083935",
+            "fleurs_fr_validation--fr_fr-4828830814070141369",
+            "fleurs_fr_validation--fr_fr-7856890929576275663",
+            "fleurs_fr_validation--fr_fr-3082641598422437134",
+            "fleurs_fr_validation--fr_fr-2086639904747050008",
+            "fleurs_fr_validation--fr_fr-6472703079090575732",
+            "fleurs_fr_validation--fr_fr-14158452746636513305",
+            "fleurs_fr_validation--fr_fr-3920926992201662587",
+            "fleurs_fr_validation--fr_fr-11260516818449932039",
+            "fleurs_fr_validation--fr_fr-7821490262817434898",
+            "fleurs_fr_validation--fr_fr-12736265345443968280",
+            "fleurs_fr_validation--fr_fr-12705132069283854619",
+            "fleurs_fr_validation--fr_fr-11432635460748117065",
+            "fleurs_fr_validation--fr_fr-3403868515702274320",
+            "fleurs_fr_validation--fr_fr-9238703150285310547",
+            "fleurs_fr_validation--fr_fr-5238075320404703631",
+            "fleurs_fr_validation--fr_fr-8203846075890120872",
+            "fleurs_fr_validation--fr_fr-1284616974191518194",
+            "fleurs_fr_validation--fr_fr-343285770319720856",
+            "fleurs_fr_validation--fr_fr-17644422570830048369",
+            "fleurs_fr_validation--fr_fr-14468638584426924317",
+            "fleurs_fr_validation--fr_fr-12482409059971069823",
+            "fleurs_fr_validation--fr_fr-15862829295612263434",
+            "fleurs_fr_validation--fr_fr-14757781394291531658",
+            "fleurs_fr_validation--fr_fr-8685376275061251487",
+            "fleurs_fr_validation--fr_fr-5992216071413521711",
+            "fleurs_fr_validation--fr_fr-4280854297640590111",
+            "fleurs_fr_validation--fr_fr-13036198272031553548",
+            "fleurs_fr_validation--fr_fr-622196158886216764"
+          ],
+          "median_wall_ms": {
+            "reference": 136.2325499940198,
+            "candidate": 124.91691700415686
+          },
+          "rtfx_change_percent": 9.058527268557537
+        }
+      ],
+      "requests_with_faster_candidate_median": 1,
+      "draft_call_differences": [
+        {
+          "repeat": 0,
+          "ids": [
+            "fleurs_fr_validation--fr_fr-9043116753413356940",
+            "fleurs_fr_validation--fr_fr-4296075365761740410",
+            "fleurs_fr_validation--fr_fr-3973723344518157445",
+            "fleurs_fr_validation--fr_fr-8772738180808083935",
+            "fleurs_fr_validation--fr_fr-4828830814070141369",
+            "fleurs_fr_validation--fr_fr-7856890929576275663",
+            "fleurs_fr_validation--fr_fr-3082641598422437134",
+            "fleurs_fr_validation--fr_fr-2086639904747050008",
+            "fleurs_fr_validation--fr_fr-6472703079090575732",
+            "fleurs_fr_validation--fr_fr-14158452746636513305",
+            "fleurs_fr_validation--fr_fr-3920926992201662587",
+            "fleurs_fr_validation--fr_fr-11260516818449932039",
+            "fleurs_fr_validation--fr_fr-7821490262817434898",
+            "fleurs_fr_validation--fr_fr-12736265345443968280",
+            "fleurs_fr_validation--fr_fr-12705132069283854619",
+            "fleurs_fr_validation--fr_fr-11432635460748117065",
+            "fleurs_fr_validation--fr_fr-3403868515702274320",
+            "fleurs_fr_validation--fr_fr-9238703150285310547",
+            "fleurs_fr_validation--fr_fr-5238075320404703631",
+            "fleurs_fr_validation--fr_fr-8203846075890120872",
+            "fleurs_fr_validation--fr_fr-1284616974191518194",
+            "fleurs_fr_validation--fr_fr-343285770319720856",
+            "fleurs_fr_validation--fr_fr-17644422570830048369",
+            "fleurs_fr_validation--fr_fr-14468638584426924317",
+            "fleurs_fr_validation--fr_fr-12482409059971069823",
+            "fleurs_fr_validation--fr_fr-15862829295612263434",
+            "fleurs_fr_validation--fr_fr-14757781394291531658",
+            "fleurs_fr_validation--fr_fr-8685376275061251487",
+            "fleurs_fr_validation--fr_fr-5992216071413521711",
+            "fleurs_fr_validation--fr_fr-4280854297640590111",
+            "fleurs_fr_validation--fr_fr-13036198272031553548",
+            "fleurs_fr_validation--fr_fr-622196158886216764"
+          ],
+          "reference": 49,
+          "candidate": 54
+        },
+        {
+          "repeat": 1,
+          "ids": [
+            "fleurs_fr_validation--fr_fr-9043116753413356940",
+            "fleurs_fr_validation--fr_fr-4296075365761740410",
+            "fleurs_fr_validation--fr_fr-3973723344518157445",
+            "fleurs_fr_validation--fr_fr-8772738180808083935",
+            "fleurs_fr_validation--fr_fr-4828830814070141369",
+            "fleurs_fr_validation--fr_fr-7856890929576275663",
+            "fleurs_fr_validation--fr_fr-3082641598422437134",
+            "fleurs_fr_validation--fr_fr-2086639904747050008",
+            "fleurs_fr_validation--fr_fr-6472703079090575732",
+            "fleurs_fr_validation--fr_fr-14158452746636513305",
+            "fleurs_fr_validation--fr_fr-3920926992201662587",
+            "fleurs_fr_validation--fr_fr-11260516818449932039",
+            "fleurs_fr_validation--fr_fr-7821490262817434898",
+            "fleurs_fr_validation--fr_fr-12736265345443968280",
+            "fleurs_fr_validation--fr_fr-12705132069283854619",
+            "fleurs_fr_validation--fr_fr-11432635460748117065",
+            "fleurs_fr_validation--fr_fr-3403868515702274320",
+            "fleurs_fr_validation--fr_fr-9238703150285310547",
+            "fleurs_fr_validation--fr_fr-5238075320404703631",
+            "fleurs_fr_validation--fr_fr-8203846075890120872",
+            "fleurs_fr_validation--fr_fr-1284616974191518194",
+            "fleurs_fr_validation--fr_fr-343285770319720856",
+            "fleurs_fr_validation--fr_fr-17644422570830048369",
+            "fleurs_fr_validation--fr_fr-14468638584426924317",
+            "fleurs_fr_validation--fr_fr-12482409059971069823",
+            "fleurs_fr_validation--fr_fr-15862829295612263434",
+            "fleurs_fr_validation--fr_fr-14757781394291531658",
+            "fleurs_fr_validation--fr_fr-8685376275061251487",
+            "fleurs_fr_validation--fr_fr-5992216071413521711",
+            "fleurs_fr_validation--fr_fr-4280854297640590111",
+            "fleurs_fr_validation--fr_fr-13036198272031553548",
+            "fleurs_fr_validation--fr_fr-622196158886216764"
+          ],
+          "reference": 49,
+          "candidate": 54
+        },
+        {
+          "repeat": 2,
+          "ids": [
+            "fleurs_fr_validation--fr_fr-9043116753413356940",
+            "fleurs_fr_validation--fr_fr-4296075365761740410",
+            "fleurs_fr_validation--fr_fr-3973723344518157445",
+            "fleurs_fr_validation--fr_fr-8772738180808083935",
+            "fleurs_fr_validation--fr_fr-4828830814070141369",
+            "fleurs_fr_validation--fr_fr-7856890929576275663",
+            "fleurs_fr_validation--fr_fr-3082641598422437134",
+            "fleurs_fr_validation--fr_fr-2086639904747050008",
+            "fleurs_fr_validation--fr_fr-6472703079090575732",
+            "fleurs_fr_validation--fr_fr-14158452746636513305",
+            "fleurs_fr_validation--fr_fr-3920926992201662587",
+            "fleurs_fr_validation--fr_fr-11260516818449932039",
+            "fleurs_fr_validation--fr_fr-7821490262817434898",
+            "fleurs_fr_validation--fr_fr-12736265345443968280",
+            "fleurs_fr_validation--fr_fr-12705132069283854619",
+            "fleurs_fr_validation--fr_fr-11432635460748117065",
+            "fleurs_fr_validation--fr_fr-3403868515702274320",
+            "fleurs_fr_validation--fr_fr-9238703150285310547",
+            "fleurs_fr_validation--fr_fr-5238075320404703631",
+            "fleurs_fr_validation--fr_fr-8203846075890120872",
+            "fleurs_fr_validation--fr_fr-1284616974191518194",
+            "fleurs_fr_validation--fr_fr-343285770319720856",
+            "fleurs_fr_validation--fr_fr-17644422570830048369",
+            "fleurs_fr_validation--fr_fr-14468638584426924317",
+            "fleurs_fr_validation--fr_fr-12482409059971069823",
+            "fleurs_fr_validation--fr_fr-15862829295612263434",
+            "fleurs_fr_validation--fr_fr-14757781394291531658",
+            "fleurs_fr_validation--fr_fr-8685376275061251487",
+            "fleurs_fr_validation--fr_fr-5992216071413521711",
+            "fleurs_fr_validation--fr_fr-4280854297640590111",
+            "fleurs_fr_validation--fr_fr-13036198272031553548",
+            "fleurs_fr_validation--fr_fr-622196158886216764"
+          ],
+          "reference": 49,
+          "candidate": 54
+        },
+        {
+          "repeat": 3,
+          "ids": [
+            "fleurs_fr_validation--fr_fr-9043116753413356940",
+            "fleurs_fr_validation--fr_fr-4296075365761740410",
+            "fleurs_fr_validation--fr_fr-3973723344518157445",
+            "fleurs_fr_validation--fr_fr-8772738180808083935",
+            "fleurs_fr_validation--fr_fr-4828830814070141369",
+            "fleurs_fr_validation--fr_fr-7856890929576275663",
+            "fleurs_fr_validation--fr_fr-3082641598422437134",
+            "fleurs_fr_validation--fr_fr-2086639904747050008",
+            "fleurs_fr_validation--fr_fr-6472703079090575732",
+            "fleurs_fr_validation--fr_fr-14158452746636513305",
+            "fleurs_fr_validation--fr_fr-3920926992201662587",
+            "fleurs_fr_validation--fr_fr-11260516818449932039",
+            "fleurs_fr_validation--fr_fr-7821490262817434898",
+            "fleurs_fr_validation--fr_fr-12736265345443968280",
+            "fleurs_fr_validation--fr_fr-12705132069283854619",
+            "fleurs_fr_validation--fr_fr-11432635460748117065",
+            "fleurs_fr_validation--fr_fr-3403868515702274320",
+            "fleurs_fr_validation--fr_fr-9238703150285310547",
+            "fleurs_fr_validation--fr_fr-5238075320404703631",
+            "fleurs_fr_validation--fr_fr-8203846075890120872",
+            "fleurs_fr_validation--fr_fr-1284616974191518194",
+            "fleurs_fr_validation--fr_fr-343285770319720856",
+            "fleurs_fr_validation--fr_fr-17644422570830048369",
+            "fleurs_fr_validation--fr_fr-14468638584426924317",
+            "fleurs_fr_validation--fr_fr-12482409059971069823",
+            "fleurs_fr_validation--fr_fr-15862829295612263434",
+            "fleurs_fr_validation--fr_fr-14757781394291531658",
+            "fleurs_fr_validation--fr_fr-8685376275061251487",
+            "fleurs_fr_validation--fr_fr-5992216071413521711",
+            "fleurs_fr_validation--fr_fr-4280854297640590111",
+            "fleurs_fr_validation--fr_fr-13036198272031553548",
+            "fleurs_fr_validation--fr_fr-622196158886216764"
+          ],
+          "reference": 49,
+          "candidate": 54
+        },
+        {
+          "repeat": 4,
+          "ids": [
+            "fleurs_fr_validation--fr_fr-9043116753413356940",
+            "fleurs_fr_validation--fr_fr-4296075365761740410",
+            "fleurs_fr_validation--fr_fr-3973723344518157445",
+            "fleurs_fr_validation--fr_fr-8772738180808083935",
+            "fleurs_fr_validation--fr_fr-4828830814070141369",
+            "fleurs_fr_validation--fr_fr-7856890929576275663",
+            "fleurs_fr_validation--fr_fr-3082641598422437134",
+            "fleurs_fr_validation--fr_fr-2086639904747050008",
+            "fleurs_fr_validation--fr_fr-6472703079090575732",
+            "fleurs_fr_validation--fr_fr-14158452746636513305",
+            "fleurs_fr_validation--fr_fr-3920926992201662587",
+            "fleurs_fr_validation--fr_fr-11260516818449932039",
+            "fleurs_fr_validation--fr_fr-7821490262817434898",
+            "fleurs_fr_validation--fr_fr-12736265345443968280",
+            "fleurs_fr_validation--fr_fr-12705132069283854619",
+            "fleurs_fr_validation--fr_fr-11432635460748117065",
+            "fleurs_fr_validation--fr_fr-3403868515702274320",
+            "fleurs_fr_validation--fr_fr-9238703150285310547",
+            "fleurs_fr_validation--fr_fr-5238075320404703631",
+            "fleurs_fr_validation--fr_fr-8203846075890120872",
+            "fleurs_fr_validation--fr_fr-1284616974191518194",
+            "fleurs_fr_validation--fr_fr-343285770319720856",
+            "fleurs_fr_validation--fr_fr-17644422570830048369",
+            "fleurs_fr_validation--fr_fr-14468638584426924317",
+            "fleurs_fr_validation--fr_fr-12482409059971069823",
+            "fleurs_fr_validation--fr_fr-15862829295612263434",
+            "fleurs_fr_validation--fr_fr-14757781394291531658",
+            "fleurs_fr_validation--fr_fr-8685376275061251487",
+            "fleurs_fr_validation--fr_fr-5992216071413521711",
+            "fleurs_fr_validation--fr_fr-4280854297640590111",
+            "fleurs_fr_validation--fr_fr-13036198272031553548",
+            "fleurs_fr_validation--fr_fr-622196158886216764"
+          ],
+          "reference": 49,
+          "candidate": 54
+        },
+        {
+          "repeat": 5,
+          "ids": [
+            "fleurs_fr_validation--fr_fr-9043116753413356940",
+            "fleurs_fr_validation--fr_fr-4296075365761740410",
+            "fleurs_fr_validation--fr_fr-3973723344518157445",
+            "fleurs_fr_validation--fr_fr-8772738180808083935",
+            "fleurs_fr_validation--fr_fr-4828830814070141369",
+            "fleurs_fr_validation--fr_fr-7856890929576275663",
+            "fleurs_fr_validation--fr_fr-3082641598422437134",
+            "fleurs_fr_validation--fr_fr-2086639904747050008",
+            "fleurs_fr_validation--fr_fr-6472703079090575732",
+            "fleurs_fr_validation--fr_fr-14158452746636513305",
+            "fleurs_fr_validation--fr_fr-3920926992201662587",
+            "fleurs_fr_validation--fr_fr-11260516818449932039",
+            "fleurs_fr_validation--fr_fr-7821490262817434898",
+            "fleurs_fr_validation--fr_fr-12736265345443968280",
+            "fleurs_fr_validation--fr_fr-12705132069283854619",
+            "fleurs_fr_validation--fr_fr-11432635460748117065",
+            "fleurs_fr_validation--fr_fr-3403868515702274320",
+            "fleurs_fr_validation--fr_fr-9238703150285310547",
+            "fleurs_fr_validation--fr_fr-5238075320404703631",
+            "fleurs_fr_validation--fr_fr-8203846075890120872",
+            "fleurs_fr_validation--fr_fr-1284616974191518194",
+            "fleurs_fr_validation--fr_fr-343285770319720856",
+            "fleurs_fr_validation--fr_fr-17644422570830048369",
+            "fleurs_fr_validation--fr_fr-14468638584426924317",
+            "fleurs_fr_validation--fr_fr-12482409059971069823",
+            "fleurs_fr_validation--fr_fr-15862829295612263434",
+            "fleurs_fr_validation--fr_fr-14757781394291531658",
+            "fleurs_fr_validation--fr_fr-8685376275061251487",
+            "fleurs_fr_validation--fr_fr-5992216071413521711",
+            "fleurs_fr_validation--fr_fr-4280854297640590111",
+            "fleurs_fr_validation--fr_fr-13036198272031553548",
+            "fleurs_fr_validation--fr_fr-622196158886216764"
+          ],
+          "reference": 49,
+          "candidate": 54
+        },
+        {
+          "repeat": 6,
+          "ids": [
+            "fleurs_fr_validation--fr_fr-9043116753413356940",
+            "fleurs_fr_validation--fr_fr-4296075365761740410",
+            "fleurs_fr_validation--fr_fr-3973723344518157445",
+            "fleurs_fr_validation--fr_fr-8772738180808083935",
+            "fleurs_fr_validation--fr_fr-4828830814070141369",
+            "fleurs_fr_validation--fr_fr-7856890929576275663",
+            "fleurs_fr_validation--fr_fr-3082641598422437134",
+            "fleurs_fr_validation--fr_fr-2086639904747050008",
+            "fleurs_fr_validation--fr_fr-6472703079090575732",
+            "fleurs_fr_validation--fr_fr-14158452746636513305",
+            "fleurs_fr_validation--fr_fr-3920926992201662587",
+            "fleurs_fr_validation--fr_fr-11260516818449932039",
+            "fleurs_fr_validation--fr_fr-7821490262817434898",
+            "fleurs_fr_validation--fr_fr-12736265345443968280",
+            "fleurs_fr_validation--fr_fr-12705132069283854619",
+            "fleurs_fr_validation--fr_fr-11432635460748117065",
+            "fleurs_fr_validation--fr_fr-3403868515702274320",
+            "fleurs_fr_validation--fr_fr-9238703150285310547",
+            "fleurs_fr_validation--fr_fr-5238075320404703631",
+            "fleurs_fr_validation--fr_fr-8203846075890120872",
+            "fleurs_fr_validation--fr_fr-1284616974191518194",
+            "fleurs_fr_validation--fr_fr-343285770319720856",
+            "fleurs_fr_validation--fr_fr-17644422570830048369",
+            "fleurs_fr_validation--fr_fr-14468638584426924317",
+            "fleurs_fr_validation--fr_fr-12482409059971069823",
+            "fleurs_fr_validation--fr_fr-15862829295612263434",
+            "fleurs_fr_validation--fr_fr-14757781394291531658",
+            "fleurs_fr_validation--fr_fr-8685376275061251487",
+            "fleurs_fr_validation--fr_fr-5992216071413521711",
+            "fleurs_fr_validation--fr_fr-4280854297640590111",
+            "fleurs_fr_validation--fr_fr-13036198272031553548",
+            "fleurs_fr_validation--fr_fr-622196158886216764"
+          ],
+          "reference": 49,
+          "candidate": 54
+        }
+      ],
+      "scope": "Single: per-input transcribe latency. Streaming: one complete multi-batch request. Pooled RTFx uses all warm wall samples; paired statistics use repeat totals. Draft-call counts are not all decoder steps. Memory includes both resident variant pools.",
+      "quality": {
+        "reference": {
+          "metric": "WER",
+          "reference_units": 727,
+          "errors": 103,
+          "rate": 0.14167812929848694,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "candidate": {
+          "metric": "WER",
+          "reference_units": 727,
+          "errors": 103,
+          "rate": 0.14167812929848694,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "cold": {
+        "candidate": {
+          "warmup_ms": 2825.089386999025,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 20,
+              "ready_verify_steps": 4,
+              "normal_verify_graphs": 4,
+              "notime_graphs": 0,
+              "selection_fused_windows": 5,
+              "selection_split_windows": 5
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "uninitialized": 16,
+              "megakernel-gluon": 1,
+              "tensorrt: shape limit": 3
+            }
+          },
+          "allocated_delta_bytes": 1350922240,
+          "reserved_delta_bytes": 1027604480,
+          "frontend_graph": null,
+          "full_verify_warmup_ms": 1925.7845579995774,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 20,
+              "ready_verify_steps": 20,
+              "normal_verify_graphs": 20,
+              "notime_graphs": 0,
+              "selection_fused_windows": 5,
+              "selection_split_windows": 5
+            }
+          }
+        },
+        "reference": {
+          "warmup_ms": 3284.3438209965825,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 6,
+              "normal_verify_graphs": 6,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "uninitialized": 18,
+              "megakernel-gluon": 1,
+              "tensorrt: shape limit": 5
+            }
+          },
+          "allocated_delta_bytes": 1386824192,
+          "reserved_delta_bytes": 1371537408,
+          "frontend_graph": null,
+          "full_verify_warmup_ms": 2340.943036004319,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 24,
+              "normal_verify_graphs": 24,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          }
+        }
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        }
+      },
+      "artifact_sha256": {
+        "cold.json": "08c4e827526222b1a2deed0fa63ad21c3af317724ec76a524c67e33b16a85219",
+        "actual_dispatch_candidate.json": "06339fee8ecb18a5af861a31adfcd9e9117d095e32eef2a94814b5830b1a4056",
+        "tokens.json": "f7e199352464720d97fc9043af0fbb52700dfb0a2202e0db0247ee75c0c41e2d",
+        "actual_dispatch_reference.json": "1218c9fc2a723e0ec07836e6187da29749daf5877abaf98db5f23c94436de90e",
+        "summary.json": "689b7fd78ab6a191c953da71c57743610cb78f3d84985af98ab9890e1594342a",
+        "wall.json": "0bfcb49357ec9b440df47f972fa4cc51fc6d7c7fafff8da794613eb838430772"
+      }
+    },
+    "jpn/stream_ts_b8": {
+      "variants": {
+        "reference": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 108.99638800765388,
+            "p95": 110.13695969304536,
+            "minimum": 107.97218300285749,
+            "maximum": 110.27350199583452,
+            "stdev": 0.6967736509114725,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 108.99638800765388,
+            "p95": 110.13695969304536,
+            "minimum": 107.97218300285749,
+            "maximum": 110.27350199583452,
+            "stdev": 0.6967736509114725,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 2833.076684233601,
+          "peak_allocated_bytes": 9637198848,
+          "draft_decoder_calls": 224
+        },
+        "candidate": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 98.53257999930065,
+            "p95": 99.34261200105539,
+            "minimum": 97.5549559952924,
+            "maximum": 99.4147140008863,
+            "stdev": 0.6715239779108965,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 98.53257999930065,
+            "p95": 99.34261200105539,
+            "minimum": 97.5549559952924,
+            "maximum": 99.4147140008863,
+            "stdev": 0.6715239779108965,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 3140.01931262917,
+          "peak_allocated_bytes": 9637198848,
+          "draft_decoder_calls": 238
+        }
+      },
+      "repeat_totals_ms": {
+        "reference": [
+          109.50844100443646,
+          108.81546900782268,
+          109.8183609865373,
+          110.27350199583452,
+          108.93032299645711,
+          108.99638800765388,
+          107.97218300285749
+        ],
+        "candidate": [
+          98.32721299608238,
+          97.5549559952924,
+          99.4147140008863,
+          98.95520699501503,
+          99.1743740014499,
+          98.53257999930065,
+          97.64246699342038
+        ]
+      },
+      "paired_rtfx_change_percent": {
+        "samples": [
+          11.37144811457187,
+          11.54273803688013,
+          10.464896560038639,
+          11.43779629644921,
+          9.837167204972296,
+          10.619642770368444,
+          10.579122309694577
+        ],
+        "stats": {
+          "n": 7,
+          "p50": 10.619642770368444,
+          "p95": 11.511255514750854,
+          "minimum": 9.837167204972296,
+          "maximum": 11.54273803688013,
+          "stdev": 0.5851157808170709,
+          "percentile_method": "linear interpolation at (n-1)*q"
+        },
+        "positive_repeats": 7
+      },
+      "pooled_rtfx_change_percent": 10.834250625962238,
+      "request_median_comparisons": [
+        {
+          "ids": [
+            "fleurs_ja_validation--ja_jp-3171694045962175263",
+            "jvs_nonpara90--jvs083-BASIC5000_2066",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_052",
+            "fleurs_ja_validation--ja_jp-17595107070656151202",
+            "jvs_nonpara90--jvs042-BASIC5000_3007",
+            "jvs_parallel10--jvs005-VOICEACTRESS100_084",
+            "jvs_nonpara90--jvs009-TRAVEL1000_0787",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_095",
+            "fleurs_ja_validation--ja_jp-2099970133610103443",
+            "jvs_nonpara90--jvs018-BASIC5000_2161",
+            "jvs_nonpara90--jvs021-TRAVEL1000_0045",
+            "jvs_parallel10--jvs008-VOICEACTRESS100_091",
+            "fleurs_ja_validation--ja_jp-6522611377317710498",
+            "jvs_nonpara90--jvs048-BASIC5000_2389",
+            "jvs_parallel10--jvs001-VOICEACTRESS100_029",
+            "fleurs_ja_validation--ja_jp-1819289275454271168",
+            "jvs_nonpara90--jvs080-BASIC5000_3053",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_005",
+            "jvs_nonpara90--jvs009-BASIC5000_2571",
+            "fleurs_ja_validation--ja_jp-5116751292495283703",
+            "jvs_nonpara90--jvs023-BASIC5000_1027",
+            "jvs_parallel10--jvs003-VOICEACTRESS100_055",
+            "fleurs_ja_validation--ja_jp-14672974986823750874",
+            "jvs_nonpara90--jvs003-UT-PARAPHRASE-sent239-phrase2",
+            "jvs_parallel10--jvs005-VOICEACTRESS100_057",
+            "fleurs_ja_validation--ja_jp-1286876112474128683",
+            "jvs_nonpara90--jvs066-BASIC5000_1954",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_097",
+            "fleurs_ja_validation--ja_jp-8681003617933384964",
+            "jvs_nonpara90--jvs041-BASIC5000_1011",
+            "jvs_parallel10--jvs004-VOICEACTRESS100_040",
+            "fleurs_ja_validation--ja_jp-16626033026082560289"
+          ],
+          "median_wall_ms": {
+            "reference": 108.99638800765388,
+            "candidate": 98.53257999930065
+          },
+          "rtfx_change_percent": 10.619642770368444
+        }
+      ],
+      "requests_with_faster_candidate_median": 1,
+      "draft_call_differences": [
+        {
+          "repeat": 0,
+          "ids": [
+            "fleurs_ja_validation--ja_jp-3171694045962175263",
+            "jvs_nonpara90--jvs083-BASIC5000_2066",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_052",
+            "fleurs_ja_validation--ja_jp-17595107070656151202",
+            "jvs_nonpara90--jvs042-BASIC5000_3007",
+            "jvs_parallel10--jvs005-VOICEACTRESS100_084",
+            "jvs_nonpara90--jvs009-TRAVEL1000_0787",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_095",
+            "fleurs_ja_validation--ja_jp-2099970133610103443",
+            "jvs_nonpara90--jvs018-BASIC5000_2161",
+            "jvs_nonpara90--jvs021-TRAVEL1000_0045",
+            "jvs_parallel10--jvs008-VOICEACTRESS100_091",
+            "fleurs_ja_validation--ja_jp-6522611377317710498",
+            "jvs_nonpara90--jvs048-BASIC5000_2389",
+            "jvs_parallel10--jvs001-VOICEACTRESS100_029",
+            "fleurs_ja_validation--ja_jp-1819289275454271168",
+            "jvs_nonpara90--jvs080-BASIC5000_3053",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_005",
+            "jvs_nonpara90--jvs009-BASIC5000_2571",
+            "fleurs_ja_validation--ja_jp-5116751292495283703",
+            "jvs_nonpara90--jvs023-BASIC5000_1027",
+            "jvs_parallel10--jvs003-VOICEACTRESS100_055",
+            "fleurs_ja_validation--ja_jp-14672974986823750874",
+            "jvs_nonpara90--jvs003-UT-PARAPHRASE-sent239-phrase2",
+            "jvs_parallel10--jvs005-VOICEACTRESS100_057",
+            "fleurs_ja_validation--ja_jp-1286876112474128683",
+            "jvs_nonpara90--jvs066-BASIC5000_1954",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_097",
+            "fleurs_ja_validation--ja_jp-8681003617933384964",
+            "jvs_nonpara90--jvs041-BASIC5000_1011",
+            "jvs_parallel10--jvs004-VOICEACTRESS100_040",
+            "fleurs_ja_validation--ja_jp-16626033026082560289"
+          ],
+          "reference": 32,
+          "candidate": 34
+        },
+        {
+          "repeat": 1,
+          "ids": [
+            "fleurs_ja_validation--ja_jp-3171694045962175263",
+            "jvs_nonpara90--jvs083-BASIC5000_2066",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_052",
+            "fleurs_ja_validation--ja_jp-17595107070656151202",
+            "jvs_nonpara90--jvs042-BASIC5000_3007",
+            "jvs_parallel10--jvs005-VOICEACTRESS100_084",
+            "jvs_nonpara90--jvs009-TRAVEL1000_0787",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_095",
+            "fleurs_ja_validation--ja_jp-2099970133610103443",
+            "jvs_nonpara90--jvs018-BASIC5000_2161",
+            "jvs_nonpara90--jvs021-TRAVEL1000_0045",
+            "jvs_parallel10--jvs008-VOICEACTRESS100_091",
+            "fleurs_ja_validation--ja_jp-6522611377317710498",
+            "jvs_nonpara90--jvs048-BASIC5000_2389",
+            "jvs_parallel10--jvs001-VOICEACTRESS100_029",
+            "fleurs_ja_validation--ja_jp-1819289275454271168",
+            "jvs_nonpara90--jvs080-BASIC5000_3053",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_005",
+            "jvs_nonpara90--jvs009-BASIC5000_2571",
+            "fleurs_ja_validation--ja_jp-5116751292495283703",
+            "jvs_nonpara90--jvs023-BASIC5000_1027",
+            "jvs_parallel10--jvs003-VOICEACTRESS100_055",
+            "fleurs_ja_validation--ja_jp-14672974986823750874",
+            "jvs_nonpara90--jvs003-UT-PARAPHRASE-sent239-phrase2",
+            "jvs_parallel10--jvs005-VOICEACTRESS100_057",
+            "fleurs_ja_validation--ja_jp-1286876112474128683",
+            "jvs_nonpara90--jvs066-BASIC5000_1954",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_097",
+            "fleurs_ja_validation--ja_jp-8681003617933384964",
+            "jvs_nonpara90--jvs041-BASIC5000_1011",
+            "jvs_parallel10--jvs004-VOICEACTRESS100_040",
+            "fleurs_ja_validation--ja_jp-16626033026082560289"
+          ],
+          "reference": 32,
+          "candidate": 34
+        },
+        {
+          "repeat": 2,
+          "ids": [
+            "fleurs_ja_validation--ja_jp-3171694045962175263",
+            "jvs_nonpara90--jvs083-BASIC5000_2066",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_052",
+            "fleurs_ja_validation--ja_jp-17595107070656151202",
+            "jvs_nonpara90--jvs042-BASIC5000_3007",
+            "jvs_parallel10--jvs005-VOICEACTRESS100_084",
+            "jvs_nonpara90--jvs009-TRAVEL1000_0787",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_095",
+            "fleurs_ja_validation--ja_jp-2099970133610103443",
+            "jvs_nonpara90--jvs018-BASIC5000_2161",
+            "jvs_nonpara90--jvs021-TRAVEL1000_0045",
+            "jvs_parallel10--jvs008-VOICEACTRESS100_091",
+            "fleurs_ja_validation--ja_jp-6522611377317710498",
+            "jvs_nonpara90--jvs048-BASIC5000_2389",
+            "jvs_parallel10--jvs001-VOICEACTRESS100_029",
+            "fleurs_ja_validation--ja_jp-1819289275454271168",
+            "jvs_nonpara90--jvs080-BASIC5000_3053",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_005",
+            "jvs_nonpara90--jvs009-BASIC5000_2571",
+            "fleurs_ja_validation--ja_jp-5116751292495283703",
+            "jvs_nonpara90--jvs023-BASIC5000_1027",
+            "jvs_parallel10--jvs003-VOICEACTRESS100_055",
+            "fleurs_ja_validation--ja_jp-14672974986823750874",
+            "jvs_nonpara90--jvs003-UT-PARAPHRASE-sent239-phrase2",
+            "jvs_parallel10--jvs005-VOICEACTRESS100_057",
+            "fleurs_ja_validation--ja_jp-1286876112474128683",
+            "jvs_nonpara90--jvs066-BASIC5000_1954",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_097",
+            "fleurs_ja_validation--ja_jp-8681003617933384964",
+            "jvs_nonpara90--jvs041-BASIC5000_1011",
+            "jvs_parallel10--jvs004-VOICEACTRESS100_040",
+            "fleurs_ja_validation--ja_jp-16626033026082560289"
+          ],
+          "reference": 32,
+          "candidate": 34
+        },
+        {
+          "repeat": 3,
+          "ids": [
+            "fleurs_ja_validation--ja_jp-3171694045962175263",
+            "jvs_nonpara90--jvs083-BASIC5000_2066",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_052",
+            "fleurs_ja_validation--ja_jp-17595107070656151202",
+            "jvs_nonpara90--jvs042-BASIC5000_3007",
+            "jvs_parallel10--jvs005-VOICEACTRESS100_084",
+            "jvs_nonpara90--jvs009-TRAVEL1000_0787",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_095",
+            "fleurs_ja_validation--ja_jp-2099970133610103443",
+            "jvs_nonpara90--jvs018-BASIC5000_2161",
+            "jvs_nonpara90--jvs021-TRAVEL1000_0045",
+            "jvs_parallel10--jvs008-VOICEACTRESS100_091",
+            "fleurs_ja_validation--ja_jp-6522611377317710498",
+            "jvs_nonpara90--jvs048-BASIC5000_2389",
+            "jvs_parallel10--jvs001-VOICEACTRESS100_029",
+            "fleurs_ja_validation--ja_jp-1819289275454271168",
+            "jvs_nonpara90--jvs080-BASIC5000_3053",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_005",
+            "jvs_nonpara90--jvs009-BASIC5000_2571",
+            "fleurs_ja_validation--ja_jp-5116751292495283703",
+            "jvs_nonpara90--jvs023-BASIC5000_1027",
+            "jvs_parallel10--jvs003-VOICEACTRESS100_055",
+            "fleurs_ja_validation--ja_jp-14672974986823750874",
+            "jvs_nonpara90--jvs003-UT-PARAPHRASE-sent239-phrase2",
+            "jvs_parallel10--jvs005-VOICEACTRESS100_057",
+            "fleurs_ja_validation--ja_jp-1286876112474128683",
+            "jvs_nonpara90--jvs066-BASIC5000_1954",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_097",
+            "fleurs_ja_validation--ja_jp-8681003617933384964",
+            "jvs_nonpara90--jvs041-BASIC5000_1011",
+            "jvs_parallel10--jvs004-VOICEACTRESS100_040",
+            "fleurs_ja_validation--ja_jp-16626033026082560289"
+          ],
+          "reference": 32,
+          "candidate": 34
+        },
+        {
+          "repeat": 4,
+          "ids": [
+            "fleurs_ja_validation--ja_jp-3171694045962175263",
+            "jvs_nonpara90--jvs083-BASIC5000_2066",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_052",
+            "fleurs_ja_validation--ja_jp-17595107070656151202",
+            "jvs_nonpara90--jvs042-BASIC5000_3007",
+            "jvs_parallel10--jvs005-VOICEACTRESS100_084",
+            "jvs_nonpara90--jvs009-TRAVEL1000_0787",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_095",
+            "fleurs_ja_validation--ja_jp-2099970133610103443",
+            "jvs_nonpara90--jvs018-BASIC5000_2161",
+            "jvs_nonpara90--jvs021-TRAVEL1000_0045",
+            "jvs_parallel10--jvs008-VOICEACTRESS100_091",
+            "fleurs_ja_validation--ja_jp-6522611377317710498",
+            "jvs_nonpara90--jvs048-BASIC5000_2389",
+            "jvs_parallel10--jvs001-VOICEACTRESS100_029",
+            "fleurs_ja_validation--ja_jp-1819289275454271168",
+            "jvs_nonpara90--jvs080-BASIC5000_3053",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_005",
+            "jvs_nonpara90--jvs009-BASIC5000_2571",
+            "fleurs_ja_validation--ja_jp-5116751292495283703",
+            "jvs_nonpara90--jvs023-BASIC5000_1027",
+            "jvs_parallel10--jvs003-VOICEACTRESS100_055",
+            "fleurs_ja_validation--ja_jp-14672974986823750874",
+            "jvs_nonpara90--jvs003-UT-PARAPHRASE-sent239-phrase2",
+            "jvs_parallel10--jvs005-VOICEACTRESS100_057",
+            "fleurs_ja_validation--ja_jp-1286876112474128683",
+            "jvs_nonpara90--jvs066-BASIC5000_1954",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_097",
+            "fleurs_ja_validation--ja_jp-8681003617933384964",
+            "jvs_nonpara90--jvs041-BASIC5000_1011",
+            "jvs_parallel10--jvs004-VOICEACTRESS100_040",
+            "fleurs_ja_validation--ja_jp-16626033026082560289"
+          ],
+          "reference": 32,
+          "candidate": 34
+        },
+        {
+          "repeat": 5,
+          "ids": [
+            "fleurs_ja_validation--ja_jp-3171694045962175263",
+            "jvs_nonpara90--jvs083-BASIC5000_2066",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_052",
+            "fleurs_ja_validation--ja_jp-17595107070656151202",
+            "jvs_nonpara90--jvs042-BASIC5000_3007",
+            "jvs_parallel10--jvs005-VOICEACTRESS100_084",
+            "jvs_nonpara90--jvs009-TRAVEL1000_0787",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_095",
+            "fleurs_ja_validation--ja_jp-2099970133610103443",
+            "jvs_nonpara90--jvs018-BASIC5000_2161",
+            "jvs_nonpara90--jvs021-TRAVEL1000_0045",
+            "jvs_parallel10--jvs008-VOICEACTRESS100_091",
+            "fleurs_ja_validation--ja_jp-6522611377317710498",
+            "jvs_nonpara90--jvs048-BASIC5000_2389",
+            "jvs_parallel10--jvs001-VOICEACTRESS100_029",
+            "fleurs_ja_validation--ja_jp-1819289275454271168",
+            "jvs_nonpara90--jvs080-BASIC5000_3053",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_005",
+            "jvs_nonpara90--jvs009-BASIC5000_2571",
+            "fleurs_ja_validation--ja_jp-5116751292495283703",
+            "jvs_nonpara90--jvs023-BASIC5000_1027",
+            "jvs_parallel10--jvs003-VOICEACTRESS100_055",
+            "fleurs_ja_validation--ja_jp-14672974986823750874",
+            "jvs_nonpara90--jvs003-UT-PARAPHRASE-sent239-phrase2",
+            "jvs_parallel10--jvs005-VOICEACTRESS100_057",
+            "fleurs_ja_validation--ja_jp-1286876112474128683",
+            "jvs_nonpara90--jvs066-BASIC5000_1954",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_097",
+            "fleurs_ja_validation--ja_jp-8681003617933384964",
+            "jvs_nonpara90--jvs041-BASIC5000_1011",
+            "jvs_parallel10--jvs004-VOICEACTRESS100_040",
+            "fleurs_ja_validation--ja_jp-16626033026082560289"
+          ],
+          "reference": 32,
+          "candidate": 34
+        },
+        {
+          "repeat": 6,
+          "ids": [
+            "fleurs_ja_validation--ja_jp-3171694045962175263",
+            "jvs_nonpara90--jvs083-BASIC5000_2066",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_052",
+            "fleurs_ja_validation--ja_jp-17595107070656151202",
+            "jvs_nonpara90--jvs042-BASIC5000_3007",
+            "jvs_parallel10--jvs005-VOICEACTRESS100_084",
+            "jvs_nonpara90--jvs009-TRAVEL1000_0787",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_095",
+            "fleurs_ja_validation--ja_jp-2099970133610103443",
+            "jvs_nonpara90--jvs018-BASIC5000_2161",
+            "jvs_nonpara90--jvs021-TRAVEL1000_0045",
+            "jvs_parallel10--jvs008-VOICEACTRESS100_091",
+            "fleurs_ja_validation--ja_jp-6522611377317710498",
+            "jvs_nonpara90--jvs048-BASIC5000_2389",
+            "jvs_parallel10--jvs001-VOICEACTRESS100_029",
+            "fleurs_ja_validation--ja_jp-1819289275454271168",
+            "jvs_nonpara90--jvs080-BASIC5000_3053",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_005",
+            "jvs_nonpara90--jvs009-BASIC5000_2571",
+            "fleurs_ja_validation--ja_jp-5116751292495283703",
+            "jvs_nonpara90--jvs023-BASIC5000_1027",
+            "jvs_parallel10--jvs003-VOICEACTRESS100_055",
+            "fleurs_ja_validation--ja_jp-14672974986823750874",
+            "jvs_nonpara90--jvs003-UT-PARAPHRASE-sent239-phrase2",
+            "jvs_parallel10--jvs005-VOICEACTRESS100_057",
+            "fleurs_ja_validation--ja_jp-1286876112474128683",
+            "jvs_nonpara90--jvs066-BASIC5000_1954",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_097",
+            "fleurs_ja_validation--ja_jp-8681003617933384964",
+            "jvs_nonpara90--jvs041-BASIC5000_1011",
+            "jvs_parallel10--jvs004-VOICEACTRESS100_040",
+            "fleurs_ja_validation--ja_jp-16626033026082560289"
+          ],
+          "reference": 32,
+          "candidate": 34
+        }
+      ],
+      "scope": "Single: per-input transcribe latency. Streaming: one complete multi-batch request. Pooled RTFx uses all warm wall samples; paired statistics use repeat totals. Draft-call counts are not all decoder steps. Memory includes both resident variant pools.",
+      "quality": {
+        "reference": {
+          "metric": "CER",
+          "reference_units": 1262,
+          "errors": 167,
+          "rate": 0.13232963549920762,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "candidate": {
+          "metric": "CER",
+          "reference_units": 1262,
+          "errors": 167,
+          "rate": 0.13232963549920762,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "cold": {
+        "candidate": {
+          "warmup_ms": 2766.4888209983474,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 20,
+              "ready_verify_steps": 4,
+              "normal_verify_graphs": 4,
+              "notime_graphs": 0,
+              "selection_fused_windows": 5,
+              "selection_split_windows": 5
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "uninitialized": 16,
+              "megakernel-gluon": 1,
+              "tensorrt: shape limit": 3
+            }
+          },
+          "allocated_delta_bytes": 1317367808,
+          "reserved_delta_bytes": 994050048,
+          "frontend_graph": null,
+          "full_verify_warmup_ms": 1910.9133210004074,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 20,
+              "ready_verify_steps": 20,
+              "normal_verify_graphs": 20,
+              "notime_graphs": 0,
+              "selection_fused_windows": 5,
+              "selection_split_windows": 5
+            }
+          }
+        },
+        "reference": {
+          "warmup_ms": 2664.704351002001,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 3,
+              "normal_verify_graphs": 3,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "uninitialized": 21,
+              "megakernel-gluon": 1,
+              "tensorrt: shape limit": 2
+            }
+          },
+          "allocated_delta_bytes": 1386824192,
+          "reserved_delta_bytes": 1371537408,
+          "frontend_graph": null,
+          "full_verify_warmup_ms": 2956.5585709933657,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 24,
+              "normal_verify_graphs": 24,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          }
+        }
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 30,
+          "total": 32,
+          "different_ids": [
+            "fleurs_ja_validation--ja_jp-1286876112474128683",
+            "fleurs_ja_validation--ja_jp-16626033026082560289"
+          ]
+        },
+        "timestamp_tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 30,
+          "total": 32,
+          "different_ids": [
+            "fleurs_ja_validation--ja_jp-1286876112474128683",
+            "fleurs_ja_validation--ja_jp-16626033026082560289"
+          ]
+        },
+        "text": {
+          "equal": 30,
+          "total": 32,
+          "different_ids": [
+            "fleurs_ja_validation--ja_jp-1286876112474128683",
+            "fleurs_ja_validation--ja_jp-16626033026082560289"
+          ]
+        }
+      },
+      "artifact_sha256": {
+        "cold.json": "51629c864daec1bc8a2cc848d2bac569a874beeac9139aa44f6d8ffe0bd533b5",
+        "actual_dispatch_candidate.json": "487fb3642c327f7460090555769e6036069ab8f292c5b85055ab44d4d7d7174d",
+        "tokens.json": "8b4837a26201baf300e9b22e4c352d8c2739b6730c87589c53cdaee574b7e4b4",
+        "actual_dispatch_reference.json": "bbf53b648e5b06e8d99b0279edd9ad3563a36fbf5875216f44dc40d142b452c9",
+        "summary.json": "83ae998195ae02bce25f4dc11e9939a7f3f2bf623e0b0f41d8d18c5cb97d095b",
+        "wall.json": "b8cff3763712713d7a02ce6fd77f7584585145a586fe834cab40b8ba3b89ed1a"
+      }
+    },
+    "rus/stream_ts_b8": {
+      "variants": {
+        "reference": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 163.59710600227118,
+            "p95": 164.13503530347953,
+            "minimum": 158.029094003723,
+            "maximum": 164.29173700453248,
+            "stdev": 1.978215665272024,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 163.59710600227118,
+            "p95": 164.13503530347953,
+            "minimum": 158.029094003723,
+            "maximum": 164.29173700453248,
+            "stdev": 1.978215665272024,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 2243.759259169144,
+          "peak_allocated_bytes": 9704307712,
+          "draft_decoder_calls": 532
+        },
+        "candidate": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 148.05588198942132,
+            "p95": 148.65901970479172,
+            "minimum": 146.34438500797842,
+            "maximum": 148.85284700721968,
+            "stdev": 0.8463827124434712,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 148.05588198942132,
+            "p95": 148.65901970479172,
+            "minimum": 146.34438500797842,
+            "maximum": 148.85284700721968,
+            "stdev": 0.8463827124434712,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 2473.900211952577,
+          "peak_allocated_bytes": 9704307712,
+          "draft_decoder_calls": 546
+        }
+      },
+      "repeat_totals_ms": {
+        "reference": [
+          164.29173700453248,
+          163.15564399701543,
+          158.029094003723,
+          162.9234220017679,
+          163.59710600227118,
+          163.63391101185698,
+          163.76939800102264
+        ],
+        "candidate": [
+          148.20675599912647,
+          146.34438500797842,
+          148.09850500023458,
+          147.18156900198665,
+          148.85284700721968,
+          148.05588198942132,
+          146.66471300006378
+        ]
+      },
+      "paired_rtfx_change_percent": {
+        "samples": [
+          10.853068672187117,
+          11.4874643042304,
+          6.7053944963676,
+          10.695532807894438,
+          9.905258308117126,
+          10.521722482831652,
+          11.662440576931022
+        ],
+        "stats": {
+          "n": 7,
+          "p50": 10.695532807894438,
+          "p95": 11.609947695120836,
+          "minimum": 6.7053944963676,
+          "maximum": 11.662440576931022,
+          "stdev": 1.5512424128210565,
+          "percentile_method": "linear interpolation at (n-1)*q"
+        },
+        "positive_repeats": 7
+      },
+      "pooled_rtfx_change_percent": 10.256936070256195,
+      "request_median_comparisons": [
+        {
+          "ids": [
+            "fleurs_ru_validation--ru_ru-8240168270690220831",
+            "fleurs_ru_validation--ru_ru-3765091626090272810",
+            "fleurs_ru_validation--ru_ru-17553996289576040758",
+            "fleurs_ru_validation--ru_ru-10221250944584729444",
+            "fleurs_ru_validation--ru_ru-10948790688582597154",
+            "fleurs_ru_validation--ru_ru-6463542239715166414",
+            "fleurs_ru_validation--ru_ru-10506159478104812570",
+            "fleurs_ru_validation--ru_ru-15443112433434816718",
+            "fleurs_ru_validation--ru_ru-14160035423126532654",
+            "fleurs_ru_validation--ru_ru-11322082307290188515",
+            "fleurs_ru_validation--ru_ru-14830840801014847376",
+            "fleurs_ru_validation--ru_ru-15825714963268274725",
+            "fleurs_ru_validation--ru_ru-3832089573134621088",
+            "fleurs_ru_validation--ru_ru-1342451616691576012",
+            "fleurs_ru_validation--ru_ru-12022741181094187209",
+            "fleurs_ru_validation--ru_ru-13181303627914742171",
+            "fleurs_ru_validation--ru_ru-8470716290913652079",
+            "fleurs_ru_validation--ru_ru-17328283931145121684",
+            "fleurs_ru_validation--ru_ru-17431219596452103138",
+            "fleurs_ru_validation--ru_ru-7711642424955050982",
+            "fleurs_ru_validation--ru_ru-4969910361235257757",
+            "fleurs_ru_validation--ru_ru-4742160061512262204",
+            "fleurs_ru_validation--ru_ru-3247088092324256031",
+            "fleurs_ru_validation--ru_ru-689656087570225264",
+            "fleurs_ru_validation--ru_ru-2653568755678748277",
+            "fleurs_ru_validation--ru_ru-8613300018964988460",
+            "fleurs_ru_validation--ru_ru-11516705399449231913",
+            "fleurs_ru_validation--ru_ru-5417220094059359927",
+            "fleurs_ru_validation--ru_ru-8154344926749652940",
+            "fleurs_ru_validation--ru_ru-10708884047933543059",
+            "fleurs_ru_validation--ru_ru-10479463149729837036",
+            "fleurs_ru_validation--ru_ru-7856258512050419015"
+          ],
+          "median_wall_ms": {
+            "reference": 163.59710600227118,
+            "candidate": 148.05588198942132
+          },
+          "rtfx_change_percent": 10.496863619346296
+        }
+      ],
+      "requests_with_faster_candidate_median": 1,
+      "draft_call_differences": [
+        {
+          "repeat": 0,
+          "ids": [
+            "fleurs_ru_validation--ru_ru-8240168270690220831",
+            "fleurs_ru_validation--ru_ru-3765091626090272810",
+            "fleurs_ru_validation--ru_ru-17553996289576040758",
+            "fleurs_ru_validation--ru_ru-10221250944584729444",
+            "fleurs_ru_validation--ru_ru-10948790688582597154",
+            "fleurs_ru_validation--ru_ru-6463542239715166414",
+            "fleurs_ru_validation--ru_ru-10506159478104812570",
+            "fleurs_ru_validation--ru_ru-15443112433434816718",
+            "fleurs_ru_validation--ru_ru-14160035423126532654",
+            "fleurs_ru_validation--ru_ru-11322082307290188515",
+            "fleurs_ru_validation--ru_ru-14830840801014847376",
+            "fleurs_ru_validation--ru_ru-15825714963268274725",
+            "fleurs_ru_validation--ru_ru-3832089573134621088",
+            "fleurs_ru_validation--ru_ru-1342451616691576012",
+            "fleurs_ru_validation--ru_ru-12022741181094187209",
+            "fleurs_ru_validation--ru_ru-13181303627914742171",
+            "fleurs_ru_validation--ru_ru-8470716290913652079",
+            "fleurs_ru_validation--ru_ru-17328283931145121684",
+            "fleurs_ru_validation--ru_ru-17431219596452103138",
+            "fleurs_ru_validation--ru_ru-7711642424955050982",
+            "fleurs_ru_validation--ru_ru-4969910361235257757",
+            "fleurs_ru_validation--ru_ru-4742160061512262204",
+            "fleurs_ru_validation--ru_ru-3247088092324256031",
+            "fleurs_ru_validation--ru_ru-689656087570225264",
+            "fleurs_ru_validation--ru_ru-2653568755678748277",
+            "fleurs_ru_validation--ru_ru-8613300018964988460",
+            "fleurs_ru_validation--ru_ru-11516705399449231913",
+            "fleurs_ru_validation--ru_ru-5417220094059359927",
+            "fleurs_ru_validation--ru_ru-8154344926749652940",
+            "fleurs_ru_validation--ru_ru-10708884047933543059",
+            "fleurs_ru_validation--ru_ru-10479463149729837036",
+            "fleurs_ru_validation--ru_ru-7856258512050419015"
+          ],
+          "reference": 76,
+          "candidate": 78
+        },
+        {
+          "repeat": 1,
+          "ids": [
+            "fleurs_ru_validation--ru_ru-8240168270690220831",
+            "fleurs_ru_validation--ru_ru-3765091626090272810",
+            "fleurs_ru_validation--ru_ru-17553996289576040758",
+            "fleurs_ru_validation--ru_ru-10221250944584729444",
+            "fleurs_ru_validation--ru_ru-10948790688582597154",
+            "fleurs_ru_validation--ru_ru-6463542239715166414",
+            "fleurs_ru_validation--ru_ru-10506159478104812570",
+            "fleurs_ru_validation--ru_ru-15443112433434816718",
+            "fleurs_ru_validation--ru_ru-14160035423126532654",
+            "fleurs_ru_validation--ru_ru-11322082307290188515",
+            "fleurs_ru_validation--ru_ru-14830840801014847376",
+            "fleurs_ru_validation--ru_ru-15825714963268274725",
+            "fleurs_ru_validation--ru_ru-3832089573134621088",
+            "fleurs_ru_validation--ru_ru-1342451616691576012",
+            "fleurs_ru_validation--ru_ru-12022741181094187209",
+            "fleurs_ru_validation--ru_ru-13181303627914742171",
+            "fleurs_ru_validation--ru_ru-8470716290913652079",
+            "fleurs_ru_validation--ru_ru-17328283931145121684",
+            "fleurs_ru_validation--ru_ru-17431219596452103138",
+            "fleurs_ru_validation--ru_ru-7711642424955050982",
+            "fleurs_ru_validation--ru_ru-4969910361235257757",
+            "fleurs_ru_validation--ru_ru-4742160061512262204",
+            "fleurs_ru_validation--ru_ru-3247088092324256031",
+            "fleurs_ru_validation--ru_ru-689656087570225264",
+            "fleurs_ru_validation--ru_ru-2653568755678748277",
+            "fleurs_ru_validation--ru_ru-8613300018964988460",
+            "fleurs_ru_validation--ru_ru-11516705399449231913",
+            "fleurs_ru_validation--ru_ru-5417220094059359927",
+            "fleurs_ru_validation--ru_ru-8154344926749652940",
+            "fleurs_ru_validation--ru_ru-10708884047933543059",
+            "fleurs_ru_validation--ru_ru-10479463149729837036",
+            "fleurs_ru_validation--ru_ru-7856258512050419015"
+          ],
+          "reference": 76,
+          "candidate": 78
+        },
+        {
+          "repeat": 2,
+          "ids": [
+            "fleurs_ru_validation--ru_ru-8240168270690220831",
+            "fleurs_ru_validation--ru_ru-3765091626090272810",
+            "fleurs_ru_validation--ru_ru-17553996289576040758",
+            "fleurs_ru_validation--ru_ru-10221250944584729444",
+            "fleurs_ru_validation--ru_ru-10948790688582597154",
+            "fleurs_ru_validation--ru_ru-6463542239715166414",
+            "fleurs_ru_validation--ru_ru-10506159478104812570",
+            "fleurs_ru_validation--ru_ru-15443112433434816718",
+            "fleurs_ru_validation--ru_ru-14160035423126532654",
+            "fleurs_ru_validation--ru_ru-11322082307290188515",
+            "fleurs_ru_validation--ru_ru-14830840801014847376",
+            "fleurs_ru_validation--ru_ru-15825714963268274725",
+            "fleurs_ru_validation--ru_ru-3832089573134621088",
+            "fleurs_ru_validation--ru_ru-1342451616691576012",
+            "fleurs_ru_validation--ru_ru-12022741181094187209",
+            "fleurs_ru_validation--ru_ru-13181303627914742171",
+            "fleurs_ru_validation--ru_ru-8470716290913652079",
+            "fleurs_ru_validation--ru_ru-17328283931145121684",
+            "fleurs_ru_validation--ru_ru-17431219596452103138",
+            "fleurs_ru_validation--ru_ru-7711642424955050982",
+            "fleurs_ru_validation--ru_ru-4969910361235257757",
+            "fleurs_ru_validation--ru_ru-4742160061512262204",
+            "fleurs_ru_validation--ru_ru-3247088092324256031",
+            "fleurs_ru_validation--ru_ru-689656087570225264",
+            "fleurs_ru_validation--ru_ru-2653568755678748277",
+            "fleurs_ru_validation--ru_ru-8613300018964988460",
+            "fleurs_ru_validation--ru_ru-11516705399449231913",
+            "fleurs_ru_validation--ru_ru-5417220094059359927",
+            "fleurs_ru_validation--ru_ru-8154344926749652940",
+            "fleurs_ru_validation--ru_ru-10708884047933543059",
+            "fleurs_ru_validation--ru_ru-10479463149729837036",
+            "fleurs_ru_validation--ru_ru-7856258512050419015"
+          ],
+          "reference": 76,
+          "candidate": 78
+        },
+        {
+          "repeat": 3,
+          "ids": [
+            "fleurs_ru_validation--ru_ru-8240168270690220831",
+            "fleurs_ru_validation--ru_ru-3765091626090272810",
+            "fleurs_ru_validation--ru_ru-17553996289576040758",
+            "fleurs_ru_validation--ru_ru-10221250944584729444",
+            "fleurs_ru_validation--ru_ru-10948790688582597154",
+            "fleurs_ru_validation--ru_ru-6463542239715166414",
+            "fleurs_ru_validation--ru_ru-10506159478104812570",
+            "fleurs_ru_validation--ru_ru-15443112433434816718",
+            "fleurs_ru_validation--ru_ru-14160035423126532654",
+            "fleurs_ru_validation--ru_ru-11322082307290188515",
+            "fleurs_ru_validation--ru_ru-14830840801014847376",
+            "fleurs_ru_validation--ru_ru-15825714963268274725",
+            "fleurs_ru_validation--ru_ru-3832089573134621088",
+            "fleurs_ru_validation--ru_ru-1342451616691576012",
+            "fleurs_ru_validation--ru_ru-12022741181094187209",
+            "fleurs_ru_validation--ru_ru-13181303627914742171",
+            "fleurs_ru_validation--ru_ru-8470716290913652079",
+            "fleurs_ru_validation--ru_ru-17328283931145121684",
+            "fleurs_ru_validation--ru_ru-17431219596452103138",
+            "fleurs_ru_validation--ru_ru-7711642424955050982",
+            "fleurs_ru_validation--ru_ru-4969910361235257757",
+            "fleurs_ru_validation--ru_ru-4742160061512262204",
+            "fleurs_ru_validation--ru_ru-3247088092324256031",
+            "fleurs_ru_validation--ru_ru-689656087570225264",
+            "fleurs_ru_validation--ru_ru-2653568755678748277",
+            "fleurs_ru_validation--ru_ru-8613300018964988460",
+            "fleurs_ru_validation--ru_ru-11516705399449231913",
+            "fleurs_ru_validation--ru_ru-5417220094059359927",
+            "fleurs_ru_validation--ru_ru-8154344926749652940",
+            "fleurs_ru_validation--ru_ru-10708884047933543059",
+            "fleurs_ru_validation--ru_ru-10479463149729837036",
+            "fleurs_ru_validation--ru_ru-7856258512050419015"
+          ],
+          "reference": 76,
+          "candidate": 78
+        },
+        {
+          "repeat": 4,
+          "ids": [
+            "fleurs_ru_validation--ru_ru-8240168270690220831",
+            "fleurs_ru_validation--ru_ru-3765091626090272810",
+            "fleurs_ru_validation--ru_ru-17553996289576040758",
+            "fleurs_ru_validation--ru_ru-10221250944584729444",
+            "fleurs_ru_validation--ru_ru-10948790688582597154",
+            "fleurs_ru_validation--ru_ru-6463542239715166414",
+            "fleurs_ru_validation--ru_ru-10506159478104812570",
+            "fleurs_ru_validation--ru_ru-15443112433434816718",
+            "fleurs_ru_validation--ru_ru-14160035423126532654",
+            "fleurs_ru_validation--ru_ru-11322082307290188515",
+            "fleurs_ru_validation--ru_ru-14830840801014847376",
+            "fleurs_ru_validation--ru_ru-15825714963268274725",
+            "fleurs_ru_validation--ru_ru-3832089573134621088",
+            "fleurs_ru_validation--ru_ru-1342451616691576012",
+            "fleurs_ru_validation--ru_ru-12022741181094187209",
+            "fleurs_ru_validation--ru_ru-13181303627914742171",
+            "fleurs_ru_validation--ru_ru-8470716290913652079",
+            "fleurs_ru_validation--ru_ru-17328283931145121684",
+            "fleurs_ru_validation--ru_ru-17431219596452103138",
+            "fleurs_ru_validation--ru_ru-7711642424955050982",
+            "fleurs_ru_validation--ru_ru-4969910361235257757",
+            "fleurs_ru_validation--ru_ru-4742160061512262204",
+            "fleurs_ru_validation--ru_ru-3247088092324256031",
+            "fleurs_ru_validation--ru_ru-689656087570225264",
+            "fleurs_ru_validation--ru_ru-2653568755678748277",
+            "fleurs_ru_validation--ru_ru-8613300018964988460",
+            "fleurs_ru_validation--ru_ru-11516705399449231913",
+            "fleurs_ru_validation--ru_ru-5417220094059359927",
+            "fleurs_ru_validation--ru_ru-8154344926749652940",
+            "fleurs_ru_validation--ru_ru-10708884047933543059",
+            "fleurs_ru_validation--ru_ru-10479463149729837036",
+            "fleurs_ru_validation--ru_ru-7856258512050419015"
+          ],
+          "reference": 76,
+          "candidate": 78
+        },
+        {
+          "repeat": 5,
+          "ids": [
+            "fleurs_ru_validation--ru_ru-8240168270690220831",
+            "fleurs_ru_validation--ru_ru-3765091626090272810",
+            "fleurs_ru_validation--ru_ru-17553996289576040758",
+            "fleurs_ru_validation--ru_ru-10221250944584729444",
+            "fleurs_ru_validation--ru_ru-10948790688582597154",
+            "fleurs_ru_validation--ru_ru-6463542239715166414",
+            "fleurs_ru_validation--ru_ru-10506159478104812570",
+            "fleurs_ru_validation--ru_ru-15443112433434816718",
+            "fleurs_ru_validation--ru_ru-14160035423126532654",
+            "fleurs_ru_validation--ru_ru-11322082307290188515",
+            "fleurs_ru_validation--ru_ru-14830840801014847376",
+            "fleurs_ru_validation--ru_ru-15825714963268274725",
+            "fleurs_ru_validation--ru_ru-3832089573134621088",
+            "fleurs_ru_validation--ru_ru-1342451616691576012",
+            "fleurs_ru_validation--ru_ru-12022741181094187209",
+            "fleurs_ru_validation--ru_ru-13181303627914742171",
+            "fleurs_ru_validation--ru_ru-8470716290913652079",
+            "fleurs_ru_validation--ru_ru-17328283931145121684",
+            "fleurs_ru_validation--ru_ru-17431219596452103138",
+            "fleurs_ru_validation--ru_ru-7711642424955050982",
+            "fleurs_ru_validation--ru_ru-4969910361235257757",
+            "fleurs_ru_validation--ru_ru-4742160061512262204",
+            "fleurs_ru_validation--ru_ru-3247088092324256031",
+            "fleurs_ru_validation--ru_ru-689656087570225264",
+            "fleurs_ru_validation--ru_ru-2653568755678748277",
+            "fleurs_ru_validation--ru_ru-8613300018964988460",
+            "fleurs_ru_validation--ru_ru-11516705399449231913",
+            "fleurs_ru_validation--ru_ru-5417220094059359927",
+            "fleurs_ru_validation--ru_ru-8154344926749652940",
+            "fleurs_ru_validation--ru_ru-10708884047933543059",
+            "fleurs_ru_validation--ru_ru-10479463149729837036",
+            "fleurs_ru_validation--ru_ru-7856258512050419015"
+          ],
+          "reference": 76,
+          "candidate": 78
+        },
+        {
+          "repeat": 6,
+          "ids": [
+            "fleurs_ru_validation--ru_ru-8240168270690220831",
+            "fleurs_ru_validation--ru_ru-3765091626090272810",
+            "fleurs_ru_validation--ru_ru-17553996289576040758",
+            "fleurs_ru_validation--ru_ru-10221250944584729444",
+            "fleurs_ru_validation--ru_ru-10948790688582597154",
+            "fleurs_ru_validation--ru_ru-6463542239715166414",
+            "fleurs_ru_validation--ru_ru-10506159478104812570",
+            "fleurs_ru_validation--ru_ru-15443112433434816718",
+            "fleurs_ru_validation--ru_ru-14160035423126532654",
+            "fleurs_ru_validation--ru_ru-11322082307290188515",
+            "fleurs_ru_validation--ru_ru-14830840801014847376",
+            "fleurs_ru_validation--ru_ru-15825714963268274725",
+            "fleurs_ru_validation--ru_ru-3832089573134621088",
+            "fleurs_ru_validation--ru_ru-1342451616691576012",
+            "fleurs_ru_validation--ru_ru-12022741181094187209",
+            "fleurs_ru_validation--ru_ru-13181303627914742171",
+            "fleurs_ru_validation--ru_ru-8470716290913652079",
+            "fleurs_ru_validation--ru_ru-17328283931145121684",
+            "fleurs_ru_validation--ru_ru-17431219596452103138",
+            "fleurs_ru_validation--ru_ru-7711642424955050982",
+            "fleurs_ru_validation--ru_ru-4969910361235257757",
+            "fleurs_ru_validation--ru_ru-4742160061512262204",
+            "fleurs_ru_validation--ru_ru-3247088092324256031",
+            "fleurs_ru_validation--ru_ru-689656087570225264",
+            "fleurs_ru_validation--ru_ru-2653568755678748277",
+            "fleurs_ru_validation--ru_ru-8613300018964988460",
+            "fleurs_ru_validation--ru_ru-11516705399449231913",
+            "fleurs_ru_validation--ru_ru-5417220094059359927",
+            "fleurs_ru_validation--ru_ru-8154344926749652940",
+            "fleurs_ru_validation--ru_ru-10708884047933543059",
+            "fleurs_ru_validation--ru_ru-10479463149729837036",
+            "fleurs_ru_validation--ru_ru-7856258512050419015"
+          ],
+          "reference": 76,
+          "candidate": 78
+        }
+      ],
+      "scope": "Single: per-input transcribe latency. Streaming: one complete multi-batch request. Pooled RTFx uses all warm wall samples; paired statistics use repeat totals. Draft-call counts are not all decoder steps. Memory includes both resident variant pools.",
+      "quality": {
+        "reference": {
+          "metric": "WER",
+          "reference_units": 648,
+          "errors": 65,
+          "rate": 0.10030864197530864,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "candidate": {
+          "metric": "WER",
+          "reference_units": 648,
+          "errors": 66,
+          "rate": 0.10185185185185185,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "cold": {
+        "candidate": {
+          "warmup_ms": 3010.0585909967776,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 20,
+              "ready_verify_steps": 6,
+              "normal_verify_graphs": 6,
+              "notime_graphs": 0,
+              "selection_fused_windows": 5,
+              "selection_split_windows": 5
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "megakernel-gluon": 2,
+              "uninitialized": 14,
+              "tensorrt: shape limit": 4
+            }
+          },
+          "allocated_delta_bytes": 1317886976,
+          "reserved_delta_bytes": 994050048,
+          "frontend_graph": null,
+          "full_verify_warmup_ms": 1705.3294140059734,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 20,
+              "ready_verify_steps": 20,
+              "normal_verify_graphs": 20,
+              "notime_graphs": 0,
+              "selection_fused_windows": 5,
+              "selection_split_windows": 5
+            }
+          }
+        },
+        "reference": {
+          "warmup_ms": 3090.1841479935683,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 6,
+              "normal_verify_graphs": 6,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "megakernel-gluon": 2,
+              "uninitialized": 18,
+              "tensorrt: shape limit": 4
+            }
+          },
+          "allocated_delta_bytes": 1387343360,
+          "reserved_delta_bytes": 1371537408,
+          "frontend_graph": null,
+          "full_verify_warmup_ms": 2585.109088002355,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 24,
+              "normal_verify_graphs": 24,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          }
+        }
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 31,
+          "total": 32,
+          "different_ids": [
+            "fleurs_ru_validation--ru_ru-12022741181094187209"
+          ]
+        },
+        "timestamp_tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 31,
+          "total": 32,
+          "different_ids": [
+            "fleurs_ru_validation--ru_ru-12022741181094187209"
+          ]
+        },
+        "text": {
+          "equal": 31,
+          "total": 32,
+          "different_ids": [
+            "fleurs_ru_validation--ru_ru-12022741181094187209"
+          ]
+        }
+      },
+      "artifact_sha256": {
+        "cold.json": "c6a29df545dd23e8ceb5864d34ebf332e094faa5a6508a267197cb047b5e0a7d",
+        "actual_dispatch_candidate.json": "25596cf8302439524f38fb1ef0cec85f07f57a7e1e8d1677d243f17640169891",
+        "tokens.json": "195258dee6bfcb7b0778399d46c40f6d25a52f6554c6d0381d776269c44ef3f9",
+        "actual_dispatch_reference.json": "875114c5f32981214e9d0ee50c568f440c483b2af02b118fceedf99ed57e1a38",
+        "summary.json": "32858d612e7eb9b468581e54a2c66f349bd784eb1215d28b0ff38d266873cfca",
+        "wall.json": "1bd9510ccb115861a36d8429b5d90a6719ea37fa735644c7899293cff00b26ad"
+      }
+    },
+    "spa/stream_ts_b8": {
+      "variants": {
+        "reference": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 132.63291200564709,
+            "p95": 133.40397780557396,
+            "minimum": 130.69996899866965,
+            "maximum": 133.4730060043512,
+            "stdev": 0.9545609105516824,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 132.63291200564709,
+            "p95": 133.40397780557396,
+            "minimum": 130.69996899866965,
+            "maximum": 133.4730060043512,
+            "stdev": 0.9545609105516824,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 3293.1378760900816,
+          "peak_allocated_bytes": 9704307712,
+          "draft_decoder_calls": 315
+        },
+        "candidate": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 123.7442940036999,
+            "p95": 125.17513390193926,
+            "minimum": 122.54307699913625,
+            "maximum": 125.43547600216698,
+            "stdev": 0.9987186455518098,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 123.7442940036999,
+            "p95": 125.17513390193926,
+            "minimum": 122.54307699913625,
+            "maximum": 125.43547600216698,
+            "stdev": 0.9987186455518098,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 3520.11748844098,
+          "peak_allocated_bytes": 9704307712,
+          "draft_decoder_calls": 343
+        }
+      },
+      "repeat_totals_ms": {
+        "reference": [
+          131.5328080090694,
+          133.24291200842708,
+          131.93239600514062,
+          133.1766229995992,
+          130.69996899866965,
+          132.63291200564709,
+          133.4730060043512
+        ],
+        "candidate": [
+          125.43547600216698,
+          123.49473898939323,
+          122.58652200398501,
+          123.7442940036999,
+          122.54307699913625,
+          124.56519599072635,
+          124.56766900140792
+        ]
+      },
+      "paired_rtfx_change_percent": {
+        "samples": [
+          4.860931054941031,
+          7.893593766671403,
+          7.623900122439076,
+          7.622435500433888,
+          6.656346649097844,
+          6.476701578442001,
+          7.148995461127727
+        ],
+        "stats": {
+          "n": 7,
+          "p50": 7.148995461127727,
+          "p95": 7.812685673401704,
+          "minimum": 4.860931054941031,
+          "maximum": 7.893593766671403,
+          "stdev": 0.9629924099628205,
+          "percentile_method": "linear interpolation at (n-1)*q"
+        },
+        "positive_repeats": 7
+      },
+      "pooled_rtfx_change_percent": 6.892502558088753,
+      "request_median_comparisons": [
+        {
+          "ids": [
+            "fleurs_es_test--es_419-10589251314781768344",
+            "fleurs_es_test--es_419-10234623649795772963",
+            "fleurs_es_test--es_419-3873350128853031296",
+            "fleurs_es_test--es_419-390658848617539020",
+            "fleurs_es_test--es_419-5859386036374111061",
+            "fleurs_es_test--es_419-9633703226199096522",
+            "fleurs_es_test--es_419-8898033152301134515",
+            "fleurs_es_test--es_419-6978180619280489223",
+            "fleurs_es_test--es_419-17679286535662041524",
+            "fleurs_es_test--es_419-11972630248341529626",
+            "fleurs_es_test--es_419-8616615381295825121",
+            "fleurs_es_test--es_419-916453851137046048",
+            "fleurs_es_test--es_419-17124063481425082418",
+            "fleurs_es_test--es_419-10891154757063940475",
+            "fleurs_es_test--es_419-11603681517704231177",
+            "fleurs_es_test--es_419-8534628782326212080",
+            "fleurs_es_test--es_419-1254626507182510256",
+            "fleurs_es_test--es_419-10286137499198568147",
+            "fleurs_es_test--es_419-13302816037308807402",
+            "fleurs_es_test--es_419-13997737119505689253",
+            "fleurs_es_test--es_419-11444088495955610827",
+            "fleurs_es_test--es_419-11546411932607639194",
+            "fleurs_es_test--es_419-3585803545555373032",
+            "fleurs_es_test--es_419-416124317841544182",
+            "fleurs_es_test--es_419-17736040977613383649",
+            "fleurs_es_test--es_419-18103809775608034391",
+            "fleurs_es_test--es_419-17752586354715492019",
+            "fleurs_es_test--es_419-10764228514996022810",
+            "fleurs_es_test--es_419-5970990648174807758",
+            "fleurs_es_test--es_419-8959429617551765590",
+            "fleurs_es_test--es_419-6725969256029359068",
+            "fleurs_es_test--es_419-13500300560093598250"
+          ],
+          "median_wall_ms": {
+            "reference": 132.63291200564709,
+            "candidate": 123.7442940036999
+          },
+          "rtfx_change_percent": 7.183052821555891
+        }
+      ],
+      "requests_with_faster_candidate_median": 1,
+      "draft_call_differences": [
+        {
+          "repeat": 0,
+          "ids": [
+            "fleurs_es_test--es_419-10589251314781768344",
+            "fleurs_es_test--es_419-10234623649795772963",
+            "fleurs_es_test--es_419-3873350128853031296",
+            "fleurs_es_test--es_419-390658848617539020",
+            "fleurs_es_test--es_419-5859386036374111061",
+            "fleurs_es_test--es_419-9633703226199096522",
+            "fleurs_es_test--es_419-8898033152301134515",
+            "fleurs_es_test--es_419-6978180619280489223",
+            "fleurs_es_test--es_419-17679286535662041524",
+            "fleurs_es_test--es_419-11972630248341529626",
+            "fleurs_es_test--es_419-8616615381295825121",
+            "fleurs_es_test--es_419-916453851137046048",
+            "fleurs_es_test--es_419-17124063481425082418",
+            "fleurs_es_test--es_419-10891154757063940475",
+            "fleurs_es_test--es_419-11603681517704231177",
+            "fleurs_es_test--es_419-8534628782326212080",
+            "fleurs_es_test--es_419-1254626507182510256",
+            "fleurs_es_test--es_419-10286137499198568147",
+            "fleurs_es_test--es_419-13302816037308807402",
+            "fleurs_es_test--es_419-13997737119505689253",
+            "fleurs_es_test--es_419-11444088495955610827",
+            "fleurs_es_test--es_419-11546411932607639194",
+            "fleurs_es_test--es_419-3585803545555373032",
+            "fleurs_es_test--es_419-416124317841544182",
+            "fleurs_es_test--es_419-17736040977613383649",
+            "fleurs_es_test--es_419-18103809775608034391",
+            "fleurs_es_test--es_419-17752586354715492019",
+            "fleurs_es_test--es_419-10764228514996022810",
+            "fleurs_es_test--es_419-5970990648174807758",
+            "fleurs_es_test--es_419-8959429617551765590",
+            "fleurs_es_test--es_419-6725969256029359068",
+            "fleurs_es_test--es_419-13500300560093598250"
+          ],
+          "reference": 45,
+          "candidate": 49
+        },
+        {
+          "repeat": 1,
+          "ids": [
+            "fleurs_es_test--es_419-10589251314781768344",
+            "fleurs_es_test--es_419-10234623649795772963",
+            "fleurs_es_test--es_419-3873350128853031296",
+            "fleurs_es_test--es_419-390658848617539020",
+            "fleurs_es_test--es_419-5859386036374111061",
+            "fleurs_es_test--es_419-9633703226199096522",
+            "fleurs_es_test--es_419-8898033152301134515",
+            "fleurs_es_test--es_419-6978180619280489223",
+            "fleurs_es_test--es_419-17679286535662041524",
+            "fleurs_es_test--es_419-11972630248341529626",
+            "fleurs_es_test--es_419-8616615381295825121",
+            "fleurs_es_test--es_419-916453851137046048",
+            "fleurs_es_test--es_419-17124063481425082418",
+            "fleurs_es_test--es_419-10891154757063940475",
+            "fleurs_es_test--es_419-11603681517704231177",
+            "fleurs_es_test--es_419-8534628782326212080",
+            "fleurs_es_test--es_419-1254626507182510256",
+            "fleurs_es_test--es_419-10286137499198568147",
+            "fleurs_es_test--es_419-13302816037308807402",
+            "fleurs_es_test--es_419-13997737119505689253",
+            "fleurs_es_test--es_419-11444088495955610827",
+            "fleurs_es_test--es_419-11546411932607639194",
+            "fleurs_es_test--es_419-3585803545555373032",
+            "fleurs_es_test--es_419-416124317841544182",
+            "fleurs_es_test--es_419-17736040977613383649",
+            "fleurs_es_test--es_419-18103809775608034391",
+            "fleurs_es_test--es_419-17752586354715492019",
+            "fleurs_es_test--es_419-10764228514996022810",
+            "fleurs_es_test--es_419-5970990648174807758",
+            "fleurs_es_test--es_419-8959429617551765590",
+            "fleurs_es_test--es_419-6725969256029359068",
+            "fleurs_es_test--es_419-13500300560093598250"
+          ],
+          "reference": 45,
+          "candidate": 49
+        },
+        {
+          "repeat": 2,
+          "ids": [
+            "fleurs_es_test--es_419-10589251314781768344",
+            "fleurs_es_test--es_419-10234623649795772963",
+            "fleurs_es_test--es_419-3873350128853031296",
+            "fleurs_es_test--es_419-390658848617539020",
+            "fleurs_es_test--es_419-5859386036374111061",
+            "fleurs_es_test--es_419-9633703226199096522",
+            "fleurs_es_test--es_419-8898033152301134515",
+            "fleurs_es_test--es_419-6978180619280489223",
+            "fleurs_es_test--es_419-17679286535662041524",
+            "fleurs_es_test--es_419-11972630248341529626",
+            "fleurs_es_test--es_419-8616615381295825121",
+            "fleurs_es_test--es_419-916453851137046048",
+            "fleurs_es_test--es_419-17124063481425082418",
+            "fleurs_es_test--es_419-10891154757063940475",
+            "fleurs_es_test--es_419-11603681517704231177",
+            "fleurs_es_test--es_419-8534628782326212080",
+            "fleurs_es_test--es_419-1254626507182510256",
+            "fleurs_es_test--es_419-10286137499198568147",
+            "fleurs_es_test--es_419-13302816037308807402",
+            "fleurs_es_test--es_419-13997737119505689253",
+            "fleurs_es_test--es_419-11444088495955610827",
+            "fleurs_es_test--es_419-11546411932607639194",
+            "fleurs_es_test--es_419-3585803545555373032",
+            "fleurs_es_test--es_419-416124317841544182",
+            "fleurs_es_test--es_419-17736040977613383649",
+            "fleurs_es_test--es_419-18103809775608034391",
+            "fleurs_es_test--es_419-17752586354715492019",
+            "fleurs_es_test--es_419-10764228514996022810",
+            "fleurs_es_test--es_419-5970990648174807758",
+            "fleurs_es_test--es_419-8959429617551765590",
+            "fleurs_es_test--es_419-6725969256029359068",
+            "fleurs_es_test--es_419-13500300560093598250"
+          ],
+          "reference": 45,
+          "candidate": 49
+        },
+        {
+          "repeat": 3,
+          "ids": [
+            "fleurs_es_test--es_419-10589251314781768344",
+            "fleurs_es_test--es_419-10234623649795772963",
+            "fleurs_es_test--es_419-3873350128853031296",
+            "fleurs_es_test--es_419-390658848617539020",
+            "fleurs_es_test--es_419-5859386036374111061",
+            "fleurs_es_test--es_419-9633703226199096522",
+            "fleurs_es_test--es_419-8898033152301134515",
+            "fleurs_es_test--es_419-6978180619280489223",
+            "fleurs_es_test--es_419-17679286535662041524",
+            "fleurs_es_test--es_419-11972630248341529626",
+            "fleurs_es_test--es_419-8616615381295825121",
+            "fleurs_es_test--es_419-916453851137046048",
+            "fleurs_es_test--es_419-17124063481425082418",
+            "fleurs_es_test--es_419-10891154757063940475",
+            "fleurs_es_test--es_419-11603681517704231177",
+            "fleurs_es_test--es_419-8534628782326212080",
+            "fleurs_es_test--es_419-1254626507182510256",
+            "fleurs_es_test--es_419-10286137499198568147",
+            "fleurs_es_test--es_419-13302816037308807402",
+            "fleurs_es_test--es_419-13997737119505689253",
+            "fleurs_es_test--es_419-11444088495955610827",
+            "fleurs_es_test--es_419-11546411932607639194",
+            "fleurs_es_test--es_419-3585803545555373032",
+            "fleurs_es_test--es_419-416124317841544182",
+            "fleurs_es_test--es_419-17736040977613383649",
+            "fleurs_es_test--es_419-18103809775608034391",
+            "fleurs_es_test--es_419-17752586354715492019",
+            "fleurs_es_test--es_419-10764228514996022810",
+            "fleurs_es_test--es_419-5970990648174807758",
+            "fleurs_es_test--es_419-8959429617551765590",
+            "fleurs_es_test--es_419-6725969256029359068",
+            "fleurs_es_test--es_419-13500300560093598250"
+          ],
+          "reference": 45,
+          "candidate": 49
+        },
+        {
+          "repeat": 4,
+          "ids": [
+            "fleurs_es_test--es_419-10589251314781768344",
+            "fleurs_es_test--es_419-10234623649795772963",
+            "fleurs_es_test--es_419-3873350128853031296",
+            "fleurs_es_test--es_419-390658848617539020",
+            "fleurs_es_test--es_419-5859386036374111061",
+            "fleurs_es_test--es_419-9633703226199096522",
+            "fleurs_es_test--es_419-8898033152301134515",
+            "fleurs_es_test--es_419-6978180619280489223",
+            "fleurs_es_test--es_419-17679286535662041524",
+            "fleurs_es_test--es_419-11972630248341529626",
+            "fleurs_es_test--es_419-8616615381295825121",
+            "fleurs_es_test--es_419-916453851137046048",
+            "fleurs_es_test--es_419-17124063481425082418",
+            "fleurs_es_test--es_419-10891154757063940475",
+            "fleurs_es_test--es_419-11603681517704231177",
+            "fleurs_es_test--es_419-8534628782326212080",
+            "fleurs_es_test--es_419-1254626507182510256",
+            "fleurs_es_test--es_419-10286137499198568147",
+            "fleurs_es_test--es_419-13302816037308807402",
+            "fleurs_es_test--es_419-13997737119505689253",
+            "fleurs_es_test--es_419-11444088495955610827",
+            "fleurs_es_test--es_419-11546411932607639194",
+            "fleurs_es_test--es_419-3585803545555373032",
+            "fleurs_es_test--es_419-416124317841544182",
+            "fleurs_es_test--es_419-17736040977613383649",
+            "fleurs_es_test--es_419-18103809775608034391",
+            "fleurs_es_test--es_419-17752586354715492019",
+            "fleurs_es_test--es_419-10764228514996022810",
+            "fleurs_es_test--es_419-5970990648174807758",
+            "fleurs_es_test--es_419-8959429617551765590",
+            "fleurs_es_test--es_419-6725969256029359068",
+            "fleurs_es_test--es_419-13500300560093598250"
+          ],
+          "reference": 45,
+          "candidate": 49
+        },
+        {
+          "repeat": 5,
+          "ids": [
+            "fleurs_es_test--es_419-10589251314781768344",
+            "fleurs_es_test--es_419-10234623649795772963",
+            "fleurs_es_test--es_419-3873350128853031296",
+            "fleurs_es_test--es_419-390658848617539020",
+            "fleurs_es_test--es_419-5859386036374111061",
+            "fleurs_es_test--es_419-9633703226199096522",
+            "fleurs_es_test--es_419-8898033152301134515",
+            "fleurs_es_test--es_419-6978180619280489223",
+            "fleurs_es_test--es_419-17679286535662041524",
+            "fleurs_es_test--es_419-11972630248341529626",
+            "fleurs_es_test--es_419-8616615381295825121",
+            "fleurs_es_test--es_419-916453851137046048",
+            "fleurs_es_test--es_419-17124063481425082418",
+            "fleurs_es_test--es_419-10891154757063940475",
+            "fleurs_es_test--es_419-11603681517704231177",
+            "fleurs_es_test--es_419-8534628782326212080",
+            "fleurs_es_test--es_419-1254626507182510256",
+            "fleurs_es_test--es_419-10286137499198568147",
+            "fleurs_es_test--es_419-13302816037308807402",
+            "fleurs_es_test--es_419-13997737119505689253",
+            "fleurs_es_test--es_419-11444088495955610827",
+            "fleurs_es_test--es_419-11546411932607639194",
+            "fleurs_es_test--es_419-3585803545555373032",
+            "fleurs_es_test--es_419-416124317841544182",
+            "fleurs_es_test--es_419-17736040977613383649",
+            "fleurs_es_test--es_419-18103809775608034391",
+            "fleurs_es_test--es_419-17752586354715492019",
+            "fleurs_es_test--es_419-10764228514996022810",
+            "fleurs_es_test--es_419-5970990648174807758",
+            "fleurs_es_test--es_419-8959429617551765590",
+            "fleurs_es_test--es_419-6725969256029359068",
+            "fleurs_es_test--es_419-13500300560093598250"
+          ],
+          "reference": 45,
+          "candidate": 49
+        },
+        {
+          "repeat": 6,
+          "ids": [
+            "fleurs_es_test--es_419-10589251314781768344",
+            "fleurs_es_test--es_419-10234623649795772963",
+            "fleurs_es_test--es_419-3873350128853031296",
+            "fleurs_es_test--es_419-390658848617539020",
+            "fleurs_es_test--es_419-5859386036374111061",
+            "fleurs_es_test--es_419-9633703226199096522",
+            "fleurs_es_test--es_419-8898033152301134515",
+            "fleurs_es_test--es_419-6978180619280489223",
+            "fleurs_es_test--es_419-17679286535662041524",
+            "fleurs_es_test--es_419-11972630248341529626",
+            "fleurs_es_test--es_419-8616615381295825121",
+            "fleurs_es_test--es_419-916453851137046048",
+            "fleurs_es_test--es_419-17124063481425082418",
+            "fleurs_es_test--es_419-10891154757063940475",
+            "fleurs_es_test--es_419-11603681517704231177",
+            "fleurs_es_test--es_419-8534628782326212080",
+            "fleurs_es_test--es_419-1254626507182510256",
+            "fleurs_es_test--es_419-10286137499198568147",
+            "fleurs_es_test--es_419-13302816037308807402",
+            "fleurs_es_test--es_419-13997737119505689253",
+            "fleurs_es_test--es_419-11444088495955610827",
+            "fleurs_es_test--es_419-11546411932607639194",
+            "fleurs_es_test--es_419-3585803545555373032",
+            "fleurs_es_test--es_419-416124317841544182",
+            "fleurs_es_test--es_419-17736040977613383649",
+            "fleurs_es_test--es_419-18103809775608034391",
+            "fleurs_es_test--es_419-17752586354715492019",
+            "fleurs_es_test--es_419-10764228514996022810",
+            "fleurs_es_test--es_419-5970990648174807758",
+            "fleurs_es_test--es_419-8959429617551765590",
+            "fleurs_es_test--es_419-6725969256029359068",
+            "fleurs_es_test--es_419-13500300560093598250"
+          ],
+          "reference": 45,
+          "candidate": 49
+        }
+      ],
+      "scope": "Single: per-input transcribe latency. Streaming: one complete multi-batch request. Pooled RTFx uses all warm wall samples; paired statistics use repeat totals. Draft-call counts are not all decoder steps. Memory includes both resident variant pools.",
+      "quality": {
+        "reference": {
+          "metric": "WER",
+          "reference_units": 948,
+          "errors": 48,
+          "rate": 0.05063291139240506,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "candidate": {
+          "metric": "WER",
+          "reference_units": 948,
+          "errors": 48,
+          "rate": 0.05063291139240506,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "cold": {
+        "candidate": {
+          "warmup_ms": 2815.3701150004053,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 20,
+              "ready_verify_steps": 4,
+              "normal_verify_graphs": 4,
+              "notime_graphs": 0,
+              "selection_fused_windows": 5,
+              "selection_split_windows": 5
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "uninitialized": 16,
+              "megakernel-gluon": 1,
+              "tensorrt: shape limit": 3
+            }
+          },
+          "allocated_delta_bytes": 1317367808,
+          "reserved_delta_bytes": 989855744,
+          "frontend_graph": null,
+          "full_verify_warmup_ms": 1930.318280996289,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 20,
+              "ready_verify_steps": 20,
+              "normal_verify_graphs": 20,
+              "notime_graphs": 0,
+              "selection_fused_windows": 5,
+              "selection_split_windows": 5
+            }
+          }
+        },
+        "reference": {
+          "warmup_ms": 3056.758021004498,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 5,
+              "normal_verify_graphs": 5,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "uninitialized": 19,
+              "megakernel-gluon": 1,
+              "tensorrt: shape limit": 4
+            }
+          },
+          "allocated_delta_bytes": 1386824192,
+          "reserved_delta_bytes": 1367343104,
+          "frontend_graph": null,
+          "full_verify_warmup_ms": 2540.905539004598,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 24,
+              "normal_verify_graphs": 24,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          }
+        }
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        }
+      },
+      "artifact_sha256": {
+        "cold.json": "648856f1634077dd38ae478f6392f90bba834c9264a66a008bec90c98920235e",
+        "actual_dispatch_candidate.json": "7336821df02c8f8d8fa117b0ddfc20f8ae04b3e619818d83538f86a7512a2534",
+        "tokens.json": "c5daff30eda8a568d7ad7f0fed2c032c7e3fa12484aa31a87dd036c1894e718b",
+        "actual_dispatch_reference.json": "800774fd5c0b094c5a1d298333702da0adf5add83fbf67e5420d6400c6e5459a",
+        "summary.json": "f96aa0b730829389deae095fe2260dff9144ce29995d4c799d6d7b4a28fec022",
+        "wall.json": "167008ea99d4f3cece7ac20fbeb4e0542a9cc1fbef211c6e7c8a0643ce545462"
+      }
+    },
+    "zho/stream_ts_b8": {
+      "variants": {
+        "reference": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 131.42658400465734,
+            "p95": 131.85993899824098,
+            "minimum": 126.88679600250907,
+            "maximum": 131.89075799891725,
+            "stdev": 1.7504639563854911,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 131.42658400465734,
+            "p95": 131.85993899824098,
+            "minimum": 126.88679600250907,
+            "maximum": 131.89075799891725,
+            "stdev": 1.7504639563854911,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 2976.755409719232,
+          "peak_allocated_bytes": 9670753280,
+          "draft_decoder_calls": 315
+        },
+        "candidate": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 117.1934910089476,
+            "p95": 118.15129030292155,
+            "minimum": 115.75925500073936,
+            "maximum": 118.33587700675707,
+            "stdev": 0.7332482484946864,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 117.1934910089476,
+            "p95": 118.15129030292155,
+            "minimum": 115.75925500073936,
+            "maximum": 118.33587700675707,
+            "stdev": 0.7332482484946864,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 3314.7311180619445,
+          "peak_allocated_bytes": 9670753280,
+          "draft_decoder_calls": 329
+        }
+      },
+      "repeat_totals_ms": {
+        "reference": [
+          126.88679600250907,
+          131.788027996663,
+          131.89075799891725,
+          128.996414001449,
+          131.53408499783836,
+          131.29107700660825,
+          131.42658400465734
+        ],
+        "candidate": [
+          117.1934910089476,
+          118.33587700675707,
+          117.1511469874531,
+          115.75925500073936,
+          116.98548599088099,
+          117.49387100280728,
+          117.720587993972
+        ]
+      },
+      "paired_rtfx_change_percent": {
+        "samples": [
+          8.271197410461472,
+          11.36777056136391,
+          12.581704396835969,
+          11.435076185161265,
+          12.436242738771398,
+          11.742915512138774,
+          11.642819870545651
+        ],
+        "stats": {
+          "n": 7,
+          "p50": 11.642819870545651,
+          "p95": 12.538065899416598,
+          "minimum": 8.271197410461472,
+          "maximum": 12.581704396835969,
+          "stdev": 1.3322169705522364,
+          "percentile_method": "linear interpolation at (n-1)*q"
+        },
+        "positive_repeats": 7
+      },
+      "pooled_rtfx_change_percent": 11.3538286430658,
+      "request_median_comparisons": [
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-5359218493314493777",
+            "fleurs_zh_test--cmn_hans_cn-7485992766206519433",
+            "fleurs_zh_test--cmn_hans_cn-608809329260395375",
+            "fleurs_zh_test--cmn_hans_cn-14452059866858390995",
+            "fleurs_zh_test--cmn_hans_cn-9699581877784184472",
+            "fleurs_zh_test--cmn_hans_cn-2512442429278456870",
+            "fleurs_zh_test--cmn_hans_cn-1626393343718951419",
+            "fleurs_zh_test--cmn_hans_cn-17738549684744212080",
+            "fleurs_zh_test--cmn_hans_cn-14948927894507528293",
+            "fleurs_zh_test--cmn_hans_cn-17084587270054163808",
+            "fleurs_zh_test--cmn_hans_cn-18059580157250761435",
+            "fleurs_zh_test--cmn_hans_cn-9674297047338995817",
+            "fleurs_zh_test--cmn_hans_cn-3701454187093730515",
+            "fleurs_zh_test--cmn_hans_cn-12915718546983056859",
+            "fleurs_zh_test--cmn_hans_cn-4543746568663720408",
+            "fleurs_zh_test--cmn_hans_cn-5473826726739727303",
+            "fleurs_zh_test--cmn_hans_cn-16785823246087242981",
+            "fleurs_zh_test--cmn_hans_cn-6883634606271964216",
+            "fleurs_zh_test--cmn_hans_cn-14300870981631473855",
+            "fleurs_zh_test--cmn_hans_cn-5479411876618006152",
+            "fleurs_zh_test--cmn_hans_cn-3344315741210503938",
+            "fleurs_zh_test--cmn_hans_cn-17731746061944982790",
+            "fleurs_zh_test--cmn_hans_cn-12263293608573146837",
+            "fleurs_zh_test--cmn_hans_cn-16549419822262830660",
+            "fleurs_zh_test--cmn_hans_cn-7208321975419226278",
+            "fleurs_zh_test--cmn_hans_cn-17739918928868205471",
+            "fleurs_zh_test--cmn_hans_cn-4670237890473852788",
+            "fleurs_zh_test--cmn_hans_cn-454772499289221744",
+            "fleurs_zh_test--cmn_hans_cn-1217058574298081955",
+            "fleurs_zh_test--cmn_hans_cn-12625997379895833919",
+            "fleurs_zh_test--cmn_hans_cn-5822785433218729093",
+            "fleurs_zh_test--cmn_hans_cn-12537777433733171491"
+          ],
+          "median_wall_ms": {
+            "reference": 131.42658400465734,
+            "candidate": 117.1934910089476
+          },
+          "rtfx_change_percent": 12.144951799945147
+        }
+      ],
+      "requests_with_faster_candidate_median": 1,
+      "draft_call_differences": [
+        {
+          "repeat": 0,
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-5359218493314493777",
+            "fleurs_zh_test--cmn_hans_cn-7485992766206519433",
+            "fleurs_zh_test--cmn_hans_cn-608809329260395375",
+            "fleurs_zh_test--cmn_hans_cn-14452059866858390995",
+            "fleurs_zh_test--cmn_hans_cn-9699581877784184472",
+            "fleurs_zh_test--cmn_hans_cn-2512442429278456870",
+            "fleurs_zh_test--cmn_hans_cn-1626393343718951419",
+            "fleurs_zh_test--cmn_hans_cn-17738549684744212080",
+            "fleurs_zh_test--cmn_hans_cn-14948927894507528293",
+            "fleurs_zh_test--cmn_hans_cn-17084587270054163808",
+            "fleurs_zh_test--cmn_hans_cn-18059580157250761435",
+            "fleurs_zh_test--cmn_hans_cn-9674297047338995817",
+            "fleurs_zh_test--cmn_hans_cn-3701454187093730515",
+            "fleurs_zh_test--cmn_hans_cn-12915718546983056859",
+            "fleurs_zh_test--cmn_hans_cn-4543746568663720408",
+            "fleurs_zh_test--cmn_hans_cn-5473826726739727303",
+            "fleurs_zh_test--cmn_hans_cn-16785823246087242981",
+            "fleurs_zh_test--cmn_hans_cn-6883634606271964216",
+            "fleurs_zh_test--cmn_hans_cn-14300870981631473855",
+            "fleurs_zh_test--cmn_hans_cn-5479411876618006152",
+            "fleurs_zh_test--cmn_hans_cn-3344315741210503938",
+            "fleurs_zh_test--cmn_hans_cn-17731746061944982790",
+            "fleurs_zh_test--cmn_hans_cn-12263293608573146837",
+            "fleurs_zh_test--cmn_hans_cn-16549419822262830660",
+            "fleurs_zh_test--cmn_hans_cn-7208321975419226278",
+            "fleurs_zh_test--cmn_hans_cn-17739918928868205471",
+            "fleurs_zh_test--cmn_hans_cn-4670237890473852788",
+            "fleurs_zh_test--cmn_hans_cn-454772499289221744",
+            "fleurs_zh_test--cmn_hans_cn-1217058574298081955",
+            "fleurs_zh_test--cmn_hans_cn-12625997379895833919",
+            "fleurs_zh_test--cmn_hans_cn-5822785433218729093",
+            "fleurs_zh_test--cmn_hans_cn-12537777433733171491"
+          ],
+          "reference": 45,
+          "candidate": 47
+        },
+        {
+          "repeat": 1,
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-5359218493314493777",
+            "fleurs_zh_test--cmn_hans_cn-7485992766206519433",
+            "fleurs_zh_test--cmn_hans_cn-608809329260395375",
+            "fleurs_zh_test--cmn_hans_cn-14452059866858390995",
+            "fleurs_zh_test--cmn_hans_cn-9699581877784184472",
+            "fleurs_zh_test--cmn_hans_cn-2512442429278456870",
+            "fleurs_zh_test--cmn_hans_cn-1626393343718951419",
+            "fleurs_zh_test--cmn_hans_cn-17738549684744212080",
+            "fleurs_zh_test--cmn_hans_cn-14948927894507528293",
+            "fleurs_zh_test--cmn_hans_cn-17084587270054163808",
+            "fleurs_zh_test--cmn_hans_cn-18059580157250761435",
+            "fleurs_zh_test--cmn_hans_cn-9674297047338995817",
+            "fleurs_zh_test--cmn_hans_cn-3701454187093730515",
+            "fleurs_zh_test--cmn_hans_cn-12915718546983056859",
+            "fleurs_zh_test--cmn_hans_cn-4543746568663720408",
+            "fleurs_zh_test--cmn_hans_cn-5473826726739727303",
+            "fleurs_zh_test--cmn_hans_cn-16785823246087242981",
+            "fleurs_zh_test--cmn_hans_cn-6883634606271964216",
+            "fleurs_zh_test--cmn_hans_cn-14300870981631473855",
+            "fleurs_zh_test--cmn_hans_cn-5479411876618006152",
+            "fleurs_zh_test--cmn_hans_cn-3344315741210503938",
+            "fleurs_zh_test--cmn_hans_cn-17731746061944982790",
+            "fleurs_zh_test--cmn_hans_cn-12263293608573146837",
+            "fleurs_zh_test--cmn_hans_cn-16549419822262830660",
+            "fleurs_zh_test--cmn_hans_cn-7208321975419226278",
+            "fleurs_zh_test--cmn_hans_cn-17739918928868205471",
+            "fleurs_zh_test--cmn_hans_cn-4670237890473852788",
+            "fleurs_zh_test--cmn_hans_cn-454772499289221744",
+            "fleurs_zh_test--cmn_hans_cn-1217058574298081955",
+            "fleurs_zh_test--cmn_hans_cn-12625997379895833919",
+            "fleurs_zh_test--cmn_hans_cn-5822785433218729093",
+            "fleurs_zh_test--cmn_hans_cn-12537777433733171491"
+          ],
+          "reference": 45,
+          "candidate": 47
+        },
+        {
+          "repeat": 2,
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-5359218493314493777",
+            "fleurs_zh_test--cmn_hans_cn-7485992766206519433",
+            "fleurs_zh_test--cmn_hans_cn-608809329260395375",
+            "fleurs_zh_test--cmn_hans_cn-14452059866858390995",
+            "fleurs_zh_test--cmn_hans_cn-9699581877784184472",
+            "fleurs_zh_test--cmn_hans_cn-2512442429278456870",
+            "fleurs_zh_test--cmn_hans_cn-1626393343718951419",
+            "fleurs_zh_test--cmn_hans_cn-17738549684744212080",
+            "fleurs_zh_test--cmn_hans_cn-14948927894507528293",
+            "fleurs_zh_test--cmn_hans_cn-17084587270054163808",
+            "fleurs_zh_test--cmn_hans_cn-18059580157250761435",
+            "fleurs_zh_test--cmn_hans_cn-9674297047338995817",
+            "fleurs_zh_test--cmn_hans_cn-3701454187093730515",
+            "fleurs_zh_test--cmn_hans_cn-12915718546983056859",
+            "fleurs_zh_test--cmn_hans_cn-4543746568663720408",
+            "fleurs_zh_test--cmn_hans_cn-5473826726739727303",
+            "fleurs_zh_test--cmn_hans_cn-16785823246087242981",
+            "fleurs_zh_test--cmn_hans_cn-6883634606271964216",
+            "fleurs_zh_test--cmn_hans_cn-14300870981631473855",
+            "fleurs_zh_test--cmn_hans_cn-5479411876618006152",
+            "fleurs_zh_test--cmn_hans_cn-3344315741210503938",
+            "fleurs_zh_test--cmn_hans_cn-17731746061944982790",
+            "fleurs_zh_test--cmn_hans_cn-12263293608573146837",
+            "fleurs_zh_test--cmn_hans_cn-16549419822262830660",
+            "fleurs_zh_test--cmn_hans_cn-7208321975419226278",
+            "fleurs_zh_test--cmn_hans_cn-17739918928868205471",
+            "fleurs_zh_test--cmn_hans_cn-4670237890473852788",
+            "fleurs_zh_test--cmn_hans_cn-454772499289221744",
+            "fleurs_zh_test--cmn_hans_cn-1217058574298081955",
+            "fleurs_zh_test--cmn_hans_cn-12625997379895833919",
+            "fleurs_zh_test--cmn_hans_cn-5822785433218729093",
+            "fleurs_zh_test--cmn_hans_cn-12537777433733171491"
+          ],
+          "reference": 45,
+          "candidate": 47
+        },
+        {
+          "repeat": 3,
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-5359218493314493777",
+            "fleurs_zh_test--cmn_hans_cn-7485992766206519433",
+            "fleurs_zh_test--cmn_hans_cn-608809329260395375",
+            "fleurs_zh_test--cmn_hans_cn-14452059866858390995",
+            "fleurs_zh_test--cmn_hans_cn-9699581877784184472",
+            "fleurs_zh_test--cmn_hans_cn-2512442429278456870",
+            "fleurs_zh_test--cmn_hans_cn-1626393343718951419",
+            "fleurs_zh_test--cmn_hans_cn-17738549684744212080",
+            "fleurs_zh_test--cmn_hans_cn-14948927894507528293",
+            "fleurs_zh_test--cmn_hans_cn-17084587270054163808",
+            "fleurs_zh_test--cmn_hans_cn-18059580157250761435",
+            "fleurs_zh_test--cmn_hans_cn-9674297047338995817",
+            "fleurs_zh_test--cmn_hans_cn-3701454187093730515",
+            "fleurs_zh_test--cmn_hans_cn-12915718546983056859",
+            "fleurs_zh_test--cmn_hans_cn-4543746568663720408",
+            "fleurs_zh_test--cmn_hans_cn-5473826726739727303",
+            "fleurs_zh_test--cmn_hans_cn-16785823246087242981",
+            "fleurs_zh_test--cmn_hans_cn-6883634606271964216",
+            "fleurs_zh_test--cmn_hans_cn-14300870981631473855",
+            "fleurs_zh_test--cmn_hans_cn-5479411876618006152",
+            "fleurs_zh_test--cmn_hans_cn-3344315741210503938",
+            "fleurs_zh_test--cmn_hans_cn-17731746061944982790",
+            "fleurs_zh_test--cmn_hans_cn-12263293608573146837",
+            "fleurs_zh_test--cmn_hans_cn-16549419822262830660",
+            "fleurs_zh_test--cmn_hans_cn-7208321975419226278",
+            "fleurs_zh_test--cmn_hans_cn-17739918928868205471",
+            "fleurs_zh_test--cmn_hans_cn-4670237890473852788",
+            "fleurs_zh_test--cmn_hans_cn-454772499289221744",
+            "fleurs_zh_test--cmn_hans_cn-1217058574298081955",
+            "fleurs_zh_test--cmn_hans_cn-12625997379895833919",
+            "fleurs_zh_test--cmn_hans_cn-5822785433218729093",
+            "fleurs_zh_test--cmn_hans_cn-12537777433733171491"
+          ],
+          "reference": 45,
+          "candidate": 47
+        },
+        {
+          "repeat": 4,
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-5359218493314493777",
+            "fleurs_zh_test--cmn_hans_cn-7485992766206519433",
+            "fleurs_zh_test--cmn_hans_cn-608809329260395375",
+            "fleurs_zh_test--cmn_hans_cn-14452059866858390995",
+            "fleurs_zh_test--cmn_hans_cn-9699581877784184472",
+            "fleurs_zh_test--cmn_hans_cn-2512442429278456870",
+            "fleurs_zh_test--cmn_hans_cn-1626393343718951419",
+            "fleurs_zh_test--cmn_hans_cn-17738549684744212080",
+            "fleurs_zh_test--cmn_hans_cn-14948927894507528293",
+            "fleurs_zh_test--cmn_hans_cn-17084587270054163808",
+            "fleurs_zh_test--cmn_hans_cn-18059580157250761435",
+            "fleurs_zh_test--cmn_hans_cn-9674297047338995817",
+            "fleurs_zh_test--cmn_hans_cn-3701454187093730515",
+            "fleurs_zh_test--cmn_hans_cn-12915718546983056859",
+            "fleurs_zh_test--cmn_hans_cn-4543746568663720408",
+            "fleurs_zh_test--cmn_hans_cn-5473826726739727303",
+            "fleurs_zh_test--cmn_hans_cn-16785823246087242981",
+            "fleurs_zh_test--cmn_hans_cn-6883634606271964216",
+            "fleurs_zh_test--cmn_hans_cn-14300870981631473855",
+            "fleurs_zh_test--cmn_hans_cn-5479411876618006152",
+            "fleurs_zh_test--cmn_hans_cn-3344315741210503938",
+            "fleurs_zh_test--cmn_hans_cn-17731746061944982790",
+            "fleurs_zh_test--cmn_hans_cn-12263293608573146837",
+            "fleurs_zh_test--cmn_hans_cn-16549419822262830660",
+            "fleurs_zh_test--cmn_hans_cn-7208321975419226278",
+            "fleurs_zh_test--cmn_hans_cn-17739918928868205471",
+            "fleurs_zh_test--cmn_hans_cn-4670237890473852788",
+            "fleurs_zh_test--cmn_hans_cn-454772499289221744",
+            "fleurs_zh_test--cmn_hans_cn-1217058574298081955",
+            "fleurs_zh_test--cmn_hans_cn-12625997379895833919",
+            "fleurs_zh_test--cmn_hans_cn-5822785433218729093",
+            "fleurs_zh_test--cmn_hans_cn-12537777433733171491"
+          ],
+          "reference": 45,
+          "candidate": 47
+        },
+        {
+          "repeat": 5,
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-5359218493314493777",
+            "fleurs_zh_test--cmn_hans_cn-7485992766206519433",
+            "fleurs_zh_test--cmn_hans_cn-608809329260395375",
+            "fleurs_zh_test--cmn_hans_cn-14452059866858390995",
+            "fleurs_zh_test--cmn_hans_cn-9699581877784184472",
+            "fleurs_zh_test--cmn_hans_cn-2512442429278456870",
+            "fleurs_zh_test--cmn_hans_cn-1626393343718951419",
+            "fleurs_zh_test--cmn_hans_cn-17738549684744212080",
+            "fleurs_zh_test--cmn_hans_cn-14948927894507528293",
+            "fleurs_zh_test--cmn_hans_cn-17084587270054163808",
+            "fleurs_zh_test--cmn_hans_cn-18059580157250761435",
+            "fleurs_zh_test--cmn_hans_cn-9674297047338995817",
+            "fleurs_zh_test--cmn_hans_cn-3701454187093730515",
+            "fleurs_zh_test--cmn_hans_cn-12915718546983056859",
+            "fleurs_zh_test--cmn_hans_cn-4543746568663720408",
+            "fleurs_zh_test--cmn_hans_cn-5473826726739727303",
+            "fleurs_zh_test--cmn_hans_cn-16785823246087242981",
+            "fleurs_zh_test--cmn_hans_cn-6883634606271964216",
+            "fleurs_zh_test--cmn_hans_cn-14300870981631473855",
+            "fleurs_zh_test--cmn_hans_cn-5479411876618006152",
+            "fleurs_zh_test--cmn_hans_cn-3344315741210503938",
+            "fleurs_zh_test--cmn_hans_cn-17731746061944982790",
+            "fleurs_zh_test--cmn_hans_cn-12263293608573146837",
+            "fleurs_zh_test--cmn_hans_cn-16549419822262830660",
+            "fleurs_zh_test--cmn_hans_cn-7208321975419226278",
+            "fleurs_zh_test--cmn_hans_cn-17739918928868205471",
+            "fleurs_zh_test--cmn_hans_cn-4670237890473852788",
+            "fleurs_zh_test--cmn_hans_cn-454772499289221744",
+            "fleurs_zh_test--cmn_hans_cn-1217058574298081955",
+            "fleurs_zh_test--cmn_hans_cn-12625997379895833919",
+            "fleurs_zh_test--cmn_hans_cn-5822785433218729093",
+            "fleurs_zh_test--cmn_hans_cn-12537777433733171491"
+          ],
+          "reference": 45,
+          "candidate": 47
+        },
+        {
+          "repeat": 6,
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-5359218493314493777",
+            "fleurs_zh_test--cmn_hans_cn-7485992766206519433",
+            "fleurs_zh_test--cmn_hans_cn-608809329260395375",
+            "fleurs_zh_test--cmn_hans_cn-14452059866858390995",
+            "fleurs_zh_test--cmn_hans_cn-9699581877784184472",
+            "fleurs_zh_test--cmn_hans_cn-2512442429278456870",
+            "fleurs_zh_test--cmn_hans_cn-1626393343718951419",
+            "fleurs_zh_test--cmn_hans_cn-17738549684744212080",
+            "fleurs_zh_test--cmn_hans_cn-14948927894507528293",
+            "fleurs_zh_test--cmn_hans_cn-17084587270054163808",
+            "fleurs_zh_test--cmn_hans_cn-18059580157250761435",
+            "fleurs_zh_test--cmn_hans_cn-9674297047338995817",
+            "fleurs_zh_test--cmn_hans_cn-3701454187093730515",
+            "fleurs_zh_test--cmn_hans_cn-12915718546983056859",
+            "fleurs_zh_test--cmn_hans_cn-4543746568663720408",
+            "fleurs_zh_test--cmn_hans_cn-5473826726739727303",
+            "fleurs_zh_test--cmn_hans_cn-16785823246087242981",
+            "fleurs_zh_test--cmn_hans_cn-6883634606271964216",
+            "fleurs_zh_test--cmn_hans_cn-14300870981631473855",
+            "fleurs_zh_test--cmn_hans_cn-5479411876618006152",
+            "fleurs_zh_test--cmn_hans_cn-3344315741210503938",
+            "fleurs_zh_test--cmn_hans_cn-17731746061944982790",
+            "fleurs_zh_test--cmn_hans_cn-12263293608573146837",
+            "fleurs_zh_test--cmn_hans_cn-16549419822262830660",
+            "fleurs_zh_test--cmn_hans_cn-7208321975419226278",
+            "fleurs_zh_test--cmn_hans_cn-17739918928868205471",
+            "fleurs_zh_test--cmn_hans_cn-4670237890473852788",
+            "fleurs_zh_test--cmn_hans_cn-454772499289221744",
+            "fleurs_zh_test--cmn_hans_cn-1217058574298081955",
+            "fleurs_zh_test--cmn_hans_cn-12625997379895833919",
+            "fleurs_zh_test--cmn_hans_cn-5822785433218729093",
+            "fleurs_zh_test--cmn_hans_cn-12537777433733171491"
+          ],
+          "reference": 45,
+          "candidate": 47
+        }
+      ],
+      "scope": "Single: per-input transcribe latency. Streaming: one complete multi-batch request. Pooled RTFx uses all warm wall samples; paired statistics use repeat totals. Draft-call counts are not all decoder steps. Memory includes both resident variant pools.",
+      "quality": {
+        "reference": {
+          "metric": "CER",
+          "reference_units": 1282,
+          "errors": 148,
+          "rate": 0.11544461778471139,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "candidate": {
+          "metric": "CER",
+          "reference_units": 1282,
+          "errors": 147,
+          "rate": 0.11466458658346333,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "cold": {
+        "candidate": {
+          "warmup_ms": 2843.8626389979618,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 20,
+              "ready_verify_steps": 5,
+              "normal_verify_graphs": 5,
+              "notime_graphs": 0,
+              "selection_fused_windows": 5,
+              "selection_split_windows": 5
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "megakernel-gluon": 2,
+              "uninitialized": 15,
+              "tensorrt: shape limit": 3
+            }
+          },
+          "allocated_delta_bytes": 1317886976,
+          "reserved_delta_bytes": 994050048,
+          "frontend_graph": null,
+          "full_verify_warmup_ms": 1921.8835119972937,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 20,
+              "ready_verify_steps": 20,
+              "normal_verify_graphs": 20,
+              "notime_graphs": 0,
+              "selection_fused_windows": 5,
+              "selection_split_windows": 5
+            }
+          }
+        },
+        "reference": {
+          "warmup_ms": 2844.2110120086,
+          "captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 5,
+              "normal_verify_graphs": 5,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          },
+          "dispatch": {
+            "(8, 1)": {
+              "megakernel-gluon": 2,
+              "uninitialized": 19,
+              "tensorrt: shape limit": 3
+            }
+          },
+          "allocated_delta_bytes": 1387343360,
+          "reserved_delta_bytes": 1371537408,
+          "frontend_graph": null,
+          "full_verify_warmup_ms": 2731.53533799632,
+          "full_verify_warmup_captures": {
+            "(8, 1)": {
+              "encode": 4,
+              "plain_select_fused": true,
+              "ctc": 0,
+              "decode": 0,
+              "experimental_chunk_decode": 0,
+              "plain_ready": false,
+              "plain_steps": 0,
+              "verify": 24,
+              "ready_verify_steps": 24,
+              "normal_verify_graphs": 24,
+              "notime_graphs": 0,
+              "selection_fused_windows": 6,
+              "selection_split_windows": 6
+            }
+          }
+        }
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 31,
+          "total": 32,
+          "different_ids": [
+            "fleurs_zh_test--cmn_hans_cn-17739918928868205471"
+          ]
+        },
+        "timestamp_tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 31,
+          "total": 32,
+          "different_ids": [
+            "fleurs_zh_test--cmn_hans_cn-17739918928868205471"
+          ]
+        },
+        "text": {
+          "equal": 31,
+          "total": 32,
+          "different_ids": [
+            "fleurs_zh_test--cmn_hans_cn-17739918928868205471"
+          ]
+        }
+      },
+      "artifact_sha256": {
+        "cold.json": "cc739ba1c5ae1f79d246fb3af5dc412b9f348c031ed4cc526884859aecc3fee3",
+        "actual_dispatch_candidate.json": "88f8ae941b11ea7372e46b617586f24a0634b4b27c9b2920019ea278cf251e95",
+        "tokens.json": "44a4884e1252102683a2e7d0ff18aa7c05ffbb074b7510a40489598d78688006",
+        "actual_dispatch_reference.json": "5e657a753b4538f0885d377d4ad1d5b771690a56c91ce83d08fe7dba12714b81",
+        "summary.json": "47fde540cf43a0bcc2d3f7a7c4538b35d5ca31a61c235ae342462490f4d50d2d",
+        "wall.json": "96acfa953288c3ed3515fb3cd01f576d64d87026910fbcc54a40909731e1ce71"
+      }
+    }
+  },
+  "comparison": "draft_budget",
+  "classification": "N",
+  "gpu_telemetry": {
+    "utilization_percent": {
+      "n": 59,
+      "p50": 7.0,
+      "p95": 96.0,
+      "minimum": 0.0,
+      "maximum": 96.0,
+      "stdev": 26.53057295555802,
+      "percentile_method": "linear interpolation at (n-1)*q"
+    },
+    "device_memory_mib": {
+      "n": 59,
+      "p50": 13617.0,
+      "p95": 17072.8,
+      "minimum": 0.0,
+      "maximum": 17665.0,
+      "stdev": 3760.312512225638,
+      "percentile_method": "linear interpolation at (n-1)*q"
+    },
+    "scope": "Five-second samples across loading/capture/warm/diagnostic calls and both variants; not per-condition utilization or kernel occupancy."
+  },
+  "scope": "N: same-engine public draft budget256/128, greedy kernels ON both; differences retained. Balanced 224-input speech sample, not an independent quality holdout or corpus-weighted performance. Seven repeats are repeated timings, not additional evaluation inputs. Raw files retain per-call wall time/output/dispatch/cold metadata. No timing from the full-corpus one-pass audit."
+}
