@@ -174,3 +174,14 @@ Use `OWSM.from_pretrained(..., frontend_graph_max_batch=8)` to opt in. Reproduce
 source. Raw timings/cold/cache/output/dispatch data and the previous-output control are retained in
 `outputs/runtime-2786935/`. The default remains1 for the memory/performance tradeoff and mixed
 earlier1B measurements; the larger1B frontend audit is separate.
+
+## Prepared budget tail diagnosis
+
+`--host-diagnostics` records GC overlap, process CPU time, faults and context switches through the
+existing `HostLatency` observer; it does not change GC thresholds or subtract collection time.
+`--candidate-first` reverses warmup and the initial alternating order. With `HOST_ROTATED=1`, the PBS
+driver runs the diagnostic and rotated ordinary measurement in separate Python processes, saving
+`host_profile` and `profile` separately. The standard warm summarizer rejects instrumented metadata;
+eleven small selection/aggregation fixtures pass, including that guard. The three observer callback/
+exception/overlap tests run on the compute node before the diagnostic. These changes are prepared
+for the budget256/128 tail excursions; no cause or new performance conclusion is established yet.

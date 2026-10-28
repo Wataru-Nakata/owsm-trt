@@ -1,7 +1,9 @@
 """Synthetic timing records only; no inference or timing on the login node."""
 
+import json
+
 import pytest
-from summarize_expanded_greedy import aggregate, output_agreement
+from summarize_expanded_greedy import aggregate, output_agreement, summarize
 
 
 def samples(streaming=False):
@@ -46,3 +48,13 @@ def test_output_differences_are_retained_only_for_explicit_n_comparison():
     assert result['timestamp_tokens']==dict(equal=1,total=1,different_ids=[])
     with pytest.raises(AssertionError):
         output_agreement(records,['a','missing'],exact=False)
+
+
+def test_instrumented_job_cannot_be_reported_as_warm_latency(tmp_path):
+    (tmp_path/'profile').mkdir()
+    (tmp_path/'exit_status.txt').write_text('0\n')
+    for name,value in [('pbs-final.json',dict(state='F',exit_status=0)),('source.json',{}),
+                       ('profile/environment.json',dict(host_diagnostics=True))]:
+        (tmp_path/name).write_text(json.dumps(value))
+    with pytest.raises(AssertionError,match='instrumented host diagnostics'):
+        summarize(tmp_path)

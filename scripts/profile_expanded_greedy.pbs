@@ -14,6 +14,8 @@ OUT="$REPO/outputs/runtime-${PBS_JOBID%%.*}"
 LOCAL="$PBS_LOCALDIR/expanded-profile"
 MODEL_NAME=${MODEL_NAME:-owsm_v4_medium_1B}
 COMPARISON=${COMPARISON:-greedy_kernels}
+HOST_ROTATED=${HOST_ROTATED:-0}
+case "$HOST_ROTATED" in 0|1) ;; *) exit 2 ;; esac
 CORPUS="$REPO/.cache/regression-expanded-v1"
 mkdir -p "$OUT" "$LOCAL" "$LOCAL/results" "$LOCAL/tmp" "$LOCAL/engines"
 export TMPDIR="$LOCAL/tmp" TRITON_CACHE_DIR="$LOCAL/triton" TORCHINDUCTOR_CACHE_DIR="$LOCAL/inductor"
@@ -62,17 +64,29 @@ mkdir -p "$OWSM_TRT_CACHE/$MODEL_NAME"
 cp -a "$REPO/.cache/engines/$MODEL_NAME/v621-NVIDIA_H200-sm90-trt11.4.0.106-float16-3d0cbdc9" "$OWSM_TRT_CACHE/$MODEL_NAME/"
 nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv -l 5 > "$LOCAL/results/gpu_utilization.csv" &
 SMI=$!
-# Bound the complete benchmark inside the existing one-hour allocation.
-PROFILE_TIMEOUT=$((3500 - SECONDS))
-if (( PROFILE_TIMEOUT < 300 )); then
-    printf '%s\n' 'insufficient remaining allocation for profiling' > "$LOCAL/results/deferred_reason.txt"
-    exit 1
+# Host diagnostics and the rotated uninstrumented run use separate Python processes.
+PASSES=(profile)
+if [ "$HOST_ROTATED" = 1 ]; then
+    timeout 120 "$PY" -m pytest -q -p no:cacheprovider "$LOCAL/tests/test_host_latency.py" \
+        > "$LOCAL/results/host_tests.log" 2>&1
+    PASSES=(host_profile profile)
 fi
-printf '%s\n' "expanded greedy timing: 224 inputs, 7 alternating repeats, comparison=$COMPARISON" >> "$OUT/progress.log"
-timeout --kill-after=30 --preserve-status "$PROFILE_TIMEOUT" "$PY" "$LOCAL/scripts/profile_expanded_greedy.py" \
-    --model "$LOCAL/$MODEL_NAME" --data "$LOCAL/corpus" --out "$LOCAL/results/profile" \
-    --per-language 32 --repeat 7 --comparison "$COMPARISON" > "$LOCAL/results/profile.log" 2>&1 &
-WORKER=$!
-wait "$WORKER"
-WORKER=""
+for PASS in "${PASSES[@]}"; do
+    PROFILE_TIMEOUT=$((3500 - SECONDS))
+    if (( PROFILE_TIMEOUT < 300 )); then
+        printf '%s\n' 'insufficient remaining allocation for profiling' > "$LOCAL/results/deferred_reason.txt"
+        exit 1
+    fi
+    OPTIONS=()
+    if [ "$PASS" = host_profile ]; then OPTIONS=(--host-diagnostics); fi
+    if [ "$PASS" = profile ] && [ "$HOST_ROTATED" = 1 ]; then OPTIONS=(--candidate-first); fi
+    printf '%s\n' "$PASS: 224 inputs, 7 alternating repeats, comparison=$COMPARISON" >> "$OUT/progress.log"
+    timeout --kill-after=30 --preserve-status "$PROFILE_TIMEOUT" "$PY" "$LOCAL/scripts/profile_expanded_greedy.py" \
+        --model "$LOCAL/$MODEL_NAME" --data "$LOCAL/corpus" --out "$LOCAL/results/$PASS" \
+        --per-language 32 --repeat 7 --comparison "$COMPARISON" "${OPTIONS[@]}" > "$LOCAL/results/$PASS.log" 2>&1 &
+    WORKER=$!
+    wait "$WORKER"
+    WORKER=""
+    printf '%s complete\n' "$PASS" >> "$OUT/progress.log"
+done
 printf '%s\n' 'expanded profiling ended; inspect complete flag and output agreement' >> "$OUT/progress.log"

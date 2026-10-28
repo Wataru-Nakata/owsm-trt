@@ -8,7 +8,7 @@ import json
 import os
 import tarfile
 from collections import defaultdict, deque
-from contextlib import ExitStack
+from contextlib import ExitStack, nullcontext
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -50,6 +50,8 @@ def main():
     ap.add_argument('--per-language',type=int,default=32)
     ap.add_argument('--repeat',type=int,default=7)
     ap.add_argument('--comparison',choices=['greedy_kernels','draft_budget','frontend_batches'],default='greedy_kernels')
+    ap.add_argument('--host-diagnostics',action='store_true',help='separate instrumented GC/CPU pass; not warm latency')
+    ap.add_argument('--candidate-first',action='store_true',help='reverse the initial warmup/alternating variant order')
     args=ap.parse_args()
     if not os.environ.get('PBS_JOBID') or not os.environ.get('PBS_LOCALDIR'):
         ap.error('model/audio profiling requires a compute allocation')
@@ -66,6 +68,7 @@ def main():
     from owsm_trt.build import engine_tag
 
     with torch.inference_mode():
+        variants=['candidate','reference'] if args.candidate_first else ['reference','candidate']
         numerical=args.comparison=='draft_budget'
         frontend=args.comparison=='frontend_batches'
         cases=('single_ts','stream_ts_b8') if args.comparison=='greedy_kernels' else ('stream_ts_b8',)
@@ -99,8 +102,10 @@ def main():
             nvidia_smi=command(['nvidia-smi','--query-gpu=name,uuid,driver_version','--format=csv']),
             load_ms=load_ms,greedy_settings=settings,draft_token_budgets=budgets,frontend_batch_limits=frontend_limits,
             comparison=args.comparison,classification='N' if numerical else 'E',cases=cases,
+            host_diagnostics=args.host_diagnostics,variant_order=variants,
             repeat=args.repeat,per_language=args.per_language,
-            scope=('N: public draft budget256/128, greedy kernels ON both. ' if numerical
+            scope=('INSTRUMENTED host diagnostic; not warm latency. ' if args.host_diagnostics else
+                   'Uninstrumented warm request timing. ')+('N: public draft budget256/128, greedy kernels ON both. ' if numerical
                    else 'Public frontend graph batch limit1/8. ' if frontend
                    else 'Combined public greedy switch. ')+'Same engine/checkpoint. Balanced language/duration/dataset '
                   'sample excluding prior screening overlap, nonspeech and long-form. Not corpus-weighted '
@@ -140,10 +145,16 @@ def main():
                 items=[dict(id=r['key'],text=r['text']) for r in rows]
                 save(args.out/lang/'audio_load.json',dict(milliseconds=audio_ms,included_in_timing=False))
                 options=SimpleNamespace(out=args.out/lang,lang=lang,repeat=args.repeat,
-                                        variants=['reference','candidate'],trace=False,long_audio=None)
+                                        variants=variants,trace=False,long_audio=None)
                 for case in cases:
-                    result=run_case(model,options,case,items,waves,configure=configure,
-                                    observe=count_decoder_dispatch)
+                    if args.host_diagnostics:
+                        from host_latency import HostLatency
+                    with HostLatency() if args.host_diagnostics else nullcontext() as host:
+                        result=run_case(model,options,case,items,waves,configure=configure,
+                                        observe=count_decoder_dispatch,measure=host.measure if host else None)
+                    if host:
+                        samples=json.loads((args.out/lang/case/'wall.json').read_text())
+                        save(args.out/lang/case/'host.json',host.report(samples))
                     summaries[lang+'/'+case]=result
                     save(args.out/'summary.json',summaries)
                     assert not model.backend.failed,'decoder failed; refuse fallback timing'

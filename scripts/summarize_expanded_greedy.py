@@ -84,6 +84,7 @@ def summarize(raw: Path) -> dict:
     assert scheduler['state']=='F' and scheduler['exit_status']==0
     source=json.loads((raw/'source.json').read_text())
     env=json.loads((profile/'environment.json').read_text())
+    assert not env.get('host_diagnostics',False),'instrumented host diagnostics are not warm latency results'
     complete=json.loads((profile/'complete.json').read_text())
     assert complete['complete'] and complete['job']==env['job']==scheduler['job']
     assert env['commit']==source['commit'] and env['repeat']==complete['repeat']==7
