@@ -276,6 +276,23 @@ counts. Both variants retain51 diagnostic inputs, including21 invalid/out-of-ran
 unpaired timestamp sequences. This validates the combined public switch within bulk requests;
 it does not establish B1/B8 numerical identity, per-flag execution, file-prefetch coverage or a speed gain.
 
+The [102M B1-versus-bulk saved-output comparison](runtime-greedy-bulk-numerics-102m-13232.json)
+holds the candidate runtime tree, checkpoint/engines, software and configured greedy/decoder settings
+fixed and requires both within-run E controls to pass. It changes request grouping, streaming/refill,
+batch/verification shapes and default dispatch together (N). There are748 differing inputs, including
+six long-form inputs whose requested batch also changes from1 to8. Full token sequences match
+12,449/13,191, timestamp sequences13,173/13,191, text12,522/13,232 and segments12,519/13,232.
+Bulk-minus-B1 speech edits are Japanese−15, English+5, German+5, French0, Russian+4, Spanish−3,
+Chinese+11; denominators and full per-language rates are retained in the artifact. The largest
+absolute individual speech edit change is8 characters. For12,521 inputs with comparable text and
+ordered segment labels/count,22 boundaries move: nonzero median20ms, p95 160ms and maximum560ms.
+The maximum is Chinese `fleurs_zh_test--cmn_hans_cn-12747982423047432241`;711 outputs with incompatible
+text/segmentation are excluded from boundary statistics. These are differences between generated
+outputs, not reference timestamp errors or an isolated cause. Reproduce with
+`compare_regression_batches.py B1_DIR BULK_DIR --greedy-bulk --out RESULT.json`.
+Fourteen lightweight comparison fixtures pass, including incomplete request membership, changed
+settings, failed within-run controls and unavailable token IDs. No inference runs on the login node.
+
 Additional ablations include `beam_kernels` (upper bound ON in both, search/state/cache kernels OFF/ON)
 and `beam_combined` (upper bound and beam kernels both OFF/ON), to cover bugs shared by both sides
 of the upper-bound-only comparison. These use the existing PyTorch reference path, the same decoder

@@ -9,15 +9,21 @@ import pytest
 from compare_regression_batches import boundary_displacements, compare_batches
 
 
-def write_fixture(root,batch):
+def write_fixture(root,batch,greedy=False):
     root.mkdir()
     config=dict(mode='beam_bound',case=f'beam_b{batch}',commit='fixture',checkpoint_sha256='checkpoint',
                 index_sha256='corpus',selected_samples=3,
                 selected_keys_sha256=hashlib.sha256(b'speech\nlong\nstress').hexdigest())
+    if greedy:
+        config.update(mode='greedy_kernels',case='draft_ts' if batch==1 else 'draft_bulk',
+                      greedy_variants=dict(reference=False,candidate=True))
+        if batch!=1:
+            config.update(request_batch_size=8,input_group_limit=64)
     (root/'config.json').write_text(json.dumps(config))
     digest=hashlib.sha256((root/'config.json').read_bytes()).hexdigest()
     (root/'environment.json').write_text(json.dumps(dict(engine_sha256={'decoder':'same'},
-                                                        torch='fixture',cuda='fixture',gpu='fixture')))
+        torch='fixture',cuda='fixture',gpu='fixture',greedy_settings=dict(candidate={'enabled':True}),
+        decoder_settings=dict(candidate={'budget':256}))))
     rows=[]
     for key in ('speech','long','stress'):
         text='word' if key!='stress' or batch==3 else ''
@@ -32,6 +38,10 @@ def write_fixture(root,batch):
                          config_sha256=digest,reference=value,candidate=value,differences=[],
                          input_group=['long'] if key=='long' else ['speech','stress'],
                          api='transcribe_long' if key=='long' else 'transcribe'))
+        if greedy:
+            rows[-1]['requested_batch_size']=1 if batch==1 else 8
+            if batch==1:
+                rows[-1]['input_group']=[key]
     save_rows(root,rows)
 
 
@@ -42,6 +52,8 @@ def save_rows(root,rows):
             stream.write(json.dumps(row)+'\n')
     (root/'progress.json').write_text(json.dumps(dict(chunks={path.name:dict(
         samples=3,sha256=hashlib.sha256(path.read_bytes()).hexdigest())})))
+    (root/'status.json').write_text(json.dumps(dict(complete=True,completed=3,differences=0,
+        interrupted=False,**json.loads((root/'progress.json').read_text()))))
 
 
 def test_batch_comparison_separates_missing_ids_nonspeech_and_boundary_changes(tmp_path,monkeypatch):
@@ -96,3 +108,46 @@ def test_boundary_displacement_does_not_align_different_segment_texts():
     assert boundary_displacements(value,value|dict(segments=[dict(text='one two',start=0,end=2)])) is None
     assert boundary_displacements(value,value|dict(segments=[dict(text='one',start=0,end=float('nan')),
                                                             dict(text='two',start=1,end=2)])) is None
+
+
+def test_greedy_bulk_comparison_retains_missing_ids_and_request_groups(tmp_path,monkeypatch):
+    monkeypatch.setattr(compare_regression_batches,'runtime_tree',lambda _: 'same')
+    first,bulk=tmp_path/'b1',tmp_path/'bulk'
+    write_fixture(first,1,greedy=True)
+    write_fixture(bulk,3,greedy=True)
+    result=compare_batches(first,bulk,greedy_bulk=True)
+    assert result['agreement']['tokens']==dict(equal=1,total=2)
+    assert result['quality']['eng']['bulk_errors']==0
+    assert result['nonspeech']['eng']['bulk_insertions']==1
+    assert result['actual_groups']['transcribe:group2']['samples']==2
+    assert result['changed_inputs'][0]['bulk_input_group']==['speech','stress']
+    assert result['boundary_displacements']['changed_boundaries']['maximum']==pytest.approx(.02)
+
+
+@pytest.mark.parametrize('corruption',['missing_member','wrong_batch','settings','partial'])
+def test_greedy_bulk_comparison_rejects_incompatible_groups_and_controls(tmp_path,monkeypatch,corruption):
+    monkeypatch.setattr(compare_regression_batches,'runtime_tree',lambda _: 'same')
+    first,bulk=tmp_path/'b1',tmp_path/'bulk'
+    write_fixture(first,1,greedy=True)
+    write_fixture(bulk,3,greedy=True)
+    if corruption=='settings':
+        path=bulk/'environment.json'
+        env=json.loads(path.read_text())
+        env['decoder_settings']['candidate']['budget']=128
+        path.write_text(json.dumps(env))
+    elif corruption=='partial':
+        path=bulk/'status.json'
+        value=json.loads(path.read_text())
+        path.write_text(json.dumps(value|dict(complete=False)))
+    else:
+        with gzip.open(bulk/'chunk-00000.jsonl.gz','rt') as stream:
+            rows=[json.loads(line) for line in stream]
+        if corruption=='missing_member':
+            for row in rows:
+                if row['api']=='transcribe':
+                    row['input_group'].append('unobserved')
+        else:
+            rows[0]['requested_batch_size']=3
+        save_rows(bulk,rows)
+    with pytest.raises(AssertionError):
+        compare_batches(first,bulk,greedy_bulk=True)
