@@ -10,8 +10,9 @@ weights, tile sizes, barriers, encoder buffers and beam behavior remain as befor
 None retaining the existing formula. It applies to allR1calls within that mode, both concurrent
 and solo, so encoder timing cannot change the arithmetic grouping within a mode. R>1retains the
 prior formula. This is N, not exact relative toNS2; token/time/quality differences must be retained.
-The original prototype adds no default behavior. A guarded public `ring:split` option is now
-prepared for independent verification; it is not yet validated through the public API.
+The original prototype adds no default behavior. The guarded public `ring:split` option now has
+the102M drafted-timestamp B1 large-corpus validation below; broader public timing/shape coverage
+remains incomplete.
 
 Thirteen synthetic GPU checks cover width384/1024, W1/8/32, T64/374, offsets0/63/0, graphs,
 cache bounds, repeated states and EOS skip. Within each split setting, concurrent/solo outputs
@@ -71,3 +72,12 @@ python scripts/profile_ring_cross_splits.py --model /local/owsm_v4_medium_1B \
 The public repeat2778800 was stopped for the account192-GPU cap after another allocation surge.
 PBS exit271 and incomplete published artifacts prevent accepting it as independent validation.
 Large-corpus regression now takes priority; see [expanded evaluation](runtime-large-regression.md).
+
+The subsequent public102M B1 drafted-timestamp audit2786533 completes13,232 inputs at frozen3976d7f,
+with104 verified chunks and PBS/publication exit0. NS2 reference outputs exactly match the earlier
+default B1 audit. NS8 differs on41 inputs (36 texts,3 timestamp sequences); speech edit deltas are
+Japanese0, English−2, German−1, French0, Russian+1, Spanish−1 and Chinese+2. One comparable boundary
+moves20ms, while37 incompatible text/segment outputs are excluded from boundary statistics.
+All changed outputs and denominators are [retained](runtime-large-regression-2786533.json).
+This verifies the specified public path's larger numerical/quality scope, not independent public
+timing, other shapes or1B. The streaming regression still prevents default adoption.

@@ -337,6 +337,18 @@ Other ablations are102M serial64 versus24 (E), and the explicit1B NS4/102M NS8 o
 with plain/drafted ASR, translation and long-form cases. N differences remain visible, not treated
 as exact or silently accepted as accuracy improvements. New default adoption waits for relevant
 large-corpus checks as well as the repeated performance benchmark.
+The [102M NS8 drafted-timestamp B1 audit2786533](runtime-large-regression-2786533.json), frozen3976d7f,
+completes13,232 inputs/104 chunks (PBS F/exit0 and publication exit0). It uses the public `ring:split`
+option versus NS2 with unchanged12 concurrent/64 solo CTA budgets, checkpoint and engines.
+Its NS2 reference exactly matches the earlier full-corpus default B1 candidate on every available
+field, confirming the baseline control. NS8 changes41 inputs: full tokens match13,150/13,191,
+timestamp tokens13,188/13,191, text13,196/13,232 and segments13,195/13,232. Speech edit deltas are
+Japanese0, English−2, German−1, French0, Russian+1, Spanish−1 and Chinese+2; no individual speech
+edit change exceeds2 units. Among13,195 outputs with comparable text/segmentation, one boundary
+moves20ms;37 incompatible outputs are excluded from that statistic. Three timestamp-token sequences
+change overall, and the full changed outputs remain in the artifact. Baseline flag totals remain
+unchanged. This is N evidence, not exact parity or a new latency result. No default changes follow:
+the earlier B1 streaming regression still applies, and large1B/translation/long-form coverage is pending.
 The `greedy_kernels` audit mode compares the public constructor's OFF/ON switch with shared
 loaded weights/engines and separate pipeline/session state. It records the resolved greedy settings,
 uses the same corpus/order/hash/resume checks and requires exact full outputs. The [102M drafted timestamp
