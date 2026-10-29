@@ -2,77 +2,111 @@
 
 This compares the existing public grouped cross-attention, compact-tail and fused-LSE preset against
 the optimized default on H200/1B, beam5 with timestamps. Upper-bound stopping and beam kernels are
-enabled in both variants. It introduces no new decoder kernels or default changes. The preset is N-class:
+enabled in both variants. No new decoder kernel or default is introduced. The preset remains N-class:
 the [13,232-input B3 audit](runtime-large-regression.md) retains238 changed inputs and mixed language
-edit-count changes. Exact output on a timing sample does not establish exactness on the full corpus.
+edit-count changes. Exact output on a timing sample does not establish full-corpus exactness.
 
-Seven-language coverage is in progress. The completed job below covers Spanish and Chinese only
-(64 unique input IDs, four conditions); the remaining ten language/shape conditions are not yet complete.
-The deterministic32-input-per-language sample is the same as the earlier expanded timing selection,
-balanced by duration/dataset and excluding prior screening overlap, nonspeech and recordings over30s.
-This is not an independent quality holdout or a corpus-weighted throughput estimate.
+All14 conditions and224 unique input IDs are complete across four successful allocations.
+Each language has32 deterministic duration/dataset-stratified speech inputs, excluding prior screening
+overlap, nonspeech and recordings over30s. The selection is unchanged from the original full-language
+attempt. This is neither an independent quality holdout nor a corpus-weighted throughput estimate.
 
-Each condition has seven alternating reference/candidate repeats after all used shapes are warmed.
-B1 measures individual requests; B3 sends32 inputs in one duration-sorted request, including the final
-B2 batch. B3 p50/p95 therefore describe the entire32-input request. Audio loading, model loading,
-warmup/capture and diagnostic decoder counts are outside the warm timing samples.
+Each condition retains seven alternating default/preset repeats in one successful allocation.
+B1 measures individual requests; B3 measures one duration-sorted32-input request, including the final
+B2 batch. B3 p50/p95 are therefore whole32-input request latency. Loading, initial warmup/capture and
+diagnostic decoder counts are separate from warm wall timing. Repeats are not extra audio inputs.
 
-## Completed Spanish/Chinese comparison
+|Languages|Validated job artifact|Unique inputs|Conditions|
+|---|---|---:|---:|
+|Spanish, Chinese|[Job2787704](runtime-expanded-beam-preset-2787704.json)|64|4|
+|German, French|[Job2792018](runtime-expanded-beam-preset-2792018.json)|64|4|
+|English, Japanese|[Job2792040](runtime-expanded-beam-preset-2792040.json)|64|4|
+|Russian|[Job2792068](runtime-expanded-beam-preset-2792068.json)|32|2|
 
-[Job2787704](runtime-expanded-beam-preset-2787704.json), frozen3bb1362, completed PBS F/exit0 and
-publication exit0. Stageout_status1 is recorded separately; all required artifacts were validated.
-The executable runtime tree0852 is identical to113ee39. All64 B1 default outputs also match the
-saved full-corpus B1 default control, with the same checkpoint/engines and executable runtime.
+Every listed job completed PBS F/exit0 and publication exit0. Stageout_status1 is recorded separately;
+required artifacts were verified. Frozen3bb1362 has the same runtime tree0852 as113ee39. Each B1 default
+output matches its saved full-corpus default control. Across jobs, checkpoint/engines remain identical;
+the physical allocation and frontend/cache history can differ. Paired gains compare variants within
+a condition, not unrelated jobs, and are not multiplied by earlier optimization percentages.
+
+## Warm paired results
 
 |Language / request|RTFx change|Default → preset p50 ms|Default → preset p95 ms|Positive repeat totals|
 |---|---:|---:|---:|---:|
+|German / B1 individual|+8.87%|33.359 →30.732|62.832 →57.605|7/7|
+|German / B3 whole32|+22.92%|809.628 →656.739|813.945 →662.998|7/7|
+|English / B1 individual|+9.16%|31.993 →29.335|82.337 →74.833|7/7|
+|English / B3 whole32|+21.30%|762.562 →629.484|767.509 →629.848|7/7|
+|French / B1 individual|+8.94%|38.290 →35.162|99.832 →91.149|7/7|
+|French / B3 whole32|+23.60%|956.338 →774.442|960.872 →775.244|7/7|
+|Japanese / B1 individual|+7.64%|28.740 →26.723|53.869 →49.736|7/7|
+|Japanese / B3 whole32|+23.36%|687.770 →557.836|690.911 →558.840|7/7|
+|Russian / B1 individual|+9.28%|42.587 →38.958|108.704 →98.897|7/7|
+|Russian / B3 whole32|+22.62%|1071.791 →873.375|1075.842 →879.021|7/7|
 |Spanish / B1 individual|+9.26%|43.597 →40.083|96.866 →88.250|7/7|
 |Spanish / B3 whole32|+24.22%|1064.957 →857.295|1067.735 →860.149|7/7|
 |Chinese / B1 individual|+8.80%|31.732 →29.214|78.485 →71.653|7/7|
 |Chinese / B3 whole32|+21.90%|787.023 →645.328|788.086 →647.178|7/7|
 
-All four conditions retain identical full tokens, timestamp sequences, text and segments across
-variants. All28 paired repeat totals improve; no outliers are removed. These are incremental gains
-over the optimized default for this existing preset, not whole-version gains or an additional factor
-to multiply by earlier optimization percentages.
+98/98 paired repeat totals improve in the completed conditions. All samples and outliers
+are retained. RTFx changes use pooled warm wall time. B1 percentiles pool32 inputs ×7 repeats, so
+their spread includes duration variation and does not describe224 independent inputs per language.
 
-|Language / request|Post-prefill decoder replays, both variants|Prefill selections per diagnostic pass|
+## Output and decoder checks
+
+|Changed condition|Token sequences|Timestamp sequences|Texts|Default → preset edit count / reference units|
+|---|---:|---:|---:|---:|
+|deu/beam_stream_ts_b3|2|0|2|33 →31 /575 (WER)|
+|eng/beam_stream_ts_b3|1|1|0|49 →49 /764 (WER)|
+|rus/beam_stream_ts_b3|2|1|1|68 →67 /648 (WER)|
+
+All unlisted conditions have identical full tokens, timestamp sequences, text and segments.
+Differences are retained in each raw `profile/LANGUAGE/CASE/tokens.json`, with file hashes and quality
+counts in the linked job artifacts. No human timestamp references are available: generated boundary
+agreement is not timestamp accuracy. These sampled changes do not reverse the full-corpus N findings.
+
+|Language / request|Default → preset post-prefill decoder replays|Prefill selections per diagnostic pass|
 |---|---:|---:|
-|spa / B1|1564|32|
-|spa / B3|672|11|
-|zho / B1|1116|32|
-|zho / B3|478|11|
+|deu/beam_single_ts|1140 →1140|32|
+|deu/beam_stream_ts_b3|494 →494|11|
+|eng/beam_single_ts|1108 →1108|32|
+|eng/beam_stream_ts_b3|470 →470|11|
+|fra/beam_single_ts|1356 →1356|32|
+|fra/beam_stream_ts_b3|606 →606|11|
+|jpn/beam_single_ts|920 →920|32|
+|jpn/beam_stream_ts_b3|417 →417|11|
+|rus/beam_single_ts|1575 →1575|32|
+|rus/beam_stream_ts_b3|688 →688|11|
+|spa/beam_single_ts|1564 →1564|32|
+|spa/beam_stream_ts_b3|672 →672|11|
+|zho/beam_single_ts|1116 →1116|32|
+|zho/beam_stream_ts_b3|478 →478|11|
 
-Decoder counts come from a separate untimed diagnostic pass. They exclude selection0 following
-prefill; zero draft-call counts in beam wall records are not beam decoder counts. The effective routes
-are Gluon for B1 in both variants and TensorRT→Gluon for B2/B3. The grouped preset uses additional
-tail graphs at B2/B3; compact-tail is inactive at B1. Dispatch and last-request tail transitions are
-retained in the artifact. They are not a complete kernel timeline or per-phase GPU timing.
+Counts come from an untimed diagnostic pass and exclude selection0 following prefill. Zero draft-call
+counts in beam wall records are not beam decoder counts. Effective routes are Gluon for both B1
+variants and TensorRT→Gluon at B2/B3. Tail compaction is inactive at B1; B2/B3 retain additional tail
+graphs and last-request transition metadata. These are not kernel timelines or per-phase GPU timings.
 
-Model load in this job is8.296s, excluding environment/corpus staging.
-Per-condition cold warmup and capture metadata remain separate. Both variant pools are resident;
-allocator peaks are the combined experiment footprint, not standalone deployment memory. Five-second
-GPU utilization samples span loading, warmup, timing and diagnostics, not individual variants.
+Per-job model loading and per-condition cold warmup/capture remain in the artifacts, outside warm
+latency. Both variant pools are resident, so allocator peaks describe the combined experiment, not
+standalone deployment memory. Five-second GPU utilization samples span all phases and variants.
 
-## Reproduction and allocation scope
+## Reproduction
 
-Run on a compute node with staged model, engines and corpus:
+Run only inside a compute allocation with staged model, engines and corpus:
 
 ```bash
 python scripts/profile_expanded_greedy.py --model MODEL --data LOCAL_CORPUS \
   --out LOCAL_RESULTS --comparison beam_preset --languages spa zho --repeat 7 --per-language 32
-python scripts/summarize_expanded_greedy.py outputs/runtime-2787704 \
-  --out docs/runtime-expanded-beam-preset-2787704.json
+python scripts/summarize_expanded_greedy.py outputs/runtime-JOB \
+  --out docs/runtime-expanded-beam-preset-JOB.json
 ```
 
-The PBS driver accepts`PROFILE_LANGUAGES=spa:zho`. Omitting the subset preserves the full seven-language
-selection. Twenty-four small metadata/aggregation fixtures pass. The temporary code worktree used to
-freeze the original runtime was removed after snapshot creation.
+Use the other subsets `deu fra`, `eng jpn`, and `rus` analogously. The PBS driver accepts colon-separated
+`PROFILE_LANGUAGES`; omission preserves full-language selection. Twenty-four small metadata/aggregation
+fixtures pass. The temporary source worktree was removed after immutable snapshots were saved.
 
-Short language-subset jobs replace a full14-condition run after two account-cap interruptions.
-Jobs2787353 and2787385 ended via quota cancellation with11/14 and9/14 completed condition records;
-their raw samples remain preserved but are not used in the completed-job results above. Each new
-condition must finish all seven paired repeats in one successful allocation. Across-language coverage
-will span separate allocations, with per-job source/GPU/cold/memory provenance. Frontend cache history
-can differ between subsets; per-language paired changes must not be presented as one global speedup.
-No human timestamp references are available, so generated boundary agreement is not timestamp accuracy.
+Jobs2787353 and2787385 were quota-interrupted with11/14 and9/14 completed condition records. Their raw
+samples remain preserved and are excluded from the successful subset results. No per-condition timing
+samples are spliced across jobs. The final collection retains per-job provenance and does not report a
+global multi-job speedup or a new production default.

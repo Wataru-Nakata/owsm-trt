@@ -1,0 +1,4280 @@
+{
+  "source": {
+    "group": "gai51740",
+    "queue": "R9920261300",
+    "resource": "rt_HG",
+    "nodes": 1,
+    "gpus": 1,
+    "walltime": "01:00:00",
+    "account_gpu_cap": 192,
+    "approval": "Standing serial1GPU authorization;fresh192/queue/no duplicate guard required.",
+    "model_name": "owsm_v4_medium_1B",
+    "experiment": "runtime_expanded_beam_preset",
+    "comparison": "beam_preset",
+    "expected_samples": 64,
+    "expected_conditions": 4,
+    "repeat": 7,
+    "per_language": 32,
+    "commit": "3bb13622eafef1715c3b63982a14f452780f3754",
+    "runtime_tree": "0852f348ec6e2b0b8b4e7a03acdfe6248b25eb6f",
+    "snapshot": "/groups/gai51740/acc12576tt/github.com/owsm_trt/outputs/runtime-expanded-beam-subset-eng-jpn-submit-01/snapshot-3bb13622.tar",
+    "status": "approved_not_submitted",
+    "approved_jobs": 1,
+    "additional_jobs_submitted": 0,
+    "prepared_at": "2026-10-28T13:28:13.522442+00:00",
+    "purpose": "Complete language-subset paired timing with7repeats; normalPBS/raw0 required. Same113ee39 executable runtime. No interrupted-job timing spliced.",
+    "classification": "N publicbeam preset; retain alloutputdifferences. Per-condition pairs remainwithinoneallocation; final coverage spansseparatejobs.",
+    "checks": "24 focusedmetadata/config tests,Ruff/bash/diff pass. Runtime tree identical0852 toprior113ee39.",
+    "prerequisite": "Complete13232 B3audit2787145/control validated; priorownjob2787385 confirmedF. Fresh192/queue/duplicate guard.",
+    "languages": [
+      "eng",
+      "jpn"
+    ]
+  },
+  "environment": {
+    "commit": "3bb13622eafef1715c3b63982a14f452780f3754",
+    "job": "2792040.pbs1",
+    "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+    "index_sha256": "213a5e54cf891cefdcfebffb4c2dbac392867f64bcecc9cc60c3bdf7e5057211",
+    "selection_sha256": "3bd8b48df8be4f5ccb8e4d9383870f277e66e48517736efaf28171c7805d2afe",
+    "engine_sha256": {
+      "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+      "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+      "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+    },
+    "gpu": "NVIDIA H200",
+    "cuda": "13.0",
+    "torch": "2.14.1+cu130",
+    "versions": {
+      "torch": "2.14.1",
+      "triton": "3.8.0",
+      "tensorrt": "11.4.0.106"
+    },
+    "nvidia_smi": "name, uuid, driver_version\nNVIDIA H200, GPU-3d7e685e-a387-0a02-c691-1ae118993479, 595.71.05",
+    "load_ms": 7038.126521976665,
+    "greedy_settings": {
+      "reference": {
+        "greedy_skip_finished": true,
+        "greedy_plain_solo": true,
+        "greedy_fused_select": true,
+        "greedy_split_choose": true,
+        "greedy_fuse_accept": true,
+        "greedy_reuse_notime": false,
+        "greedy_cache_draft_flags": true,
+        "greedy_lazy_verify_graphs": true,
+        "greedy_lazy_plain": true
+      },
+      "candidate": {
+        "greedy_skip_finished": true,
+        "greedy_plain_solo": true,
+        "greedy_fused_select": true,
+        "greedy_split_choose": true,
+        "greedy_fuse_accept": true,
+        "greedy_reuse_notime": false,
+        "greedy_cache_draft_flags": true,
+        "greedy_lazy_verify_graphs": true,
+        "greedy_lazy_plain": true
+      }
+    },
+    "draft_token_budgets": {
+      "reference": 256,
+      "candidate": 256
+    },
+    "frontend_batch_limits": {
+      "reference": 1,
+      "candidate": 1
+    },
+    "beam_settings": {
+      "reference": {
+        "beam_upper_bound": true,
+        "beam_kernels": true,
+        "beam_grouped_cross": false,
+        "beam_compact_tail": false,
+        "beam_fused_lse": false
+      },
+      "candidate": {
+        "beam_upper_bound": true,
+        "beam_kernels": true,
+        "beam_grouped_cross": true,
+        "beam_compact_tail": true,
+        "beam_fused_lse": true
+      }
+    },
+    "comparison": "beam_preset",
+    "classification": "N",
+    "cases": [
+      "beam_single_ts",
+      "beam_stream_ts_b3"
+    ],
+    "host_diagnostics": false,
+    "variant_order": [
+      "reference",
+      "candidate"
+    ],
+    "repeat": 7,
+    "per_language": 32,
+    "language_subset": [
+      "eng",
+      "jpn"
+    ],
+    "scope": "Uninstrumented warm request timing. N: public grouped cross/tail/LSE beam preset, optimized default control. Same engine/checkpoint. Balanced language/duration/dataset sample excluding prior screening overlap, nonspeech and long-form. Not corpus-weighted performance or an independent quality holdout. Loaded audio outside measured calls; cold/capture and diagnostic dispatch counts separate. Both session pools resident."
+  },
+  "scheduler": {
+    "job": "2792040.pbs1",
+    "state": "F",
+    "exit_status": 0,
+    "stageout_status": 1,
+    "project": "gai51740",
+    "queue": "R9920261300",
+    "resources": {
+      "fs_factor": 1,
+      "mem": "160gb",
+      "mpiprocs": 1,
+      "ncpus": 16,
+      "ngpus": 1,
+      "njobs_rt_HG": 1,
+      "nodect": 1,
+      "ompthreads": 1,
+      "place": "scatter",
+      "select": "1:ncpus=16:mem=160gb:ngpus=1:njobs_rt_HG=1",
+      "walltime": "01:00:00"
+    },
+    "resources_used": {
+      "cpupercent": 124,
+      "cput": "00:04:21",
+      "mem": "35095964kb",
+      "ncpus": 16,
+      "vmem": "338627684kb",
+      "walltime": "00:04:11"
+    },
+    "observed_at": "2026-10-29T03:41:52.473570+00:00"
+  },
+  "complete": {
+    "job": "2792040.pbs1",
+    "complete": true,
+    "conditions": 4,
+    "samples": 64,
+    "repeat": 7
+  },
+  "conditions": {
+    "eng/beam_single_ts": {
+      "variants": {
+        "reference": {
+          "request_wall_ms": {
+            "n": 224,
+            "p50": 31.993452925235033,
+            "p95": 82.33733390225098,
+            "minimum": 9.485129034146667,
+            "maximum": 92.20147295854986,
+            "stdev": 19.95100602014351,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 1178.0449703801423,
+            "p95": 1181.2462997855619,
+            "minimum": 1177.6412236504257,
+            "maximum": 1181.6377404611558,
+            "stdev": 1.4491303233633495,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 273.90054099467426,
+          "peak_allocated_bytes": 6897270784,
+          "draft_decoder_calls": 0
+        },
+        "candidate": {
+          "request_wall_ms": {
+            "n": 224,
+            "p50": 29.335001949220896,
+            "p95": 74.832885467913,
+            "minimum": 9.054105961695313,
+            "maximum": 83.75901100225747,
+            "stdev": 18.016733640245985,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 1079.2885730043054,
+            "p95": 1081.1424328479916,
+            "minimum": 1079.030120978132,
+            "maximum": 1081.1679132748395,
+            "stdev": 0.9562996642351939,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 299.00063042273257,
+          "peak_allocated_bytes": 6897270784,
+          "draft_decoder_calls": 0
+        }
+      },
+      "repeat_totals_ms": {
+        "reference": [
+          1181.6377404611558,
+          1180.332938209176,
+          1179.3572308961302,
+          1177.6412236504257,
+          1178.0449703801423,
+          1177.7750910259783,
+          1177.730330498889
+        ],
+        "candidate": [
+          1081.1679132748395,
+          1080.9360810089856,
+          1079.1799291037023,
+          1079.2885730043054,
+          1079.0628879331052,
+          1079.030120978132,
+          1081.0829785186797
+        ]
+      },
+      "paired_rtfx_change_percent": {
+        "samples": [
+          9.292712626107713,
+          9.195442630373641,
+          9.282724695929879,
+          9.112729728282588,
+          9.172966984031184,
+          9.15127095417272,
+          8.939864367547191
+        ],
+        "stats": {
+          "n": 7,
+          "p50": 9.172966984031184,
+          "p95": 9.289716247054363,
+          "minimum": 8.939864367547191,
+          "maximum": 9.292712626107713,
+          "stdev": 0.11003829113087851,
+          "percentile_method": "linear interpolation at (n-1)*q"
+        },
+        "positive_repeats": 7
+      },
+      "pooled_rtfx_change_percent": 9.163942990731933,
+      "request_median_comparisons": [
+        {
+          "ids": [
+            "fleurs_en_validation--en_us-4913562629825440299"
+          ],
+          "median_wall_ms": {
+            "reference": 26.94946201518178,
+            "candidate": 24.824469815939665
+          },
+          "rtfx_change_percent": 8.560070829297906
+        },
+        {
+          "ids": [
+            "librispeech_dev_other--4323-55228-0004"
+          ],
+          "median_wall_ms": {
+            "reference": 39.614479057490826,
+            "candidate": 36.232944810763
+          },
+          "rtfx_change_percent": 9.332761287797231
+        },
+        {
+          "ids": [
+            "librispeech_test_clean--3575-170457-0006"
+          ],
+          "median_wall_ms": {
+            "reference": 32.38257206976414,
+            "candidate": 29.672845033928752
+          },
+          "rtfx_change_percent": 9.132009528365103
+        },
+        {
+          "ids": [
+            "fleurs_en_validation--en_us-9909934339673808373"
+          ],
+          "median_wall_ms": {
+            "reference": 25.255339918658137,
+            "candidate": 23.336674086749554
+          },
+          "rtfx_change_percent": 8.221676425596524
+        },
+        {
+          "ids": [
+            "librispeech_dev_other--4831-25894-0030"
+          ],
+          "median_wall_ms": {
+            "reference": 47.179315937682986,
+            "candidate": 42.98649216070771
+          },
+          "rtfx_change_percent": 9.753816992789588
+        },
+        {
+          "ids": [
+            "librispeech_test_clean--5683-32866-0009"
+          ],
+          "median_wall_ms": {
+            "reference": 47.24560212343931,
+            "candidate": 43.09542593546212
+          },
+          "rtfx_change_percent": 9.630201112740643
+        },
+        {
+          "ids": [
+            "librispeech_dev_other--4572-112383-0000"
+          ],
+          "median_wall_ms": {
+            "reference": 9.537932928651571,
+            "candidate": 9.089040802791715
+          },
+          "rtfx_change_percent": 4.938828371438042
+        },
+        {
+          "ids": [
+            "librispeech_test_clean--7127-75947-0004"
+          ],
+          "median_wall_ms": {
+            "reference": 11.337080970406532,
+            "candidate": 10.706543223932385
+          },
+          "rtfx_change_percent": 5.88927474803167
+        },
+        {
+          "ids": [
+            "fleurs_en_validation--en_us-6733125851564557061"
+          ],
+          "median_wall_ms": {
+            "reference": 67.90067488327622,
+            "candidate": 61.879299115389585
+          },
+          "rtfx_change_percent": 9.73084028740898
+        },
+        {
+          "ids": [
+            "librispeech_dev_other--4572-112375-0009"
+          ],
+          "median_wall_ms": {
+            "reference": 82.37720304168761,
+            "candidate": 74.85835999250412
+          },
+          "rtfx_change_percent": 10.044092670392967
+        },
+        {
+          "ids": [
+            "librispeech_test_clean--7021-79759-0004"
+          ],
+          "median_wall_ms": {
+            "reference": 66.08449597842991,
+            "candidate": 60.22658199071884
+          },
+          "rtfx_change_percent": 9.726459304321477
+        },
+        {
+          "ids": [
+            "fleurs_en_validation--en_us-16834890005363592460"
+          ],
+          "median_wall_ms": {
+            "reference": 21.49461815133691,
+            "candidate": 19.91610089316964
+          },
+          "rtfx_change_percent": 7.925834813924992
+        },
+        {
+          "ids": [
+            "librispeech_dev_other--3915-57461-0023"
+          ],
+          "median_wall_ms": {
+            "reference": 16.89962507225573,
+            "candidate": 15.717094065621495
+          },
+          "rtfx_change_percent": 7.523852702649547
+        },
+        {
+          "ids": [
+            "librispeech_test_clean--5105-28240-0022"
+          ],
+          "median_wall_ms": {
+            "reference": 24.081711191684008,
+            "candidate": 22.24718895740807
+          },
+          "rtfx_change_percent": 8.246085551698702
+        },
+        {
+          "ids": [
+            "fleurs_en_validation--en_us-8840380835730314512"
+          ],
+          "median_wall_ms": {
+            "reference": 30.556580051779747,
+            "candidate": 28.03472988307476
+          },
+          "rtfx_change_percent": 8.995450212015378
+        },
+        {
+          "ids": [
+            "librispeech_dev_other--2506-11278-0005"
+          ],
+          "median_wall_ms": {
+            "reference": 35.09911801666021,
+            "candidate": 32.0985340513289
+          },
+          "rtfx_change_percent": 9.348040507186628
+        },
+        {
+          "ids": [
+            "librispeech_test_clean--2830-3980-0032"
+          ],
+          "median_wall_ms": {
+            "reference": 28.750820085406303,
+            "candidate": 26.406479999423027
+          },
+          "rtfx_change_percent": 8.877896963300302
+        },
+        {
+          "ids": [
+            "fleurs_en_validation--en_us-6840966447225121742"
+          ],
+          "median_wall_ms": {
+            "reference": 31.63356287404895,
+            "candidate": 29.03850795701146
+          },
+          "rtfx_change_percent": 8.936598674006246
+        },
+        {
+          "ids": [
+            "librispeech_dev_other--1630-141772-0015"
+          ],
+          "median_wall_ms": {
+            "reference": 49.19674014672637,
+            "candidate": 44.86829903908074
+          },
+          "rtfx_change_percent": 9.646991752184576
+        },
+        {
+          "ids": [
+            "librispeech_test_clean--2830-3980-0007"
+          ],
+          "median_wall_ms": {
+            "reference": 44.34845899231732,
+            "candidate": 40.48126912675798
+          },
+          "rtfx_change_percent": 9.553035141882793
+        },
+        {
+          "ids": [
+            "librispeech_dev_other--8288-274162-0062"
+          ],
+          "median_wall_ms": {
+            "reference": 12.198890093713999,
+            "candidate": 11.512557975947857
+          },
+          "rtfx_change_percent": 5.961595322256219
+        },
+        {
+          "ids": [
+            "librispeech_test_clean--8463-294828-0024"
+          ],
+          "median_wall_ms": {
+            "reference": 16.72362699173391,
+            "candidate": 15.594220021739602
+          },
+          "rtfx_change_percent": 7.242471687713925
+        },
+        {
+          "ids": [
+            "fleurs_en_validation--en_us-843704469654597326"
+          ],
+          "median_wall_ms": {
+            "reference": 59.37273986637592,
+            "candidate": 54.17013610713184
+          },
+          "rtfx_change_percent": 9.604191780051895
+        },
+        {
+          "ids": [
+            "librispeech_dev_other--5849-50873-0001"
+          ],
+          "median_wall_ms": {
+            "reference": 91.9324909336865,
+            "candidate": 83.60353112220764
+          },
+          "rtfx_change_percent": 9.962449790911322
+        },
+        {
+          "ids": [
+            "librispeech_test_clean--908-31957-0025"
+          ],
+          "median_wall_ms": {
+            "reference": 52.05179308541119,
+            "candidate": 47.509812051430345
+          },
+          "rtfx_change_percent": 9.560090511543295
+        },
+        {
+          "ids": [
+            "fleurs_en_validation--en_us-5710220425952785052"
+          ],
+          "median_wall_ms": {
+            "reference": 22.268668981269002,
+            "candidate": 20.62903600744903
+          },
+          "rtfx_change_percent": 7.948180289316031
+        },
+        {
+          "ids": [
+            "librispeech_dev_other--6841-88294-0037"
+          ],
+          "median_wall_ms": {
+            "reference": 14.145930064842105,
+            "candidate": 13.280959101393819
+          },
+          "rtfx_change_percent": 6.512865199302564
+        },
+        {
+          "ids": [
+            "librispeech_test_clean--6829-68769-0026"
+          ],
+          "median_wall_ms": {
+            "reference": 23.176800925284624,
+            "candidate": 21.442533936351538
+          },
+          "rtfx_change_percent": 8.087975955085147
+        },
+        {
+          "ids": [
+            "fleurs_en_validation--en_us-227756730022928180"
+          ],
+          "median_wall_ms": {
+            "reference": 28.760930988937616,
+            "candidate": 26.47182997316122
+          },
+          "rtfx_change_percent": 8.6473093023687
+        },
+        {
+          "ids": [
+            "librispeech_dev_other--116-288048-0030"
+          ],
+          "median_wall_ms": {
+            "reference": 36.93115897476673,
+            "candidate": 33.77502481453121
+          },
+          "rtfx_change_percent": 9.344579841367405
+        },
+        {
+          "ids": [
+            "librispeech_test_clean--7127-75947-0037"
+          ],
+          "median_wall_ms": {
+            "reference": 40.555241983383894,
+            "candidate": 37.07653493620455
+          },
+          "rtfx_change_percent": 9.382503120005548
+        },
+        {
+          "ids": [
+            "fleurs_en_validation--en_us-8091644035324618810"
+          ],
+          "median_wall_ms": {
+            "reference": 42.64938901178539,
+            "candidate": 39.030661806464195
+          },
+          "rtfx_change_percent": 9.271498452331816
+        }
+      ],
+      "requests_with_faster_candidate_median": 32,
+      "draft_call_differences": [],
+      "scope": "Single: per-input transcribe latency. Streaming: one complete multi-batch request. Pooled RTFx uses all warm wall samples; paired statistics use repeat totals. Draft-call counts are not all decoder steps. Memory includes both resident variant pools.",
+      "quality": {
+        "reference": {
+          "metric": "WER",
+          "reference_units": 764,
+          "errors": 49,
+          "rate": 0.06413612565445026,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "candidate": {
+          "metric": "WER",
+          "reference_units": 764,
+          "errors": 49,
+          "rate": 0.06413612565445026,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "cold": {
+        "reference": {
+          "warmup_ms": 14704.039785079658,
+          "captures": {
+            "(1, 5)": {
+              "encode": 18,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          },
+          "dispatch": {
+            "(1, 5)": {
+              "megakernel-gluon": 4
+            }
+          },
+          "allocated_delta_bytes": 4602758656,
+          "reserved_delta_bytes": 4655677440,
+          "frontend_graph": {
+            "captures": 18,
+            "max_entries": 32,
+            "max_batch": 1,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 24899400,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          }
+        },
+        "candidate": {
+          "warmup_ms": 15497.61231103912,
+          "captures": {
+            "(1, 5)": {
+              "encode": 18,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          },
+          "dispatch": {
+            "(1, 5)": {
+              "megakernel-gluon": 4
+            }
+          },
+          "allocated_delta_bytes": 579936768,
+          "reserved_delta_bytes": 513802240,
+          "frontend_graph": {
+            "captures": 18,
+            "max_entries": 32,
+            "max_batch": 1,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 24899400,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          }
+        }
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        }
+      },
+      "artifact_sha256": {
+        "cold.json": "d49bbbdbedd55819960f250152bb1b243ba480f8bb012d894efc6562f05855a9",
+        "tokens.json": "e45536c2a4d703906debca2dc586fcca94572218b34304959abe522063b26cdb",
+        "summary.json": "a24bea05daafdac3b2bf410a726f86308899532d5d2ae2c442b90fc278104dea",
+        "actual_dispatch_candidate.json": "91fc4688c8279797cfc71e333a0209d1888e4ca8d38b94da3f0f6adec1d33d6b",
+        "wall.json": "c4f3ea5b120fb3b948bd1b280d5a35734f5111f31f1125c588641e4ba1a3303e",
+        "actual_dispatch_reference.json": "b0a4f4e6b5e2782eb52d4c26ded25b10155f89afc30667effa9048be81eca039"
+      },
+      "beam_decoder_diagnostics": {
+        "reference": {
+          "decoder_calls": 1108,
+          "prefill_selections": 32,
+          "batches": [
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 24,
+              "output_lengths": [
+                24
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 38,
+              "output_lengths": [
+                38
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 30,
+              "output_lengths": [
+                30
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 22,
+              "output_lengths": [
+                22
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 46,
+              "output_lengths": [
+                46
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 46,
+              "output_lengths": [
+                46
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 5,
+              "output_lengths": [
+                5
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 7,
+              "output_lengths": [
+                7
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 68,
+              "output_lengths": [
+                68
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 83,
+              "output_lengths": [
+                82
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 66,
+              "output_lengths": [
+                66
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 18,
+              "output_lengths": [
+                18
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 13,
+              "output_lengths": [
+                13
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 21,
+              "output_lengths": [
+                21
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 28,
+              "output_lengths": [
+                28
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 33,
+              "output_lengths": [
+                33
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 26,
+              "output_lengths": [
+                26
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 29,
+              "output_lengths": [
+                29
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 48,
+              "output_lengths": [
+                48
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 43,
+              "output_lengths": [
+                43
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 8,
+              "output_lengths": [
+                8
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 13,
+              "output_lengths": [
+                13
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 59,
+              "output_lengths": [
+                58
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 93,
+              "output_lengths": [
+                92
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 51,
+              "output_lengths": [
+                51
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 19,
+              "output_lengths": [
+                19
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 10,
+              "output_lengths": [
+                10
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 20,
+              "output_lengths": [
+                20
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 26,
+              "output_lengths": [
+                26
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 35,
+              "output_lengths": [
+                35
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 39,
+              "output_lengths": [
+                39
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 41,
+              "output_lengths": [
+                41
+              ]
+            }
+          ],
+          "sessions": {
+            "(1, 5)": {
+              "dispatch": {
+                "64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                }
+              },
+              "fused_lse": false,
+              "compact_tail": false,
+              "chunk": 1,
+              "last_request_tail_start": null
+            }
+          },
+          "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads. Beam decoder_calls counts post-prefill decoder replays; selection0 after prefill is separate."
+        },
+        "candidate": {
+          "decoder_calls": 1108,
+          "prefill_selections": 32,
+          "batches": [
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 24,
+              "output_lengths": [
+                24
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 38,
+              "output_lengths": [
+                38
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 30,
+              "output_lengths": [
+                30
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 22,
+              "output_lengths": [
+                22
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 46,
+              "output_lengths": [
+                46
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 46,
+              "output_lengths": [
+                46
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 5,
+              "output_lengths": [
+                5
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 7,
+              "output_lengths": [
+                7
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 68,
+              "output_lengths": [
+                68
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 83,
+              "output_lengths": [
+                82
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 66,
+              "output_lengths": [
+                66
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 18,
+              "output_lengths": [
+                18
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 13,
+              "output_lengths": [
+                13
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 21,
+              "output_lengths": [
+                21
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 28,
+              "output_lengths": [
+                28
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 33,
+              "output_lengths": [
+                33
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 26,
+              "output_lengths": [
+                26
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 29,
+              "output_lengths": [
+                29
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 48,
+              "output_lengths": [
+                48
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 43,
+              "output_lengths": [
+                43
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 8,
+              "output_lengths": [
+                8
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 13,
+              "output_lengths": [
+                13
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 59,
+              "output_lengths": [
+                58
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 93,
+              "output_lengths": [
+                92
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 51,
+              "output_lengths": [
+                51
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 19,
+              "output_lengths": [
+                19
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 10,
+              "output_lengths": [
+                10
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 20,
+              "output_lengths": [
+                20
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 26,
+              "output_lengths": [
+                26
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 35,
+              "output_lengths": [
+                35
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 39,
+              "output_lengths": [
+                39
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 41,
+              "output_lengths": [
+                41
+              ]
+            }
+          ],
+          "sessions": {
+            "(1, 5)": {
+              "dispatch": {
+                "64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                }
+              },
+              "fused_lse": true,
+              "compact_tail": false,
+              "chunk": 1,
+              "last_request_tail_start": null
+            }
+          },
+          "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads. Beam decoder_calls counts post-prefill decoder replays; selection0 after prefill is separate."
+        }
+      }
+    },
+    "eng/beam_stream_ts_b3": {
+      "variants": {
+        "reference": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 762.5621659681201,
+            "p95": 767.509353091009,
+            "minimum": 762.0608890429139,
+            "maximum": 769.3687530700117,
+            "stdev": 2.4158658657901713,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 762.5621659681201,
+            "p95": 767.509353091009,
+            "minimum": 762.0608890429139,
+            "maximum": 769.3687530700117,
+            "stdev": 2.4158658657901713,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 422.92844816537047,
+          "peak_allocated_bytes": 12245422080,
+          "draft_decoder_calls": 0
+        },
+        "candidate": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 629.4838460162282,
+            "p95": 629.8477223608643,
+            "minimum": 628.7975411396474,
+            "maximum": 629.8933820798993,
+            "stdev": 0.32502225386032363,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 629.4838460162282,
+            "p95": 629.8477223608643,
+            "minimum": 628.7975411396474,
+            "maximum": 629.8933820798993,
+            "stdev": 0.32502225386032363,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 512.9976463118523,
+          "peak_allocated_bytes": 12244678656,
+          "draft_decoder_calls": 0
+        }
+      },
+      "repeat_totals_ms": {
+        "reference": [
+          769.3687530700117,
+          762.3433149419725,
+          762.0608890429139,
+          763.1707531400025,
+          762.268670136109,
+          762.7927730791271,
+          762.5621659681201
+        ],
+        "candidate": [
+          629.8933820798993,
+          629.7411830164492,
+          629.4838460162282,
+          629.3020201846957,
+          629.5470879413188,
+          629.4336400460452,
+          628.7975411396474
+        ]
+      },
+      "paired_rtfx_change_percent": {
+        "samples": [
+          22.14269509064639,
+          21.056607936987916,
+          21.061230381957706,
+          21.272573209921887,
+          21.08207388089156,
+          21.18716327639023,
+          21.273083318047735
+        ],
+        "stats": {
+          "n": 7,
+          "p50": 21.18716327639023,
+          "p95": 21.881811558866794,
+          "minimum": 21.056607936987916,
+          "maximum": 22.14269509064639,
+          "stdev": 0.35617011138488064,
+          "percentile_method": "linear interpolation at (n-1)*q"
+        },
+        "positive_repeats": 7
+      },
+      "pooled_rtfx_change_percent": 21.29655702689068,
+      "request_median_comparisons": [
+        {
+          "ids": [
+            "fleurs_en_validation--en_us-4913562629825440299",
+            "librispeech_dev_other--4323-55228-0004",
+            "librispeech_test_clean--3575-170457-0006",
+            "fleurs_en_validation--en_us-9909934339673808373",
+            "librispeech_dev_other--4831-25894-0030",
+            "librispeech_test_clean--5683-32866-0009",
+            "librispeech_dev_other--4572-112383-0000",
+            "librispeech_test_clean--7127-75947-0004",
+            "fleurs_en_validation--en_us-6733125851564557061",
+            "librispeech_dev_other--4572-112375-0009",
+            "librispeech_test_clean--7021-79759-0004",
+            "fleurs_en_validation--en_us-16834890005363592460",
+            "librispeech_dev_other--3915-57461-0023",
+            "librispeech_test_clean--5105-28240-0022",
+            "fleurs_en_validation--en_us-8840380835730314512",
+            "librispeech_dev_other--2506-11278-0005",
+            "librispeech_test_clean--2830-3980-0032",
+            "fleurs_en_validation--en_us-6840966447225121742",
+            "librispeech_dev_other--1630-141772-0015",
+            "librispeech_test_clean--2830-3980-0007",
+            "librispeech_dev_other--8288-274162-0062",
+            "librispeech_test_clean--8463-294828-0024",
+            "fleurs_en_validation--en_us-843704469654597326",
+            "librispeech_dev_other--5849-50873-0001",
+            "librispeech_test_clean--908-31957-0025",
+            "fleurs_en_validation--en_us-5710220425952785052",
+            "librispeech_dev_other--6841-88294-0037",
+            "librispeech_test_clean--6829-68769-0026",
+            "fleurs_en_validation--en_us-227756730022928180",
+            "librispeech_dev_other--116-288048-0030",
+            "librispeech_test_clean--7127-75947-0037",
+            "fleurs_en_validation--en_us-8091644035324618810"
+          ],
+          "median_wall_ms": {
+            "reference": 762.5621659681201,
+            "candidate": 629.4838460162282
+          },
+          "rtfx_change_percent": 21.14086339055332
+        }
+      ],
+      "requests_with_faster_candidate_median": 1,
+      "draft_call_differences": [],
+      "scope": "Single: per-input transcribe latency. Streaming: one complete multi-batch request. Pooled RTFx uses all warm wall samples; paired statistics use repeat totals. Draft-call counts are not all decoder steps. Memory includes both resident variant pools.",
+      "quality": {
+        "reference": {
+          "metric": "WER",
+          "reference_units": 764,
+          "errors": 49,
+          "rate": 0.06413612565445026,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "candidate": {
+          "metric": "WER",
+          "reference_units": 764,
+          "errors": 49,
+          "rate": 0.06413612565445026,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "cold": {
+        "reference": {
+          "warmup_ms": 8110.966949025169,
+          "captures": {
+            "(3, 5)": {
+              "encode": 9,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(2, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          },
+          "dispatch": {
+            "(3, 5)": {
+              "tensorrt: shape limit": 4
+            },
+            "(2, 5)": {
+              "tensorrt: shape limit": 4
+            }
+          },
+          "allocated_delta_bytes": 3567798272,
+          "reserved_delta_bytes": 5412749312,
+          "frontend_graph": {
+            "captures": 18,
+            "max_entries": 32,
+            "max_batch": 1,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 24899400,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          }
+        },
+        "candidate": {
+          "warmup_ms": 70767.77704083361,
+          "captures": {
+            "(3, 5)": {
+              "encode": 9,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(2, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          },
+          "dispatch": {
+            "(3, 5)": {
+              "megakernel-gluon": 4
+            },
+            "(2, 5)": {
+              "megakernel-gluon": 4
+            }
+          },
+          "allocated_delta_bytes": 2895408128,
+          "reserved_delta_bytes": 2938109952,
+          "frontend_graph": {
+            "captures": 18,
+            "max_entries": 32,
+            "max_batch": 1,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 24899400,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          }
+        }
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 31,
+          "total": 32,
+          "different_ids": [
+            "librispeech_dev_other--5849-50873-0001"
+          ]
+        },
+        "timestamp_tokens": {
+          "equal": 31,
+          "total": 32,
+          "different_ids": [
+            "librispeech_dev_other--5849-50873-0001"
+          ]
+        },
+        "segments": {
+          "equal": 31,
+          "total": 32,
+          "different_ids": [
+            "librispeech_dev_other--5849-50873-0001"
+          ]
+        },
+        "text": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        }
+      },
+      "artifact_sha256": {
+        "cold.json": "0683081e8ce4967b057b965628c3f4adc96de77fe5b2818613c625c3c9dcfac7",
+        "tokens.json": "20a28c519e9c5a1eb5545553bae38c7aa5746bffd342cba459804177762dcfac",
+        "summary.json": "0eab88102b172d2a4a8f8ec254f8d6184c29fb9737379bcd44f031822d818480",
+        "actual_dispatch_candidate.json": "5bfeed0d4038dbc49190e33d64e9a330769971abecdb5e90da003ad21e3491a3",
+        "wall.json": "3f928b31092caaeb09032deb24f9cb19405f330439d797c94638a2a42dadfdaa",
+        "actual_dispatch_reference.json": "0ba3970513d00b5d6f3af973732f391f9a00c3dfda9d3f2976549f4922e5f57a"
+      },
+      "beam_decoder_diagnostics": {
+        "reference": {
+          "decoder_calls": 470,
+          "prefill_selections": 11,
+          "batches": [
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 8,
+              "output_lengths": [
+                5,
+                8,
+                7
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 16,
+              "output_lengths": [
+                13,
+                10,
+                13
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 24,
+              "output_lengths": [
+                19,
+                20,
+                21
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 40,
+              "output_lengths": [
+                18,
+                38,
+                26
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 36,
+              "output_lengths": [
+                33,
+                28,
+                35
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 40,
+              "output_lengths": [
+                30,
+                26,
+                39
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 44,
+              "output_lengths": [
+                24,
+                22,
+                43
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 48,
+              "output_lengths": [
+                29,
+                46,
+                41
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 52,
+              "output_lengths": [
+                46,
+                48,
+                51
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 69,
+              "output_lengths": [
+                58,
+                68,
+                66
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 10,
+              "primer_length": 3,
+              "decoder_calls": 93,
+              "output_lengths": [
+                92,
+                82
+              ]
+            }
+          ],
+          "sessions": {
+            "(3, 5)": {
+              "dispatch": {
+                "64": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "128": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "256": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "512": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                }
+              },
+              "fused_lse": false,
+              "compact_tail": false,
+              "chunk": 4,
+              "last_request_tail_start": null
+            },
+            "(2, 5)": {
+              "dispatch": {
+                "64": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "128": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "256": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "512": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                }
+              },
+              "fused_lse": false,
+              "compact_tail": false,
+              "chunk": 4,
+              "last_request_tail_start": null
+            }
+          },
+          "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads. Beam decoder_calls counts post-prefill decoder replays; selection0 after prefill is separate."
+        },
+        "candidate": {
+          "decoder_calls": 470,
+          "prefill_selections": 11,
+          "batches": [
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 8,
+              "output_lengths": [
+                5,
+                8,
+                7
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 16,
+              "output_lengths": [
+                13,
+                10,
+                13
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 24,
+              "output_lengths": [
+                19,
+                20,
+                21
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 40,
+              "output_lengths": [
+                18,
+                38,
+                26
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 36,
+              "output_lengths": [
+                33,
+                28,
+                35
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 40,
+              "output_lengths": [
+                30,
+                26,
+                39
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 44,
+              "output_lengths": [
+                24,
+                22,
+                43
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 48,
+              "output_lengths": [
+                29,
+                46,
+                41
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 52,
+              "output_lengths": [
+                46,
+                48,
+                51
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 69,
+              "output_lengths": [
+                58,
+                68,
+                66
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 10,
+              "primer_length": 3,
+              "decoder_calls": 93,
+              "output_lengths": [
+                92,
+                82
+              ]
+            }
+          ],
+          "sessions": {
+            "(3, 5)": {
+              "dispatch": {
+                "64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=2/cache=64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=2/cache=128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=2/cache=256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=2/cache=512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                }
+              },
+              "fused_lse": true,
+              "compact_tail": true,
+              "chunk": 4,
+              "last_request_tail_start": null
+            },
+            "(2, 5)": {
+              "dispatch": {
+                "64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                }
+              },
+              "fused_lse": true,
+              "compact_tail": true,
+              "chunk": 4,
+              "last_request_tail_start": [
+                0,
+                85
+              ]
+            }
+          },
+          "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads. Beam decoder_calls counts post-prefill decoder replays; selection0 after prefill is separate."
+        }
+      }
+    },
+    "jpn/beam_single_ts": {
+      "variants": {
+        "reference": {
+          "request_wall_ms": {
+            "n": 224,
+            "p50": 28.74022489413619,
+            "p95": 53.868900204543024,
+            "minimum": 9.49440198019147,
+            "maximum": 73.76681501045823,
+            "stdev": 14.224191822500874,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 1004.2623090557754,
+            "p95": 1005.6005197810009,
+            "minimum": 1004.1048042476177,
+            "maximum": 1006.1097978614271,
+            "stdev": 0.6539467268851216,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 307.94471785550036,
+          "peak_allocated_bytes": 6902958080,
+          "draft_decoder_calls": 0
+        },
+        "candidate": {
+          "request_wall_ms": {
+            "n": 224,
+            "p50": 26.7226395662874,
+            "p95": 49.73631410393864,
+            "minimum": 9.11011011339724,
+            "maximum": 67.85569502972066,
+            "stdev": 13.018476893887675,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 933.091675164178,
+            "p95": 933.8629173114896,
+            "minimum": 932.6038502622396,
+            "maximum": 933.9769051875919,
+            "stdev": 0.4694674644118807,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 331.4836886866913,
+          "peak_allocated_bytes": 6902958080,
+          "draft_decoder_calls": 0
+        }
+      },
+      "repeat_totals_ms": {
+        "reference": [
+          1006.1097978614271,
+          1004.1048042476177,
+          1004.1954747866839,
+          1004.3162377551198,
+          1004.2575735133141,
+          1004.2623090557754,
+          1004.4122042600065
+        ],
+        "candidate": [
+          933.0281496513635,
+          933.4177146665752,
+          933.5969456005841,
+          933.9769051875919,
+          932.6038502622396,
+          933.091675164178,
+          932.6184350065887
+        ]
+      },
+      "paired_rtfx_change_percent": {
+        "samples": [
+          7.832737762239161,
+          7.572932082855588,
+          7.561992305007337,
+          7.531164012390645,
+          7.683189730658535,
+          7.627399942141255,
+          7.698086008015759
+        ],
+        "stats": {
+          "n": 7,
+          "p50": 7.627399942141255,
+          "p95": 7.79234223597214,
+          "minimum": 7.531164012390645,
+          "maximum": 7.832737762239161,
+          "stdev": 0.09626338244756333,
+          "percentile_method": "linear interpolation at (n-1)*q"
+        },
+        "positive_repeats": 7
+      },
+      "pooled_rtfx_change_percent": 7.643894980603738,
+      "request_median_comparisons": [
+        {
+          "ids": [
+            "fleurs_ja_validation--ja_jp-3171694045962175263"
+          ],
+          "median_wall_ms": {
+            "reference": 23.288075113669038,
+            "candidate": 21.73659298568964
+          },
+          "rtfx_change_percent": 7.137650914293792
+        },
+        {
+          "ids": [
+            "jvs_nonpara90--jvs083-BASIC5000_2066"
+          ],
+          "median_wall_ms": {
+            "reference": 18.765290966257453,
+            "candidate": 17.60097499936819
+          },
+          "rtfx_change_percent": 6.615065170713885
+        },
+        {
+          "ids": [
+            "jvs_parallel10--jvs009-VOICEACTRESS100_052"
+          ],
+          "median_wall_ms": {
+            "reference": 30.58762103319168,
+            "candidate": 28.422272065654397
+          },
+          "rtfx_change_percent": 7.618493562145234
+        },
+        {
+          "ids": [
+            "fleurs_ja_validation--ja_jp-17595107070656151202"
+          ],
+          "median_wall_ms": {
+            "reference": 52.70156404003501,
+            "candidate": 48.69449092075229
+          },
+          "rtfx_change_percent": 8.22900710843044
+        },
+        {
+          "ids": [
+            "jvs_nonpara90--jvs042-BASIC5000_3007"
+          ],
+          "median_wall_ms": {
+            "reference": 40.69153987802565,
+            "candidate": 37.69814921543002
+          },
+          "rtfx_change_percent": 7.940418097157997
+        },
+        {
+          "ids": [
+            "jvs_parallel10--jvs005-VOICEACTRESS100_084"
+          ],
+          "median_wall_ms": {
+            "reference": 38.94147998653352,
+            "candidate": 36.017563892528415
+          },
+          "rtfx_change_percent": 8.118028478354834
+        },
+        {
+          "ids": [
+            "jvs_nonpara90--jvs009-TRAVEL1000_0787"
+          ],
+          "median_wall_ms": {
+            "reference": 9.526780107989907,
+            "candidate": 9.126368910074234
+          },
+          "rtfx_change_percent": 4.38740973393783
+        },
+        {
+          "ids": [
+            "jvs_parallel10--jvs009-VOICEACTRESS100_095"
+          ],
+          "median_wall_ms": {
+            "reference": 9.517058031633496,
+            "candidate": 9.119166061282158
+          },
+          "rtfx_change_percent": 4.363249530466318
+        },
+        {
+          "ids": [
+            "fleurs_ja_validation--ja_jp-2099970133610103443"
+          ],
+          "median_wall_ms": {
+            "reference": 44.91619602777064,
+            "candidate": 41.458443040028214
+          },
+          "rtfx_change_percent": 8.340286644155825
+        },
+        {
+          "ids": [
+            "jvs_nonpara90--jvs018-BASIC5000_2161"
+          ],
+          "median_wall_ms": {
+            "reference": 42.06515196710825,
+            "candidate": 38.95598603412509
+          },
+          "rtfx_change_percent": 7.981227661031509
+        },
+        {
+          "ids": [
+            "jvs_nonpara90--jvs021-TRAVEL1000_0045"
+          ],
+          "median_wall_ms": {
+            "reference": 15.998058952391148,
+            "candidate": 15.03224391490221
+          },
+          "rtfx_change_percent": 6.424955867909232
+        },
+        {
+          "ids": [
+            "jvs_parallel10--jvs008-VOICEACTRESS100_091"
+          ],
+          "median_wall_ms": {
+            "reference": 24.116657907143235,
+            "candidate": 22.486140951514244
+          },
+          "rtfx_change_percent": 7.251208462780667
+        },
+        {
+          "ids": [
+            "fleurs_ja_validation--ja_jp-6522611377317710498"
+          ],
+          "median_wall_ms": {
+            "reference": 29.643653891980648,
+            "candidate": 27.584578143432736
+          },
+          "rtfx_change_percent": 7.46459031507114
+        },
+        {
+          "ids": [
+            "jvs_nonpara90--jvs048-BASIC5000_2389"
+          ],
+          "median_wall_ms": {
+            "reference": 26.916474103927612,
+            "candidate": 25.126728927716613
+          },
+          "rtfx_change_percent": 7.122873738796853
+        },
+        {
+          "ids": [
+            "jvs_parallel10--jvs001-VOICEACTRESS100_029"
+          ],
+          "median_wall_ms": {
+            "reference": 35.118818981572986,
+            "candidate": 32.57899894379079
+          },
+          "rtfx_change_percent": 7.79588115081189
+        },
+        {
+          "ids": [
+            "fleurs_ja_validation--ja_jp-1819289275454271168"
+          ],
+          "median_wall_ms": {
+            "reference": 39.07190402969718,
+            "candidate": 36.1566380597651
+          },
+          "rtfx_change_percent": 8.06287897982465
+        },
+        {
+          "ids": [
+            "jvs_nonpara90--jvs080-BASIC5000_3053"
+          ],
+          "median_wall_ms": {
+            "reference": 44.3460289388895,
+            "candidate": 41.01672489196062
+          },
+          "rtfx_change_percent": 8.116942675697224
+        },
+        {
+          "ids": [
+            "jvs_parallel10--jvs009-VOICEACTRESS100_005"
+          ],
+          "median_wall_ms": {
+            "reference": 37.19988209195435,
+            "candidate": 34.510164987295866
+          },
+          "rtfx_change_percent": 7.793985063962006
+        },
+        {
+          "ids": [
+            "jvs_nonpara90--jvs009-BASIC5000_2571"
+          ],
+          "median_wall_ms": {
+            "reference": 10.416728910058737,
+            "candidate": 9.942063828930259
+          },
+          "rtfx_change_percent": 4.774311343156512
+        },
+        {
+          "ids": [
+            "fleurs_ja_validation--ja_jp-5116751292495283703"
+          ],
+          "median_wall_ms": {
+            "reference": 53.88897215016186,
+            "candidate": 49.7732840012759
+          },
+          "rtfx_change_percent": 8.26887000018015
+        },
+        {
+          "ids": [
+            "jvs_nonpara90--jvs023-BASIC5000_1027"
+          ],
+          "median_wall_ms": {
+            "reference": 15.979672083631158,
+            "candidate": 15.049090143293142
+          },
+          "rtfx_change_percent": 6.183642542354928
+        },
+        {
+          "ids": [
+            "jvs_parallel10--jvs003-VOICEACTRESS100_055"
+          ],
+          "median_wall_ms": {
+            "reference": 25.93279001303017,
+            "candidate": 24.1599939763546
+          },
+          "rtfx_change_percent": 7.337733769348653
+        },
+        {
+          "ids": [
+            "fleurs_ja_validation--ja_jp-14672974986823750874"
+          ],
+          "median_wall_ms": {
+            "reference": 25.13486216776073,
+            "candidate": 23.44244299456477
+          },
+          "rtfx_change_percent": 7.219465878997133
+        },
+        {
+          "ids": [
+            "jvs_nonpara90--jvs003-UT-PARAPHRASE-sent239-phrase2"
+          ],
+          "median_wall_ms": {
+            "reference": 21.487574791535735,
+            "candidate": 20.118358079344034
+          },
+          "rtfx_change_percent": 6.805807446073375
+        },
+        {
+          "ids": [
+            "jvs_parallel10--jvs005-VOICEACTRESS100_057"
+          ],
+          "median_wall_ms": {
+            "reference": 27.75465906597674,
+            "candidate": 25.881336070597172
+          },
+          "rtfx_change_percent": 7.238123218483228
+        },
+        {
+          "ids": [
+            "fleurs_ja_validation--ja_jp-1286876112474128683"
+          ],
+          "median_wall_ms": {
+            "reference": 44.59419613704085,
+            "candidate": 41.279369965195656
+          },
+          "rtfx_change_percent": 8.030224721549928
+        },
+        {
+          "ids": [
+            "jvs_nonpara90--jvs066-BASIC5000_1954"
+          ],
+          "median_wall_ms": {
+            "reference": 42.64012584462762,
+            "candidate": 39.467972004786134
+          },
+          "rtfx_change_percent": 8.037286130274968
+        },
+        {
+          "ids": [
+            "jvs_parallel10--jvs009-VOICEACTRESS100_097"
+          ],
+          "median_wall_ms": {
+            "reference": 35.28528194874525,
+            "candidate": 32.70721295848489
+          },
+          "rtfx_change_percent": 7.882264360258073
+        },
+        {
+          "ids": [
+            "fleurs_ja_validation--ja_jp-8681003617933384964"
+          ],
+          "median_wall_ms": {
+            "reference": 73.63003096543252,
+            "candidate": 67.73600890301168
+          },
+          "rtfx_change_percent": 8.701460505091529
+        },
+        {
+          "ids": [
+            "jvs_nonpara90--jvs041-BASIC5000_1011"
+          ],
+          "median_wall_ms": {
+            "reference": 15.987366903573275,
+            "candidate": 15.040868893265724
+          },
+          "rtfx_change_percent": 6.292841304742236
+        },
+        {
+          "ids": [
+            "jvs_parallel10--jvs004-VOICEACTRESS100_040"
+          ],
+          "median_wall_ms": {
+            "reference": 25.99893999285996,
+            "candidate": 24.216118967160583
+          },
+          "rtfx_change_percent": 7.362125318747625
+        },
+        {
+          "ids": [
+            "fleurs_ja_validation--ja_jp-16626033026082560289"
+          ],
+          "median_wall_ms": {
+            "reference": 22.418524837121367,
+            "candidate": 20.959216868504882
+          },
+          "rtfx_change_percent": 6.962607323412762
+        }
+      ],
+      "requests_with_faster_candidate_median": 32,
+      "draft_call_differences": [],
+      "scope": "Single: per-input transcribe latency. Streaming: one complete multi-batch request. Pooled RTFx uses all warm wall samples; paired statistics use repeat totals. Draft-call counts are not all decoder steps. Memory includes both resident variant pools.",
+      "quality": {
+        "reference": {
+          "metric": "CER",
+          "reference_units": 1262,
+          "errors": 167,
+          "rate": 0.13232963549920762,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "candidate": {
+          "metric": "CER",
+          "reference_units": 1262,
+          "errors": 167,
+          "rate": 0.13232963549920762,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "cold": {
+        "reference": {
+          "warmup_ms": 4599.811498075724,
+          "captures": {
+            "(1, 5)": {
+              "encode": 18,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          },
+          "dispatch": {
+            "(1, 5)": {
+              "megakernel-gluon": 4
+            }
+          },
+          "allocated_delta_bytes": 582573056,
+          "reserved_delta_bytes": 369098752,
+          "frontend_graph": {
+            "captures": 22,
+            "max_entries": 32,
+            "max_batch": 1,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 31815000,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          }
+        },
+        "candidate": {
+          "warmup_ms": 4476.969448849559,
+          "captures": {
+            "(1, 5)": {
+              "encode": 18,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          },
+          "dispatch": {
+            "(1, 5)": {
+              "megakernel-gluon": 4
+            }
+          },
+          "allocated_delta_bytes": 579043328,
+          "reserved_delta_bytes": 524288000,
+          "frontend_graph": {
+            "captures": 22,
+            "max_entries": 32,
+            "max_batch": 1,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 31815000,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          }
+        }
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        }
+      },
+      "artifact_sha256": {
+        "cold.json": "f0f2f99df350fb43d83e132551fca2e81d0e22e691872b278d1e7c451ec7b25d",
+        "tokens.json": "68165cdea36c927dc93fa0a7dc4ee140a44ae8b3314fadb836cd6706d11700f8",
+        "summary.json": "c361850b02acb60fac7557ef6fa0c7ac5c55c9ac5a5e49ca0b549c7597a40cd5",
+        "actual_dispatch_candidate.json": "10ecceb4348a2f9f6a98d2ed10d1bb58a4bd4798c50dc3495b5b6d3d8dae6828",
+        "wall.json": "25f8c062bb22ded978fd99a1c9dc37c96989ba6bd7f6d575307122046caac8dd",
+        "actual_dispatch_reference.json": "47868cf9f793eb843f4ecd4c10dcf9527a73e3ad4e5cca7d57b058dc031e6a8d"
+      },
+      "beam_decoder_diagnostics": {
+        "reference": {
+          "decoder_calls": 920,
+          "prefill_selections": 32,
+          "batches": [
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 20,
+              "output_lengths": [
+                20
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 15,
+              "output_lengths": [
+                15
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 28,
+              "output_lengths": [
+                28
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 52,
+              "output_lengths": [
+                52
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 39,
+              "output_lengths": [
+                39
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 37,
+              "output_lengths": [
+                37
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 5,
+              "output_lengths": [
+                5
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 5,
+              "output_lengths": [
+                5
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 43,
+              "output_lengths": [
+                43
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 40,
+              "output_lengths": [
+                40
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 12,
+              "output_lengths": [
+                12
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 21,
+              "output_lengths": [
+                21
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 27,
+              "output_lengths": [
+                27
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 24,
+              "output_lengths": [
+                24
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 33,
+              "output_lengths": [
+                33
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 37,
+              "output_lengths": [
+                37
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 43,
+              "output_lengths": [
+                43
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 35,
+              "output_lengths": [
+                35
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 6,
+              "output_lengths": [
+                6
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 53,
+              "output_lengths": [
+                53
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 12,
+              "output_lengths": [
+                12
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 23,
+              "output_lengths": [
+                23
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 22,
+              "output_lengths": [
+                22
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 18,
+              "output_lengths": [
+                18
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 25,
+              "output_lengths": [
+                25
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 43,
+              "output_lengths": [
+                43
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 41,
+              "output_lengths": [
+                41
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 33,
+              "output_lengths": [
+                33
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 74,
+              "output_lengths": [
+                74
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 12,
+              "output_lengths": [
+                12
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 23,
+              "output_lengths": [
+                23
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 19,
+              "output_lengths": [
+                19
+              ]
+            }
+          ],
+          "sessions": {
+            "(1, 5)": {
+              "dispatch": {
+                "64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                }
+              },
+              "fused_lse": false,
+              "compact_tail": false,
+              "chunk": 1,
+              "last_request_tail_start": null
+            }
+          },
+          "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads. Beam decoder_calls counts post-prefill decoder replays; selection0 after prefill is separate."
+        },
+        "candidate": {
+          "decoder_calls": 920,
+          "prefill_selections": 32,
+          "batches": [
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 20,
+              "output_lengths": [
+                20
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 15,
+              "output_lengths": [
+                15
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 28,
+              "output_lengths": [
+                28
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 52,
+              "output_lengths": [
+                52
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 39,
+              "output_lengths": [
+                39
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 37,
+              "output_lengths": [
+                37
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 5,
+              "output_lengths": [
+                5
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 5,
+              "output_lengths": [
+                5
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 43,
+              "output_lengths": [
+                43
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 40,
+              "output_lengths": [
+                40
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 12,
+              "output_lengths": [
+                12
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 21,
+              "output_lengths": [
+                21
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 27,
+              "output_lengths": [
+                27
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 24,
+              "output_lengths": [
+                24
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 33,
+              "output_lengths": [
+                33
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 37,
+              "output_lengths": [
+                37
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 43,
+              "output_lengths": [
+                43
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 35,
+              "output_lengths": [
+                35
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 6,
+              "output_lengths": [
+                6
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 53,
+              "output_lengths": [
+                53
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 12,
+              "output_lengths": [
+                12
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 23,
+              "output_lengths": [
+                23
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 22,
+              "output_lengths": [
+                22
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 18,
+              "output_lengths": [
+                18
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 25,
+              "output_lengths": [
+                25
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 43,
+              "output_lengths": [
+                43
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 41,
+              "output_lengths": [
+                41
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 33,
+              "output_lengths": [
+                33
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 74,
+              "output_lengths": [
+                74
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 12,
+              "output_lengths": [
+                12
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 23,
+              "output_lengths": [
+                23
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 19,
+              "output_lengths": [
+                19
+              ]
+            }
+          ],
+          "sessions": {
+            "(1, 5)": {
+              "dispatch": {
+                "64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                }
+              },
+              "fused_lse": true,
+              "compact_tail": false,
+              "chunk": 1,
+              "last_request_tail_start": null
+            }
+          },
+          "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads. Beam decoder_calls counts post-prefill decoder replays; selection0 after prefill is separate."
+        }
+      }
+    },
+    "jpn/beam_stream_ts_b3": {
+      "variants": {
+        "reference": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 687.7700837794691,
+            "p95": 690.9113941946998,
+            "minimum": 687.2544910293072,
+            "maximum": 692.2004579100758,
+            "stdev": 1.6124026619617815,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 687.7700837794691,
+            "p95": 690.9113941946998,
+            "minimum": 687.2544910293072,
+            "maximum": 692.2004579100758,
+            "stdev": 1.6124026619617815,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 449.4302373399608,
+          "peak_allocated_bytes": 12247008256,
+          "draft_decoder_calls": 0
+        },
+        "candidate": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 557.8360389918089,
+            "p95": 558.8398657273501,
+            "minimum": 557.3643380776048,
+            "maximum": 559.1582809574902,
+            "stdev": 0.5530947217462575,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 557.8360389918089,
+            "p95": 558.8398657273501,
+            "minimum": 557.3643380776048,
+            "maximum": 559.1582809574902,
+            "stdev": 0.5530947217462575,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 554.4325670949696,
+          "peak_allocated_bytes": 12247008256,
+          "draft_decoder_calls": 0
+        }
+      },
+      "repeat_totals_ms": {
+        "reference": [
+          692.2004579100758,
+          687.9035788588226,
+          687.2544910293072,
+          687.4976670369506,
+          687.7700837794691,
+          687.8937517758459,
+          687.495943158865
+        ],
+        "candidate": [
+          557.9632599838078,
+          558.0968968570232,
+          557.6223128009588,
+          557.3643380776048,
+          557.5051750056446,
+          557.8360389918089,
+          559.1582809574902
+        ]
+      },
+      "paired_rtfx_change_percent": {
+        "samples": [
+          24.058429569388416,
+          23.258807338442168,
+          23.247308303930847,
+          23.347982651381383,
+          23.365686026592613,
+          23.31468454764838,
+          22.951938041874698
+        ],
+        "stats": {
+          "n": 7,
+          "p50": 23.31468454764838,
+          "p95": 23.850606506549674,
+          "minimum": 22.951938041874698,
+          "maximum": 24.058429569388416,
+          "stdev": 0.31153993425298016,
+          "percentile_method": "linear interpolation at (n-1)*q"
+        },
+        "positive_repeats": 7
+      },
+      "pooled_rtfx_change_percent": 23.36343241533665,
+      "request_median_comparisons": [
+        {
+          "ids": [
+            "fleurs_ja_validation--ja_jp-3171694045962175263",
+            "jvs_nonpara90--jvs083-BASIC5000_2066",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_052",
+            "fleurs_ja_validation--ja_jp-17595107070656151202",
+            "jvs_nonpara90--jvs042-BASIC5000_3007",
+            "jvs_parallel10--jvs005-VOICEACTRESS100_084",
+            "jvs_nonpara90--jvs009-TRAVEL1000_0787",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_095",
+            "fleurs_ja_validation--ja_jp-2099970133610103443",
+            "jvs_nonpara90--jvs018-BASIC5000_2161",
+            "jvs_nonpara90--jvs021-TRAVEL1000_0045",
+            "jvs_parallel10--jvs008-VOICEACTRESS100_091",
+            "fleurs_ja_validation--ja_jp-6522611377317710498",
+            "jvs_nonpara90--jvs048-BASIC5000_2389",
+            "jvs_parallel10--jvs001-VOICEACTRESS100_029",
+            "fleurs_ja_validation--ja_jp-1819289275454271168",
+            "jvs_nonpara90--jvs080-BASIC5000_3053",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_005",
+            "jvs_nonpara90--jvs009-BASIC5000_2571",
+            "fleurs_ja_validation--ja_jp-5116751292495283703",
+            "jvs_nonpara90--jvs023-BASIC5000_1027",
+            "jvs_parallel10--jvs003-VOICEACTRESS100_055",
+            "fleurs_ja_validation--ja_jp-14672974986823750874",
+            "jvs_nonpara90--jvs003-UT-PARAPHRASE-sent239-phrase2",
+            "jvs_parallel10--jvs005-VOICEACTRESS100_057",
+            "fleurs_ja_validation--ja_jp-1286876112474128683",
+            "jvs_nonpara90--jvs066-BASIC5000_1954",
+            "jvs_parallel10--jvs009-VOICEACTRESS100_097",
+            "fleurs_ja_validation--ja_jp-8681003617933384964",
+            "jvs_nonpara90--jvs041-BASIC5000_1011",
+            "jvs_parallel10--jvs004-VOICEACTRESS100_040",
+            "fleurs_ja_validation--ja_jp-16626033026082560289"
+          ],
+          "median_wall_ms": {
+            "reference": 687.7700837794691,
+            "candidate": 557.8360389918089
+          },
+          "rtfx_change_percent": 23.292515310142626
+        }
+      ],
+      "requests_with_faster_candidate_median": 1,
+      "draft_call_differences": [],
+      "scope": "Single: per-input transcribe latency. Streaming: one complete multi-batch request. Pooled RTFx uses all warm wall samples; paired statistics use repeat totals. Draft-call counts are not all decoder steps. Memory includes both resident variant pools.",
+      "quality": {
+        "reference": {
+          "metric": "CER",
+          "reference_units": 1262,
+          "errors": 165,
+          "rate": 0.13074484944532488,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "candidate": {
+          "metric": "CER",
+          "reference_units": 1262,
+          "errors": 165,
+          "rate": 0.13074484944532488,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "cold": {
+        "reference": {
+          "warmup_ms": 6960.7469770126045,
+          "captures": {
+            "(3, 5)": {
+              "encode": 10,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(2, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          },
+          "dispatch": {
+            "(3, 5)": {
+              "tensorrt: shape limit": 4
+            },
+            "(2, 5)": {
+              "tensorrt: shape limit": 4
+            }
+          },
+          "allocated_delta_bytes": 3567798272,
+          "reserved_delta_bytes": 5620367360,
+          "frontend_graph": {
+            "captures": 22,
+            "max_entries": 32,
+            "max_batch": 1,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 31815000,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          }
+        },
+        "candidate": {
+          "warmup_ms": 6189.059177879244,
+          "captures": {
+            "(3, 5)": {
+              "encode": 10,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(2, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          },
+          "dispatch": {
+            "(3, 5)": {
+              "megakernel-gluon": 4
+            },
+            "(2, 5)": {
+              "megakernel-gluon": 4
+            }
+          },
+          "allocated_delta_bytes": 2895220736,
+          "reserved_delta_bytes": 2956984320,
+          "frontend_graph": {
+            "captures": 22,
+            "max_entries": 32,
+            "max_batch": 1,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 31815000,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          }
+        }
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        }
+      },
+      "artifact_sha256": {
+        "cold.json": "d14c72964ade8aeebafca753910e1ac610e85574d354afe28e38b442fad79201",
+        "tokens.json": "6537ecd81f392804e34c011a051da2a460858715cce286223adbf8f00349a96e",
+        "summary.json": "8b710cd7b37fc8017ff9ba4f2845631e9c5a38c881270ebad1cb88e262284020",
+        "actual_dispatch_candidate.json": "399404626749c4a98a97bda325bd669df2a20e5d7ed8a5cff37095d0e4dc70b4",
+        "wall.json": "39a4731d4febb8ccefc41711673392eecbb117937925c0a24036a17beb1586e8",
+        "actual_dispatch_reference.json": "09b0ae16d999bd99c5b70e696d8035032c39be6838316b88e5a95f8bea4da022"
+      },
+      "beam_decoder_diagnostics": {
+        "reference": {
+          "decoder_calls": 417,
+          "prefill_selections": 11,
+          "batches": [
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 8,
+              "output_lengths": [
+                5,
+                5,
+                6
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 24,
+              "output_lengths": [
+                12,
+                12,
+                23
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 24,
+              "output_lengths": [
+                21,
+                12,
+                23
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 28,
+              "output_lengths": [
+                25,
+                15,
+                18
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 24,
+              "output_lengths": [
+                24,
+                20,
+                22
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 36,
+              "output_lengths": [
+                28,
+                33,
+                27
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 44,
+              "output_lengths": [
+                19,
+                39,
+                43
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 44,
+              "output_lengths": [
+                33,
+                37,
+                41
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 52,
+              "output_lengths": [
+                37,
+                35,
+                52
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 56,
+              "output_lengths": [
+                43,
+                40,
+                53
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 10,
+              "primer_length": 3,
+              "decoder_calls": 77,
+              "output_lengths": [
+                43,
+                74
+              ]
+            }
+          ],
+          "sessions": {
+            "(3, 5)": {
+              "dispatch": {
+                "64": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "128": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "256": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "512": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                }
+              },
+              "fused_lse": false,
+              "compact_tail": false,
+              "chunk": 4,
+              "last_request_tail_start": null
+            },
+            "(2, 5)": {
+              "dispatch": {
+                "64": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "128": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "256": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "512": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                }
+              },
+              "fused_lse": false,
+              "compact_tail": false,
+              "chunk": 4,
+              "last_request_tail_start": null
+            }
+          },
+          "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads. Beam decoder_calls counts post-prefill decoder replays; selection0 after prefill is separate."
+        },
+        "candidate": {
+          "decoder_calls": 417,
+          "prefill_selections": 11,
+          "batches": [
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 8,
+              "output_lengths": [
+                5,
+                5,
+                6
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 24,
+              "output_lengths": [
+                12,
+                12,
+                23
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 24,
+              "output_lengths": [
+                21,
+                12,
+                23
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 28,
+              "output_lengths": [
+                25,
+                15,
+                18
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 24,
+              "output_lengths": [
+                24,
+                20,
+                22
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 36,
+              "output_lengths": [
+                28,
+                33,
+                27
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 44,
+              "output_lengths": [
+                19,
+                39,
+                43
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 44,
+              "output_lengths": [
+                33,
+                37,
+                41
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 52,
+              "output_lengths": [
+                37,
+                35,
+                52
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 56,
+              "output_lengths": [
+                43,
+                40,
+                53
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 10,
+              "primer_length": 3,
+              "decoder_calls": 77,
+              "output_lengths": [
+                43,
+                74
+              ]
+            }
+          ],
+          "sessions": {
+            "(3, 5)": {
+              "dispatch": {
+                "64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=2/cache=64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=2/cache=128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=2/cache=256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=2/cache=512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                }
+              },
+              "fused_lse": true,
+              "compact_tail": true,
+              "chunk": 4,
+              "last_request_tail_start": [
+                2,
+                44
+              ]
+            },
+            "(2, 5)": {
+              "dispatch": {
+                "64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                }
+              },
+              "fused_lse": true,
+              "compact_tail": true,
+              "chunk": 4,
+              "last_request_tail_start": [
+                1,
+                44
+              ]
+            }
+          },
+          "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads. Beam decoder_calls counts post-prefill decoder replays; selection0 after prefill is separate."
+        }
+      }
+    }
+  },
+  "comparison": "beam_preset",
+  "classification": "N",
+  "gpu_telemetry": {
+    "utilization_percent": {
+      "n": 45,
+      "p50": 0.0,
+      "p95": 98.0,
+      "minimum": 0.0,
+      "maximum": 100.0,
+      "stdev": 41.563813796185144,
+      "percentile_method": "linear interpolation at (n-1)*q"
+    },
+    "device_memory_mib": {
+      "n": 45,
+      "p50": 17125.0,
+      "p95": 19608.6,
+      "minimum": 0.0,
+      "maximum": 19691.0,
+      "stdev": 4765.625348262282,
+      "percentile_method": "linear interpolation at (n-1)*q"
+    },
+    "scope": "Five-second samples across loading/capture/warm/diagnostic calls and both variants; not per-condition utilization or kernel occupancy."
+  },
+  "scope": "N: existing grouped cross/tail/LSE beam preset versus optimized default. Balanced 64-input speech sample, not an independent quality holdout or corpus-weighted performance. Seven repeats are repeated timings, not additional evaluation inputs. Raw files retain per-call wall time/output/dispatch/cold metadata. No timing from the full-corpus one-pass audit.",
+  "reference_output_control": {
+    "current": "outputs/runtime-2792040/profile",
+    "prior": "outputs/runtime-large-audit/owsm_v4_medium_1B_beam_kernels_beam_b1",
+    "partial": false,
+    "agreement": {
+      "tokens": {
+        "equal": 64,
+        "total": 64
+      },
+      "timestamp_tokens": {
+        "equal": 64,
+        "total": 64
+      },
+      "segments": {
+        "equal": 64,
+        "total": 64
+      },
+      "text": {
+        "equal": 64,
+        "total": 64
+      }
+    },
+    "source_control": {
+      "commits": [
+        "9e87cfaf81aa45fa789e37a491e2f15b2a830557",
+        "3bb13622eafef1715c3b63982a14f452780f3754"
+      ],
+      "changed_runtime_files": [
+        "src/owsm_trt/pipeline.py"
+      ],
+      "pipeline_ast_without_docs_sha256": "5d3c7944b4dc2b08123038976093bdd85e9db185b6285caee2805410b06d2649"
+    },
+    "prior_chunk_sha256": {
+      "chunk-00000.jsonl.gz": "b96ba4c294632d1b79e6baff3ab976464aa4060c1fd3dd61a947c859b27d2515",
+      "chunk-00002.jsonl.gz": "1ee9fa5fef8b30a0bd378e8daabdad3d7fcd56b3316ec039811e55e2adb4866a",
+      "chunk-00003.jsonl.gz": "e3d57f367a4328f86a79f4d607d870ea8518d8d789e34affae370372be91f592",
+      "chunk-00017.jsonl.gz": "6719f308ccb2e51ceedcf5c8c1b9e395edeaa9b6ecc149c22425fb587840a4cd",
+      "chunk-00018.jsonl.gz": "bb1f1205c448132719a51592d6d8a1a26d3a6a52473b9e3b57eb0edba7f212d9",
+      "chunk-00021.jsonl.gz": "b920f1e83adde7f5ff872ab463c98e8d9b135d54ae3d4f1a4a6e9f8b959d9702",
+      "chunk-00023.jsonl.gz": "f8cc82abfe1a64e51dbebd09d9f5ac61b4a6c981f4f0c018c9657ea1e2e69946",
+      "chunk-00027.jsonl.gz": "9589a50ddd6147c229b05b9a3d0be3e6458c2201e093bbd1e8334d851c08abe1",
+      "chunk-00031.jsonl.gz": "1197f06ce8e47ee49c4e68fa28e43e54b94da67e109a1c396c71859d2ef2daef",
+      "chunk-00032.jsonl.gz": "463b127813b0e4ccb019be36ae43047bbcc5a99938f0db66dcee5597856ba447",
+      "chunk-00034.jsonl.gz": "d9922b7a3add77d1984295c8dc88b0a7dfd034482bae960f60a7e98fac60bfee",
+      "chunk-00035.jsonl.gz": "2283b378640bdeceab4ef6a6f83b8e83b8fb143b6b58a64d250ac7c119f2046c",
+      "chunk-00056.jsonl.gz": "0ef2564c035c95c4498019b0807d84ae0567ecaaf0cabeb354290249a8444322",
+      "chunk-00057.jsonl.gz": "3a8543f59a85ae23592f05974e349b4de4c26c04e13815835fa8112978ba9d24"
+    },
+    "scope": "B1 default full outputs only, same single-input grouping/checkpoint/engines/executable runtime. B3 timing uses32-input groups unlike the prior3-input audit groups; no B3 cross-job identity assertion. No cross-job speed comparison."
+  }
+}

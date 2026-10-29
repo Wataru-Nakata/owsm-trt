@@ -421,6 +421,11 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   inputs among13,232, including178 text differences and58 timestamp sequences. Speech edit counts
   improve in some languages and worsen in others; two additional inputs exceed the existing timestamp
   range tolerance. These options remain N-class and off by default.
+  [Expanded seven-language timing](docs/runtime-expanded-beam.md) on224 inputs measures7.64–9.28%
+  more RTFx at B1 and21.30–24.22% at B3 versus the optimized default, with all98 paired repeat totals
+  improving. All sampled B1 outputs match; B3 changes five inputs (three texts and two timestamp
+  sequences). Each language's seven paired repeats stay within one successful allocation; these
+  percentages are neither a global multi-job gain nor additional factors to multiply together.
 * **Timestamp rules.** Like ESPnet, every search applies its `ScoreFilter`: no timestamps after `<notimestamps>`;
   otherwise the output starts with a timestamp, timestamps come in increasing pairs, and `<eos>` only after a
   complete pair.
