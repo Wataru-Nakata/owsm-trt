@@ -421,6 +421,9 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   inputs among13,232, including178 text differences and58 timestamp sequences. Speech edit counts
   improve in some languages and worsen in others; two additional inputs exceed the existing timestamp
   range tolerance. These options remain N-class and off by default.
+  The matching [full B1 audit](docs/runtime-large-regression-2792098.json) changes20 inputs, including
+  16 texts and three available timestamp sequences. Speech edits change by−1 Russian word and+1
+  Chinese character, with other language totals unchanged; comparable boundaries shift at most80ms.
   [Expanded seven-language timing](docs/runtime-expanded-beam.md) on224 inputs measures7.64–9.28%
   more RTFx at B1 and21.30–24.22% at B3 versus the optimized default, with all98 paired repeat totals
   improving. All sampled B1 outputs match; B3 changes five inputs (three texts and two timestamp

@@ -577,4 +577,31 @@ outputs, per-language quality, largest edit/time differences and source controls
 raw chunks and validator are in `outputs/runtime-large-audit/`, PBS/logs in `outputs/runtime-2787145`.
 After this job was already finished, the account reached200 allocated GPUs; a fresh parent check
 found192. No own job remained to cancel and no new job was submitted. The separate expanded timing
-is prepared and waits for a safe slot under the192-GPU cap.
+subsequently completed in four independent language subsets; see the
+[seven-language paired timing](runtime-expanded-beam.md). No interrupted timing samples were combined.
+
+### Public beam preset audit / 1B B1
+
+[Job2792098](runtime-large-regression-2792098.json), also frozen dc17623, completes all13,232 inputs
+and104 chunks with PBS/publication exit0. Its optimized-default reference exactly matches the earlier
+B1 search-kernel candidate2780923 on every available field; checkpoint, engines, grouping and source
+control pass the same checks as B3. Both variants bind Gluon with shared cross-KV and one-step host
+checks. The candidate uses grouped cross attention and fused LSE. Requested compact tail is inactive
+at B1, with the recorded single-group fallback reason. This is an N comparison of the combined preset.
+
+Twenty inputs differ, including two long-form outputs without joined token IDs. Full tokens match
+13,173/13,191, timestamp sequences13,188/13,191, text13,216/13,232 and segments13,212/13,232.
+The224-input timing subset had exact B1 outputs; it did not expose these larger-corpus differences.
+Speech-only WER/CER edit totals are unchanged in Japanese, English, German, French and Spanish.
+Russian changes511→510 errors over6,501 words, while Chinese changes4,251→4,252 over35,649 characters.
+Individual speech edit changes are at most one unit in either direction. Five English silence probes
+change text; their generated-word total rises197→206 and remains excluded from speech WER.
+
+Among13,216 outputs with comparable text/segment labels/counts, five boundaries move: median20ms,
+p95/maximum80ms. Sixteen incompatible outputs are excluded. The80ms maximum belongs to a34.74s
+German long-form input; all changed boundaries are speech. These are generated-output displacements,
+not errors against timestamp annotations. Invalid segments remain83 with identical flagged inputs;
+empty segments remain1, repeated-fourgram flags5, unpaired and nonmonotonic timestamps0.
+
+The preset remains opt-in. Full changed outputs, quality, boundary comparisons and the exact default
+control are retained in the artifact. This audit adds quality coverage, not a new latency measurement.
