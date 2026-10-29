@@ -13,6 +13,8 @@ REPO=$PWD
 OUT="$REPO/outputs/runtime-${PBS_JOBID%%.*}"
 LOCAL="$PBS_LOCALDIR/session-retention"
 MODEL_NAME=${MODEL_NAME:-owsm_v4_medium_1B}
+SESSION_MEMORY_ONLY=${SESSION_MEMORY_ONLY:-0}
+[[ "$SESSION_MEMORY_ONLY" == 0 || "$SESSION_MEMORY_ONLY" == 1 ]]
 CORPUS="$REPO/.cache/regression-expanded-v1"
 mkdir -p "$OUT" "$LOCAL" "$LOCAL/results" "$LOCAL/tmp" "$LOCAL/engines"
 export TMPDIR="$LOCAL/tmp" TRITON_CACHE_DIR="$LOCAL/triton" TORCHINDUCTOR_CACHE_DIR="$LOCAL/inductor"
@@ -64,13 +66,31 @@ SMI=$!
 # The default remains two retained sessions; the private three-entry control is experimental.
 timeout 180 "$PY" -m pytest -q -p no:cacheprovider "$LOCAL/tests/test_session_retention.py" \
     > "$LOCAL/results/tests.log" 2>&1
-PROFILE_TIMEOUT=$((3500 - SECONDS))
-if (( PROFILE_TIMEOUT < 300 )); then exit 1; fi
-printf '%s\n' 'session retention2/3: English/Japanese12 each,7 repeats of two paired cycles' >> "$OUT/progress.log"
-timeout --kill-after=30 --preserve-status "$PROFILE_TIMEOUT" "$PY" "$LOCAL/scripts/profile_session_retention.py" \
-    --model "$LOCAL/$MODEL_NAME" --data "$LOCAL/corpus" --out "$LOCAL/results/retention" \
-    --languages eng jpn --repeat 7 > "$LOCAL/results/retention.log" 2>&1 &
-WORKER=$!
-wait "$WORKER"
-WORKER=""
+if [[ "$SESSION_MEMORY_ONLY" == 1 ]]; then
+    # Separate processes release all model/session/graph state between policies.
+    # This run measures resident and peak memory; it is not a paired timing comparison.
+    for LIMIT in 2 3; do
+        PROFILE_TIMEOUT=$((3500 - SECONDS))
+        if [[ "$LIMIT" == 2 ]]; then PROFILE_TIMEOUT=$((PROFILE_TIMEOUT / 2)); fi
+        if (( PROFILE_TIMEOUT < 300 )); then exit 1; fi
+        printf 'isolated retention%s memory assessment starts\n' "$LIMIT" >> "$OUT/progress.log"
+        timeout --kill-after=30 --preserve-status "$PROFILE_TIMEOUT" "$PY" "$LOCAL/scripts/profile_session_retention.py" \
+            --model "$LOCAL/$MODEL_NAME" --data "$LOCAL/corpus" --out "$LOCAL/results/isolated-$LIMIT" \
+            --languages eng jpn --repeat 3 --isolated-limit "$LIMIT" \
+            > "$LOCAL/results/isolated-$LIMIT.log" 2>&1 &
+        WORKER=$!
+        wait "$WORKER"
+        WORKER=""
+    done
+else
+    PROFILE_TIMEOUT=$((3500 - SECONDS))
+    if (( PROFILE_TIMEOUT < 300 )); then exit 1; fi
+    printf '%s\n' 'session retention2/3: English/Japanese12 each,7 repeats of two paired cycles' >> "$OUT/progress.log"
+    timeout --kill-after=30 --preserve-status "$PROFILE_TIMEOUT" "$PY" "$LOCAL/scripts/profile_session_retention.py" \
+        --model "$LOCAL/$MODEL_NAME" --data "$LOCAL/corpus" --out "$LOCAL/results/retention" \
+        --languages eng jpn --repeat 7 > "$LOCAL/results/retention.log" 2>&1 &
+    WORKER=$!
+    wait "$WORKER"
+    WORKER=""
+fi
 printf '%s\n' 'session retention experiment ended; inspect full output and creation counts' >> "$OUT/progress.log"

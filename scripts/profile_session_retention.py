@@ -27,6 +27,8 @@ def main():
     ap.add_argument('--out', type=Path, required=True)
     ap.add_argument('--languages', nargs='+', default=['eng', 'jpn'])
     ap.add_argument('--repeat', type=int, default=7)
+    ap.add_argument('--isolated-limit', type=int, choices=(2, 3),
+                    help='Run one policy in a fresh process for standalone memory assessment')
     args = ap.parse_args()
     if not os.environ.get('PBS_JOBID'):
         ap.error('model/audio operations require an allocated compute job')
@@ -41,6 +43,21 @@ def main():
     from owsm_trt import OWSM, hub
     from owsm_trt.audio import load_audio
     from owsm_trt.build import engine_tag
+
+    limits = dict(reference=2, candidate=3)
+    if args.isolated_limit is not None:
+        limits = {name: limit for name, limit in limits.items() if limit == args.isolated_limit}
+    memory_scope = ('standalone policy in this process' if args.isolated_limit is not None
+                    else 'combined two-policy experiment, not standalone deployment memory')
+
+    def memory():
+        torch.cuda.synchronize()
+        free, total = torch.cuda.mem_get_info()
+        return dict(allocated_bytes=torch.cuda.memory_allocated(),
+                    reserved_bytes=torch.cuda.memory_reserved(),
+                    peak_allocated_bytes=torch.cuda.max_memory_allocated(),
+                    peak_reserved_bytes=torch.cuda.max_memory_reserved(),
+                    device_used_bytes=total-free, device_total_bytes=total)
 
     with torch.inference_mode(), ExitStack() as stack:
         model, load_ms = wall(lambda: OWSM.from_pretrained(args.model))
@@ -59,10 +76,9 @@ def main():
             gpu=torch.cuda.get_device_name(), cuda=torch.version.cuda,
             versions={name: importlib.metadata.version(name) for name in ('torch', 'triton', 'tensorrt')},
             nvidia_smi=command(['nvidia-smi', '--query-gpu=name,uuid,driver_version', '--format=csv']),
-            repeat=args.repeat, session_limits=dict(reference=2, candidate=3),
+            repeat=args.repeat, session_limits=limits, memory_scope=memory_scope,
             scope='Private session retention ablation, public default2 unchanged. '
-                  'Reference includes cache churn/setup/capture. Both pools resident; allocator memory '
-                  'is a combined benchmark footprint, not isolated deployment memory. Loaded audio '
+                  'Reference includes cache churn/setup/capture. See memory_scope for pool residency. Loaded audio '
                   'outside timing. Diagnostic factory/decoder counts are separate from timing.'))
         archives = {}
         for lang, rows in selected.items():
@@ -82,9 +98,10 @@ def main():
             model._sessions.clear()
             gc.collect()
             torch.cuda.empty_cache()
-            pools = {variant: OrderedDict() for variant in ('reference', 'candidate')}
-            limits = dict(reference=2, candidate=3)
+            pools = {variant: OrderedDict() for variant in limits}
             expected, records, cold, diagnostics = {}, [], [], []
+            torch.cuda.reset_peak_memory_stats()
+            baseline_memory = memory()
 
             def cycle(variant, offset):
                 model._sessions = pools[variant]
@@ -110,7 +127,8 @@ def main():
                 for offset in (0, 6):
                     values, ms = wall(lambda: cycle(variant, offset))
                     check(values, offset)
-                    cold.append(dict(variant=variant, offset=offset, wall_ms=ms, captures=captures(model)))
+                    cold.append(dict(variant=variant, offset=offset, wall_ms=ms,
+                                     captures=captures(model), memory=memory()))
             candidate_captures = captures(model)
             for repeat in range(args.repeat):
                 for offset in (0, 6):
@@ -123,7 +141,7 @@ def main():
                         records.append(dict(variant=variant, repeat=repeat, offset=offset, wall_ms=ms,
                             ids=[r['key'] for r in rows[offset:offset+6]],
                             audio_seconds=sum(r['seconds'] for r in rows[offset:offset+6]),
-                            peak_allocated_bytes=torch.cuda.max_memory_allocated()))
+                            peak_allocated_bytes=torch.cuda.max_memory_allocated(), memory=memory()))
                 save(args.out/lang/'wall.json', records)
                 save(args.out/lang/'tokens.json', expected)
                 if progress := os.environ.get('OWSM_PROFILE_PROGRESS'):
@@ -151,6 +169,7 @@ def main():
                 diagnostics.append(dict(variant=variant, created=created, retained_captures=captures(model)))
             save(args.out/lang/'summary.json', dict(
                 complete=True, input_count=12, audio_load_ms=audio_ms, cold=cold, diagnostics=diagnostics,
+                baseline_memory=baseline_memory, final_memory=memory(), memory_scope=memory_scope,
                 quality=quality([dict(id=r['key'], text=r['text']) for r in rows], expected, lang)))
             # Destroy both pools before the next language; a previous candidate pool must not linger.
             for pool in pools.values():

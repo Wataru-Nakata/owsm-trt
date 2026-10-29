@@ -36,3 +36,21 @@ python scripts/profile_session_retention.py --model MODEL --data LOCAL_CORPUS \
 
 The private runtime field is only an experiment control. No new performance number or production
 retention option has been adopted.
+
+Standalone memory assessment is prepared separately. Run the same profiler twice in fresh processes,
+once with `--isolated-limit 2` and once with `--isolated-limit 3`, using `--repeat 3`. Setting
+`SESSION_MEMORY_ONLY=1` in the PBS wrapper runs these processes sequentially in one allocation.
+It records resident and peak PyTorch allocated/reserved bytes, plus synchronized whole-device used
+memory samples. Device samples include CUDA context and library allocations; they are not process
+peak measurements. These sequential runs must not be used as a paired latency comparison.
+
+After normal PBS/publication completion, validate all24 full outputs against the paired run and both
+isolated processes, then compare memory:
+
+```bash
+PYTHONPATH=scripts python scripts/summarize_session_memory.py RAW_MEMORY_RESULTS \
+  --control RAW_PAIRED_RESULTS/retention --out MEMORY_SUMMARY.json
+```
+
+Memory outside these model/beam/request shapes remains unmeasured. The isolated mode changes only
+benchmark instrumentation; the production default is still two retained sessions.
