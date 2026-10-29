@@ -437,7 +437,8 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   558MiB of resident PyTorch allocation and710–750MiB of sampled device usage. The
   [13,232-input beam audit](docs/runtime-large-regression-2792704.json) matches every text/segment
   and all13,191 available token/timestamp sequences, including the prior default-output control.
-  Mixed-task GPU checks are pending; the default remains2 and CTC-only caching keeps its separate policy.
+  A separate mixed greedy/translation/prompt/beam check matches96 API calls and276 output visits.
+  The default remains2 and CTC-only caching keeps its separate policy.
 * **Timestamp rules.** Like ESPnet, every search applies its `ScoreFilter`: no timestamps after `<notimestamps>`;
   otherwise the output starts with a timestamp, timestamps come in increasing pairs, and `<eos>` only after a
   complete pair.

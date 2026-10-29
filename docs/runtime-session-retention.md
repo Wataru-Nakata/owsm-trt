@@ -24,8 +24,8 @@ captures must stay constant after warmup; output changes or decoder fallback inv
 Both session pools remain resident, so reported allocator peaks describe the combined experiment,
 not standalone deployment memory. A separate memory assessment is required before adoption.
 
-Three small CPU fixtures cover the default two-entry policy, three-shape reuse and LRU refresh on
-a cache hit. They allocate no model tensors and do not establish CUDA graph lifetime safety.
+Focused CPU fixtures cover positive cache limits, three-shape reuse, LRU refresh and rejection
+before model loading. They allocate no model tensors; GPU validation is reported separately below.
 The CTC-only session cache uses a separate policy and is unchanged.
 
 Run only inside an allocated compute job, with the environment, model, engines and corpus staged
@@ -109,10 +109,18 @@ process. These are process-local factory counts, not decoder calls or an uninter
 The zero-progress interrupted process contributes no published session-observation snapshot.
 No speed claim is derived from this one-pass multi-allocation audit; use the paired measurements above.
 
-`check_session_reuse.py` prepares a separate mixed-task regression on12 English/Japanese inputs.
+`check_session_reuse.py` runs a separate mixed-task regression on12 English/Japanese inputs.
 Eight named cases alternate drafted/plain greedy, streaming batches, translation, a long prompt and
 timestamp/no-timestamp beam requests. Three request orders exercise retained and evicted sessions
 without clearing the caches between tasks or languages. All96 API calls and276 output visits are
 retained and compared against the first result for the same case/input. `SESSION_REUSE_CHECK=1` in
-the PBS wrapper runs this check; it cannot be combined with the isolated-memory mode. This coverage
-is prepared, not yet GPU validated, and makes no timing or annotation-based quality claim.
+the PBS wrapper runs this check; it cannot be combined with the isolated-memory mode.
+
+[Job2792857](runtime-session-reuse-2792857.json), frozen86e19d2, finishes with PBS/publication exit0.
+All96 calls/276 output visits match, covering46 named-case/input records across two policies and
+three orders. Both policies exercise `(1,1)`, `(2,1)`, `(3,1)`, `(1,5)`, `(2,5)` and `(3,5)` session
+keys; maximum retained entries are2/3. Ordinary primers have3/4 tokens, and both prompt cases have
+124. The greedy prompt exceeds its draft-window limit, exercising the long-primer path.
+The12 inputs are a subset of the earlier paired corpus, not additional independent speech data.
+This check adds H200/1B compatibility coverage, with no new timing or translation-quality claim.
+CTC-only models, other GPU/models and cache counts other than2/3 remain outside this GPU validation.
