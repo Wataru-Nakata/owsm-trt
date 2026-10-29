@@ -93,3 +93,11 @@ session creation counts and maximum retained entries per process. Resume keeps o
 counts describe that process, not an uninterrupted execution across allocations. It is an E audit,
 so any output difference fails the run. This pass includes41 ordinary long-form inputs, which lack
 joined token IDs; their text/segments remain comparable.
+
+`check_session_reuse.py` prepares a separate mixed-task regression on12 English/Japanese inputs.
+Eight named cases alternate drafted/plain greedy, streaming batches, translation, a long prompt and
+timestamp/no-timestamp beam requests. Three request orders exercise retained and evicted sessions
+without clearing the caches between tasks or languages. All96 API calls and276 output visits are
+retained and compared against the first result for the same case/input. `SESSION_REUSE_CHECK=1` in
+the PBS wrapper runs this check; it cannot be combined with the isolated-memory mode. This coverage
+is prepared, not yet GPU validated, and makes no timing or annotation-based quality claim.

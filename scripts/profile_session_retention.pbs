@@ -14,7 +14,10 @@ OUT="$REPO/outputs/runtime-${PBS_JOBID%%.*}"
 LOCAL="$PBS_LOCALDIR/session-retention"
 MODEL_NAME=${MODEL_NAME:-owsm_v4_medium_1B}
 SESSION_MEMORY_ONLY=${SESSION_MEMORY_ONLY:-0}
+SESSION_REUSE_CHECK=${SESSION_REUSE_CHECK:-0}
 [[ "$SESSION_MEMORY_ONLY" == 0 || "$SESSION_MEMORY_ONLY" == 1 ]]
+[[ "$SESSION_REUSE_CHECK" == 0 || "$SESSION_REUSE_CHECK" == 1 ]]
+[[ "$SESSION_MEMORY_ONLY$SESSION_REUSE_CHECK" != 11 ]]
 CORPUS="$REPO/.cache/regression-expanded-v1"
 mkdir -p "$OUT" "$LOCAL" "$LOCAL/results" "$LOCAL/tmp" "$LOCAL/engines"
 export TMPDIR="$LOCAL/tmp" TRITON_CACHE_DIR="$LOCAL/triton" TORCHINDUCTOR_CACHE_DIR="$LOCAL/inductor"
@@ -66,7 +69,17 @@ SMI=$!
 # The default remains two retained sessions; three entries are an opt-in workload tradeoff.
 timeout 180 "$PY" -m pytest -q -p no:cacheprovider "$LOCAL/tests/test_session_retention.py" \
     > "$LOCAL/results/tests.log" 2>&1
-if [[ "$SESSION_MEMORY_ONLY" == 1 ]]; then
+if [[ "$SESSION_REUSE_CHECK" == 1 ]]; then
+    PROFILE_TIMEOUT=$((3500 - SECONDS))
+    if (( PROFILE_TIMEOUT < 300 )); then exit 1; fi
+    printf '%s\n' 'mixed greedy/translation/prompt/beam session reuse check starts' >> "$OUT/progress.log"
+    timeout --kill-after=30 --preserve-status "$PROFILE_TIMEOUT" "$PY" "$LOCAL/scripts/check_session_reuse.py" \
+        --model "$LOCAL/$MODEL_NAME" --data "$LOCAL/corpus" --out "$LOCAL/results/reuse" \
+        > "$LOCAL/results/reuse.log" 2>&1 &
+    WORKER=$!
+    wait "$WORKER"
+    WORKER=""
+elif [[ "$SESSION_MEMORY_ONLY" == 1 ]]; then
     # Separate processes release all model/session/graph state between policies.
     # This run measures resident and peak memory; it is not a paired timing comparison.
     for LIMIT in 2 3; do
