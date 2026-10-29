@@ -39,6 +39,7 @@ from summarize_large_regression import summarize
     ('draft_budget','draft_ts','draft_budget requires draft_bulk'),
     ('frontend_batches','draft_ts','frontend_batches requires draft_bulk'),
     ('beam_preset','beam_prompt','beam_preset requires beam_b1 or beam_b3'),
+    ('beam_sessions','beam_b1','beam_sessions requires beam_b3'),
     ('ring_split','draft_bulk','single-row scheduling knobs are not bulk ablations'),
 ])
 def test_bulk_ablation_rejects_inactive_or_unrelated_scheduling_options(monkeypatch,capsys,mode,case,message):
@@ -59,6 +60,12 @@ def test_numerical_preset_keeps_existing_search_optimizations_on_in_both_variant
     assert beam_variants('beam_bound')['reference']==dict(beam_upper_bound=False,beam_kernels=True)
     assert beam_variants('beam_kernels')['reference']==dict(beam_upper_bound=True,beam_kernels=False)
     assert beam_variants('beam_combined')['reference']==dict(beam_upper_bound=False,beam_kernels=False)
+
+
+def test_session_retention_changes_only_cache_size_with_optimized_search():
+    modes=beam_variants('beam_sessions')
+    for name,limit in [('reference',2),('candidate',3)]:
+        assert modes[name]==dict(beam_upper_bound=True,beam_kernels=True,session_cache_size=limit)
 
 
 @pytest.mark.parametrize('key',['','../outside','folder/item','a.b','bad key'])

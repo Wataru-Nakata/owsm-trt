@@ -219,7 +219,10 @@ class OWSM:
         frontend_graph_max_batch: int = 1,
         audio_prefetch_workers: int = 0,
         beam_fused_lse: bool = False,
+        session_cache_size: int = 2,
     ):
+        if type(session_cache_size) is not int or session_cache_size < 1:
+            raise ValueError("session_cache_size must be a positive integer")
         if type(beam_fused_lse) is not bool:
             raise ValueError("beam_fused_lse must be a bool")
         if type(audio_prefetch_workers) is not int or audio_prefetch_workers not in (0, 1, 2):
@@ -264,7 +267,7 @@ class OWSM:
             else None
         )
         self._sessions: OrderedDict[tuple, GreedySession | BeamSession | CTCSession] = OrderedDict()
-        self._session_cache_limit = 2  # Private ablation control; the production retention policy is unchanged.
+        self.session_cache_size = session_cache_size
         self._lane_streams: list = []  # streams of the CTC lanes (_ctc_stream)
         self._ctc_buffers: dict[int, tuple] = {}  # per lane: buffers its CTC sessions share
 
@@ -300,6 +303,7 @@ class OWSM:
         fp8_skip: str = "",
         audio_prefetch_workers: int = 0,
         beam_fused_lse: bool = False,
+        session_cache_size: int = 2,
     ) -> "OWSM":
         """Load an OWSM model from a Hugging Face repo id or local ESPnet model directory.
 
@@ -370,6 +374,13 @@ class OWSM:
         prepares both plain and verification calls/graphs. This reduces session-cold setup, not
         steady-state decoder time; validated on H200 with v4 medium 1B/base 102M.
 
+        ``session_cache_size`` (positive integer, default 2): retain this many encoder-decoder
+        sessions, keyed by utterance batch and beam width, with least-recently-used eviction.
+        Three entries avoid repeated setup/capture for B1/B3 requests with a final B2 group.
+        H200/1B beam5 measurements show higher memory use and unchanged sampled outputs; see
+        docs/runtime-session-retention.md for the workload and memory scope. This changes session
+        retention, not decoder math. CTC-only lane/session caching uses its separate existing policy.
+
         ``draft_token_budget`` (default 256): maximum rows x verification window for greedy CTC
         drafts (at least one token per row). 128 improved H200/1B timestamped B8 throughput in the
         measured English/Japanese corpora. Shape/kernel changes can change fp16 outputs; this is
@@ -426,6 +437,8 @@ class OWSM:
         None: the ``OWSM_TRT_MEGAKERNEL`` environment variable (auto / ring / 1 / triton /
         0), ``"auto"`` if unset.
         """
+        if type(session_cache_size) is not int or session_cache_size < 1:
+            raise ValueError("session_cache_size must be a positive integer")
         if type(beam_fused_lse) is not bool:
             raise ValueError("beam_fused_lse must be a bool")
         if type(audio_prefetch_workers) is not int or audio_prefetch_workers not in (0, 1, 2):
@@ -481,7 +494,7 @@ class OWSM:
                        frontend_graph=frontend_graph, lazy_drafts=lazy_drafts, draft_token_budget=draft_token_budget,
                        greedy_kernels=greedy_kernels, encoder_lookahead=encoder_lookahead,
                        frontend_graph_max_batch=frontend_graph_max_batch, audio_prefetch_workers=audio_prefetch_workers,
-                       beam_fused_lse=beam_fused_lse)
+                       beam_fused_lse=beam_fused_lse, session_cache_size=session_cache_size)
         if backend != "tensorrt":
             raise ValueError(f"unknown backend {backend!r} (use 'tensorrt' or 'torch')")
 
@@ -524,14 +537,14 @@ class OWSM:
                        frontend_graph=frontend_graph, lazy_drafts=lazy_drafts, draft_token_budget=draft_token_budget,
                        greedy_kernels=greedy_kernels, encoder_lookahead=encoder_lookahead,
                        frontend_graph_max_batch=frontend_graph_max_batch, audio_prefetch_workers=audio_prefetch_workers,
-                       beam_fused_lse=beam_fused_lse)
+                       beam_fused_lse=beam_fused_lse, session_cache_size=session_cache_size)
 
     # ------------------------------------------------------------------ helpers
 
     def _session(self, batch: int, beam: int = 1) -> GreedySession | BeamSession:
         key = (batch, beam)
         if key not in self._sessions:
-            if len(self._sessions) >= self._session_cache_limit:
+            if len(self._sessions) >= self.session_cache_size:
                 self._sessions.popitem(last=False)
             args = (self.opts.capacity, self.tokenizer.eos, self.dtype, self.device, self.use_cuda_graph)
             if beam == 1:

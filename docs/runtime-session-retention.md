@@ -4,9 +4,11 @@ Candidate22 also covers session eviction. The production encoder-decoder factory
 sessions, keyed by utterance batch and beam width. A B1 beam request followed by a five-input B3
 request uses `(1,5)`, `(3,5)` and `(2,5)`. Repeating this sequence recreates all three sessions under
 the two-entry LRU. The paired H200/1B experiment below verifies an E-intent three-entry alternative
-on24 inputs. The public API and default retention count remain unchanged.
+on24 inputs. `OWSM.from_pretrained(..., session_cache_size=3)` exposes the retention count as a
+positive integer. Its default remains2; CTC-only caching is separate and unchanged. The public
+integration has focused CPU coverage; large GPU reuse validation is pending.
 
-`scripts/profile_session_retention.py` compares the existing two-entry policy with a private
+`scripts/profile_session_retention.py` compares the existing two-entry policy with an opt-in
 three-entry control. It selects12 inputs each from English and Japanese in the expanded corpus,
 uses two distinct six-input cycles, and alternates the policies over seven repeats. Each cycle is
 one single-input request followed by one five-input request at B3, with beam5 and timestamps.
@@ -34,7 +36,7 @@ python scripts/profile_session_retention.py --model MODEL --data LOCAL_CORPUS \
   --languages eng jpn --repeat 7 --out LOCAL_RESULTS
 ```
 
-The private runtime field is an experiment control. No production retention option has been adopted.
+The initial measurements used a private runtime field; the public option uses the same LRU count.
 
 [Job2792200](runtime-session-retention-2792200.json), frozen5fdd30f, finished with PBS/publication
 exit0. All24 full token/time/text/segment outputs match across policies and every warm/timed/diagnostic
@@ -84,3 +86,10 @@ resident allocated bytes stay constant across its six measured cycles per langua
 These differences use final synchronized observations. The allocator, library/context allocations
 and device samples have different scopes, as described above. They are measured costs of retention3
 for this workload, not a general memory bound. Full13,232-input reuse compatibility remains pending.
+
+`audit_large_regression.py --mode beam_sessions --case beam_b3` compares public cache sizes2/3
+with the optimized default search in both. It preserves the established corpus/grouping and records
+session creation counts and maximum retained entries per process. Resume keeps observations per job;
+counts describe that process, not an uninterrupted execution across allocations. It is an E audit,
+so any output difference fails the run. This pass includes41 ordinary long-form inputs, which lack
+joined token IDs; their text/segments remain comparable.

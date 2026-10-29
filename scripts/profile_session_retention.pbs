@@ -63,7 +63,7 @@ mkdir -p "$OWSM_TRT_CACHE/$MODEL_NAME"
 cp -a "$REPO/.cache/engines/$MODEL_NAME/v621-NVIDIA_H200-sm90-trt11.4.0.106-float16-3d0cbdc9" "$OWSM_TRT_CACHE/$MODEL_NAME/"
 nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv -l 5 > "$LOCAL/results/gpu_utilization.csv" &
 SMI=$!
-# The default remains two retained sessions; the private three-entry control is experimental.
+# The default remains two retained sessions; three entries are an opt-in workload tradeoff.
 timeout 180 "$PY" -m pytest -q -p no:cacheprovider "$LOCAL/tests/test_session_retention.py" \
     > "$LOCAL/results/tests.log" 2>&1
 if [[ "$SESSION_MEMORY_ONLY" == 1 ]]; then

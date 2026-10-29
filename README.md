@@ -429,6 +429,13 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   improving. All sampled B1 outputs match; B3 changes five inputs (three texts and two timestamp
   sequences). Each language's seven paired repeats stay within one successful allocation; these
   percentages are neither a global multi-job gain nor additional factors to multiply together.
+* **Session retention.** `OWSM.from_pretrained(..., session_cache_size=3)` retains three encoder-decoder
+  batch/beam sessions instead of the default two. In repeated B1 then five-input B3 requests (final B2),
+  this avoids repeated graph setup. [H200/1B measurements](docs/runtime-session-retention.md) reduce
+  six-input cycle p50 from3.22s to225ms in English and4.24s to174ms in Japanese, with all24 outputs
+  equal. This includes eviction/capture cost, not a fixed-shape decoder gain. Isolated runs add about
+  558MiB of resident PyTorch allocation and710–750MiB of sampled device usage. Large GPU reuse
+  validation is pending; the default remains2 and CTC-only caching keeps its separate policy.
 * **Timestamp rules.** Like ESPnet, every search applies its `ScoreFilter`: no timestamps after `<notimestamps>`;
   otherwise the output starts with a timestamp, timestamps come in increasing pairs, and `<eos>` only after a
   complete pair.

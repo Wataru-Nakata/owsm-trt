@@ -22,13 +22,16 @@ FIELDS = ('tokens','timestamp_tokens','segments','text')
 
 def beam_variants(mode: str) -> dict:
     variants=dict(
-        reference=dict(beam_upper_bound=mode in ('beam_kernels','beam_preset'),
-                       beam_kernels=mode in ('beam_bound','beam_preset')),
+        reference=dict(beam_upper_bound=mode in ('beam_kernels','beam_preset','beam_sessions'),
+                       beam_kernels=mode in ('beam_bound','beam_preset','beam_sessions')),
         candidate=dict(beam_upper_bound=True,beam_kernels=True))
     if mode=='beam_preset':
         for variant in variants:
             variants[variant].update(beam_grouped_cross=variant=='candidate',
                 beam_compact_tail=variant=='candidate',beam_fused_lse=variant=='candidate')
+    if mode=='beam_sessions':
+        for variant,limit in [('reference',2),('candidate',3)]:
+            variants[variant]['session_cache_size']=limit
     return variants
 
 
@@ -128,7 +131,7 @@ def main():
     ap.add_argument('--data',type=Path,required=True)
     ap.add_argument('--out',type=Path,required=True)
     ap.add_argument('--publish',type=Path,required=True)
-    ap.add_argument('--mode',choices=['beam_bound','beam_kernels','beam_combined','beam_preset','greedy_kernels','ring_split','serial64','draft_budget','frontend_batches'],
+    ap.add_argument('--mode',choices=['beam_bound','beam_kernels','beam_combined','beam_preset','beam_sessions','greedy_kernels','ring_split','serial64','draft_budget','frontend_batches'],
                     default='beam_bound')
     ap.add_argument('--case',choices=['beam_b1','beam_b3','beam_prompt','beam_long','plain_ts','draft_ts','draft_bulk','translation','long'],default='beam_b1')
     ap.add_argument('--datasets',nargs='+')
@@ -148,6 +151,8 @@ def main():
         ap.error('beam modes require a beam case; other modes require a greedy case')
     if args.mode=='beam_preset' and args.case not in ('beam_b1','beam_b3'):
         ap.error('beam_preset requires beam_b1 or beam_b3 for this ordinary-corpus comparison')
+    if args.mode=='beam_sessions' and args.case!='beam_b3':
+        ap.error('beam_sessions requires beam_b3 to exercise mixed session shapes')
     if args.case=='draft_bulk' and args.mode not in ('greedy_kernels','draft_budget','frontend_batches'):
         ap.error('draft_bulk requires greedy_kernels, draft_budget or frontend_batches; single-row scheduling knobs are not bulk ablations')
     if args.mode=='draft_budget' and args.case!='draft_bulk':
@@ -237,10 +242,28 @@ def main():
         elif args.mode=='frontend_batches':
             models['reference'] = OWSM(model.cfg,model.tokenizer,model.frontend,current,model.opts,
                 model.device,use_cuda_graph=model.use_cuda_graph,frontend_graph_max_batch=1)
-        elif args.mode=='beam_preset':
+        elif args.mode in ('beam_preset','beam_sessions'):
             models['reference'] = OWSM(model.cfg,model.tokenizer,model.frontend,current,model.opts,
                 model.device,use_cuda_graph=model.use_cuda_graph,**config['beam_variants']['reference'])
         pools = {v:OrderedDict() for v in backends}
+        session_observations = {}
+        if args.mode=='beam_sessions':
+            for variant,owner in models.items():
+                observed = dict(created={},maximum_retained=0)
+                session_observations[variant] = observed
+                original = owner._session
+
+                def observe(batch,beam=1,owner=owner,original=original,observed=observed):
+                    missing = (batch,beam) not in owner._sessions
+                    session = original(batch,beam)
+                    if missing:
+                        key = f'batch={batch},beam={beam}'
+                        observed['created'][key] = observed['created'].get(key,0)+1
+                    observed['maximum_retained'] = max(observed['maximum_retained'],len(owner._sessions))
+                    assert len(owner._sessions)<=owner.session_cache_size
+                    return session
+
+                owner._session = observe
         engines = hub.cache_dir()/files.name.replace('/','--')/engine_tag(model.opts)
         env = dict(engine_sha256={p.name:sha256(p) for p in engines.glob('*.engine')},gpu=torch.cuda.get_device_name(),
             torch=torch.__version__,cuda=torch.version.cuda,job=os.environ.get('PBS_JOBID'),
@@ -248,7 +271,7 @@ def main():
         env['decoder_settings'] = {v:dict(kernel=type(b.kernel).__name__,
             programs=getattr(b.kernel,'P',None),solo_programs=getattr(b.kernel,'P_solo',None),
             single_cross_splits=getattr(b.kernel,'single_cross_splits',None)) for v,b in backends.items()}
-        if args.mode=='beam_preset':
+        if args.mode in ('beam_preset','beam_sessions'):
             env['decoder_settings_scope'] = ('Pipeline base backend only; effective grouped beam/tail routes '
                                              'and search options are recorded per session in decoder_dispatch.')
             env['beam_settings'] = {v:{key:getattr(m,key) for key in config['beam_variants'][v]}
@@ -272,6 +295,8 @@ def main():
                 'Fallback count includes cache-capacity misses only; above-limit eager calls are not counted. '
                 'Input/output bytes exclude graph-private intermediate pools/workspaces. No cache eviction.')
         env['decoder_dispatch'] = {v:{} for v in backends}
+        if args.mode=='beam_sessions':
+            env['session_observations'] = {}
         env['dispatch_scope'] = ('Configured single-token and already bound drafted-verification functions '
                                  'for observed sessions; listed buckets/windows may only have warmed/captured. '
                                  'Includes per-entry observation jobs, not execution counts.')
@@ -286,6 +311,8 @@ def main():
             assert previous.get('draft_token_budgets')==env.get('draft_token_budgets'), 'draft budget changed on resume'
             assert previous.get('frontend_batch_limits')==env.get('frontend_batch_limits'), 'frontend limits changed on resume'
             assert previous.get('beam_settings')==env.get('beam_settings'), 'beam options changed on resume'
+            if args.mode=='beam_sessions':
+                env['session_observations'] = previous['session_observations']
             if args.mode=='frontend_batches':
                 env['frontend_observations'] = previous['frontend_observations']
         (args.out/'environment.json').write_text(json.dumps(env,indent=2)+'\n')
@@ -349,7 +376,7 @@ def main():
                             observed = dict(plain_solo=solo,decoder=previous_dispatch.get('decoder',{}) | {
                                 str(bucket):info | dict(observed_job=os.environ.get('PBS_JOBID'))
                                 for bucket,info in steps.items()})
-                            if args.mode=='beam_preset':
+                            if args.mode in ('beam_preset','beam_sessions'):
                                 observed['search'] = {key:getattr(session,key) for key in (
                                     'fused_lse','compact_tail','compact_tail_fallback','share_cross_kv','cross_kv_fallback','chunk')}
                                 assert session.fused_lse==model.beam_fused_lse
@@ -391,6 +418,10 @@ def main():
                         f.write(json.dumps(record,ensure_ascii=False)+'\n')
                 publish_file(path,args.publish/name)
                 completed[name] = dict(samples=len(records),sha256=sha256(path),differences=sum(bool(r['differences']) for r in records))
+                if args.mode=='beam_sessions':
+                    env['session_observations'][os.environ['PBS_JOBID']] = session_observations
+                    (args.out/'environment.json').write_text(json.dumps(env,indent=2)+'\n')
+                    publish_file(args.out/'environment.json',args.publish/'environment.json')
                 if args.mode=='frontend_batches':
                     env['frontend_observations'][os.environ['PBS_JOBID']] = {
                         v:(m._frontend_replay.info() | dict(shapes=[list(key[0]) for key in m._frontend_replay.entries])

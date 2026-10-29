@@ -1,7 +1,7 @@
 """Measure session eviction under alternating B1 and B3 requests with a final B2 group.
 
 The reference intentionally includes repeated session setup/capture. This is a mixed-shape
-request workload, not a kernel or fully resident steady-state speedup. The private3-entry
+request workload, not a kernel or fully resident steady-state speedup. The opt-in three-entry
 candidate changes no public defaults. Run inference/audio work only in a compute allocation.
 """
 
@@ -60,7 +60,7 @@ def main():
                     device_used_bytes=total-free, device_total_bytes=total)
 
     with torch.inference_mode(), ExitStack() as stack:
-        model, load_ms = wall(lambda: OWSM.from_pretrained(args.model))
+        model, load_ms = wall(lambda: OWSM.from_pretrained(args.model, session_cache_size=max(limits.values())))
         selected = select_inputs(json.loads((args.data/'index.json').read_text()), 32, model.cfg.speech_seconds)
         if not set(args.languages) <= selected.keys():
             ap.error('requested language absent from the corpus')
@@ -77,7 +77,7 @@ def main():
             versions={name: importlib.metadata.version(name) for name in ('torch', 'triton', 'tensorrt')},
             nvidia_smi=command(['nvidia-smi', '--query-gpu=name,uuid,driver_version', '--format=csv']),
             repeat=args.repeat, session_limits=limits, memory_scope=memory_scope,
-            scope='Private session retention ablation, public default2 unchanged. '
+            scope='Session retention ablation, public default2 unchanged. '
                   'Reference includes cache churn/setup/capture. See memory_scope for pool residency. Loaded audio '
                   'outside timing. Diagnostic factory/decoder counts are separate from timing.'))
         archives = {}
@@ -105,7 +105,7 @@ def main():
 
             def cycle(variant, offset):
                 model._sessions = pools[variant]
-                model._session_cache_limit = limits[variant]
+                model.session_cache_size = limits[variant]
                 single = model.transcribe(waves[offset], lang=lang, beam_size=5, timestamps=True)
                 batch = model.transcribe(waves[offset+1:offset+6], lang=lang, beam_size=5,
                                          batch_size=3, timestamps=True)
