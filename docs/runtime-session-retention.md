@@ -54,7 +54,7 @@ requests already fitting the cache. Both pools were resident during the paired r
 Initial setup/JIT and shape warmup are retained separately in the result, without comparing their
 ordered reference/candidate measurements as an independent cold-start speedup.
 
-Standalone memory assessment is prepared separately. Run the same profiler twice in fresh processes,
+Standalone memory assessment runs the same profiler twice in fresh processes,
 once with `--isolated-limit 2` and once with `--isolated-limit 3`, using `--repeat 3`. Setting
 `SESSION_MEMORY_ONLY=1` in the PBS wrapper runs these processes sequentially in one allocation.
 It records resident and peak PyTorch allocated/reserved bytes, plus synchronized whole-device used
@@ -71,3 +71,16 @@ PYTHONPATH=scripts python scripts/summarize_session_memory.py RAW_MEMORY_RESULTS
 
 Memory outside these model/beam/request shapes remains unmeasured. The isolated mode changes only
 benchmark instrumentation; the production default is still two retained sessions.
+
+[Job2792242](runtime-session-memory-2792242.json), frozen afce443, completes both isolated processes
+with PBS/publication exit0. All24 outputs match each other and the earlier paired run. Candidate
+resident allocated bytes stay constant across its six measured cycles per language.
+
+| Language | Additional resident allocated | Additional reserved | Additional sampled device usage |
+|---|---:|---:|---:|
+| English |557.76MiB|576MiB|710MiB|
+| Japanese |557.27MiB|618MiB|750MiB|
+
+These differences use final synchronized observations. The allocator, library/context allocations
+and device samples have different scopes, as described above. They are measured costs of retention3
+for this workload, not a general memory bound. Full13,232-input reuse compatibility remains pending.

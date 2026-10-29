@@ -1,0 +1,1454 @@
+{
+  "source": {
+    "group": "gai51740",
+    "queue": "R9920261300",
+    "resource": "rt_HG",
+    "nodes": 1,
+    "gpus": 1,
+    "walltime": "01:00:00",
+    "account_gpu_cap": 192,
+    "approval": "Standing serial1GPU authorization; fresh192/queue/duplicate guard, no additional permission required.",
+    "model_name": "owsm_v4_medium_1B",
+    "experiment": "runtime_session_memory",
+    "expected_samples": 24,
+    "languages": [
+      "eng",
+      "jpn"
+    ],
+    "repeat": 3,
+    "commit": "afce44302c57e0c8930e62bd8b060648285f67d4",
+    "runtime_tree": "d9803c2253c55a0074128f14c896fbb56a1114e2",
+    "snapshot": "/groups/gai51740/acc12576tt/github.com/owsm_trt/outputs/runtime-session-memory-1b-submit-01/snapshot-afce4430.tar",
+    "status": "approved_not_submitted",
+    "approved_jobs": 1,
+    "additional_jobs_submitted": 0,
+    "prepared_at": "2026-10-29T04:13:14.160390+00:00",
+    "purpose": "Two independent policy processes2/3; resident/peak memory plus full output control to2792200. Not pairedtiming. Default2 unchanged.",
+    "prerequisite": "Validated pairedretention2792200 all24 exact and14positive pairedtotals."
+  },
+  "scheduler": {
+    "job": "2792242.pbs1",
+    "observed_at": "2026-10-29T04:17:42.841892+00:00",
+    "state": "F",
+    "exit_status": 0,
+    "stageout_status": 1,
+    "project": "gai51740",
+    "queue": "R9920261300",
+    "resources": {
+      "fs_factor": 1,
+      "mem": "160gb",
+      "mpiprocs": 1,
+      "ncpus": 16,
+      "ngpus": 1,
+      "njobs_rt_HG": 1,
+      "nodect": 1,
+      "ompthreads": 1,
+      "place": "scatter",
+      "select": "1:ncpus=16:mem=160gb:ngpus=1:njobs_rt_HG=1",
+      "walltime": "01:00:00"
+    },
+    "resources_used": {
+      "cpupercent": 107,
+      "cput": "00:02:34",
+      "mem": "26588116kb",
+      "ncpus": 16,
+      "vmem": "331929456kb",
+      "walltime": "00:02:41"
+    }
+  },
+  "environments": {
+    "reference": {
+      "commit": "afce44302c57e0c8930e62bd8b060648285f67d4",
+      "job": "2792242.pbs1",
+      "load_ms": 7178.35939489305,
+      "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+      "index_sha256": "213a5e54cf891cefdcfebffb4c2dbac392867f64bcecc9cc60c3bdf7e5057211",
+      "selection_sha256": "8b40bb8b1595fae35a87cc2018db4d0fe17cc7357a1e2c500dc15a10e432fb21",
+      "engine_sha256": {
+        "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+        "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+        "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+      },
+      "gpu": "NVIDIA H200",
+      "cuda": "13.0",
+      "versions": {
+        "torch": "2.14.1",
+        "triton": "3.8.0",
+        "tensorrt": "11.4.0.106"
+      },
+      "nvidia_smi": "name, uuid, driver_version\nNVIDIA H200, GPU-3d7e685e-a387-0a02-c691-1ae118993479, 595.71.05",
+      "repeat": 3,
+      "session_limits": {
+        "reference": 2
+      },
+      "memory_scope": "standalone policy in this process",
+      "scope": "Private session retention ablation, public default2 unchanged. Reference includes cache churn/setup/capture. See memory_scope for pool residency. Loaded audio outside timing. Diagnostic factory/decoder counts are separate from timing."
+    },
+    "candidate": {
+      "commit": "afce44302c57e0c8930e62bd8b060648285f67d4",
+      "job": "2792242.pbs1",
+      "load_ms": 3349.5713679585606,
+      "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+      "index_sha256": "213a5e54cf891cefdcfebffb4c2dbac392867f64bcecc9cc60c3bdf7e5057211",
+      "selection_sha256": "8b40bb8b1595fae35a87cc2018db4d0fe17cc7357a1e2c500dc15a10e432fb21",
+      "engine_sha256": {
+        "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+        "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+        "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+      },
+      "gpu": "NVIDIA H200",
+      "cuda": "13.0",
+      "versions": {
+        "torch": "2.14.1",
+        "triton": "3.8.0",
+        "tensorrt": "11.4.0.106"
+      },
+      "nvidia_smi": "name, uuid, driver_version\nNVIDIA H200, GPU-3d7e685e-a387-0a02-c691-1ae118993479, 595.71.05",
+      "repeat": 3,
+      "session_limits": {
+        "candidate": 3
+      },
+      "memory_scope": "standalone policy in this process",
+      "scope": "Private session retention ablation, public default2 unchanged. Reference includes cache churn/setup/capture. See memory_scope for pool residency. Loaded audio outside timing. Diagnostic factory/decoder counts are separate from timing."
+    }
+  },
+  "policies": {
+    "reference": {
+      "eng": {
+        "baseline": {
+          "allocated_bytes": 1711093248,
+          "reserved_bytes": 2097152000,
+          "peak_allocated_bytes": 1711093248,
+          "peak_reserved_bytes": 2097152000,
+          "device_used_bytes": 6346833920,
+          "device_total_bytes": 150111977472
+        },
+        "final": {
+          "allocated_bytes": 9275591680,
+          "reserved_bytes": 10227810304,
+          "peak_allocated_bytes": 9418661376,
+          "peak_reserved_bytes": 10303307776,
+          "device_used_bytes": 14716567552,
+          "device_total_bytes": 150111977472
+        },
+        "cold": [
+          {
+            "variant": "reference",
+            "offset": 0,
+            "wall_ms": 14768.691123928875,
+            "captures": {
+              "(3, 5)": {
+                "encode": 1,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              },
+              "(2, 5)": {
+                "encode": 1,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              }
+            },
+            "memory": {
+              "allocated_bytes": 9282190336,
+              "reserved_bytes": 9879683072,
+              "peak_allocated_bytes": 9422119936,
+              "peak_reserved_bytes": 9879683072,
+              "device_used_bytes": 14355857408,
+              "device_total_bytes": 150111977472
+            }
+          },
+          {
+            "variant": "reference",
+            "offset": 6,
+            "wall_ms": 3155.579993966967,
+            "captures": {
+              "(3, 5)": {
+                "encode": 1,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              },
+              "(2, 5)": {
+                "encode": 1,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              }
+            },
+            "memory": {
+              "allocated_bytes": 9277509632,
+              "reserved_bytes": 10089398272,
+              "peak_allocated_bytes": 9422119936,
+              "peak_reserved_bytes": 10089398272,
+              "device_used_bytes": 14567669760,
+              "device_total_bytes": 150111977472
+            }
+          }
+        ],
+        "cycle_memory": [
+          {
+            "allocated_bytes": 9277618688,
+            "reserved_bytes": 10005512192,
+            "peak_allocated_bytes": 9417676288,
+            "peak_reserved_bytes": 10093592576,
+            "device_used_bytes": 14485880832,
+            "device_total_bytes": 150111977472
+          },
+          {
+            "allocated_bytes": 9276924416,
+            "reserved_bytes": 10030678016,
+            "peak_allocated_bytes": 9417999872,
+            "peak_reserved_bytes": 10030678016,
+            "device_used_bytes": 14511046656,
+            "device_total_bytes": 150111977472
+          },
+          {
+            "allocated_bytes": 9276269568,
+            "reserved_bytes": 10129244160,
+            "peak_allocated_bytes": 9416399872,
+            "peak_reserved_bytes": 10208935936,
+            "device_used_bytes": 14611709952,
+            "device_total_bytes": 150111977472
+          },
+          {
+            "allocated_bytes": 9277444096,
+            "reserved_bytes": 10129244160,
+            "peak_allocated_bytes": 9418519552,
+            "peak_reserved_bytes": 10133438464,
+            "device_used_bytes": 14613807104,
+            "device_total_bytes": 150111977472
+          },
+          {
+            "allocated_bytes": 9275279872,
+            "reserved_bytes": 10299113472,
+            "peak_allocated_bytes": 9415410176,
+            "peak_reserved_bytes": 10299113472,
+            "device_used_bytes": 14783676416,
+            "device_total_bytes": 150111977472
+          },
+          {
+            "allocated_bytes": 9277585920,
+            "reserved_bytes": 10110369792,
+            "peak_allocated_bytes": 9418661376,
+            "peak_reserved_bytes": 10303307776,
+            "device_used_bytes": 14597029888,
+            "device_total_bytes": 150111977472
+          }
+        ],
+        "peak_allocated_bytes": 9418661376,
+        "peak_reserved_bytes": 10303307776,
+        "allocated_range_bytes": [
+          9275279872,
+          9277618688
+        ],
+        "diagnostics": [
+          {
+            "variant": "reference",
+            "created": [
+              {
+                "batch": 1,
+                "beam": 5,
+                "dispatch": {
+                  "64": {
+                    "implementation": "megakernel-gluon",
+                    "module": "owsm_trt.megakernel_gluon",
+                    "fallback_reason": null,
+                    "writes_cache": true
+                  },
+                  "128": {
+                    "implementation": "megakernel-gluon",
+                    "module": "owsm_trt.megakernel_gluon",
+                    "fallback_reason": null,
+                    "writes_cache": true
+                  },
+                  "256": {
+                    "implementation": "megakernel-gluon",
+                    "module": "owsm_trt.megakernel_gluon",
+                    "fallback_reason": null,
+                    "writes_cache": true
+                  },
+                  "512": {
+                    "implementation": "megakernel-gluon",
+                    "module": "owsm_trt.megakernel_gluon",
+                    "fallback_reason": null,
+                    "writes_cache": true
+                  }
+                }
+              },
+              {
+                "batch": 3,
+                "beam": 5,
+                "dispatch": {
+                  "64": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  },
+                  "128": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  },
+                  "256": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  },
+                  "512": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  }
+                }
+              },
+              {
+                "batch": 2,
+                "beam": 5,
+                "dispatch": {
+                  "64": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  },
+                  "128": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  },
+                  "256": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  },
+                  "512": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  }
+                }
+              },
+              {
+                "batch": 1,
+                "beam": 5,
+                "dispatch": {
+                  "64": {
+                    "implementation": "megakernel-gluon",
+                    "module": "owsm_trt.megakernel_gluon",
+                    "fallback_reason": null,
+                    "writes_cache": true
+                  },
+                  "128": {
+                    "implementation": "megakernel-gluon",
+                    "module": "owsm_trt.megakernel_gluon",
+                    "fallback_reason": null,
+                    "writes_cache": true
+                  },
+                  "256": {
+                    "implementation": "megakernel-gluon",
+                    "module": "owsm_trt.megakernel_gluon",
+                    "fallback_reason": null,
+                    "writes_cache": true
+                  },
+                  "512": {
+                    "implementation": "megakernel-gluon",
+                    "module": "owsm_trt.megakernel_gluon",
+                    "fallback_reason": null,
+                    "writes_cache": true
+                  }
+                }
+              },
+              {
+                "batch": 3,
+                "beam": 5,
+                "dispatch": {
+                  "64": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  },
+                  "128": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  },
+                  "256": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  },
+                  "512": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  }
+                }
+              },
+              {
+                "batch": 2,
+                "beam": 5,
+                "dispatch": {
+                  "64": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  },
+                  "128": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  },
+                  "256": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  },
+                  "512": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  }
+                }
+              }
+            ],
+            "retained_captures": {
+              "(3, 5)": {
+                "encode": 1,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              },
+              "(2, 5)": {
+                "encode": 1,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              }
+            }
+          }
+        ],
+        "quality": {
+          "metric": "WER",
+          "reference_units": 316,
+          "errors": 21,
+          "rate": 0.06645569620253164,
+          "annotated_utterances": 12,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "jpn": {
+        "baseline": {
+          "allocated_bytes": 5713843712,
+          "reserved_bytes": 6129975296,
+          "peak_allocated_bytes": 5713843712,
+          "peak_reserved_bytes": 6129975296,
+          "device_used_bytes": 10604052480,
+          "device_total_bytes": 150111977472
+        },
+        "final": {
+          "allocated_bytes": 9277262848,
+          "reserved_bytes": 10221518848,
+          "peak_allocated_bytes": 9419201536,
+          "peak_reserved_bytes": 10385096704,
+          "device_used_bytes": 14727053312,
+          "device_total_bytes": 150111977472
+        },
+        "cold": [
+          {
+            "variant": "reference",
+            "offset": 0,
+            "wall_ms": 2443.9074110705405,
+            "captures": {
+              "(3, 5)": {
+                "encode": 1,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              },
+              "(2, 5)": {
+                "encode": 1,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              }
+            },
+            "memory": {
+              "allocated_bytes": 9283459584,
+              "reserved_bytes": 9909043200,
+              "peak_allocated_bytes": 9423758848,
+              "peak_reserved_bytes": 9909043200,
+              "device_used_bytes": 14399897600,
+              "device_total_bytes": 150111977472
+            }
+          },
+          {
+            "variant": "reference",
+            "offset": 6,
+            "wall_ms": 3084.3272081110626,
+            "captures": {
+              "(3, 5)": {
+                "encode": 1,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              },
+              "(2, 5)": {
+                "encode": 1,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              }
+            },
+            "memory": {
+              "allocated_bytes": 9278772736,
+              "reserved_bytes": 10118758400,
+              "peak_allocated_bytes": 9423758848,
+              "peak_reserved_bytes": 10118758400,
+              "device_used_bytes": 14609612800,
+              "device_total_bytes": 150111977472
+            }
+          }
+        ],
+        "cycle_memory": [
+          {
+            "allocated_bytes": 9277986304,
+            "reserved_bytes": 10104078336,
+            "peak_allocated_bytes": 9418116608,
+            "peak_reserved_bytes": 10120855552,
+            "device_used_bytes": 14599127040,
+            "device_total_bytes": 150111977472
+          },
+          {
+            "allocated_bytes": 9277448192,
+            "reserved_bytes": 10060038144,
+            "peak_allocated_bytes": 9418318848,
+            "peak_reserved_bytes": 10106175488,
+            "device_used_bytes": 14557184000,
+            "device_total_bytes": 150111977472
+          },
+          {
+            "allocated_bytes": 9276896768,
+            "reserved_bytes": 10022289408,
+            "peak_allocated_bytes": 9417978368,
+            "peak_reserved_bytes": 10062135296,
+            "device_used_bytes": 14519435264,
+            "device_total_bytes": 150111977472
+          },
+          {
+            "allocated_bytes": 9277094400,
+            "reserved_bytes": 10192158720,
+            "peak_allocated_bytes": 9418023936,
+            "peak_reserved_bytes": 10192158720,
+            "device_used_bytes": 14691401728,
+            "device_total_bytes": 150111977472
+          },
+          {
+            "allocated_bytes": 9277445632,
+            "reserved_bytes": 10175381504,
+            "peak_allocated_bytes": 9418543616,
+            "peak_reserved_bytes": 10194255872,
+            "device_used_bytes": 14676721664,
+            "device_total_bytes": 150111977472
+          },
+          {
+            "allocated_bytes": 9278330880,
+            "reserved_bytes": 10382999552,
+            "peak_allocated_bytes": 9419201536,
+            "peak_reserved_bytes": 10382999552,
+            "device_used_bytes": 14884339712,
+            "device_total_bytes": 150111977472
+          }
+        ],
+        "peak_allocated_bytes": 9419201536,
+        "peak_reserved_bytes": 10382999552,
+        "allocated_range_bytes": [
+          9276896768,
+          9278330880
+        ],
+        "diagnostics": [
+          {
+            "variant": "reference",
+            "created": [
+              {
+                "batch": 1,
+                "beam": 5,
+                "dispatch": {
+                  "64": {
+                    "implementation": "megakernel-gluon",
+                    "module": "owsm_trt.megakernel_gluon",
+                    "fallback_reason": null,
+                    "writes_cache": true
+                  },
+                  "128": {
+                    "implementation": "megakernel-gluon",
+                    "module": "owsm_trt.megakernel_gluon",
+                    "fallback_reason": null,
+                    "writes_cache": true
+                  },
+                  "256": {
+                    "implementation": "megakernel-gluon",
+                    "module": "owsm_trt.megakernel_gluon",
+                    "fallback_reason": null,
+                    "writes_cache": true
+                  },
+                  "512": {
+                    "implementation": "megakernel-gluon",
+                    "module": "owsm_trt.megakernel_gluon",
+                    "fallback_reason": null,
+                    "writes_cache": true
+                  }
+                }
+              },
+              {
+                "batch": 3,
+                "beam": 5,
+                "dispatch": {
+                  "64": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  },
+                  "128": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  },
+                  "256": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  },
+                  "512": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  }
+                }
+              },
+              {
+                "batch": 2,
+                "beam": 5,
+                "dispatch": {
+                  "64": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  },
+                  "128": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  },
+                  "256": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  },
+                  "512": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  }
+                }
+              },
+              {
+                "batch": 1,
+                "beam": 5,
+                "dispatch": {
+                  "64": {
+                    "implementation": "megakernel-gluon",
+                    "module": "owsm_trt.megakernel_gluon",
+                    "fallback_reason": null,
+                    "writes_cache": true
+                  },
+                  "128": {
+                    "implementation": "megakernel-gluon",
+                    "module": "owsm_trt.megakernel_gluon",
+                    "fallback_reason": null,
+                    "writes_cache": true
+                  },
+                  "256": {
+                    "implementation": "megakernel-gluon",
+                    "module": "owsm_trt.megakernel_gluon",
+                    "fallback_reason": null,
+                    "writes_cache": true
+                  },
+                  "512": {
+                    "implementation": "megakernel-gluon",
+                    "module": "owsm_trt.megakernel_gluon",
+                    "fallback_reason": null,
+                    "writes_cache": true
+                  }
+                }
+              },
+              {
+                "batch": 3,
+                "beam": 5,
+                "dispatch": {
+                  "64": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  },
+                  "128": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  },
+                  "256": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  },
+                  "512": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  }
+                }
+              },
+              {
+                "batch": 2,
+                "beam": 5,
+                "dispatch": {
+                  "64": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  },
+                  "128": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  },
+                  "256": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  },
+                  "512": {
+                    "implementation": "tensorrt",
+                    "module": "owsm_trt.runtime",
+                    "fallback_reason": "shape limit",
+                    "writes_cache": false
+                  }
+                }
+              }
+            ],
+            "retained_captures": {
+              "(3, 5)": {
+                "encode": 1,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              },
+              "(2, 5)": {
+                "encode": 1,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              }
+            }
+          }
+        ],
+        "quality": {
+          "metric": "CER",
+          "reference_units": 445,
+          "errors": 102,
+          "rate": 0.2292134831460674,
+          "annotated_utterances": 12,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      }
+    },
+    "candidate": {
+      "eng": {
+        "baseline": {
+          "allocated_bytes": 1711093248,
+          "reserved_bytes": 2097152000,
+          "peak_allocated_bytes": 1711093248,
+          "peak_reserved_bytes": 2097152000,
+          "device_used_bytes": 6346833920,
+          "device_total_bytes": 150111977472
+        },
+        "final": {
+          "allocated_bytes": 9860444160,
+          "reserved_bytes": 10831790080,
+          "peak_allocated_bytes": 9900159488,
+          "peak_reserved_bytes": 10831790080,
+          "device_used_bytes": 15461056512,
+          "device_total_bytes": 150111977472
+        },
+        "cold": [
+          {
+            "variant": "candidate",
+            "offset": 0,
+            "wall_ms": 3451.4343689661473,
+            "captures": {
+              "(1, 5)": {
+                "encode": 1,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              },
+              "(3, 5)": {
+                "encode": 1,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              },
+              "(2, 5)": {
+                "encode": 1,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              }
+            },
+            "memory": {
+              "allocated_bytes": 9860212736,
+              "reserved_bytes": 10448011264,
+              "peak_allocated_bytes": 10000197632,
+              "peak_reserved_bytes": 10466885632,
+              "device_used_bytes": 14945157120,
+              "device_total_bytes": 150111977472
+            }
+          },
+          {
+            "variant": "candidate",
+            "offset": 6,
+            "wall_ms": 1840.4776249080896,
+            "captures": {
+              "(1, 5)": {
+                "encode": 2,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              },
+              "(3, 5)": {
+                "encode": 2,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              },
+              "(2, 5)": {
+                "encode": 2,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              }
+            },
+            "memory": {
+              "allocated_bytes": 9860444160,
+              "reserved_bytes": 10796138496,
+              "peak_allocated_bytes": 10071442944,
+              "peak_reserved_bytes": 10823401472,
+              "device_used_bytes": 15414919168,
+              "device_total_bytes": 150111977472
+            }
+          }
+        ],
+        "cycle_memory": [
+          {
+            "allocated_bytes": 9860444160,
+            "reserved_bytes": 10817110016,
+            "peak_allocated_bytes": 9880140288,
+            "peak_reserved_bytes": 10817110016,
+            "device_used_bytes": 15437987840,
+            "device_total_bytes": 150111977472
+          },
+          {
+            "allocated_bytes": 9860444160,
+            "reserved_bytes": 10831790080,
+            "peak_allocated_bytes": 9899552256,
+            "peak_reserved_bytes": 10831790080,
+            "device_used_bytes": 15452667904,
+            "device_total_bytes": 150111977472
+          },
+          {
+            "allocated_bytes": 9860444160,
+            "reserved_bytes": 10831790080,
+            "peak_allocated_bytes": 9880140288,
+            "peak_reserved_bytes": 10831790080,
+            "device_used_bytes": 15454765056,
+            "device_total_bytes": 150111977472
+          },
+          {
+            "allocated_bytes": 9860444160,
+            "reserved_bytes": 10831790080,
+            "peak_allocated_bytes": 9900159488,
+            "peak_reserved_bytes": 10831790080,
+            "device_used_bytes": 15456862208,
+            "device_total_bytes": 150111977472
+          },
+          {
+            "allocated_bytes": 9860444160,
+            "reserved_bytes": 10831790080,
+            "peak_allocated_bytes": 9880140288,
+            "peak_reserved_bytes": 10831790080,
+            "device_used_bytes": 15456862208,
+            "device_total_bytes": 150111977472
+          },
+          {
+            "allocated_bytes": 9860444160,
+            "reserved_bytes": 10831790080,
+            "peak_allocated_bytes": 9900159488,
+            "peak_reserved_bytes": 10831790080,
+            "device_used_bytes": 15458959360,
+            "device_total_bytes": 150111977472
+          }
+        ],
+        "peak_allocated_bytes": 9900159488,
+        "peak_reserved_bytes": 10831790080,
+        "allocated_range_bytes": [
+          9860444160,
+          9860444160
+        ],
+        "diagnostics": [
+          {
+            "variant": "candidate",
+            "created": [],
+            "retained_captures": {
+              "(1, 5)": {
+                "encode": 2,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              },
+              "(3, 5)": {
+                "encode": 2,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              },
+              "(2, 5)": {
+                "encode": 2,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              }
+            }
+          }
+        ],
+        "quality": {
+          "metric": "WER",
+          "reference_units": 316,
+          "errors": 21,
+          "rate": 0.06645569620253164,
+          "annotated_utterances": 12,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "jpn": {
+        "baseline": {
+          "allocated_bytes": 5713843712,
+          "reserved_bytes": 6127878144,
+          "peak_allocated_bytes": 5713843712,
+          "peak_reserved_bytes": 6127878144,
+          "device_used_bytes": 10551623680,
+          "device_total_bytes": 150111977472
+        },
+        "final": {
+          "allocated_bytes": 9861598208,
+          "reserved_bytes": 10869538816,
+          "peak_allocated_bytes": 9889354752,
+          "peak_reserved_bytes": 10869538816,
+          "device_used_bytes": 15513485312,
+          "device_total_bytes": 150111977472
+        },
+        "cold": [
+          {
+            "variant": "candidate",
+            "offset": 0,
+            "wall_ms": 2909.672620939091,
+            "captures": {
+              "(1, 5)": {
+                "encode": 1,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              },
+              "(3, 5)": {
+                "encode": 1,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              },
+              "(2, 5)": {
+                "encode": 1,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              }
+            },
+            "memory": {
+              "allocated_bytes": 9861481984,
+              "reserved_bytes": 10475274240,
+              "peak_allocated_bytes": 10001679872,
+              "peak_reserved_bytes": 10496245760,
+              "device_used_bytes": 14999683072,
+              "device_total_bytes": 150111977472
+            }
+          },
+          {
+            "variant": "candidate",
+            "offset": 6,
+            "wall_ms": 1569.0869288519025,
+            "captures": {
+              "(1, 5)": {
+                "encode": 2,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              },
+              "(3, 5)": {
+                "encode": 2,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              },
+              "(2, 5)": {
+                "encode": 2,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              }
+            },
+            "memory": {
+              "allocated_bytes": 9861598208,
+              "reserved_bytes": 10823401472,
+              "peak_allocated_bytes": 10069985792,
+              "peak_reserved_bytes": 10867441664,
+              "device_used_bytes": 15456862208,
+              "device_total_bytes": 150111977472
+            }
+          }
+        ],
+        "cycle_memory": [
+          {
+            "allocated_bytes": 9861598208,
+            "reserved_bytes": 10846470144,
+            "peak_allocated_bytes": 9881294336,
+            "peak_reserved_bytes": 10846470144,
+            "device_used_bytes": 15482028032,
+            "device_total_bytes": 150111977472
+          },
+          {
+            "allocated_bytes": 9861598208,
+            "reserved_bytes": 10869538816,
+            "peak_allocated_bytes": 9889354752,
+            "peak_reserved_bytes": 10869538816,
+            "device_used_bytes": 15507193856,
+            "device_total_bytes": 150111977472
+          },
+          {
+            "allocated_bytes": 9861598208,
+            "reserved_bytes": 10869538816,
+            "peak_allocated_bytes": 9881294336,
+            "peak_reserved_bytes": 10869538816,
+            "device_used_bytes": 15507193856,
+            "device_total_bytes": 150111977472
+          },
+          {
+            "allocated_bytes": 9861598208,
+            "reserved_bytes": 10869538816,
+            "peak_allocated_bytes": 9889354752,
+            "peak_reserved_bytes": 10869538816,
+            "device_used_bytes": 15509291008,
+            "device_total_bytes": 150111977472
+          },
+          {
+            "allocated_bytes": 9861598208,
+            "reserved_bytes": 10869538816,
+            "peak_allocated_bytes": 9881294336,
+            "peak_reserved_bytes": 10869538816,
+            "device_used_bytes": 15511388160,
+            "device_total_bytes": 150111977472
+          },
+          {
+            "allocated_bytes": 9861598208,
+            "reserved_bytes": 10869538816,
+            "peak_allocated_bytes": 9889354752,
+            "peak_reserved_bytes": 10869538816,
+            "device_used_bytes": 15511388160,
+            "device_total_bytes": 150111977472
+          }
+        ],
+        "peak_allocated_bytes": 9889354752,
+        "peak_reserved_bytes": 10869538816,
+        "allocated_range_bytes": [
+          9861598208,
+          9861598208
+        ],
+        "diagnostics": [
+          {
+            "variant": "candidate",
+            "created": [],
+            "retained_captures": {
+              "(1, 5)": {
+                "encode": 2,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              },
+              "(3, 5)": {
+                "encode": 2,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              },
+              "(2, 5)": {
+                "encode": 2,
+                "plain_select_fused": false,
+                "ctc": 0,
+                "decode": 4,
+                "experimental_chunk_decode": 0,
+                "plain_ready": null,
+                "plain_steps": 4,
+                "verify": 0,
+                "ready_verify_steps": 0,
+                "normal_verify_graphs": 0,
+                "notime_graphs": 0,
+                "selection_fused_windows": 0,
+                "selection_split_windows": 0
+              }
+            }
+          }
+        ],
+        "quality": {
+          "metric": "CER",
+          "reference_units": 445,
+          "errors": 102,
+          "rate": 0.2292134831460674,
+          "annotated_utterances": 12,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      }
+    }
+  },
+  "candidate_minus_reference": {
+    "eng": {
+      "final_bytes": {
+        "allocated_bytes": 584852480,
+        "reserved_bytes": 603979776,
+        "peak_allocated_bytes": 481498112,
+        "peak_reserved_bytes": 528482304,
+        "device_used_bytes": 744488960,
+        "device_total_bytes": 0
+      },
+      "peak_allocated_bytes": 481498112,
+      "peak_reserved_bytes": 528482304
+    },
+    "jpn": {
+      "final_bytes": {
+        "allocated_bytes": 584335360,
+        "reserved_bytes": 648019968,
+        "peak_allocated_bytes": 470153216,
+        "peak_reserved_bytes": 484442112,
+        "device_used_bytes": 786432000,
+        "device_total_bytes": 0
+      },
+      "peak_allocated_bytes": 470153216,
+      "peak_reserved_bytes": 486539264
+    }
+  },
+  "output_control": "outputs/runtime-2792200/retention",
+  "exact_output_inputs": 24,
+  "scope": "Separate fresh processes per policy, same allocation and engine/checkpoint. Resident/peak PyTorch allocator bytes and sampled whole-device used bytes are distinct. Device samples include context and library allocations; they are not process peaks. Each six-input cycle is two requests; sequential policy runs provide no paired timing claim. These samples do not bound memory for other models, beams, prompts or workloads."
+}
