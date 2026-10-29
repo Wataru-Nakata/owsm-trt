@@ -1,0 +1,4273 @@
+{
+  "source": {
+    "group": "gai51740",
+    "queue": "R9920261300",
+    "resource": "rt_HG",
+    "nodes": 1,
+    "gpus": 1,
+    "walltime": "01:00:00",
+    "account_gpu_cap": 192,
+    "approval": "Standing serial1GPU authorization;fresh192/queue/no duplicate guard required.",
+    "model_name": "owsm_v4_medium_1B",
+    "experiment": "runtime_expanded_beam_preset",
+    "comparison": "beam_preset",
+    "expected_samples": 64,
+    "expected_conditions": 4,
+    "repeat": 7,
+    "per_language": 32,
+    "commit": "3bb13622eafef1715c3b63982a14f452780f3754",
+    "runtime_tree": "0852f348ec6e2b0b8b4e7a03acdfe6248b25eb6f",
+    "snapshot": "/groups/gai51740/acc12576tt/github.com/owsm_trt/outputs/runtime-expanded-beam-subset-spa-zho-submit-01/snapshot-3bb13622.tar",
+    "status": "approved_not_submitted",
+    "approved_jobs": 1,
+    "additional_jobs_submitted": 0,
+    "prepared_at": "2026-10-28T13:27:57.571383+00:00",
+    "purpose": "Complete language-subset paired timing with7repeats; normalPBS/raw0 required. Same113ee39 executable runtime. No interrupted-job timing spliced.",
+    "classification": "N publicbeam preset; retain alloutputdifferences. Per-condition pairs remainwithinoneallocation; final coverage spansseparatejobs.",
+    "checks": "24 focusedmetadata/config tests,Ruff/bash/diff pass. Runtime tree identical0852 toprior113ee39.",
+    "prerequisite": "Complete13232 B3audit2787145/control validated; priorownjob2787385 confirmedF. Fresh192/queue/duplicate guard.",
+    "languages": [
+      "spa",
+      "zho"
+    ]
+  },
+  "environment": {
+    "commit": "3bb13622eafef1715c3b63982a14f452780f3754",
+    "job": "2787704.pbs1",
+    "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+    "index_sha256": "213a5e54cf891cefdcfebffb4c2dbac392867f64bcecc9cc60c3bdf7e5057211",
+    "selection_sha256": "070f8ede824b12c172c1c33d6d0fe0a6ebfd8952f7b1ede8512ae9c54674e5f2",
+    "engine_sha256": {
+      "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+      "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+      "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+    },
+    "gpu": "NVIDIA H200",
+    "cuda": "13.0",
+    "torch": "2.14.1+cu130",
+    "versions": {
+      "torch": "2.14.1",
+      "triton": "3.8.0",
+      "tensorrt": "11.4.0.106"
+    },
+    "nvidia_smi": "name, uuid, driver_version\nNVIDIA H200, GPU-13d7a0a7-f65c-a2e7-c87e-6547ddfa9cdf, 595.71.05",
+    "load_ms": 8296.337312989635,
+    "greedy_settings": {
+      "reference": {
+        "greedy_skip_finished": true,
+        "greedy_plain_solo": true,
+        "greedy_fused_select": true,
+        "greedy_split_choose": true,
+        "greedy_fuse_accept": true,
+        "greedy_reuse_notime": false,
+        "greedy_cache_draft_flags": true,
+        "greedy_lazy_verify_graphs": true,
+        "greedy_lazy_plain": true
+      },
+      "candidate": {
+        "greedy_skip_finished": true,
+        "greedy_plain_solo": true,
+        "greedy_fused_select": true,
+        "greedy_split_choose": true,
+        "greedy_fuse_accept": true,
+        "greedy_reuse_notime": false,
+        "greedy_cache_draft_flags": true,
+        "greedy_lazy_verify_graphs": true,
+        "greedy_lazy_plain": true
+      }
+    },
+    "draft_token_budgets": {
+      "reference": 256,
+      "candidate": 256
+    },
+    "frontend_batch_limits": {
+      "reference": 1,
+      "candidate": 1
+    },
+    "beam_settings": {
+      "reference": {
+        "beam_upper_bound": true,
+        "beam_kernels": true,
+        "beam_grouped_cross": false,
+        "beam_compact_tail": false,
+        "beam_fused_lse": false
+      },
+      "candidate": {
+        "beam_upper_bound": true,
+        "beam_kernels": true,
+        "beam_grouped_cross": true,
+        "beam_compact_tail": true,
+        "beam_fused_lse": true
+      }
+    },
+    "comparison": "beam_preset",
+    "classification": "N",
+    "cases": [
+      "beam_single_ts",
+      "beam_stream_ts_b3"
+    ],
+    "host_diagnostics": false,
+    "variant_order": [
+      "reference",
+      "candidate"
+    ],
+    "repeat": 7,
+    "per_language": 32,
+    "language_subset": [
+      "spa",
+      "zho"
+    ],
+    "scope": "Uninstrumented warm request timing. N: public grouped cross/tail/LSE beam preset, optimized default control. Same engine/checkpoint. Balanced language/duration/dataset sample excluding prior screening overlap, nonspeech and long-form. Not corpus-weighted performance or an independent quality holdout. Loaded audio outside measured calls; cold/capture and diagnostic dispatch counts separate. Both session pools resident."
+  },
+  "scheduler": {
+    "job": "2787704.pbs1",
+    "state": "F",
+    "exit_status": 0,
+    "stageout_status": 1,
+    "project": "gai51740",
+    "queue": "R9920261300",
+    "resources": {
+      "fs_factor": 1,
+      "mem": "160gb",
+      "mpiprocs": 1,
+      "ncpus": 16,
+      "ngpus": 1,
+      "njobs_rt_HG": 1,
+      "nodect": 1,
+      "ompthreads": 1,
+      "place": "scatter",
+      "select": "1:ncpus=16:mem=160gb:ngpus=1:njobs_rt_HG=1",
+      "walltime": "01:00:00"
+    },
+    "resources_used": {
+      "cpupercent": 109,
+      "cput": "00:05:01",
+      "mem": "36325084kb",
+      "ncpus": 16,
+      "vmem": "338123868kb",
+      "walltime": "00:04:44"
+    },
+    "observed_at": "2026-10-28T13:37:06.508562+00:00"
+  },
+  "complete": {
+    "job": "2787704.pbs1",
+    "complete": true,
+    "conditions": 4,
+    "samples": 64,
+    "repeat": 7
+  },
+  "conditions": {
+    "spa/beam_single_ts": {
+      "variants": {
+        "reference": {
+          "request_wall_ms": {
+            "n": 224,
+            "p50": 43.59737150662113,
+            "p95": 96.8656131401076,
+            "minimum": 22.314870002446696,
+            "maximum": 107.8487120103091,
+            "stdev": 23.36012234129953,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 1609.4210829905933,
+            "p95": 1609.837671625428,
+            "minimum": 1606.9300060044043,
+            "maximum": 1609.9064370209817,
+            "stdev": 1.0403902616793865,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 270.9673336403947,
+          "peak_allocated_bytes": 6899727360,
+          "draft_decoder_calls": 0
+        },
+        "candidate": {
+          "request_wall_ms": {
+            "n": 224,
+            "p50": 40.082980995066464,
+            "p95": 88.2503352011554,
+            "minimum": 20.747283997479826,
+            "maximum": 98.2355349988211,
+            "stdev": 21.156316004823758,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 1472.904552007094,
+            "p95": 1474.1908044728916,
+            "minimum": 1470.7066949922591,
+            "maximum": 1474.3730589689221,
+            "stdev": 1.2000331595042897,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 296.0502687021071,
+          "peak_allocated_bytes": 6899727360,
+          "draft_decoder_calls": 0
+        }
+      },
+      "repeat_totals_ms": {
+        "reference": [
+          1609.9064370209817,
+          1609.6772190358024,
+          1609.4210829905933,
+          1608.904186039581,
+          1609.6759529900737,
+          1606.9300060044043,
+          1607.802086014999
+        ],
+        "candidate": [
+          1473.7655439821538,
+          1472.904552007094,
+          1472.9290849354584,
+          1472.0616929553216,
+          1474.3730589689221,
+          1471.3736440317007,
+          1470.7066949922591
+        ]
+      },
+      "paired_rtfx_change_percent": {
+        "samples": [
+          9.237622198098872,
+          9.285915156031766,
+          9.26670533232874,
+          9.295975415917068,
+          9.176978187309892,
+          9.21291220095981,
+          9.321735699548261
+        ],
+        "stats": {
+          "n": 7,
+          "p50": 9.26670533232874,
+          "p95": 9.314007614458903,
+          "minimum": 9.176978187309892,
+          "maximum": 9.321735699548261,
+          "stdev": 0.046847177778194964,
+          "percentile_method": "linear interpolation at (n-1)*q"
+        },
+        "positive_repeats": 7
+      },
+      "pooled_rtfx_change_percent": 9.256811411445032,
+      "request_median_comparisons": [
+        {
+          "ids": [
+            "fleurs_es_test--es_419-10589251314781768344"
+          ],
+          "median_wall_ms": {
+            "reference": 24.271118993056007,
+            "candidate": 22.48666099330876
+          },
+          "rtfx_change_percent": 7.9356290392701645
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-10234623649795772963"
+          ],
+          "median_wall_ms": {
+            "reference": 58.1858540099347,
+            "candidate": 53.31609200220555
+          },
+          "rtfx_change_percent": 9.133756479240262
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-3873350128853031296"
+          ],
+          "median_wall_ms": {
+            "reference": 60.31015398912132,
+            "candidate": 55.21055300778244
+          },
+          "rtfx_change_percent": 9.236641735177042
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-390658848617539020"
+          ],
+          "median_wall_ms": {
+            "reference": 23.45675700053107,
+            "candidate": 21.75661499495618
+          },
+          "rtfx_change_percent": 7.814368209250522
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-5859386036374111061"
+          ],
+          "median_wall_ms": {
+            "reference": 22.65687500766944,
+            "candidate": 20.88763400388416
+          },
+          "rtfx_change_percent": 8.470279608768916
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-9633703226199096522"
+          ],
+          "median_wall_ms": {
+            "reference": 31.71012000530027,
+            "candidate": 29.369497002335265
+          },
+          "rtfx_change_percent": 7.969571296297295
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-8898033152301134515"
+          ],
+          "median_wall_ms": {
+            "reference": 79.50656699540559,
+            "candidate": 72.5528529874282
+          },
+          "rtfx_change_percent": 9.58434261597172
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-6978180619280489223"
+          ],
+          "median_wall_ms": {
+            "reference": 35.25364499364514,
+            "candidate": 32.451544000650756
+          },
+          "rtfx_change_percent": 8.634723182780423
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-17679286535662041524"
+          ],
+          "median_wall_ms": {
+            "reference": 48.25415099912789,
+            "candidate": 44.070709991501644
+          },
+          "rtfx_change_percent": 9.492565489489401
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-11972630248341529626"
+          ],
+          "median_wall_ms": {
+            "reference": 71.70680401031859,
+            "candidate": 65.61471500026528
+          },
+          "rtfx_change_percent": 9.28463837727358
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-8616615381295825121"
+          ],
+          "median_wall_ms": {
+            "reference": 35.30256400699727,
+            "candidate": 32.380581003963016
+          },
+          "rtfx_change_percent": 9.023874533556508
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-916453851137046048"
+          ],
+          "median_wall_ms": {
+            "reference": 51.9495800108416,
+            "candidate": 47.39229200640693
+          },
+          "rtfx_change_percent": 9.61609538491739
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-17124063481425082418"
+          ],
+          "median_wall_ms": {
+            "reference": 69.03345699538477,
+            "candidate": 62.89480300620198
+          },
+          "rtfx_change_percent": 9.760192727811635
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-10891154757063940475"
+          ],
+          "median_wall_ms": {
+            "reference": 28.016762997140177,
+            "candidate": 25.769494997803122
+          },
+          "rtfx_change_percent": 8.720652071484668
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-11603681517704231177"
+          ],
+          "median_wall_ms": {
+            "reference": 43.64625699236058,
+            "candidate": 40.01158400205895
+          },
+          "rtfx_change_percent": 9.08405173390432
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-8534628782326212080"
+          ],
+          "median_wall_ms": {
+            "reference": 107.54083799838554,
+            "candidate": 97.83030299877282
+          },
+          "rtfx_change_percent": 9.925896886708529
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-1254626507182510256"
+          ],
+          "median_wall_ms": {
+            "reference": 39.780876992153935,
+            "candidate": 36.437841001315974
+          },
+          "rtfx_change_percent": 9.174626978358091
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-10286137499198568147"
+          ],
+          "median_wall_ms": {
+            "reference": 43.58777900051791,
+            "candidate": 40.14543700031936
+          },
+          "rtfx_change_percent": 8.57467811390662
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-13302816037308807402"
+          ],
+          "median_wall_ms": {
+            "reference": 96.88933799043298,
+            "candidate": 88.27109799312893
+          },
+          "rtfx_change_percent": 9.76337690732576
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-13997737119505689253"
+          ],
+          "median_wall_ms": {
+            "reference": 26.235489000100642,
+            "candidate": 24.30072099377867
+          },
+          "rtfx_change_percent": 7.961772026506142
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-11444088495955610827"
+          ],
+          "median_wall_ms": {
+            "reference": 35.34455600311048,
+            "candidate": 32.48988799168728
+          },
+          "rtfx_change_percent": 8.786327648016456
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-11546411932607639194"
+          ],
+          "median_wall_ms": {
+            "reference": 87.1921349898912,
+            "candidate": 79.45304999884684
+          },
+          "rtfx_change_percent": 9.74045048133041
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-3585803545555373032"
+          ],
+          "median_wall_ms": {
+            "reference": 31.54966200236231,
+            "candidate": 29.131866991519928
+          },
+          "rtfx_change_percent": 8.299485273450502
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-416124317841544182"
+          ],
+          "median_wall_ms": {
+            "reference": 39.08325200609397,
+            "candidate": 35.97892999823671
+          },
+          "rtfx_change_percent": 8.62816656306733
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-17736040977613383649"
+          ],
+          "median_wall_ms": {
+            "reference": 79.59537900751457,
+            "candidate": 72.62711899238639
+          },
+          "rtfx_change_percent": 9.594570336541475
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-18103809775608034391"
+          ],
+          "median_wall_ms": {
+            "reference": 28.89956400031224,
+            "candidate": 26.699674999690615
+          },
+          "rtfx_change_percent": 8.239384938757176
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-17752586354715492019"
+          ],
+          "median_wall_ms": {
+            "reference": 38.10835500189569,
+            "candidate": 34.945100007462315
+          },
+          "rtfx_change_percent": 9.052070229468168
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-10764228514996022810"
+          ],
+          "median_wall_ms": {
+            "reference": 70.87792700622231,
+            "candidate": 64.81981500110123
+          },
+          "rtfx_change_percent": 9.346080369125009
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-5970990648174807758"
+          ],
+          "median_wall_ms": {
+            "reference": 44.37959200004116,
+            "candidate": 40.63787301129196
+          },
+          "rtfx_change_percent": 9.207467594845564
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-8959429617551765590"
+          ],
+          "median_wall_ms": {
+            "reference": 44.607824995182455,
+            "candidate": 40.82102500251494
+          },
+          "rtfx_change_percent": 9.27659212975227
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-6725969256029359068"
+          ],
+          "median_wall_ms": {
+            "reference": 86.14163499441929,
+            "candidate": 78.33777199266478
+          },
+          "rtfx_change_percent": 9.961813826521926
+        },
+        {
+          "ids": [
+            "fleurs_es_test--es_419-13500300560093598250"
+          ],
+          "median_wall_ms": {
+            "reference": 25.29519799281843,
+            "candidate": 23.35179000510834
+          },
+          "rtfx_change_percent": 8.322308428111747
+        }
+      ],
+      "requests_with_faster_candidate_median": 32,
+      "draft_call_differences": [],
+      "scope": "Single: per-input transcribe latency. Streaming: one complete multi-batch request. Pooled RTFx uses all warm wall samples; paired statistics use repeat totals. Draft-call counts are not all decoder steps. Memory includes both resident variant pools.",
+      "quality": {
+        "reference": {
+          "metric": "WER",
+          "reference_units": 948,
+          "errors": 45,
+          "rate": 0.04746835443037975,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "candidate": {
+          "metric": "WER",
+          "reference_units": 948,
+          "errors": 45,
+          "rate": 0.04746835443037975,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "cold": {
+        "reference": {
+          "warmup_ms": 17615.120382004534,
+          "captures": {
+            "(1, 5)": {
+              "encode": 16,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          },
+          "dispatch": {
+            "(1, 5)": {
+              "megakernel-gluon": 4
+            }
+          },
+          "allocated_delta_bytes": 4606035456,
+          "reserved_delta_bytes": 4689231872,
+          "frontend_graph": {
+            "captures": 16,
+            "max_entries": 32,
+            "max_batch": 1,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 28468800,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          }
+        },
+        "candidate": {
+          "warmup_ms": 18396.62128999771,
+          "captures": {
+            "(1, 5)": {
+              "encode": 16,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          },
+          "dispatch": {
+            "(1, 5)": {
+              "megakernel-gluon": 4
+            }
+          },
+          "allocated_delta_bytes": 579080192,
+          "reserved_delta_bytes": 524288000,
+          "frontend_graph": {
+            "captures": 16,
+            "max_entries": 32,
+            "max_batch": 1,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 28468800,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          }
+        }
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        }
+      },
+      "artifact_sha256": {
+        "cold.json": "76cc18de37db6969f6bc2d75d3d2a1014ffe664be90bd63e5f47203ea24f9bd8",
+        "actual_dispatch_reference.json": "8f5b8a0d794f7e4d5d92e3b37ff553307f7aac9fc0d7de35630a545b5bcb3df8",
+        "wall.json": "d41944372aad2c621fb2ce448222028cc9f02f892d445253d7296e4985851213",
+        "summary.json": "6bf2d9915cd405e3fe79cd25980966e8339767b3cf16d488056be93750286aaa",
+        "tokens.json": "f126d1524ac201cec70d015bfde4cfc1b18ae0e516256c92f7f3163873ffb120",
+        "actual_dispatch_candidate.json": "33a2898974de8d1a9e3c1cd0d4188f9fabc138f31689c77b57db0a5674aa6aae"
+      },
+      "beam_decoder_diagnostics": {
+        "reference": {
+          "decoder_calls": 1564,
+          "prefill_selections": 32,
+          "batches": [
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 21,
+              "output_lengths": [
+                20
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 58,
+              "output_lengths": [
+                58
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 60,
+              "output_lengths": [
+                58
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 20,
+              "output_lengths": [
+                20
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 19,
+              "output_lengths": [
+                19
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 29,
+              "output_lengths": [
+                29
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 80,
+              "output_lengths": [
+                80
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 33,
+              "output_lengths": [
+                33
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 47,
+              "output_lengths": [
+                47
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 72,
+              "output_lengths": [
+                71
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 33,
+              "output_lengths": [
+                33
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 51,
+              "output_lengths": [
+                51
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 69,
+              "output_lengths": [
+                69
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 25,
+              "output_lengths": [
+                25
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 42,
+              "output_lengths": [
+                42
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 109,
+              "output_lengths": [
+                109
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 38,
+              "output_lengths": [
+                38
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 42,
+              "output_lengths": [
+                42
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 98,
+              "output_lengths": [
+                98
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 23,
+              "output_lengths": [
+                23
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 33,
+              "output_lengths": [
+                32
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 88,
+              "output_lengths": [
+                88
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 29,
+              "output_lengths": [
+                29
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 37,
+              "output_lengths": [
+                37
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 80,
+              "output_lengths": [
+                80
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 26,
+              "output_lengths": [
+                26
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 36,
+              "output_lengths": [
+                36
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 71,
+              "output_lengths": [
+                71
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 43,
+              "output_lengths": [
+                43
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 43,
+              "output_lengths": [
+                43
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 87,
+              "output_lengths": [
+                87
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 22,
+              "output_lengths": [
+                22
+              ]
+            }
+          ],
+          "sessions": {
+            "(1, 5)": {
+              "dispatch": {
+                "64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                }
+              },
+              "fused_lse": false,
+              "compact_tail": false,
+              "chunk": 1,
+              "last_request_tail_start": null
+            }
+          },
+          "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads. Beam decoder_calls counts post-prefill decoder replays; selection0 after prefill is separate."
+        },
+        "candidate": {
+          "decoder_calls": 1564,
+          "prefill_selections": 32,
+          "batches": [
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 21,
+              "output_lengths": [
+                20
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 58,
+              "output_lengths": [
+                58
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 60,
+              "output_lengths": [
+                58
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 20,
+              "output_lengths": [
+                20
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 19,
+              "output_lengths": [
+                19
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 29,
+              "output_lengths": [
+                29
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 80,
+              "output_lengths": [
+                80
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 33,
+              "output_lengths": [
+                33
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 47,
+              "output_lengths": [
+                47
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 72,
+              "output_lengths": [
+                71
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 33,
+              "output_lengths": [
+                33
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 51,
+              "output_lengths": [
+                51
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 69,
+              "output_lengths": [
+                69
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 25,
+              "output_lengths": [
+                25
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 42,
+              "output_lengths": [
+                42
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 109,
+              "output_lengths": [
+                109
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 38,
+              "output_lengths": [
+                38
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 42,
+              "output_lengths": [
+                42
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 98,
+              "output_lengths": [
+                98
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 23,
+              "output_lengths": [
+                23
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 33,
+              "output_lengths": [
+                32
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 88,
+              "output_lengths": [
+                88
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 29,
+              "output_lengths": [
+                29
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 37,
+              "output_lengths": [
+                37
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 80,
+              "output_lengths": [
+                80
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 26,
+              "output_lengths": [
+                26
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 36,
+              "output_lengths": [
+                36
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 71,
+              "output_lengths": [
+                71
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 43,
+              "output_lengths": [
+                43
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 43,
+              "output_lengths": [
+                43
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 87,
+              "output_lengths": [
+                87
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 22,
+              "output_lengths": [
+                22
+              ]
+            }
+          ],
+          "sessions": {
+            "(1, 5)": {
+              "dispatch": {
+                "64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                }
+              },
+              "fused_lse": true,
+              "compact_tail": false,
+              "chunk": 1,
+              "last_request_tail_start": null
+            }
+          },
+          "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads. Beam decoder_calls counts post-prefill decoder replays; selection0 after prefill is separate."
+        }
+      }
+    },
+    "spa/beam_stream_ts_b3": {
+      "variants": {
+        "reference": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 1064.9573669943493,
+            "p95": 1067.7345972071635,
+            "minimum": 1064.3849999905797,
+            "maximum": 1068.0358710087603,
+            "stdev": 1.2854368008299681,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 1064.9573669943493,
+            "p95": 1067.7345972071635,
+            "minimum": 1064.3849999905797,
+            "maximum": 1068.0358710087603,
+            "stdev": 1.2854368008299681,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 409.1194499295504,
+          "peak_allocated_bytes": 12247211008,
+          "draft_decoder_calls": 0
+        },
+        "candidate": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 857.2952899994561,
+            "p95": 860.1486504048808,
+            "minimum": 856.479735011817,
+            "maximum": 860.6921550090192,
+            "stdev": 1.3598116694900642,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 857.2952899994561,
+            "p95": 860.1486504048808,
+            "minimum": 856.479735011817,
+            "maximum": 860.6921550090192,
+            "stdev": 1.3598116694900642,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 508.1928552641049,
+          "peak_allocated_bytes": 12247211008,
+          "draft_decoder_calls": 0
+        }
+      },
+      "repeat_totals_ms": {
+        "reference": [
+          1067.0316250034375,
+          1065.4357790044742,
+          1068.0358710087603,
+          1064.3849999905797,
+          1064.8321930057136,
+          1064.561759994831,
+          1064.9573669943493
+        ],
+        "candidate": [
+          857.7933869964909,
+          856.9386180024594,
+          860.6921550090192,
+          857.2952899994561,
+          856.9634440063965,
+          856.479735011817,
+          858.8804729952244
+        ]
+      },
+      "paired_rtfx_change_percent": {
+        "samples": [
+          24.392614955867288,
+          24.33046622265964,
+          24.0903457517361,
+          24.15617027258541,
+          24.256431292740842,
+          24.295031916913135,
+          23.993663900689334
+        ],
+        "stats": {
+          "n": 7,
+          "p50": 24.256431292740842,
+          "p95": 24.373970335904993,
+          "minimum": 23.993663900689334,
+          "maximum": 24.392614955867288,
+          "stdev": 0.13146262872916392,
+          "percentile_method": "linear interpolation at (n-1)*q"
+        },
+        "positive_repeats": 7
+      },
+      "pooled_rtfx_change_percent": 24.216254043070972,
+      "request_median_comparisons": [
+        {
+          "ids": [
+            "fleurs_es_test--es_419-10589251314781768344",
+            "fleurs_es_test--es_419-10234623649795772963",
+            "fleurs_es_test--es_419-3873350128853031296",
+            "fleurs_es_test--es_419-390658848617539020",
+            "fleurs_es_test--es_419-5859386036374111061",
+            "fleurs_es_test--es_419-9633703226199096522",
+            "fleurs_es_test--es_419-8898033152301134515",
+            "fleurs_es_test--es_419-6978180619280489223",
+            "fleurs_es_test--es_419-17679286535662041524",
+            "fleurs_es_test--es_419-11972630248341529626",
+            "fleurs_es_test--es_419-8616615381295825121",
+            "fleurs_es_test--es_419-916453851137046048",
+            "fleurs_es_test--es_419-17124063481425082418",
+            "fleurs_es_test--es_419-10891154757063940475",
+            "fleurs_es_test--es_419-11603681517704231177",
+            "fleurs_es_test--es_419-8534628782326212080",
+            "fleurs_es_test--es_419-1254626507182510256",
+            "fleurs_es_test--es_419-10286137499198568147",
+            "fleurs_es_test--es_419-13302816037308807402",
+            "fleurs_es_test--es_419-13997737119505689253",
+            "fleurs_es_test--es_419-11444088495955610827",
+            "fleurs_es_test--es_419-11546411932607639194",
+            "fleurs_es_test--es_419-3585803545555373032",
+            "fleurs_es_test--es_419-416124317841544182",
+            "fleurs_es_test--es_419-17736040977613383649",
+            "fleurs_es_test--es_419-18103809775608034391",
+            "fleurs_es_test--es_419-17752586354715492019",
+            "fleurs_es_test--es_419-10764228514996022810",
+            "fleurs_es_test--es_419-5970990648174807758",
+            "fleurs_es_test--es_419-8959429617551765590",
+            "fleurs_es_test--es_419-6725969256029359068",
+            "fleurs_es_test--es_419-13500300560093598250"
+          ],
+          "median_wall_ms": {
+            "reference": 1064.9573669943493,
+            "candidate": 857.2952899994561
+          },
+          "rtfx_change_percent": 24.222934549777463
+        }
+      ],
+      "requests_with_faster_candidate_median": 1,
+      "draft_call_differences": [],
+      "scope": "Single: per-input transcribe latency. Streaming: one complete multi-batch request. Pooled RTFx uses all warm wall samples; paired statistics use repeat totals. Draft-call counts are not all decoder steps. Memory includes both resident variant pools.",
+      "quality": {
+        "reference": {
+          "metric": "WER",
+          "reference_units": 948,
+          "errors": 45,
+          "rate": 0.04746835443037975,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "candidate": {
+          "metric": "WER",
+          "reference_units": 948,
+          "errors": 45,
+          "rate": 0.04746835443037975,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "cold": {
+        "reference": {
+          "warmup_ms": 8333.589067988214,
+          "captures": {
+            "(3, 5)": {
+              "encode": 8,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(2, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          },
+          "dispatch": {
+            "(3, 5)": {
+              "tensorrt: shape limit": 4
+            },
+            "(2, 5)": {
+              "tensorrt: shape limit": 4
+            }
+          },
+          "allocated_delta_bytes": 3567798272,
+          "reserved_delta_bytes": 5234491392,
+          "frontend_graph": {
+            "captures": 16,
+            "max_entries": 32,
+            "max_batch": 1,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 28468800,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          }
+        },
+        "candidate": {
+          "warmup_ms": 80180.92546300613,
+          "captures": {
+            "(3, 5)": {
+              "encode": 8,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(2, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          },
+          "dispatch": {
+            "(3, 5)": {
+              "megakernel-gluon": 4
+            },
+            "(2, 5)": {
+              "megakernel-gluon": 4
+            }
+          },
+          "allocated_delta_bytes": 2896397312,
+          "reserved_delta_bytes": 2938109952,
+          "frontend_graph": {
+            "captures": 16,
+            "max_entries": 32,
+            "max_batch": 1,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 28468800,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          }
+        }
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        }
+      },
+      "artifact_sha256": {
+        "cold.json": "3083d2bc932b8f265fd5659ce826c17db18ca2672fcd5b1097b6b135e027a96a",
+        "actual_dispatch_reference.json": "6e7af940ca43b4071bd3ab1c5e08dd0a51d2c3132815ba563e71267c7fa41672",
+        "wall.json": "8520615925e2a558316698da6128166708fd7fb6c32501cf6081e7dc9510426f",
+        "summary.json": "94dcc50b019f86d29d367df5acbe30d07f02ba7eab5575a4f03641382b47a4bf",
+        "tokens.json": "e56c52d3196ee0377c1388ca7f3adff0be3c4463507d9e60d4852440f6f599f0",
+        "actual_dispatch_candidate.json": "aa08b6d41437697fccff630ca982ecd92ba001048e2cd6bebf0f8dd2f6e61165"
+      },
+      "beam_decoder_diagnostics": {
+        "reference": {
+          "decoder_calls": 672,
+          "prefill_selections": 11,
+          "batches": [
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 24,
+              "output_lengths": [
+                20,
+                20,
+                19
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 32,
+              "output_lengths": [
+                25,
+                26,
+                29
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 40,
+              "output_lengths": [
+                23,
+                22,
+                38
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 44,
+              "output_lengths": [
+                43,
+                33,
+                33
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 44,
+              "output_lengths": [
+                32,
+                36,
+                42
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 48,
+              "output_lengths": [
+                47,
+                29,
+                37
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 60,
+              "output_lengths": [
+                42,
+                43,
+                58
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 89,
+              "output_lengths": [
+                51,
+                58,
+                87
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 81,
+              "output_lengths": [
+                69,
+                80,
+                71
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 101,
+              "output_lengths": [
+                88,
+                98,
+                80
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 10,
+              "primer_length": 3,
+              "decoder_calls": 109,
+              "output_lengths": [
+                109,
+                71
+              ]
+            }
+          ],
+          "sessions": {
+            "(3, 5)": {
+              "dispatch": {
+                "64": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "128": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "256": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "512": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                }
+              },
+              "fused_lse": false,
+              "compact_tail": false,
+              "chunk": 4,
+              "last_request_tail_start": null
+            },
+            "(2, 5)": {
+              "dispatch": {
+                "64": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "128": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "256": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "512": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                }
+              },
+              "fused_lse": false,
+              "compact_tail": false,
+              "chunk": 4,
+              "last_request_tail_start": null
+            }
+          },
+          "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads. Beam decoder_calls counts post-prefill decoder replays; selection0 after prefill is separate."
+        },
+        "candidate": {
+          "decoder_calls": 672,
+          "prefill_selections": 11,
+          "batches": [
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 24,
+              "output_lengths": [
+                20,
+                20,
+                19
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 32,
+              "output_lengths": [
+                25,
+                26,
+                29
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 40,
+              "output_lengths": [
+                23,
+                22,
+                38
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 44,
+              "output_lengths": [
+                43,
+                33,
+                33
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 44,
+              "output_lengths": [
+                32,
+                36,
+                42
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 48,
+              "output_lengths": [
+                47,
+                29,
+                37
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 60,
+              "output_lengths": [
+                42,
+                43,
+                58
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 89,
+              "output_lengths": [
+                51,
+                58,
+                87
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 81,
+              "output_lengths": [
+                69,
+                80,
+                71
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 101,
+              "output_lengths": [
+                88,
+                98,
+                80
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 10,
+              "primer_length": 3,
+              "decoder_calls": 109,
+              "output_lengths": [
+                109,
+                71
+              ]
+            }
+          ],
+          "sessions": {
+            "(3, 5)": {
+              "dispatch": {
+                "64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=2/cache=64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=2/cache=128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=2/cache=256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=2/cache=512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                }
+              },
+              "fused_lse": true,
+              "compact_tail": true,
+              "chunk": 4,
+              "last_request_tail_start": [
+                1,
+                89
+              ]
+            },
+            "(2, 5)": {
+              "dispatch": {
+                "64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                }
+              },
+              "fused_lse": true,
+              "compact_tail": true,
+              "chunk": 4,
+              "last_request_tail_start": [
+                0,
+                73
+              ]
+            }
+          },
+          "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads. Beam decoder_calls counts post-prefill decoder replays; selection0 after prefill is separate."
+        }
+      }
+    },
+    "zho/beam_single_ts": {
+      "variants": {
+        "reference": {
+          "request_wall_ms": {
+            "n": 224,
+            "p50": 31.731740506074857,
+            "p95": 78.48529019829584,
+            "minimum": 17.785860007279553,
+            "maximum": 79.79174300271552,
+            "stdev": 17.033988265047153,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 1191.7534929671092,
+            "p95": 1191.9112860181485,
+            "minimum": 1190.361829023459,
+            "maximum": 1191.9493170134956,
+            "stdev": 0.567230668258514,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 326.17887716867625,
+          "peak_allocated_bytes": 6904415232,
+          "draft_decoder_calls": 0
+        },
+        "candidate": {
+          "request_wall_ms": {
+            "n": 224,
+            "p50": 29.214322508778423,
+            "p95": 71.65340845895116,
+            "minimum": 16.505849998793565,
+            "maximum": 72.83126599213574,
+            "stdev": 15.445978493416474,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 1094.9755190085853,
+            "p95": 1095.6881676669582,
+            "minimum": 1094.6961900044698,
+            "maximum": 1095.9584220836405,
+            "stdev": 0.3880088187130086,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 354.8684443822617,
+          "peak_allocated_bytes": 6904415232,
+          "draft_decoder_calls": 0
+        }
+      },
+      "repeat_totals_ms": {
+        "reference": [
+          1191.9493170134956,
+          1190.361829023459,
+          1190.7653939997545,
+          1191.186860043672,
+          1191.8225470290054,
+          1191.7563780589262,
+          1191.7534929671092
+        ],
+        "candidate": [
+          1094.7758589754812,
+          1094.9053400399862,
+          1095.0575740280328,
+          1095.0069360114867,
+          1094.6961900044698,
+          1094.9755190085853,
+          1095.9584220836405
+        ]
+      },
+      "paired_rtfx_change_percent": {
+        "samples": [
+          8.876105299668534,
+          8.718241248141755,
+          8.73998064043997,
+          8.783499069194601,
+          8.872448621944962,
+          8.838632222386899,
+          8.740757765366936
+        ],
+        "stats": {
+          "n": 7,
+          "p50": 8.783499069194601,
+          "p95": 8.875008296351462,
+          "minimum": 8.718241248141755,
+          "maximum": 8.876105299668534,
+          "stdev": 0.06149395804736402,
+          "percentile_method": "linear interpolation at (n-1)*q"
+        },
+        "positive_repeats": 7
+      },
+      "pooled_rtfx_change_percent": 8.795654538582909,
+      "request_median_comparisons": [
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-5359218493314493777"
+          ],
+          "median_wall_ms": {
+            "reference": 32.4528720084345,
+            "candidate": 29.943715999252163
+          },
+          "rtfx_change_percent": 8.37957456330738
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-7485992766206519433"
+          ],
+          "median_wall_ms": {
+            "reference": 31.836055000894703,
+            "candidate": 29.446070999256335
+          },
+          "rtfx_change_percent": 8.116478431702244
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-608809329260395375"
+          ],
+          "median_wall_ms": {
+            "reference": 49.4645010039676,
+            "candidate": 45.33382099180017
+          },
+          "rtfx_change_percent": 9.111696128403945
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-14452059866858390995"
+          ],
+          "median_wall_ms": {
+            "reference": 22.50735499546863,
+            "candidate": 20.92331500898581
+          },
+          "rtfx_change_percent": 7.570693199440592
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-9699581877784184472"
+          ],
+          "median_wall_ms": {
+            "reference": 40.742779994616285,
+            "candidate": 37.303476012311876
+          },
+          "rtfx_change_percent": 9.219794909110558
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-2512442429278456870"
+          ],
+          "median_wall_ms": {
+            "reference": 43.620773998554796,
+            "candidate": 39.987333002500236
+          },
+          "rtfx_change_percent": 9.086479950606808
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-1626393343718951419"
+          ],
+          "median_wall_ms": {
+            "reference": 79.56355200440157,
+            "candidate": 72.58498200098984
+          },
+          "rtfx_change_percent": 9.614344194941825
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-17738549684744212080"
+          ],
+          "median_wall_ms": {
+            "reference": 20.659920992329717,
+            "candidate": 19.212604995118454
+          },
+          "rtfx_change_percent": 7.533158556994213
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-14948927894507528293"
+          ],
+          "median_wall_ms": {
+            "reference": 31.516560004092753,
+            "candidate": 29.064305999781936
+          },
+          "rtfx_change_percent": 8.437338928131343
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-17084587270054163808"
+          ],
+          "median_wall_ms": {
+            "reference": 30.871827999362722,
+            "candidate": 28.492935001850128
+          },
+          "rtfx_change_percent": 8.349062661877849
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-18059580157250761435"
+          ],
+          "median_wall_ms": {
+            "reference": 55.90257400763221,
+            "candidate": 51.06274499848951
+          },
+          "rtfx_change_percent": 9.47819982902578
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-9674297047338995817"
+          ],
+          "median_wall_ms": {
+            "reference": 17.89800199912861,
+            "candidate": 16.63827100128401
+          },
+          "rtfx_change_percent": 7.571285488422341
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-3701454187093730515"
+          ],
+          "median_wall_ms": {
+            "reference": 26.09617200505454,
+            "candidate": 24.16565699968487
+          },
+          "rtfx_change_percent": 7.988671714552775
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-12915718546983056859"
+          ],
+          "median_wall_ms": {
+            "reference": 44.4332440092694,
+            "candidate": 40.83692000131123
+          },
+          "rtfx_change_percent": 8.806550562193971
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-4543746568663720408"
+          ],
+          "median_wall_ms": {
+            "reference": 77.45396900281776,
+            "candidate": 70.8331710047787
+          },
+          "rtfx_change_percent": 9.347030358971775
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-5473826726739727303"
+          ],
+          "median_wall_ms": {
+            "reference": 24.457835010252893,
+            "candidate": 22.593414003495127
+          },
+          "rtfx_change_percent": 8.252055251452251
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-16785823246087242981"
+          ],
+          "median_wall_ms": {
+            "reference": 22.45136500278022,
+            "candidate": 20.865171012701467
+          },
+          "rtfx_change_percent": 7.602113537019051
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-6883634606271964216"
+          ],
+          "median_wall_ms": {
+            "reference": 43.64917500060983,
+            "candidate": 40.08190499735065
+          },
+          "rtfx_change_percent": 8.899951246067195
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-14300870981631473855"
+          ],
+          "median_wall_ms": {
+            "reference": 34.84519600169733,
+            "candidate": 32.13992000382859
+          },
+          "rtfx_change_percent": 8.417183358099468
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-5479411876618006152"
+          ],
+          "median_wall_ms": {
+            "reference": 20.633855994674377,
+            "candidate": 19.1683640005067
+          },
+          "rtfx_change_percent": 7.645368139549835
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-3344315741210503938"
+          ],
+          "median_wall_ms": {
+            "reference": 28.889367007650435,
+            "candidate": 26.678593989345245
+          },
+          "rtfx_change_percent": 8.286692391615968
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-17731746061944982790"
+          ],
+          "median_wall_ms": {
+            "reference": 31.002395000541583,
+            "candidate": 28.695389002677985
+          },
+          "rtfx_change_percent": 8.039640088685672
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-12263293608573146837"
+          ],
+          "median_wall_ms": {
+            "reference": 78.5073500010185,
+            "candidate": 71.66610399144702
+          },
+          "rtfx_change_percent": 9.545999612854562
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-16549419822262830660"
+          ],
+          "median_wall_ms": {
+            "reference": 27.09915000014007,
+            "candidate": 24.90137099812273
+          },
+          "rtfx_change_percent": 8.825935737365743
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-7208321975419226278"
+          ],
+          "median_wall_ms": {
+            "reference": 24.35037300165277,
+            "candidate": 22.515214994200505
+          },
+          "rtfx_change_percent": 8.150746097361129
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-17739918928868205471"
+          ],
+          "median_wall_ms": {
+            "reference": 42.742741003166884,
+            "candidate": 39.21432500646915
+          },
+          "rtfx_change_percent": 8.997773125294529
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-4670237890473852788"
+          ],
+          "median_wall_ms": {
+            "reference": 55.76094200660009,
+            "candidate": 51.06673701084219
+          },
+          "rtfx_change_percent": 9.19229477058865
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-454772499289221744"
+          ],
+          "median_wall_ms": {
+            "reference": 19.703177007613704,
+            "candidate": 18.31588600180112
+          },
+          "rtfx_change_percent": 7.574250056350884
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-1217058574298081955"
+          ],
+          "median_wall_ms": {
+            "reference": 25.18041100120172,
+            "candidate": 23.289651013328694
+          },
+          "rtfx_change_percent": 8.11845564706375
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-12625997379895833919"
+          ],
+          "median_wall_ms": {
+            "reference": 36.34615500050131,
+            "candidate": 33.36500299337786
+          },
+          "rtfx_change_percent": 8.93496700034806
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-5822785433218729093"
+          ],
+          "median_wall_ms": {
+            "reference": 51.050178008154035,
+            "candidate": 46.86245300399605
+          },
+          "rtfx_change_percent": 8.936205289554277
+        },
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-12537777433733171491"
+          ],
+          "median_wall_ms": {
+            "reference": 18.774860000121407,
+            "candidate": 17.49679299246054
+          },
+          "rtfx_change_percent": 7.304578663138961
+        }
+      ],
+      "requests_with_faster_candidate_median": 32,
+      "draft_call_differences": [],
+      "scope": "Single: per-input transcribe latency. Streaming: one complete multi-batch request. Pooled RTFx uses all warm wall samples; paired statistics use repeat totals. Draft-call counts are not all decoder steps. Memory includes both resident variant pools.",
+      "quality": {
+        "reference": {
+          "metric": "CER",
+          "reference_units": 1282,
+          "errors": 150,
+          "rate": 0.11700468018720749,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "candidate": {
+          "metric": "CER",
+          "reference_units": 1282,
+          "errors": 150,
+          "rate": 0.11700468018720749,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "cold": {
+        "reference": {
+          "warmup_ms": 4573.8451769866515,
+          "captures": {
+            "(1, 5)": {
+              "encode": 15,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          },
+          "dispatch": {
+            "(1, 5)": {
+              "megakernel-gluon": 4
+            }
+          },
+          "allocated_delta_bytes": 580845056,
+          "reserved_delta_bytes": 350224384,
+          "frontend_graph": {
+            "captures": 19,
+            "max_entries": 32,
+            "max_batch": 1,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 32964300,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          }
+        },
+        "candidate": {
+          "warmup_ms": 4438.733506001881,
+          "captures": {
+            "(1, 5)": {
+              "encode": 15,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          },
+          "dispatch": {
+            "(1, 5)": {
+              "megakernel-gluon": 4
+            }
+          },
+          "allocated_delta_bytes": 579079680,
+          "reserved_delta_bytes": 524288000,
+          "frontend_graph": {
+            "captures": 19,
+            "max_entries": 32,
+            "max_batch": 1,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 32964300,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          }
+        }
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        }
+      },
+      "artifact_sha256": {
+        "cold.json": "ffa8a93b93a14560915ed0cf0df6f568a163e239ef33f246dfc0ae9be95c8471",
+        "actual_dispatch_reference.json": "614886b62bf59d9aabed5042a600abaa72dc1f0af03b77e1dd2feaa1c26c9800",
+        "wall.json": "30bee18b1aad2bc8d50d689e9ecdf0bf2cd166d7b718b923c0a8315c6596c6f0",
+        "summary.json": "08b8f6a5811501cfbedee40874bc3c2ca2448ad280291cd67476761949d14a57",
+        "tokens.json": "d23d6cd9ea919db67bf2a9c0d8ee6a51e2dce83205442e5c133a03cec113333d",
+        "actual_dispatch_candidate.json": "9c136b73ab570755b9f264e3d81dc12a46ee81e7c2e2ab06e9e23bcb061a050a"
+      },
+      "beam_decoder_diagnostics": {
+        "reference": {
+          "decoder_calls": 1116,
+          "prefill_selections": 32,
+          "batches": [
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 30,
+              "output_lengths": [
+                30
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 29,
+              "output_lengths": [
+                29
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 48,
+              "output_lengths": [
+                48
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 19,
+              "output_lengths": [
+                19
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 39,
+              "output_lengths": [
+                39
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 42,
+              "output_lengths": [
+                42
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 80,
+              "output_lengths": [
+                80
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 17,
+              "output_lengths": [
+                17
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 29,
+              "output_lengths": [
+                29
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 28,
+              "output_lengths": [
+                28
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 55,
+              "output_lengths": [
+                55
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 14,
+              "output_lengths": [
+                14
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 23,
+              "output_lengths": [
+                23
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 43,
+              "output_lengths": [
+                43
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 78,
+              "output_lengths": [
+                78
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 21,
+              "output_lengths": [
+                21
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 19,
+              "output_lengths": [
+                19
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 42,
+              "output_lengths": [
+                42
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 32,
+              "output_lengths": [
+                31
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 17,
+              "output_lengths": [
+                17
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 26,
+              "output_lengths": [
+                25
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 28,
+              "output_lengths": [
+                28
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 79,
+              "output_lengths": [
+                79
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 24,
+              "output_lengths": [
+                24
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 21,
+              "output_lengths": [
+                21
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 41,
+              "output_lengths": [
+                41
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 55,
+              "output_lengths": [
+                55
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 16,
+              "output_lengths": [
+                16
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 22,
+              "output_lengths": [
+                22
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 34,
+              "output_lengths": [
+                34
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 50,
+              "output_lengths": [
+                50
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 15,
+              "output_lengths": [
+                15
+              ]
+            }
+          ],
+          "sessions": {
+            "(1, 5)": {
+              "dispatch": {
+                "64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                }
+              },
+              "fused_lse": false,
+              "compact_tail": false,
+              "chunk": 1,
+              "last_request_tail_start": null
+            }
+          },
+          "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads. Beam decoder_calls counts post-prefill decoder replays; selection0 after prefill is separate."
+        },
+        "candidate": {
+          "decoder_calls": 1116,
+          "prefill_selections": 32,
+          "batches": [
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 30,
+              "output_lengths": [
+                30
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 29,
+              "output_lengths": [
+                29
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 48,
+              "output_lengths": [
+                48
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 19,
+              "output_lengths": [
+                19
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 39,
+              "output_lengths": [
+                39
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 42,
+              "output_lengths": [
+                42
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 80,
+              "output_lengths": [
+                80
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 17,
+              "output_lengths": [
+                17
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 29,
+              "output_lengths": [
+                29
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 28,
+              "output_lengths": [
+                28
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 55,
+              "output_lengths": [
+                55
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 14,
+              "output_lengths": [
+                14
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 23,
+              "output_lengths": [
+                23
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 43,
+              "output_lengths": [
+                43
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 78,
+              "output_lengths": [
+                78
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 21,
+              "output_lengths": [
+                21
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 19,
+              "output_lengths": [
+                19
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 42,
+              "output_lengths": [
+                42
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 32,
+              "output_lengths": [
+                31
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 17,
+              "output_lengths": [
+                17
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 26,
+              "output_lengths": [
+                25
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 28,
+              "output_lengths": [
+                28
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 79,
+              "output_lengths": [
+                79
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 24,
+              "output_lengths": [
+                24
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 21,
+              "output_lengths": [
+                21
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 41,
+              "output_lengths": [
+                41
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 55,
+              "output_lengths": [
+                55
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 16,
+              "output_lengths": [
+                16
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 22,
+              "output_lengths": [
+                22
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 34,
+              "output_lengths": [
+                34
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 50,
+              "output_lengths": [
+                50
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 5,
+              "primer_length": 3,
+              "decoder_calls": 15,
+              "output_lengths": [
+                15
+              ]
+            }
+          ],
+          "sessions": {
+            "(1, 5)": {
+              "dispatch": {
+                "64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                }
+              },
+              "fused_lse": true,
+              "compact_tail": false,
+              "chunk": 1,
+              "last_request_tail_start": null
+            }
+          },
+          "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads. Beam decoder_calls counts post-prefill decoder replays; selection0 after prefill is separate."
+        }
+      }
+    },
+    "zho/beam_stream_ts_b3": {
+      "variants": {
+        "reference": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 787.0228849933483,
+            "p95": 788.0858382035512,
+            "minimum": 784.7848630044609,
+            "maximum": 788.1062250089599,
+            "stdev": 1.2343197831216637,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 787.0228849933483,
+            "p95": 788.0858382035512,
+            "minimum": 784.7848630044609,
+            "maximum": 788.1062250089599,
+            "stdev": 1.2343197831216637,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 494.02785280481675,
+          "peak_allocated_bytes": 12250122240,
+          "draft_decoder_calls": 0
+        },
+        "candidate": {
+          "request_wall_ms": {
+            "n": 7,
+            "p50": 645.3280730056576,
+            "p95": 647.178328296286,
+            "minimum": 643.8395809964277,
+            "maximum": 647.5572789931903,
+            "stdev": 1.3046990007725066,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 645.3280730056576,
+            "p95": 647.178328296286,
+            "minimum": 643.8395809964277,
+            "maximum": 647.5572789931903,
+            "stdev": 1.3046990007725066,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 602.2050917866893,
+          "peak_allocated_bytes": 12250122240,
+          "draft_decoder_calls": 0
+        }
+      },
+      "repeat_totals_ms": {
+        "reference": [
+          788.0382689909311,
+          788.1062250089599,
+          787.2146239969879,
+          784.7848630044609,
+          785.3310349892126,
+          787.0228849933483,
+          785.6693820067449
+        ],
+        "candidate": [
+          643.9320509962272,
+          647.5572789931903,
+          645.9818889998132,
+          646.2941100035096,
+          645.3280730056576,
+          643.8395809964277,
+          644.1327759966953
+        ]
+      },
+      "paired_rtfx_change_percent": {
+        "samples": [
+          22.379103163409432,
+          21.704480912374645,
+          21.863265426194566,
+          21.428441147359266,
+          21.694850703066738,
+          22.238971977355803,
+          21.973203551246655
+        ],
+        "stats": {
+          "n": 7,
+          "p50": 21.863265426194566,
+          "p95": 22.337063807593342,
+          "minimum": 21.428441147359266,
+          "maximum": 22.379103163409432,
+          "stdev": 0.3056111114812873,
+          "percentile_method": "linear interpolation at (n-1)*q"
+        },
+        "positive_repeats": 7
+      },
+      "pooled_rtfx_change_percent": 21.896991914059516,
+      "request_median_comparisons": [
+        {
+          "ids": [
+            "fleurs_zh_test--cmn_hans_cn-5359218493314493777",
+            "fleurs_zh_test--cmn_hans_cn-7485992766206519433",
+            "fleurs_zh_test--cmn_hans_cn-608809329260395375",
+            "fleurs_zh_test--cmn_hans_cn-14452059866858390995",
+            "fleurs_zh_test--cmn_hans_cn-9699581877784184472",
+            "fleurs_zh_test--cmn_hans_cn-2512442429278456870",
+            "fleurs_zh_test--cmn_hans_cn-1626393343718951419",
+            "fleurs_zh_test--cmn_hans_cn-17738549684744212080",
+            "fleurs_zh_test--cmn_hans_cn-14948927894507528293",
+            "fleurs_zh_test--cmn_hans_cn-17084587270054163808",
+            "fleurs_zh_test--cmn_hans_cn-18059580157250761435",
+            "fleurs_zh_test--cmn_hans_cn-9674297047338995817",
+            "fleurs_zh_test--cmn_hans_cn-3701454187093730515",
+            "fleurs_zh_test--cmn_hans_cn-12915718546983056859",
+            "fleurs_zh_test--cmn_hans_cn-4543746568663720408",
+            "fleurs_zh_test--cmn_hans_cn-5473826726739727303",
+            "fleurs_zh_test--cmn_hans_cn-16785823246087242981",
+            "fleurs_zh_test--cmn_hans_cn-6883634606271964216",
+            "fleurs_zh_test--cmn_hans_cn-14300870981631473855",
+            "fleurs_zh_test--cmn_hans_cn-5479411876618006152",
+            "fleurs_zh_test--cmn_hans_cn-3344315741210503938",
+            "fleurs_zh_test--cmn_hans_cn-17731746061944982790",
+            "fleurs_zh_test--cmn_hans_cn-12263293608573146837",
+            "fleurs_zh_test--cmn_hans_cn-16549419822262830660",
+            "fleurs_zh_test--cmn_hans_cn-7208321975419226278",
+            "fleurs_zh_test--cmn_hans_cn-17739918928868205471",
+            "fleurs_zh_test--cmn_hans_cn-4670237890473852788",
+            "fleurs_zh_test--cmn_hans_cn-454772499289221744",
+            "fleurs_zh_test--cmn_hans_cn-1217058574298081955",
+            "fleurs_zh_test--cmn_hans_cn-12625997379895833919",
+            "fleurs_zh_test--cmn_hans_cn-5822785433218729093",
+            "fleurs_zh_test--cmn_hans_cn-12537777433733171491"
+          ],
+          "median_wall_ms": {
+            "reference": 787.0228849933483,
+            "candidate": 645.3280730056576
+          },
+          "rtfx_change_percent": 21.957019679577527
+        }
+      ],
+      "requests_with_faster_candidate_median": 1,
+      "draft_call_differences": [],
+      "scope": "Single: per-input transcribe latency. Streaming: one complete multi-batch request. Pooled RTFx uses all warm wall samples; paired statistics use repeat totals. Draft-call counts are not all decoder steps. Memory includes both resident variant pools.",
+      "quality": {
+        "reference": {
+          "metric": "CER",
+          "reference_units": 1282,
+          "errors": 150,
+          "rate": 0.11700468018720749,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        },
+        "candidate": {
+          "metric": "CER",
+          "reference_units": 1282,
+          "errors": 150,
+          "rate": 0.11700468018720749,
+          "annotated_utterances": 32,
+          "reference_timestamp_error": null,
+          "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+        }
+      },
+      "cold": {
+        "reference": {
+          "warmup_ms": 7880.801631006761,
+          "captures": {
+            "(3, 5)": {
+              "encode": 10,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(2, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          },
+          "dispatch": {
+            "(3, 5)": {
+              "tensorrt: shape limit": 4
+            },
+            "(2, 5)": {
+              "tensorrt: shape limit": 4
+            }
+          },
+          "allocated_delta_bytes": 3567798272,
+          "reserved_delta_bytes": 5649727488,
+          "frontend_graph": {
+            "captures": 19,
+            "max_entries": 32,
+            "max_batch": 1,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 32964300,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          }
+        },
+        "candidate": {
+          "warmup_ms": 7000.4216019879095,
+          "captures": {
+            "(3, 5)": {
+              "encode": 10,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(2, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          },
+          "dispatch": {
+            "(3, 5)": {
+              "megakernel-gluon": 4
+            },
+            "(2, 5)": {
+              "megakernel-gluon": 4
+            }
+          },
+          "allocated_delta_bytes": 2896397312,
+          "reserved_delta_bytes": 2936012800,
+          "frontend_graph": {
+            "captures": 19,
+            "max_entries": 32,
+            "max_batch": 1,
+            "reuse_warmup_stream": true,
+            "capture_stream": "exclusive native stream",
+            "fallbacks": 0,
+            "input_output_bytes": 32964300,
+            "workspace_bytes": null,
+            "memory_note": "input/output only; captured intermediate private pools are additional"
+          }
+        }
+      },
+      "agreement": {
+        "tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "timestamp_tokens": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "segments": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        },
+        "text": {
+          "equal": 32,
+          "total": 32,
+          "different_ids": []
+        }
+      },
+      "artifact_sha256": {
+        "cold.json": "b07f824533127e162dd581e72d094cc137e32ed5f56a1ab9713e788dcf9d8b3e",
+        "actual_dispatch_reference.json": "de5a3455a0dbd08c81bfc73a824fe51238f999a98bb06a5c9a022aa18fbf8cc3",
+        "wall.json": "2e9cc7bd639ee99b09577a41ef04f9a4bb6a21ad42ae53a35cc44780cb8ce393",
+        "summary.json": "324f95962649c4188705b7067421beb353c85f6df87515844bf618acdda82b6e",
+        "tokens.json": "d23d6cd9ea919db67bf2a9c0d8ee6a51e2dce83205442e5c133a03cec113333d",
+        "actual_dispatch_candidate.json": "6e9c1bb934bfc1dabd99848935dbbf25c2bd065fc2ab7e3749ddf458de295eff"
+      },
+      "beam_decoder_diagnostics": {
+        "reference": {
+          "decoder_calls": 478,
+          "prefill_selections": 11,
+          "batches": [
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 16,
+              "output_lengths": [
+                15,
+                14,
+                16
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 24,
+              "output_lengths": [
+                17,
+                21,
+                17
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 24,
+              "output_lengths": [
+                24,
+                19,
+                19
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 32,
+              "output_lengths": [
+                22,
+                29,
+                25
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 32,
+              "output_lengths": [
+                21,
+                23,
+                30
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 44,
+              "output_lengths": [
+                39,
+                43,
+                34
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 44,
+              "output_lengths": [
+                42,
+                28,
+                42
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 44,
+              "output_lengths": [
+                41,
+                29,
+                28
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 56,
+              "output_lengths": [
+                50,
+                55,
+                55
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 81,
+              "output_lengths": [
+                78,
+                31,
+                48
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 10,
+              "primer_length": 3,
+              "decoder_calls": 81,
+              "output_lengths": [
+                79,
+                80
+              ]
+            }
+          ],
+          "sessions": {
+            "(3, 5)": {
+              "dispatch": {
+                "64": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "128": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "256": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "512": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                }
+              },
+              "fused_lse": false,
+              "compact_tail": false,
+              "chunk": 4,
+              "last_request_tail_start": null
+            },
+            "(2, 5)": {
+              "dispatch": {
+                "64": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "128": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "256": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "512": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                }
+              },
+              "fused_lse": false,
+              "compact_tail": false,
+              "chunk": 4,
+              "last_request_tail_start": null
+            }
+          },
+          "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads. Beam decoder_calls counts post-prefill decoder replays; selection0 after prefill is separate."
+        },
+        "candidate": {
+          "decoder_calls": 478,
+          "prefill_selections": 11,
+          "batches": [
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 16,
+              "output_lengths": [
+                15,
+                14,
+                16
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 24,
+              "output_lengths": [
+                17,
+                21,
+                17
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 24,
+              "output_lengths": [
+                24,
+                19,
+                19
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 32,
+              "output_lengths": [
+                22,
+                29,
+                25
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 32,
+              "output_lengths": [
+                21,
+                23,
+                30
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 44,
+              "output_lengths": [
+                39,
+                43,
+                34
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 44,
+              "output_lengths": [
+                42,
+                28,
+                42
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 44,
+              "output_lengths": [
+                41,
+                29,
+                28
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 56,
+              "output_lengths": [
+                50,
+                55,
+                55
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 15,
+              "primer_length": 3,
+              "decoder_calls": 81,
+              "output_lengths": [
+                78,
+                31,
+                48
+              ]
+            },
+            {
+              "beam": true,
+              "rows": 10,
+              "primer_length": 3,
+              "decoder_calls": 81,
+              "output_lengths": [
+                79,
+                80
+              ]
+            }
+          ],
+          "sessions": {
+            "(3, 5)": {
+              "dispatch": {
+                "64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=2/cache=64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=2/cache=128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=2/cache=256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=2/cache=512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                }
+              },
+              "fused_lse": true,
+              "compact_tail": true,
+              "chunk": 4,
+              "last_request_tail_start": [
+                0,
+                48
+              ]
+            },
+            "(2, 5)": {
+              "dispatch": {
+                "64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=0/cache=512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "tail/group=1/cache=512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                }
+              },
+              "fused_lse": true,
+              "compact_tail": true,
+              "chunk": 4,
+              "last_request_tail_start": null
+            }
+          },
+          "scope": "Separate diagnostic pass, not added to warm wall samples; no per-step host reads. Beam decoder_calls counts post-prefill decoder replays; selection0 after prefill is separate."
+        }
+      }
+    }
+  },
+  "comparison": "beam_preset",
+  "classification": "N",
+  "gpu_telemetry": {
+    "utilization_percent": {
+      "n": 51,
+      "p50": 0.0,
+      "p95": 96.5,
+      "minimum": 0.0,
+      "maximum": 99.0,
+      "stdev": 41.573140709484484,
+      "percentile_method": "linear interpolation at (n-1)*q"
+    },
+    "device_memory_mib": {
+      "n": 51,
+      "p50": 16933.0,
+      "p95": 19282.0,
+      "minimum": 0.0,
+      "maximum": 19703.0,
+      "stdev": 4675.989509435312,
+      "percentile_method": "linear interpolation at (n-1)*q"
+    },
+    "scope": "Five-second samples across loading/capture/warm/diagnostic calls and both variants; not per-condition utilization or kernel occupancy."
+  },
+  "scope": "N: existing grouped cross/tail/LSE beam preset versus optimized default. Balanced 64-input speech sample, not an independent quality holdout or corpus-weighted performance. Seven repeats are repeated timings, not additional evaluation inputs. Raw files retain per-call wall time/output/dispatch/cold metadata. No timing from the full-corpus one-pass audit.",
+  "reference_output_control": {
+    "current": "outputs/runtime-2787704/profile",
+    "prior": "outputs/runtime-large-audit/owsm_v4_medium_1B_beam_kernels_beam_b1",
+    "partial": false,
+    "agreement": {
+      "tokens": {
+        "equal": 64,
+        "total": 64
+      },
+      "timestamp_tokens": {
+        "equal": 64,
+        "total": 64
+      },
+      "segments": {
+        "equal": 64,
+        "total": 64
+      },
+      "text": {
+        "equal": 64,
+        "total": 64
+      }
+    },
+    "source_control": {
+      "commits": [
+        "9e87cfaf81aa45fa789e37a491e2f15b2a830557",
+        "3bb13622eafef1715c3b63982a14f452780f3754"
+      ],
+      "changed_runtime_files": [
+        "src/owsm_trt/pipeline.py"
+      ],
+      "pipeline_ast_without_docs_sha256": "5d3c7944b4dc2b08123038976093bdd85e9db185b6285caee2805410b06d2649"
+    },
+    "prior_chunk_sha256": {
+      "chunk-00088.jsonl.gz": "1da4c1e3acafb02a20ca5c65983c55216607fac8507ef175a713da3c6e67377c",
+      "chunk-00089.jsonl.gz": "665e15bec0c1ceac28008d619f12dc9bd4ddf9c31b0a71c5606a43c8ac9cd589",
+      "chunk-00090.jsonl.gz": "208fb247211c1f66d02374f52c8c640f48c0a782b06f43448a2c2a720dfd316b",
+      "chunk-00091.jsonl.gz": "b5cedf78c75e205f654e8cbfacd9c97bc57d579ce4936cb05914059ed2885eeb",
+      "chunk-00092.jsonl.gz": "380416a25a84eb82cb32f7c63910bb1b660ce43410187248ee4e72588076ce78",
+      "chunk-00094.jsonl.gz": "b7f1a7f2595021b2ea768eb48951f7b4d310f1621a585f2c54e6b978bdbbdfeb",
+      "chunk-00095.jsonl.gz": "b91fcd15107dff7795c660ae19bdbf7054943a064983f87aa05155de7baf8c03",
+      "chunk-00096.jsonl.gz": "3a858c1c0c066dc3ccbf3ef094c0516b0fde062cd99bd143687db270ed79e202",
+      "chunk-00097.jsonl.gz": "c7ff5ebb2436ce7f37c91ad8c0ea2bb40f08c1617f5f1589e5be780b0c8dc743",
+      "chunk-00098.jsonl.gz": "5b79a307eddb32225f9e390dcd73004bb8877062a4b1d2878afc04a83aaca3ea",
+      "chunk-00099.jsonl.gz": "59faeeda63d7dbcb822a290496ac84f1af2b9253a6d05c2f29aaf40cec6df82c",
+      "chunk-00100.jsonl.gz": "ce5f74e73433f3827c297e900c233fa3f4baac4d2e4a992b01fd2bcfce038544",
+      "chunk-00101.jsonl.gz": "1eef98a63189e449b8bb91857d1f6fe0fcc5864fc09788179d684d8acb4d5d98"
+    },
+    "scope": "B1 default full outputs only, same single-input grouping/checkpoint/engines/executable runtime. B3 timing uses32-input groups unlike the prior3-input audit groups; no B3 cross-job identity assertion. No cross-job speed comparison."
+  }
+}
