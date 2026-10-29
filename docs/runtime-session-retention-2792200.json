@@ -1,0 +1,1214 @@
+{
+  "source": {
+    "group": "gai51740",
+    "queue": "R9920261300",
+    "resource": "rt_HG",
+    "nodes": 1,
+    "gpus": 1,
+    "walltime": "01:00:00",
+    "account_gpu_cap": 192,
+    "approval": "Standing serial1GPU authorization; fresh guards and completed B1preset audit required.",
+    "model_name": "owsm_v4_medium_1B",
+    "experiment": "runtime_session_retention",
+    "expected_samples": 24,
+    "languages": [
+      "eng",
+      "jpn"
+    ],
+    "repeat": 7,
+    "commit": "5fdd30feb94213f19118130d301fea462a5df867",
+    "runtime_tree": "d9803c2253c55a0074128f14c896fbb56a1114e2",
+    "snapshot": "/groups/gai51740/acc12576tt/github.com/owsm_trt/outputs/runtime-session-retention-1b-submit-01/snapshot-5fdd30fe.tar",
+    "status": "approved_not_submitted",
+    "approved_jobs": 1,
+    "additional_jobs_submitted": 0,
+    "prepared_at": "2026-10-28T13:10:59.955941+00:00",
+    "purpose": "Private2/3 session-retention comparison; mixed B1/B3-finalB2, fulloutput equality required. Reference includes repeatedsetup; no defaultchange or kernel-onlyclaim.",
+    "checks": "3fake-session CPUtests andRuff/bashsyntax passed; GPU not yetmeasured.",
+    "prerequisite": "Full13232 B1preset audit/control validated, then fresh192/queue/no duplicate guard. Standard cap policy; long headroom wait retired."
+  },
+  "environment": {
+    "commit": "5fdd30feb94213f19118130d301fea462a5df867",
+    "job": "2792200.pbs1",
+    "load_ms": 7100.59568611905,
+    "checkpoint_sha256": "b02d79f29a4daa31dd49ce145d9bb4cda0a1b68cdad91ae0af170ec3a4e92e09",
+    "index_sha256": "213a5e54cf891cefdcfebffb4c2dbac392867f64bcecc9cc60c3bdf7e5057211",
+    "selection_sha256": "8b40bb8b1595fae35a87cc2018db4d0fe17cc7357a1e2c500dc15a10e432fb21",
+    "engine_sha256": {
+      "encoder.engine": "e9e532e9dccd1e805617d5e22a4c52a96901887eb3f6500ba0bff3acfe191882",
+      "decoder.engine": "f4ec95ea82bd389b97d83b0f7699d4b926e860c65b6fe33909129d07b183647e",
+      "verify.engine": "4f6f6da3640c9fb1fbb7b237210734ad30deb663f2184cc6be7a5a3fc47d3f9b"
+    },
+    "gpu": "NVIDIA H200",
+    "cuda": "13.0",
+    "versions": {
+      "torch": "2.14.1",
+      "triton": "3.8.0",
+      "tensorrt": "11.4.0.106"
+    },
+    "nvidia_smi": "name, uuid, driver_version\nNVIDIA H200, GPU-fe007253-feb5-389d-dafc-d21594be8cc9, 595.71.05",
+    "repeat": 7,
+    "session_limits": {
+      "reference": 2,
+      "candidate": 3
+    },
+    "scope": "Private session retention ablation, public default2 unchanged. Reference includes cache churn/setup/capture. Both pools resident; allocator memory is a combined benchmark footprint, not isolated deployment memory. Loaded audio outside timing. Diagnostic factory/decoder counts are separate from timing."
+  },
+  "scheduler": {
+    "job": "2792200.pbs1",
+    "observed_at": "2026-10-29T04:12:31.477745+00:00",
+    "state": "F",
+    "exit_status": 0,
+    "stageout_status": 1,
+    "project": "gai51740",
+    "queue": "R9920261300",
+    "resources": {
+      "fs_factor": 1,
+      "mem": "160gb",
+      "mpiprocs": 1,
+      "ncpus": 16,
+      "ngpus": 1,
+      "njobs_rt_HG": 1,
+      "nodect": 1,
+      "ompthreads": 1,
+      "place": "scatter",
+      "select": "1:ncpus=16:mem=160gb:ngpus=1:njobs_rt_HG=1",
+      "walltime": "01:00:00"
+    },
+    "resources_used": {
+      "cpupercent": 103,
+      "cput": "00:03:31",
+      "mem": "32876624kb",
+      "ncpus": 16,
+      "vmem": "339620104kb",
+      "walltime": "00:03:27"
+    }
+  },
+  "complete": {
+    "complete": true,
+    "languages": [
+      "eng",
+      "jpn"
+    ],
+    "samples": 24,
+    "repeat": 7
+  },
+  "conditions": {
+    "eng": {
+      "variants": {
+        "reference": {
+          "cycle_wall_ms": {
+            "n": 14,
+            "p50": 3221.941099036485,
+            "p95": 3419.502081396058,
+            "minimum": 3124.267515959218,
+            "maximum": 3553.531541954726,
+            "stdev": 102.97091579860735,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 6487.629187293351,
+            "p95": 6684.51161282137,
+            "minimum": 6334.2232957948,
+            "maximum": 6730.28115183115,
+            "stdev": 111.52636666643261,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 21.113783616255272,
+          "combined_pool_peak_allocated_bytes": 13568592384
+        },
+        "candidate": {
+          "cycle_wall_ms": {
+            "n": 14,
+            "p50": 225.21093057002872,
+            "p95": 263.65857836790383,
+            "minimum": 185.45790202915668,
+            "maximum": 264.2856619786471,
+            "stdev": 38.4260097800487,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 449.733846122399,
+            "p95": 451.2631165329367,
+            "minimum": 448.4765629749745,
+            "maximum": 451.68886217288673,
+            "stdev": 0.9724436671524006,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 305.7356475964088,
+          "combined_pool_peak_allocated_bytes": 13465418240
+        }
+      },
+      "repeat_totals_ms": {
+        "reference": [
+          6334.2232957948,
+          6469.675798900425,
+          6730.28115183115,
+          6487.629187293351,
+          6478.590904967859,
+          6511.533391196281,
+          6577.716021798551
+        ],
+        "candidate": [
+          450.03436389379203,
+          448.4765629749745,
+          450.26971003971994,
+          449.13683901540935,
+          449.733846122399,
+          449.0332801360637,
+          451.68886217288673
+        ]
+      },
+      "paired_rtfx_change_percent": [
+        1307.497694395994,
+        1342.5894980963453,
+        1394.7221635755707,
+        1344.4660566065852,
+        1340.5388789005342,
+        1350.1226700219615,
+        1356.249328388551
+      ],
+      "paired_stats": {
+        "n": 7,
+        "p50": 1344.4660566065852,
+        "p95": 1383.1803130194648,
+        "minimum": 1307.497694395994,
+        "maximum": 1394.7221635755707,
+        "stdev": 23.884783358019845,
+        "percentile_method": "linear interpolation at (n-1)*q"
+      },
+      "positive_pairs": 7,
+      "pooled_rtfx_change_percent": 1348.0381780602613,
+      "quality": {
+        "metric": "WER",
+        "reference_units": 316,
+        "errors": 21,
+        "rate": 0.06645569620253164,
+        "annotated_utterances": 12,
+        "reference_timestamp_error": null,
+        "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+      },
+      "cold": [
+        {
+          "variant": "reference",
+          "offset": 0,
+          "wall_ms": 13800.613768864423,
+          "captures": {
+            "(3, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(2, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          }
+        },
+        {
+          "variant": "reference",
+          "offset": 6,
+          "wall_ms": 3161.8097028695047,
+          "captures": {
+            "(3, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(2, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          }
+        },
+        {
+          "variant": "candidate",
+          "offset": 0,
+          "wall_ms": 2695.9512662142515,
+          "captures": {
+            "(1, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(3, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(2, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          }
+        },
+        {
+          "variant": "candidate",
+          "offset": 6,
+          "wall_ms": 1543.88546384871,
+          "captures": {
+            "(1, 5)": {
+              "encode": 2,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(3, 5)": {
+              "encode": 2,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(2, 5)": {
+              "encode": 2,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          }
+        }
+      ],
+      "diagnostics": [
+        {
+          "variant": "reference",
+          "created": [
+            {
+              "batch": 1,
+              "beam": 5,
+              "dispatch": {
+                "64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                }
+              }
+            },
+            {
+              "batch": 3,
+              "beam": 5,
+              "dispatch": {
+                "64": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "128": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "256": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "512": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                }
+              }
+            },
+            {
+              "batch": 2,
+              "beam": 5,
+              "dispatch": {
+                "64": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "128": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "256": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "512": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                }
+              }
+            },
+            {
+              "batch": 1,
+              "beam": 5,
+              "dispatch": {
+                "64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                }
+              }
+            },
+            {
+              "batch": 3,
+              "beam": 5,
+              "dispatch": {
+                "64": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "128": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "256": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "512": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                }
+              }
+            },
+            {
+              "batch": 2,
+              "beam": 5,
+              "dispatch": {
+                "64": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "128": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "256": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "512": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                }
+              }
+            }
+          ],
+          "retained_captures": {
+            "(3, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(2, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          }
+        },
+        {
+          "variant": "candidate",
+          "created": [],
+          "retained_captures": {
+            "(1, 5)": {
+              "encode": 2,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(3, 5)": {
+              "encode": 2,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(2, 5)": {
+              "encode": 2,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          }
+        }
+      ],
+      "output_checks": "Worker asserts full result equality on every warm/timed/diagnostic call; one common full output record per input retained.",
+      "artifact_sha256": {
+        "tokens.json": "fa66d9c5d4f202fae1752a41432095a669adc8a5b16fae3d68e37bfe8f89349a",
+        "wall.json": "60d318ab9c46369933a39040fb75176434876c6a560254aa314b53e676dac59d",
+        "summary.json": "d28f6cfb803925b4728d81c4bf141c673522a650e58958802d2614b2e896ed3f"
+      }
+    },
+    "jpn": {
+      "variants": {
+        "reference": {
+          "cycle_wall_ms": {
+            "n": 14,
+            "p50": 4240.049997461028,
+            "p95": 4401.778251805808,
+            "minimum": 4111.018711002544,
+            "maximum": 4463.565810117871,
+            "stdev": 96.97775186127993,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 8479.526739101857,
+            "p95": 8709.901033621281,
+            "minimum": 8355.163769097999,
+            "maximum": 8754.090646049008,
+            "stdev": 139.43192604861616,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 13.096094708846174,
+          "combined_pool_peak_allocated_bytes": 13570835456
+        },
+        "candidate": {
+          "cycle_wall_ms": {
+            "n": 14,
+            "p50": 174.40594104118645,
+            "p95": 198.36549836909398,
+            "minimum": 151.01789799518883,
+            "maximum": 198.9283449947834,
+            "stdev": 22.355699373495185,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "repeat_total_ms": {
+            "n": 7,
+            "p50": 350.54814885370433,
+            "p95": 352.11266407277435,
+            "minimum": 346.4204368647188,
+            "maximum": 352.5555660016835,
+            "stdev": 2.0385088246698686,
+            "percentile_method": "linear interpolation at (n-1)*q"
+          },
+          "pooled_rtfx": 318.43133477367604,
+          "combined_pool_peak_allocated_bytes": 13457721344
+        }
+      },
+      "repeat_totals_ms": {
+        "reference": [
+          8754.090646049008,
+          8567.13685579598,
+          8606.791937956586,
+          8479.526739101857,
+          8355.163769097999,
+          8355.976119171828,
+          8383.912531193346
+        ],
+        "candidate": [
+          350.73104314506054,
+          350.54814885370433,
+          352.5555660016835,
+          351.07922623865306,
+          347.6148350164294,
+          346.4204368647188,
+          348.2083617709577
+        ]
+      },
+      "paired_rtfx_change_percent": [
+        2395.9554670580906,
+        2343.9258583480173,
+        2341.258277543543,
+        2315.274418241349,
+        2303.5693898688487,
+        2312.090982506016,
+        2307.72866238866
+      ],
+      "paired_stats": {
+        "n": 7,
+        "p50": 2315.274418241349,
+        "p95": 2380.3465844450684,
+        "minimum": 2303.5693898688487,
+        "maximum": 2395.9554670580906,
+        "stdev": 30.211726005108666,
+        "percentile_method": "linear interpolation at (n-1)*q"
+      },
+      "positive_pairs": 7,
+      "pooled_rtfx_change_percent": 2331.498411191097,
+      "quality": {
+        "metric": "CER",
+        "reference_units": 445,
+        "errors": 102,
+        "rate": 0.2292134831460674,
+        "annotated_utterances": 12,
+        "reference_timestamp_error": null,
+        "reference_timestamp_status": "not evaluated; token/segment comparisons are baseline agreement"
+      },
+      "cold": [
+        {
+          "variant": "reference",
+          "offset": 0,
+          "wall_ms": 2919.240012066439,
+          "captures": {
+            "(3, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(2, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          }
+        },
+        {
+          "variant": "reference",
+          "offset": 6,
+          "wall_ms": 3564.5868219435215,
+          "captures": {
+            "(3, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(2, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          }
+        },
+        {
+          "variant": "candidate",
+          "offset": 0,
+          "wall_ms": 2675.1973628997803,
+          "captures": {
+            "(1, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(3, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(2, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          }
+        },
+        {
+          "variant": "candidate",
+          "offset": 6,
+          "wall_ms": 1574.9515311326832,
+          "captures": {
+            "(1, 5)": {
+              "encode": 2,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(3, 5)": {
+              "encode": 2,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(2, 5)": {
+              "encode": 2,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          }
+        }
+      ],
+      "diagnostics": [
+        {
+          "variant": "reference",
+          "created": [
+            {
+              "batch": 1,
+              "beam": 5,
+              "dispatch": {
+                "64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                }
+              }
+            },
+            {
+              "batch": 3,
+              "beam": 5,
+              "dispatch": {
+                "64": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "128": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "256": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "512": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                }
+              }
+            },
+            {
+              "batch": 2,
+              "beam": 5,
+              "dispatch": {
+                "64": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "128": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "256": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "512": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                }
+              }
+            },
+            {
+              "batch": 1,
+              "beam": 5,
+              "dispatch": {
+                "64": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "128": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "256": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                },
+                "512": {
+                  "implementation": "megakernel-gluon",
+                  "module": "owsm_trt.megakernel_gluon",
+                  "fallback_reason": null,
+                  "writes_cache": true
+                }
+              }
+            },
+            {
+              "batch": 3,
+              "beam": 5,
+              "dispatch": {
+                "64": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "128": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "256": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "512": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                }
+              }
+            },
+            {
+              "batch": 2,
+              "beam": 5,
+              "dispatch": {
+                "64": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "128": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "256": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                },
+                "512": {
+                  "implementation": "tensorrt",
+                  "module": "owsm_trt.runtime",
+                  "fallback_reason": "shape limit",
+                  "writes_cache": false
+                }
+              }
+            }
+          ],
+          "retained_captures": {
+            "(3, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(2, 5)": {
+              "encode": 1,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          }
+        },
+        {
+          "variant": "candidate",
+          "created": [],
+          "retained_captures": {
+            "(1, 5)": {
+              "encode": 2,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(3, 5)": {
+              "encode": 2,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            },
+            "(2, 5)": {
+              "encode": 2,
+              "plain_select_fused": false,
+              "ctc": 0,
+              "decode": 4,
+              "experimental_chunk_decode": 0,
+              "plain_ready": null,
+              "plain_steps": 4,
+              "verify": 0,
+              "ready_verify_steps": 0,
+              "normal_verify_graphs": 0,
+              "notime_graphs": 0,
+              "selection_fused_windows": 0,
+              "selection_split_windows": 0
+            }
+          }
+        }
+      ],
+      "output_checks": "Worker asserts full result equality on every warm/timed/diagnostic call; one common full output record per input retained.",
+      "artifact_sha256": {
+        "tokens.json": "90f3659db2af82db1e8ff78e3f805cb14aeca4e2855d6b27d62fa5265f39b1fa",
+        "wall.json": "51bf85d1c87e2928777771fd123c64e41a2833cdfe60469fd3b543e6734cf439",
+        "summary.json": "3ecabbc5083080e25cfeceacf2ccfb8c03f273c59a3e05d66a746ca80f7da440"
+      }
+    }
+  },
+  "gpu_utilization_percent": {
+    "n": 37,
+    "p50": 2.0,
+    "p95": 16.39999999999997,
+    "minimum": 0.0,
+    "maximum": 73.0,
+    "stdev": 12.501920962695582,
+    "percentile_method": "linear interpolation at (n-1)*q"
+  },
+  "scope": "Two-entry versus private three-entry session retention; same engines/precision/grouping. Cycle wall time includes one B1 request and one five-input B3 request (final B2 group). Reference includes repeated session setup/capture from eviction. Not single-transcribe p95, not kernel speed, not a normal fixed-shape fully-resident warm workload. Both pools resident; memory is a combined experiment footprint. GPU sampling spans all phases. No default adoption."
+}

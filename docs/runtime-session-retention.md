@@ -1,10 +1,10 @@
-# Session retention experiment (not GPU measured)
+# Session retention under mixed batch requests
 
 Candidate22 also covers session eviction. The production encoder-decoder factory retains two
 sessions, keyed by utterance batch and beam width. A B1 beam request followed by a five-input B3
 request uses `(1,5)`, `(3,5)` and `(2,5)`. Repeating this sequence recreates all three sessions under
-the two-entry LRU. Retaining three sessions is an E-intent hypothesis; its speed and GPU output
-compatibility have not yet been measured. The public API and default retention count remain unchanged.
+the two-entry LRU. The paired H200/1B experiment below verifies an E-intent three-entry alternative
+on24 inputs. The public API and default retention count remain unchanged.
 
 `scripts/profile_session_retention.py` compares the existing two-entry policy with a private
 three-entry control. It selects12 inputs each from English and Japanese in the expanded corpus,
@@ -34,8 +34,25 @@ python scripts/profile_session_retention.py --model MODEL --data LOCAL_CORPUS \
   --languages eng jpn --repeat 7 --out LOCAL_RESULTS
 ```
 
-The private runtime field is only an experiment control. No new performance number or production
-retention option has been adopted.
+The private runtime field is an experiment control. No production retention option has been adopted.
+
+[Job2792200](runtime-session-retention-2792200.json), frozen5fdd30f, finished with PBS/publication
+exit0. All24 full token/time/text/segment outputs match across policies and every warm/timed/diagnostic
+call. All14 paired repeat totals improve. The separate observer confirms six session creations over
+two cycles with retention2 and zero with retention3. Candidate graph counts remain constant after
+both six-input groups have warmed up.
+
+| Language | Cycle p50, 2 →3 sessions | Cycle p95, 2 →3 sessions | Pooled RTFx, 2 →3 sessions |
+|---|---:|---:|---:|
+| English |3221.94 →225.21ms|3419.50 →263.66ms|21.11 →305.74|
+| Japanese |4240.05 →174.41ms|4401.78 →198.37ms|13.10 →318.43|
+
+Each cycle contains two API requests and six inputs. These14.48×/24.31× workload gains eliminate
+repeated setup/capture; they are not decoder-kernel gains, single-call p95s, or gains for fixed-shape
+requests already fitting the cache. Both pools were resident during the paired run. Its approximately
+12.6GiB allocator peak cannot establish the extra deployment memory required by retention3.
+Initial setup/JIT and shape warmup are retained separately in the result, without comparing their
+ordered reference/candidate measurements as an independent cold-start speedup.
 
 Standalone memory assessment is prepared separately. Run the same profiler twice in fresh processes,
 once with `--isolated-limit 2` and once with `--isolated-limit 3`, using `--repeat 3`. Setting
