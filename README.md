@@ -434,8 +434,10 @@ model takes about 5.5-6 minutes in all (download, engine build, megakernel); lat
   this avoids repeated graph setup. [H200/1B measurements](docs/runtime-session-retention.md) reduce
   six-input cycle p50 from3.22s to225ms in English and4.24s to174ms in Japanese, with all24 outputs
   equal. This includes eviction/capture cost, not a fixed-shape decoder gain. Isolated runs add about
-  558MiB of resident PyTorch allocation and710–750MiB of sampled device usage. Large GPU reuse
-  validation is pending; the default remains2 and CTC-only caching keeps its separate policy.
+  558MiB of resident PyTorch allocation and710–750MiB of sampled device usage. The
+  [13,232-input beam audit](docs/runtime-large-regression-2792704.json) matches every text/segment
+  and all13,191 available token/timestamp sequences, including the prior default-output control.
+  Mixed-task GPU checks are pending; the default remains2 and CTC-only caching keeps its separate policy.
 * **Timestamp rules.** Like ESPnet, every search applies its `ScoreFilter`: no timestamps after `<notimestamps>`;
   otherwise the output starts with a timestamp, timestamps come in increasing pairs, and `<eos>` only after a
   complete pair.

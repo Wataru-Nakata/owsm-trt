@@ -6,7 +6,7 @@ request uses `(1,5)`, `(3,5)` and `(2,5)`. Repeating this sequence recreates all
 the two-entry LRU. The paired H200/1B experiment below verifies an E-intent three-entry alternative
 on24 inputs. `OWSM.from_pretrained(..., session_cache_size=3)` exposes the retention count as a
 positive integer. Its default remains2; CTC-only caching is separate and unchanged. The public
-integration has focused CPU coverage; large GPU reuse validation is pending.
+integration has25 focused CPU checks and a complete13,232-input H200/1B beam audit.
 
 `scripts/profile_session_retention.py` compares the existing two-entry policy with an opt-in
 three-entry control. It selects12 inputs each from English and Japanese in the expanded corpus,
@@ -85,7 +85,7 @@ resident allocated bytes stay constant across its six measured cycles per langua
 
 These differences use final synchronized observations. The allocator, library/context allocations
 and device samples have different scopes, as described above. They are measured costs of retention3
-for this workload, not a general memory bound. Full13,232-input reuse compatibility remains pending.
+for this workload, not a general memory bound.
 
 `audit_large_regression.py --mode beam_sessions --case beam_b3` compares public cache sizes2/3
 with the optimized default search in both. It preserves the established corpus/grouping and records
@@ -93,6 +93,21 @@ session creation counts and maximum retained entries per process. Resume keeps o
 counts describe that process, not an uninterrupted execution across allocations. It is an E audit,
 so any output difference fails the run. This pass includes41 ordinary long-form inputs, which lack
 joined token IDs; their text/segments remain comparable.
+
+The [completed public audit2792704](runtime-large-regression-2792704.json), frozen da80175, verifies
+all104 chunks: text/segments13,232/13,232 and available token/timestamp sequences13,191/13,191 match.
+The reference also matches the earlier optimized-default B3 outputs from2781006 on every available
+field, with identical inputs/grouping/checkpoint/engines. Current reference/candidate decoder routes
+match at B1/B2/B3. Historical2781006 did not record dispatch metadata, so historical route equality is
+not claimed; all runtime files except the API/cache changes in `pipeline.py` are byte-identical.
+
+Account-cap interruptions stopped2792366 at10,496 inputs/82 chunks (PBS271, raw exit unavailable)
+and2792572 before any additional chunk (PBS271/raw143). The normal final allocation2792704
+(PBS/publication exit0) adds2,736 inputs/22 chunks, preserving every earlier chunk hash. Session
+creation counts through published chunks are79→3 in the initial process and22→3 in the final
+process. These are process-local factory counts, not decoder calls or an uninterrupted latency run.
+The zero-progress interrupted process contributes no published session-observation snapshot.
+No speed claim is derived from this one-pass multi-allocation audit; use the paired measurements above.
 
 `check_session_reuse.py` prepares a separate mixed-task regression on12 English/Japanese inputs.
 Eight named cases alternate drafted/plain greedy, streaming batches, translation, a long prompt and

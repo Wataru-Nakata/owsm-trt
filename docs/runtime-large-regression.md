@@ -605,3 +605,21 @@ empty segments remain1, repeated-fourgram flags5, unpaired and nonmonotonic time
 
 The preset remains opt-in. Full changed outputs, quality, boundary comparisons and the exact default
 control are retained in the artifact. This audit adds quality coverage, not a new latency measurement.
+
+### Public session retention / 1B B3
+
+`--mode beam_sessions --case beam_b3` compares public `session_cache_size=2/3`, with the optimized
+default search/decoder settings unchanged. The [complete result2792704](runtime-large-regression-2792704.json),
+frozen da80175, verifies all13,232 inputs/104 chunks: every text/segment and all13,191 available
+token/timestamp pairs match exactly. Forty-one long-form inputs lack joined token IDs. Its reference
+also exactly matches the prior optimized-default B3 outputs2781006, with the same input groups,
+checkpoint and engines. Current B1/B2/B3 routes match across policies; the historical environment
+lacks dispatch telemetry, so its route identity is unverified independently of output equality.
+
+Two account-cap cancellations preserved10,496 inputs/82 chunks. Job2792366 has PBS271 and no
+published raw exit;2792572 has PBS271/raw143 and no additional completed input. Final job2792704
+has PBS/publication exit0 and adds2,736 inputs/22 chunks. All preserved hashes and prior output
+controls pass. Factory counts through published chunks change79→3 and22→3 in the two contributing
+processes, with maximum retained entries2/3. Counts reset across processes; they are neither
+decoder calls nor a timing comparison. The default stays2. See the separate
+[paired workload and isolated-memory measurements](runtime-session-retention.md) for the measured benefit/cost.
